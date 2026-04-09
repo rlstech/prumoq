@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PrumoQ — Qualidade em Obras</title>
+<style>
+:root{
+  --br:#E84A1A;--brd:#C03A10;--brl:#FDF0EC;--brm:#F5784A;
+  --ok:#2E7D32;--okb:#E8F5E9;--okm:#4CAF50;
+  --nok:#C62828;--nokb:#FFEBEE;
+  --pg:#1565C0;--pgb:#E3F2FD;
+  --na:#666;--nab:#F2F2F2;
+  --warn:#E65100;--warnb:#FFF3E0;
+  --sb-w:228px;--hd:56px;
+  --r:8px;--rl:12px;
+  --bg0:#F7F6F3;--bg1:#FFFFFF;--bg2:#F1EFE8;
+  --txt:#1A1A18;--txt2:#5C5B57;--txt3:#9C9A93;
+  --brd0:rgba(0,0,0,.08);--brd1:rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg0);color:var(--txt);font-size:14px;line-height:1.5}
+a{text-decoration:none;color:inherit}
+
+/* ── LAYOUT ── */
+#app{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:var(--sb-w);background:var(--txt);flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#header{height:var(--hd);background:var(--bg1);border-bottom:1px solid var(--brd0);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0}
+#content{flex:1;overflow-y:auto;padding:24px}
+
+/* ── LOGIN ── */
+#login-wrap{position:fixed;inset:0;background:var(--br);display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-box{background:white;border-radius:16px;padding:40px;width:400px}
+.login-logo{font-size:22px;font-weight:600;color:var(--br);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--txt2);margin-bottom:28px}
+.login-box h2{font-size:17px;font-weight:600;margin-bottom:20px;color:var(--txt)}
+.lin{display:block;width:100%;padding:10px 14px;border:1px solid var(--brd1);border-radius:var(--r);font-size:14px;margin-bottom:12px;outline:none;font-family:inherit}
+.lin:focus{border-color:var(--br)}
+.lbtn{width:100%;padding:12px;background:var(--br);color:white;border:none;border-radius:var(--r);font-size:14px;font-weight:500;cursor:pointer;margin-top:4px}
+.lbtn:hover{background:var(--brd)}
+
+/* ── SIDEBAR ── */
+.sb-logo{padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo-name{font-size:16px;font-weight:600;color:white;letter-spacing:-.2px}
+.sb-logo-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}
+.sb-section{padding:16px 12px 8px;font-size:10px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.8px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;cursor:pointer;margin:1px 8px;color:rgba(255,255,255,.65);font-size:13px;transition:.12s}
+.sb-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.9)}
+.sb-item.on{background:var(--br);color:white}
+.sb-item .ico{width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.sb-item .badge{margin-left:auto;background:var(--nok);color:white;font-size:10px;padding:1px 6px;border-radius:20px;font-weight:600}
+.sb-bottom{margin-top:auto;padding:12px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px;border-radius:7px;cursor:pointer}
+.sb-user:hover{background:rgba(255,255,255,.06)}
+.sb-uav{width:32px;height:32px;border-radius:50%;background:var(--brm);color:white;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:500;color:rgba(255,255,255,.85)}
+.sb-urole{font-size:11px;color:rgba(255,255,255,.4);margin-top:1px}
+
+/* ── HEADER ── */
+.h-breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txt2)}
+.h-breadcrumb .sep{color:var(--txt3)}
+.h-breadcrumb .cur{color:var(--txt);font-weight:500}
+.h-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.btn{padding:8px 16px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--br);color:white}
+.btn-primary:hover{background:var(--brd)}
+.btn-ghost{background:transparent;color:var(--txt);border:1px solid var(--brd1)}
+.btn-ghost:hover{background:var(--bg2)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-icon{width:32px;height:32px;padding:0;border-radius:7px;justify-content:center;font-size:15px}
+
+/* ── SCREENS ── */
+.screen{display:none}.screen.on{display:block}
+
+/* ── TYPOGRAPHY ── */
+.pg-title{font-size:20px;font-weight:600;color:var(--txt);margin-bottom:4px}
+.pg-sub{font-size:13px;color:var(--txt2);margin-bottom:24px}
+.sec-title{font-size:12px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+
+/* ── STAT GRID ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:var(--bg1);border-radius:var(--rl);padding:18px 20px;border:1px solid var(--brd0)}
+.stat-card .val{font-size:28px;font-weight:600;color:var(--txt);margin-bottom:2px}
+.stat-card .lbl{font-size:12px;color:var(--txt2)}
+.stat-card .delta{font-size:11px;margin-top:6px;font-weight:500}
+.stat-card .delta.up{color:var(--ok)}
+.stat-card .delta.dn{color:var(--nok)}
+.stat-card.hi .val{color:var(--br)}
+.stat-card.hi{border-left:3px solid var(--br)}
+.stat-card.ok-c{border-left:3px solid var(--ok)}.stat-card.ok-c .val{color:var(--ok)}
+.stat-card.nok-c{border-left:3px solid var(--nok)}.stat-card.nok-c .val{color:var(--nok)}
+.stat-card.pg-c{border-left:3px solid var(--pg)}.stat-card.pg-c .val{color:var(--pg)}
+
+/* ── CARDS / TABLES ── */
+.card{background:var(--bg1);border-radius:var(--rl);border:1px solid var(--brd0);overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--brd0);display:flex;align-items:center;gap:12px}
+.card-header h3{font-size:14px;font-weight:600;color:var(--txt)}
+.card-header .ch-actions{margin-left:auto;display:flex;gap:8px}
+.card-body{padding:20px}
+.card-body.np{padding:0}
+table{width:100%;border-collapse:collapse}
+thead th{font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.4px;padding:10px 16px;text-align:left;background:var(--bg0);border-bottom:1px solid var(--brd0)}
+tbody tr{border-bottom:1px solid var(--brd0);transition:.12s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg0)}
+tbody td{padding:12px 16px;font-size:13px;color:var(--txt)}
+.td-sub{font-size:12px;color:var(--txt2);margin-top:2px}
+
+/* ── BADGES ── */
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;white-space:nowrap;display:inline-block}
+.badge.ok{background:var(--okb);color:var(--ok)}
+.badge.nok{background:var(--nokb);color:var(--nok)}
+.badge.pg{background:var(--pgb);color:var(--pg)}
+.badge.na{background:var(--nab);color:var(--na)}
+.badge.warn{background:var(--warnb);color:var(--warn)}
+
+/* ── PROGRESS ── */
+.progress{height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;min-width:80px}
+.progress .fill{height:100%;border-radius:3px;background:var(--br);transition:.3s}
+.progress .fill.ok{background:var(--ok)}
+
+/* ── FORM ── */
+.form-grid{display:grid;gap:16px}
+.form-grid.c2{grid-template-columns:1fr 1fr}
+.form-grid.c3{grid-template-columns:1fr 1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:12px;font-weight:500;color:var(--txt2)}
+.form-input{padding:9px 12px;border:1px solid var(--brd1);border-radius:var(--r);font-size:13px;color:var(--txt);background:var(--bg1);font-family:inherit;outline:none}
+.form-input:focus{border-color:var(--br)}
+select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath fill='%23666' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+textarea.form-input{resize:vertical;min-height:80px}
+.form-section{background:var(--bg0);border-radius:var(--r);padding:16px;border:1px solid var(--brd0)}
+.form-section-title{font-size:12px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:white;border-radius:var(--rl);width:680px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--brd0);display:flex;align-items:center;gap:12px;position:sticky;top:0;background:white;z-index:10}
+.modal-header h2{font-size:16px;font-weight:600;color:var(--txt)}
+.modal-header .close{margin-left:auto;background:var(--bg2);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--txt2)}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--brd0);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:white}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--brd0);margin-bottom:24px}
+.tab{padding:10px 20px;font-size:13px;font-weight:500;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.12s}
+.tab:hover{color:var(--txt)}
+.tab.on{color:var(--br);border-bottom-color:var(--br)}
+.tab-content{display:none}.tab-content.on{display:block}
+
+/* ── DETAIL PANELS ── */
+.detail-grid{display:grid;grid-template-columns:1fr 340px;gap:20px}
+.detail-main{display:flex;flex-direction:column;gap:20px}
+.detail-side{display:flex;flex-direction:column;gap:16px}
+
+/* ── CHECKLIST EDITOR ── */
+.cl-item{border:1px solid var(--brd0);border-radius:var(--r);background:var(--bg1);overflow:hidden;margin-bottom:8px}
+.cl-item-header{padding:12px 14px;background:var(--bg0);display:flex;align-items:center;gap:10px;cursor:pointer}
+.cl-item-header .num{width:22px;height:22px;border-radius:50%;background:var(--br);color:white;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cl-item-header h4{font-size:13px;font-weight:500;color:var(--txt);flex:1}
+.cl-item-body{padding:14px;border-top:1px solid var(--brd0)}
+.cl-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── TEAM ── */
+.team-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--brd0)}
+.team-row:last-child{border-bottom:none}
+.team-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.team-av.own{background:var(--okb);color:var(--ok)}
+.team-av.sub{background:var(--warnb);color:var(--warn)}
+.team-av.eng{background:var(--pgb);color:var(--pg)}
+.team-info h5{font-size:13px;font-weight:500;color:var(--txt)}
+.team-info p{font-size:12px;color:var(--txt2);margin-top:1px}
+.team-tag{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;margin-left:auto}
+.team-tag.own{background:var(--okb);color:var(--ok)}
+.team-tag.sub{background:var(--warnb);color:var(--warn)}
+.team-tag.eng{background:var(--pgb);color:var(--pg)}
+
+/* ── NC TABLE ── */
+.nc-priority{display:flex;align-items:center;gap:6px;font-size:12px}
+.nc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.nc-dot.high{background:var(--nok)}
+.nc-dot.med{background:var(--warn)}
+.nc-dot.low{background:var(--pg)}
+
+/* ── MINI CHART ── */
+.mini-bars{display:flex;align-items:flex-end;gap:3px;height:40px}
+.mini-bar{flex:1;border-radius:3px 3px 0 0;min-height:4px;transition:.3s}
+
+/* ── OBRA DETAIL VIEW ── */
+.amb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.amb-card{background:var(--bg1);border:1px solid var(--brd0);border-radius:var(--rl);padding:14px;cursor:pointer;transition:.15s}
+.amb-card:hover{border-color:var(--br);box-shadow:0 2px 8px rgba(232,74,26,.1)}
+.amb-card.int{border-top:3px solid var(--pg)}
+.amb-card.ext{border-top:3px solid var(--ok)}
+.amb-card h4{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:4px}
+.amb-card p{font-size:12px;color:var(--txt2)}
+.amb-fvs{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+
+/* ── FVS PLANNER ── */
+.fvs-plan-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--brd0)}
+.fvs-plan-row:last-child{border-bottom:none}
+.fvs-drag{color:var(--txt3);cursor:grab;font-size:16px}
+.fvs-plan-info{flex:1}
+.fvs-plan-info h5{font-size:13px;font-weight:500;color:var(--txt)}
+.fvs-plan-info p{font-size:11px;color:var(--txt2);margin-top:1px}
+
+/* ── USERS ── */
+.user-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--brd0)}
+.user-row:last-child{border-bottom:none}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--brl);color:var(--br);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.obra-access{display:flex;gap:4px;flex-wrap:wrap}
+.obra-pill{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--pgb);color:var(--pg);font-weight:500}
+
+/* ── UTILS ── */
+.divider{height:1px;background:var(--brd0);margin:20px 0}
+.chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--bg2);color:var(--txt2)}
+.row{display:flex;align-items:center;gap:12px}
+.spacer{flex:1}
+.text-muted{color:var(--txt2);font-size:12px}
+.text-small{font-size:12px}
+.fw{font-weight:500}
+.mt8{margin-top:8px}
+.empty{text-align:center;padding:40px;color:var(--txt3);font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:var(--okm)}
+.dot.nok{background:var(--nok)}
+.dot.pg{background:var(--pg)}
+.dot.na{background:#bbb}
+.inline-input{padding:4px 8px;border:1px solid var(--brd1);border-radius:6px;font-size:12px;color:var(--txt);background:var(--bg1);font-family:inherit;outline:none}
+.inline-input:focus{border-color:var(--br)}
+
+/* ── TOGGLE ── */
+.toggle-wrap{display:inline-flex;align-items:center;cursor:pointer;position:relative}
+.toggle-wrap input{position:absolute;opacity:0;width:0;height:0}
+.toggle-track{display:inline-block;width:36px;height:20px;background:#ccc;border-radius:10px;transition:.2s;position:relative;flex-shrink:0}
+.toggle-track::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:white;transition:.2s}
+.toggle-wrap input:checked+.toggle-track{background:var(--ok)}
+.toggle-wrap input:checked+.toggle-track::after{left:18px}
+/* ── PHOTO GALLERY ── */
+.photo-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.photo-thumb-lg{aspect-ratio:4/3;border-radius:var(--r);overflow:hidden;cursor:pointer;border:1px solid var(--brd0);position:relative}
+.photo-thumb-lg img{width:100%;height:100%;object-fit:cover;display:block;transition:.2s}
+.photo-thumb-lg:hover img{transform:scale(1.03)}
+.photo-thumb-lg .ph-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);transition:.2s;display:flex;align-items:center;justify-content:center}
+.photo-thumb-lg:hover .ph-overlay{background:rgba(0,0,0,.25)}
+.photo-thumb-lg .ph-icon{color:white;font-size:24px;opacity:0;transition:.2s}
+.photo-thumb-lg:hover .ph-icon{opacity:1}
+/* Lightbox */
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:800;display:none;align-items:center;justify-content:center;flex-direction:column}
+#lightbox.on{display:flex}
+#lightbox img{max-width:85vw;max-height:80vh;border-radius:var(--r);object-fit:contain}
+#lightbox .lb-close{position:absolute;top:20px;right:24px;background:rgba(255,255,255,.15);border:none;color:white;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px}
+#lightbox .lb-caption{color:rgba(255,255,255,.7);font-size:13px;margin-top:12px}
+#lightbox .lb-nav{display:flex;gap:12px;margin-top:14px}
+#lightbox .lb-nav button{background:rgba(255,255,255,.15);border:none;color:white;padding:8px 20px;border-radius:var(--r);cursor:pointer;font-size:13px}
+/* ── CHECKLIST RESULT ── */
+.cl-result{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--brd0)}
+.cl-result:last-child{border-bottom:none}
+.cl-result-icon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.cl-result-icon.ok{background:var(--okb);color:var(--ok)}
+.cl-result-icon.nok{background:var(--nokb);color:var(--nok)}
+.cl-result-icon.na{background:var(--nab);color:var(--na)}
+.cl-result-info{flex:1}
+.cl-result-info h5{font-size:13px;font-weight:500;color:var(--txt)}
+.cl-result-info .method{font-size:11px;color:var(--txt3);margin-top:2px}
+.cl-result-info .nc-inline{background:var(--nokb);border-radius:6px;padding:7px 10px;margin-top:7px;border-left:3px solid var(--nok)}
+.cl-result-info .nc-inline p{font-size:12px;color:var(--nok);line-height:1.5}
+.cl-result-info .nc-inline .sol{font-size:11px;color:var(--txt2);margin-top:4px;font-style:italic}
+/* SIG preview in admin */
+.sig-view-box{background:#f9f9f9;border:1px solid var(--brd0);border-radius:var(--r);padding:10px;display:flex;align-items:center;justify-content:center;min-height:60px}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ok);color:white;padding:12px 20px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:900;display:none;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+#toast.on{display:flex}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">PrumoQ</div>
+    <div class="login-sub">Gestão de Qualidade em Obras</div>
+    <h2>Entrar no sistema</h2>
+    <input class="lin" type="email" placeholder="E-mail corporativo" value="admin@combrasen.com.br"/>
+    <input class="lin" type="password" placeholder="Senha" value="••••••••"/>
+    <button class="lbtn" onclick="doLogin()">Entrar como Administrador</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-name">PrumoQ</div>
+      <div class="sb-logo-sub">Gestão de Qualidade</div>
+    </div>
+
+    <div class="sb-section">Principal</div>
+    <div class="sb-item on" id="si-dash" onclick="goScreen('dash')">
+      <span class="ico">⊞</span> Dashboard
+    </div>
+
+    <div class="sb-section">Cadastros</div>
+    <div class="sb-item" id="si-empresas" onclick="goScreen('empresas')">
+      <span class="ico">🏛</span> Empresas
+    </div>
+    <div class="sb-item" id="si-obras" onclick="goScreen('obras')">
+      <span class="ico">🏗</span> Obras
+    </div>
+    <div class="sb-item" id="si-fvs-padrao" onclick="goScreen('fvs-padrao')">
+      <span class="ico">📋</span> FVS Padrão
+    </div>
+    <div class="sb-item" id="si-equipes" onclick="goScreen('equipes')">
+      <span class="ico">👷</span> Equipes
+    </div>
+    <div class="sb-item" id="si-usuarios" onclick="goScreen('usuarios')">
+      <span class="ico">👤</span> Usuários
+    </div>
+
+    <div class="sb-section">Operações</div>
+    <div class="sb-item" id="si-verificacoes" onclick="goScreen('verificacoes')">
+      <span class="ico">🔍</span> Verificações
+    </div>
+    <div class="sb-item" id="si-nc" onclick="goScreen('nc')">
+      <span class="ico">⚠</span> Não Conformidades
+      <span class="badge">4</span>
+    </div>
+    <div class="sb-item" id="si-relatorios" onclick="goScreen('relatorios')">
+      <span class="ico">📊</span> Relatórios
+    </div>
+
+    <div class="sb-bottom">
+      <div class="sb-user" onclick="goScreen('usuarios')">
+        <div class="sb-uav">JE</div>
+        <div>
+          <div class="sb-uname">José Elias</div>
+          <div class="sb-urole">Administrador</div>
+        </div>
+      </div>
+      <div class="sb-item" onclick="doLogout()" style="margin-top:4px;color:rgba(255,255,255,.4)">
+        <span class="ico">↩</span> Sair
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="header">
+      <div class="h-breadcrumb" id="breadcrumb">
+        <span>Dashboard</span>
+      </div>
+      <div class="h-actions">
+        <button class="btn btn-ghost btn-sm">📥 Exportar</button>
+        <button class="btn btn-primary btn-sm" id="hdr-btn" onclick="openMainModal()">+ Nova obra</button>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- ═══ DASHBOARD ═══ -->
+      <div class="screen on" id="s-dash">
+        <div class="pg-title">Visão Geral</div>
+        <div class="pg-sub">Resumo operacional — abril 2025</div>
+
+        <div class="stat-grid">
+          <div class="stat-card hi"><div class="val">7</div><div class="lbl">Obras ativas</div><div class="delta up">↑ 1 este mês</div></div>
+          <div class="stat-card pg-c"><div class="val">84</div><div class="lbl">Ambientes cadastrados</div><div class="delta up">↑ 8 esta semana</div></div>
+          <div class="stat-card ok-c"><div class="val">184</div><div class="lbl">FVS concluídas</div><div class="delta up">↑ 23 esta semana</div></div>
+          <div class="stat-card nok-c"><div class="val">4</div><div class="lbl">NC abertas</div><div class="delta dn">↓ 2 resolvidas hoje</div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+          <!-- Progresso obras -->
+          <div class="card" style="grid-column:span 2">
+            <div class="card-header">
+              <h3>Progresso das obras</h3>
+              <div class="ch-actions"><button class="btn btn-ghost btn-sm" onclick="goScreen('obras')">Ver todas →</button></div>
+            </div>
+            <div class="card-body np">
+              <table>
+                <thead><tr><th>Obra</th><th>Empresa</th><th>Ambientes</th><th>Progresso FVS</th><th>NC</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr onclick="openObraDetail('pow')" style="cursor:pointer">
+                    <td><div class="fw">Res. Portal Oeste</div><div class="td-sub">Brasília-DF</div></td>
+                    <td>Construtora Alpha</td>
+                    <td>24</td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <div class="progress" style="width:100px"><div class="fill" style="width:67%"></div></div>
+                        <span class="text-small text-muted">67%</span>
+                      </div>
+                    </td>
+                    <td><span class="badge nok">4 abertas</span></td>
+                    <td><span class="badge pg">Em andamento</span></td>
+                  </tr>
+                  <tr onclick="openObraDetail('edh')" style="cursor:pointer">
+                    <td><div class="fw">Ed. Horizonte</div><div class="td-sub">Goiânia-GO</div></td>
+                    <td>Eng. Beta S.A.</td>
+                    <td>18</td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <div class="progress" style="width:100px"><div class="fill" style="width:42%"></div></div>
+                        <span class="text-small text-muted">42%</span>
+                      </div>
+                    </td>
+                    <td><span class="badge ok">0 abertas</span></td>
+                    <td><span class="badge pg">Em andamento</span></td>
+                  </tr>
+                  <tr onclick="openObraDetail('cna')" style="cursor:pointer">
+                    <td><div class="fw">Cond. Nova Aurora</div><div class="td-sub">Luziânia-GO</div></td>
+                    <td>Gamma Construções</td>
+                    <td>8</td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <div class="progress" style="width:100px"><div class="fill ok" style="width:88%"></div></div>
+                        <span class="text-small text-muted">88%</span>
+                      </div>
+                    </td>
+                    <td><span class="badge ok">0 abertas</span></td>
+                    <td><span class="badge pg">Em andamento</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="fw">Galpão Logístico Sul</div><div class="td-sub">Brasília-DF</div></td>
+                    <td>Construtora Alpha</td>
+                    <td>6</td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <div class="progress" style="width:100px"><div class="fill ok" style="width:100%"></div></div>
+                        <span class="text-small text-muted">100%</span>
+                      </div>
+                    </td>
+                    <td><span class="badge ok">0 abertas</span></td>
+                    <td><span class="badge ok">Concluída</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Atividade recente -->
+          <div class="card">
+            <div class="card-header"><h3>Atividade recente</h3></div>
+            <div class="card-body" style="padding:0">
+              <div style="padding:12px 16px;border-bottom:1px solid var(--brd0)">
+                <div class="row"><div class="dot ok"></div><div style="flex:1"><div class="text-small fw">Verificação concluída</div><div class="text-muted" style="margin-top:2px">Apt 301 · Revestimento Cerâmico</div></div><div class="text-muted" style="font-size:11px">2h atrás</div></div>
+              </div>
+              <div style="padding:12px 16px;border-bottom:1px solid var(--brd0)">
+                <div class="row"><div class="dot nok"></div><div style="flex:1"><div class="text-small fw">NC registrada</div><div class="text-muted" style="margin-top:2px">Apt 302 · Elétrica · Vence hoje</div></div><div class="text-muted" style="font-size:11px">4h atrás</div></div>
+              </div>
+              <div style="padding:12px 16px;border-bottom:1px solid var(--brd0)">
+                <div class="row"><div class="dot pg"></div><div style="flex:1"><div class="text-small fw">Ambiente cadastrado</div><div class="text-muted" style="margin-top:2px">Apt 601 · Res. Portal Oeste</div></div><div class="text-muted" style="font-size:11px">Ontem</div></div>
+              </div>
+              <div style="padding:12px 16px;border-bottom:1px solid var(--brd0)">
+                <div class="row"><div class="dot ok"></div><div style="flex:1"><div class="text-small fw">NC resolvida</div><div class="text-muted" style="margin-top:2px">Ed. Horizonte · Prumo alvenaria</div></div><div class="text-muted" style="font-size:11px">Ontem</div></div>
+              </div>
+              <div style="padding:12px 16px">
+                <div class="row"><div class="dot na"></div><div style="flex:1"><div class="text-small fw">Inspetor adicionado</div><div class="text-muted" style="margin-top:2px">Carlos Lima → Cond. Nova Aurora</div></div><div class="text-muted" style="font-size:11px">2 dias</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NC urgentes -->
+        <div class="card">
+          <div class="card-header"><h3>Não conformidades com prazo urgente</h3><div class="ch-actions"><button class="btn btn-ghost btn-sm" onclick="goScreen('nc')">Ver todas →</button></div></div>
+          <div class="card-body np">
+            <table>
+              <thead><tr><th>Descrição</th><th>Obra / Ambiente</th><th>Prioridade</th><th>Responsável correção</th><th>Prazo</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><div class="fw">Fiação fora do eletroduto</div><div class="td-sub">Instalação Elétrica — pontos de força</div></td><td>Res. Portal Oeste<div class="td-sub">Apt 302</div></td><td><div class="nc-priority"><div class="nc-dot high"></div>Alta</div></td><td>Eletro Irmãos Silva</td><td><span class="badge nok">Vence hoje</span></td><td><span class="badge warn">Aberta</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
+                <tr><td><div class="fw">Espessura argamassa acima do tolerado</div><div class="td-sub">Revestimento Argamassado — paredes</div></td><td>Res. Portal Oeste<div class="td-sub">Apt 201</div></td><td><div class="nc-priority"><div class="nc-dot med"></div>Média</div></td><td>Equipe Reboco A</td><td><span class="badge warn">10/04/2025</span></td><td><span class="badge warn">Aberta</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ EMPRESAS ═══ -->
+      <div class="screen" id="s-empresas">
+        <div class="row" style="margin-bottom:24px">
+          <div><div class="pg-title">Empresas</div><div class="pg-sub">3 empresas cadastradas</div></div>
+          <div class="spacer"></div>
+          <button class="btn btn-primary" onclick="showModal('m-empresa')">+ Nova empresa</button>
+        </div>
+        <div class="card">
+          <div class="card-body np">
+            <table>
+              <thead><tr><th>Razão social</th><th>CNPJ</th><th>Município</th><th>Obras ativas</th><th>Inspetores</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><div class="fw">Construtora Alpha Ltda</div></td><td>12.345.678/0001-00</td><td>Brasília-DF</td><td>3</td><td>2</td><td><button class="btn btn-ghost btn-sm" onclick="showModal('m-empresa')">Editar</button></td></tr>
+                <tr><td><div class="fw">Engenharia Beta S.A.</div></td><td>98.765.432/0001-11</td><td>Goiânia-GO</td><td>2</td><td>1</td><td><button class="btn btn-ghost btn-sm" onclick="showModal('m-empresa')">Editar</button></td></tr>
+                <tr><td><div class="fw">Gamma Construções ME</div></td><td>55.111.222/0001-33</td><td>Luziânia-GO</td><td>2</td><td>1</td><td><button class="btn btn-ghost btn-sm" onclick="showModal('m-empresa')">Editar</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ OBRAS ═══ -->
+      <div class="screen" id="s-obras">
+        <div class="row" style="margin-bottom:24px">
+          <div><div class="pg-title">Obras</div><div class="pg-sub">7 obras cadastradas</div></div>
+          <div class="spacer"></div>
+          <input style="padding:7px 12px;border:1px solid var(--brd1);border-radius:var(--r);font-size:13px;width:220px;outline:none" placeholder="Buscar obra..."/>
+          <button class="btn btn-primary" onclick="showModal('m-obra')">+ Nova obra</button>
+        </div>
+        <div class="card">
+          <div class="card-body np">
+            <table>
+              <thead><tr><th>Obra</th><th>Empresa</th><th>Engenheiro resp.</th><th>Ambientes</th><th>FVS</th><th>Progresso</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                <tr style="cursor:pointer" onclick="openObraDetail('pow')">
+                  <td><div class="fw">Res. Portal Oeste</div><div class="td-sub">Setor Hab. Jardins, Brasília</div></td>
+                  <td>Construtora Alpha</td>
+                  <td>Eng. Roberto Matos<div class="td-sub">CREA-DF 12.345-D</div></td>
+                  <td>24</td>
+                  <td>64/96</td>
+                  <td><div class="progress" style="width:90px"><div class="fill" style="width:67%"></div></div></td>
+                  <td><span class="badge pg">Em andamento</span></td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openObraDetail('pow')">Abrir</button></td>
+                </tr>
+                <tr style="cursor:pointer" onclick="openObraDetail('edh')">
+                  <td><div class="fw">Ed. Horizonte</div><div class="td-sub">Setor Marista, Goiânia</div></td>
+                  <td>Eng. Beta S.A.</td>
+                  <td>Eng. Ana Ferreira<div class="td-sub">CREA-GO 55.432-D</div></td>
+                  <td>18</td>
+                  <td>30/72</td>
+                  <td><div class="progress" style="width:90px"><div class="fill" style="width:42%"></div></div></td>
+                  <td><span class="badge pg">Em andamento</span></td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openObraDetail('edh')">Abrir</button></td>
+                </tr>
+                <tr style="cursor:pointer" onclick="openObraDetail('cna')">
+                  <td><div class="fw">Cond. Nova Aurora</div><div class="td-sub">Luziânia, GO</div></td>
+                  <td>Gamma Construções</td>
+                  <td>Eng. Marcos Vieira<div class="td-sub">CREA-GO 77.123-D</div></td>
+                  <td>8</td>
+                  <td>14/16</td>
+                  <td><div class="progress" style="width:90px"><div class="fill" style="width:88%"></div></div></td>
+                  <td><span class="badge pg">Em andamento</span></td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openObraDetail('cna')">Abrir</button></td>
+                </tr>
+                <tr>
+                  <td><div class="fw">Galpão Logístico Sul</div><div class="td-sub">SCIA Q.23, Brasília</div></td>
+                  <td>Construtora Alpha</td>
+                  <td>Eng. Roberto Matos<div class="td-sub">CREA-DF 12.345-D</div></td>
+                  <td>6</td>
+                  <td>24/24</td>
+                  <td><div class="progress" style="width:90px"><div class="fill ok" style="width:100%"></div></div></td>
+                  <td><span class="badge ok">Concluída</span></td>
+                  <td><button class="btn btn-ghost btn-sm">Abrir</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ OBRA DETALHE ═══ -->
+      <div class="screen" id="s-obra-detail">
+        <div class="row" style="margin-bottom:6px">
+          <button class="btn btn-ghost btn-sm" onclick="goScreen('obras')">← Obras</button>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost btn-sm" onclick="showModal('m-amb')">+ Ambiente</button>
+          <button class="btn btn-primary btn-sm" onclick="showModal('m-obra')">Editar obra</button>
+        </div>
+
+        <div style="margin-bottom:20px">
+          <div class="pg-title" id="od-title">Res. Portal Oeste</div>
+          <div class="pg-sub" id="od-sub">Construtora Alpha Ltda · Setor Hab. Jardins, Brasília-DF · Eng. Roberto Matos (CREA-DF 12.345-D)</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="stat-card hi"><div class="val" id="od-namb">24</div><div class="lbl">Ambientes</div></div>
+          <div class="stat-card pg-c"><div class="val" id="od-nfvs">96</div><div class="lbl">FVS planejadas</div></div>
+          <div class="stat-card ok-c"><div class="val" id="od-ndone">64</div><div class="lbl">Concluídas</div></div>
+          <div class="stat-card nok-c"><div class="val">4</div><div class="lbl">NC abertas</div></div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab on" onclick="switchTab('obra','ambientes')">Ambientes</div>
+          <div class="tab" onclick="switchTab('obra','equipe')">Equipe</div>
+          <div class="tab" onclick="switchTab('obra','docs')">Documentos</div>
+        </div>
+
+        <div class="tab-content on" id="tc-obra-ambientes">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-ghost btn-sm">Todos</button>
+              <button class="btn btn-ghost btn-sm">Internos</button>
+              <button class="btn btn-ghost btn-sm">Externos</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--nok);border-color:#f09595">Com NC</button>
+            </div>
+            <input style="padding:6px 12px;border:1px solid var(--brd1);border-radius:var(--r);font-size:12px;width:180px;outline:none" placeholder="Filtrar ambiente..."/>
+          </div>
+          <div class="amb-grid">
+            <div class="amb-card int" onclick="openAmbDetail()">
+              <div class="row"><h4>Apartamento 301</h4><span class="badge ok" style="font-size:10px;margin-left:auto">7/8</span></div>
+              <p>Interno · Piso 3</p>
+              <div class="progress mt8"><div class="fill ok" style="width:87%"></div></div>
+            </div>
+            <div class="amb-card int" onclick="openAmbDetail()" style="border-top-color:var(--nok)">
+              <div class="row"><h4>Apartamento 302</h4><span class="badge nok" style="font-size:10px;margin-left:auto">NC</span></div>
+              <p>Interno · Piso 3</p>
+              <div class="progress mt8"><div class="fill" style="width:37%;background:var(--nok)"></div></div>
+            </div>
+            <div class="amb-card int" onclick="openAmbDetail()">
+              <div class="row"><h4>Apartamento 401</h4><span class="badge pg" style="font-size:10px;margin-left:auto">4/8</span></div>
+              <p>Interno · Piso 4</p>
+              <div class="progress mt8"><div class="fill" style="width:50%"></div></div>
+            </div>
+            <div class="amb-card int" onclick="openAmbDetail()">
+              <div class="row"><h4>Apartamento 402</h4><span class="badge na" style="font-size:10px;margin-left:auto">0/8</span></div>
+              <p>Interno · Piso 4</p>
+              <div class="progress mt8"><div class="fill" style="width:0%"></div></div>
+            </div>
+            <div class="amb-card ext" onclick="openAmbDetail()">
+              <div class="row"><h4>Fachada Norte</h4><span class="badge pg" style="font-size:10px;margin-left:auto">2/5</span></div>
+              <p>Externo · Elevação N</p>
+              <div class="progress mt8"><div class="fill" style="width:40%"></div></div>
+            </div>
+            <div class="amb-card ext" onclick="openAmbDetail()">
+              <div class="row"><h4>Área de Lazer</h4><span class="badge na" style="font-size:10px;margin-left:auto">0/4</span></div>
+              <p>Externo · Térreo</p>
+              <div class="progress mt8"><div class="fill" style="width:0%"></div></div>
+            </div>
+            <div class="amb-card int" onclick="openAmbDetail()">
+              <div class="row"><h4>Hall de Entrada</h4><span class="badge ok" style="font-size:10px;margin-left:auto">3/3</span></div>
+              <p>Interno · Térreo</p>
+              <div class="progress mt8"><div class="fill ok" style="width:100%"></div></div>
+            </div>
+            <div class="amb-card int" onclick="showModal('m-amb')" style="border:2px dashed var(--brd1);background:var(--bg0);display:flex;align-items:center;justify-content:center;min-height:100px;flex-direction:column;gap:6px">
+              <span style="font-size:22px;color:var(--txt3)">+</span>
+              <span style="font-size:12px;color:var(--txt3)">Novo ambiente</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tc-obra-equipe">
+          <div class="card">
+            <div class="card-header"><h3>Equipe da obra</h3><div class="ch-actions"><button class="btn btn-ghost btn-sm" onclick="showModal('m-equipe')">+ Adicionar</button></div></div>
+            <div class="card-body np">
+              <div class="team-row"><div class="team-av eng">RM</div><div class="team-info"><h5>Eng. Roberto Matos</h5><p>CREA-DF 12.345-D</p></div><span class="team-tag eng">Engenheiro responsável</span></div>
+              <div class="team-row"><div class="team-av" style="background:#f3e5f5;color:#7b1fa2">CL</div><div class="team-info"><h5>Carlos Lima</h5><p>Inspetor de Qualidade</p></div><span class="team-tag" style="background:#f3e5f5;color:#7b1fa2">Inspetor</span></div>
+              <div class="team-row"><div class="team-av own">PM</div><div class="team-info"><h5>Paulo Mendes</h5><p>Mestre de obras — Equipe Reboco A</p></div><span class="team-tag own">Funcionário próprio</span></div>
+              <div class="team-row"><div class="team-av sub">AR</div><div class="team-info"><h5>Argecon Revestimentos ME</h5><p>Subcontratada — serviços de reboco</p></div><span class="team-tag sub">Terceirizado</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tc-obra-docs">
+          <div class="empty">Funcionalidade de documentos disponível na versão completa</div>
+        </div>
+      </div>
+
+      <!-- ═══ AMBIENTE DETALHE (FVS PLANNER) ═══ -->
+      <div class="screen" id="s-amb-detail">
+        <div class="row" style="margin-bottom:6px">
+          <button class="btn btn-ghost btn-sm" onclick="goScreen('obra-detail')">← Obra</button>
+          <div class="spacer"></div>
+          <button class="btn btn-primary btn-sm" onclick="showModal('m-fvs-plan')">+ Planejar FVS</button>
+        </div>
+        <div style="margin-bottom:20px">
+          <div class="pg-title">Apartamento 302</div>
+          <div class="pg-sub">Ambiente interno · Piso 3 · Res. Portal Oeste</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 380px;gap:20px">
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <h3>FVS planejadas para este ambiente</h3>
+                <div class="ch-actions">
+                  <span class="text-muted">8 serviços · 3 concluídos</span>
+                </div>
+              </div>
+              <div class="card-body np">
+                <div class="fvs-plan-row" onclick="showModal('m-checklist')">
+                  <div class="dot ok"></div>
+                  <div class="fvs-plan-info"><h5>Revestimento Cerâmico</h5><p>Piso · 5 itens de verificação · 3 verificações realizadas</p></div>
+                  <span class="badge ok">Concluído</span>
+                  <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showModal('m-checklist')">Checklist</button>
+                </div>
+                <div class="fvs-plan-row" onclick="showModal('m-checklist')">
+                  <div class="dot" style="background:var(--nok)"></div>
+                  <div class="fvs-plan-info"><h5>Revestimento Argamassado</h5><p>Paredes · 5 itens de verificação · NC aberta</p></div>
+                  <span class="badge nok">NC aberta</span>
+                  <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showModal('m-checklist')">Checklist</button>
+                </div>
+                <div class="fvs-plan-row" onclick="showModal('m-checklist')">
+                  <div class="dot pg"></div>
+                  <div class="fvs-plan-info"><h5>Instalação Elétrica</h5><p>Pontos de força · 4 itens · 2 verificações</p></div>
+                  <span class="badge pg">Em andamento</span>
+                  <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showModal('m-checklist')">Checklist</button>
+                </div>
+                <div class="fvs-plan-row" onclick="showModal('m-checklist')">
+                  <div class="dot pg"></div>
+                  <div class="fvs-plan-info"><h5>Instalação Hidráulica</h5><p>Ramais internos · 4 itens · 1 verificação</p></div>
+                  <span class="badge pg">Em andamento</span>
+                  <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showModal('m-checklist')">Checklist</button>
+                </div>
+                <div class="fvs-plan-row">
+                  <div class="dot ok"></div>
+                  <div class="fvs-plan-info"><h5>Alvenaria de Vedação</h5><p>Paredes internas · 4 itens · 1 verificação</p></div>
+                  <span class="badge ok">Concluído</span>
+                  <button class="btn btn-ghost btn-sm" onclick="showModal('m-checklist')">Checklist</button>
+                </div>
+                <div class="fvs-plan-row">
+                  <div class="dot na"></div>
+                  <div class="fvs-plan-info"><h5>Pintura Interna</h5><p>Paredes e teto · 4 itens · Não iniciado</p></div>
+                  <span class="badge na">Pendente</span>
+                  <button class="btn btn-ghost btn-sm" onclick="showModal('m-checklist')">Checklist</button>
+                </div>
+                <div class="fvs-plan-row">
+                  <div class="dot na"></div>
+                  <div class="fvs-plan-info"><h5>Esquadrias</h5><p>Portas e janelas · 3 itens · Não iniciado</p></div>
+                  <span class="badge na">Pendente</span>
+                  <button class="btn btn-ghost btn-sm" onclick="showModal('m-checklist')">Checklist</button>
+                </div>
+                <div class="fvs-plan-row">
+                  <div class="dot na"></div>
+                  <div class="fvs-plan-info"><h5>Louças e Metais</h5><p>Banheiro e cozinha · 3 itens · Não iniciado</p></div>
+                  <span class="badge na">Pendente</span>
+                  <button class="btn btn-ghost btn-sm" onclick="showModal('m-checklist')">Checklist</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar direita -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div class="card-header"><h3>Progresso</h3></div>
+              <div class="card-body">
+                <div style="text-align:center;margin-bottom:14px">
+                  <div style="font-size:32px;font-weight:600;color:var(--br)">37%</div>
+                  <div class="text-muted">3 de 8 FVS concluídas</div>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:8px">
+                  <div style="flex:1;background:var(--okb);border-radius:var(--r);padding:10px;text-align:center"><div style="font-size:18px;font-weight:600;color:var(--ok)">2</div><div style="font-size:11px;color:var(--ok)">Concluídas</div></div>
+                  <div style="flex:1;background:var(--nokb);border-radius:var(--r);padding:10px;text-align:center"><div style="font-size:18px;font-weight:600;color:var(--nok)">1</div><div style="font-size:11px;color:var(--nok)">NC aberta</div></div>
+                  <div style="flex:1;background:var(--nab);border-radius:var(--r);padding:10px;text-align:center"><div style="font-size:18px;font-weight:600;color:var(--na)">3</div><div style="font-size:11px;color:var(--na)">Pendentes</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><h3>Informações</h3></div>
+              <div class="card-body">
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div><div class="text-muted">Tipo</div><div class="fw mt8" style="margin-top:4px">Interno</div></div>
+                  <div><div class="text-muted">Localização</div><div class="fw" style="margin-top:4px">Piso 3 · Torre A</div></div>
+                  <div><div class="text-muted">Inspetor responsável</div><div class="fw" style="margin-top:4px">Carlos Lima</div></div>
+                  <div><div class="text-muted">Criado em</div><div class="fw" style="margin-top:4px">10/02/2025</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ EQUIPES ═══ -->
+      <div class="screen" id="s-equipes">
+        <div class="row" style="margin-bottom:24px">
+          <div><div class="pg-title">Equipes</div><div class="pg-sub">Funcionários próprios e terceirizados cadastrados</div></div>
+          <div class="spacer"></div>
+          <button class="btn btn-primary" onclick="showModal('m-equipe')">+ Nova equipe</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-header"><h3>Funcionários próprios</h3><div class="ch-actions"><span class="badge ok">4 equipes</span></div></div>
+            <div class="card-body np">
+              <div class="team-row"><div class="team-av own">PM</div><div class="team-info"><h5>Equipe Reboco A</h5><p>Paulo Mendes (Mestre) + 2 serventes</p></div><span class="team-tag own">Próprio</span></div>
+              <div class="team-row"><div class="team-av own">FC</div><div class="team-info"><h5>Equipe Reboco B</h5><p>Fábio Costa (Mestre) + 2 serventes</p></div><span class="team-tag own">Próprio</span></div>
+              <div class="team-row"><div class="team-av own">JO</div><div class="team-info"><h5>Equipe Elétrica</h5><p>José Oliveira (Eletricista) + 1</p></div><span class="team-tag own">Próprio</span></div>
+              <div class="team-row"><div class="team-av own">MS</div><div class="team-info"><h5>Equipe Hidráulica</h5><p>Marcos Souza (Encanador) + 1</p></div><span class="team-tag own">Próprio</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Terceirizados</h3><div class="ch-actions"><span class="badge warn">2 empresas</span></div></div>
+            <div class="card-body np">
+              <div class="team-row"><div class="team-av sub">AR</div><div class="team-info"><h5>Argecon Revestimentos ME</h5><p>CNPJ 44.321.123/0001-55 · Revestimentos</p></div><span class="team-tag sub">Terceirizado</span></div>
+              <div class="team-row"><div class="team-av sub">ES</div><div class="team-info"><h5>Eletro Irmãos Silva</h5><p>CNPJ 66.789.456/0001-22 · Instalações el.</p></div><span class="team-tag sub">Terceirizado</span></div>
+              <div class="team-row" style="padding:16px;cursor:pointer" onclick="showModal('m-equipe')">
+                <span style="font-size:12px;color:var(--txt3)">+ Cadastrar terceirizado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ USUÁRIOS ═══ -->
+      <div class="screen" id="s-usuarios">
+        <div class="row" style="margin-bottom:24px">
+          <div><div class="pg-title">Usuários</div><div class="pg-sub">4 usuários ativos</div></div>
+          <div class="spacer"></div>
+          <button class="btn btn-primary" onclick="showModal('m-usuario')">+ Novo usuário</button>
+        </div>
+        <div class="card">
+          <div class="card-body np">
+            <table>
+              <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Obras com acesso</th><th>Último acesso</th><th></th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><div class="row" style="gap:10px"><div class="team-av" style="background:var(--brl);color:var(--br);width:32px;height:32px;font-size:11px">JE</div><div><div class="fw">José Elias</div><div class="td-sub">Sócio-Diretor</div></div></div></td>
+                  <td>jose.elias@combrasen.com.br</td>
+                  <td><span class="badge pg">Administrador</span></td>
+                  <td><span class="text-muted text-small">Todas as obras</span></td>
+                  <td>Hoje, 09:15</td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="showModal('m-usuario')">Editar</button></td>
+                </tr>
+                <tr>
+                  <td><div class="row" style="gap:10px"><div class="team-av" style="background:var(--brl);color:var(--br);width:32px;height:32px;font-size:11px">HB</div><div><div class="fw">Hugo Borges</div><div class="td-sub">Gerente de Contratos</div></div></div></td>
+                  <td>hugo.borges@combrasen.com.br</td>
+                  <td><span class="badge warn">Gestor</span></td>
+                  <td><div class="obra-access"><span class="obra-pill">Portal Oeste</span><span class="obra-pill">Horizonte</span></div></td>
+                  <td>Ontem, 14:30</td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="showModal('m-usuario')">Editar</button></td>
+                </tr>
+                <tr>
+                  <td><div class="row" style="gap:10px"><div class="team-av" style="background:var(--brl);color:var(--br);width:32px;height:32px;font-size:11px">CL</div><div><div class="fw">Carlos Lima</div><div class="td-sub">Inspetor de Qualidade</div></div></div></td>
+                  <td>carlos.lima@combrasen.com.br</td>
+                  <td><span class="badge ok">Inspetor</span></td>
+                  <td><div class="obra-access"><span class="obra-pill">Portal Oeste</span><span class="obra-pill">Horizonte</span><span class="obra-pill">Nova Aurora</span></div></td>
+                  <td>Hoje, 11:22</td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="showModal('m-usuario')">Editar</button></td>
+                </tr>
+                <tr>
+                  <td><div class="row" style="gap:10px"><div class="team-av" style="background:var(--brl);color:var(--br);width:32px;height:32px;font-size:11px">MS</div><div><div class="fw">Mariana Santos</div><div class="td-sub">Inspetora de Qualidade</div></div></div></td>
+                  <td>mariana.santos@combrasen.com.br</td>
+                  <td><span class="badge ok">Inspetora</span></td>
+                  <td><div class="obra-access"><span class="obra-pill">Horizonte</span></div></td>
+                  <td>08/04/2025</td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="showModal('m-usuario')">Editar</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ NÃO CONFORMIDADES ═══ -->
+      <div class="screen" id="s-nc">
+        <div class="row" style="margin-bottom:24px">
+          <div><div class="pg-title">Não Conformidades</div><div class="pg-sub">Gestão centralizada de todas as NCs</div></div>
+          <div class="spacer"></div>
+          <div style="display:flex;gap:6px">
+            <select style="padding:7px 12px;border:1px solid var(--brd1);border-radius:var(--r);font-size:13px;outline:none"><option>Todas as obras</option><option>Res. Portal Oeste</option><option>Ed. Horizonte</option></select>
+            <select style="padding:7px 12px;border:1px solid var(--brd1);border-radius:var(--r);font-size:13px;outline:none"><option>Todos os status</option><option>Abertas</option><option>Resolvidas</option></select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="stat-card nok-c"><div class="val">4</div><div class="lbl">Abertas</div></div>
+          <div class="stat-card" style="border-left:3px solid var(--warn)"><div class="val" style="color:var(--warn)">2</div><div class="lbl">Prazo próximo</div></div>
+          <div class="stat-card ok-c"><div class="val">7</div><div class="lbl">Resolvidas (mês)</div></div>
+          <div class="stat-card"><div class="val">3.2d</div><div class="lbl">Tempo médio resolução</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Todas as não conformidades</h3></div>
+          <div class="card-body np">
+            <table>
+              <thead><tr><th>Descrição</th><th>Serviço / Ambiente</th><th>Obra</th><th>Prioridade</th><th>Responsável</th><th>Prazo</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><div class="fw">Fiação fora do eletroduto</div></td><td>Instalação Elétrica<div class="td-sub">Apt 302</div></td><td>Res. Portal Oeste</td><td><div class="nc-priority"><div class="nc-dot high"></div>Alta</div></td><td>Eletro Irmãos Silva</td><td><span class="badge nok">Hoje</span></td><td><span class="badge nok">Aberta</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
+                <tr><td><div class="fw">Espessura argamassa > 6mm</div></td><td>Revestimento Argamassado<div class="td-sub">Apt 201</div></td><td>Res. Portal Oeste</td><td><div class="nc-priority"><div class="nc-dot med"></div>Média</div></td><td>Equipe Reboco A</td><td><span class="badge warn">10/04</span></td><td><span class="badge nok">Aberta</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
+                <tr><td><div class="fw">NF da cerâmica não apresentada</div></td><td>Revestimento Cerâmico<div class="td-sub">Apt 105</div></td><td>Res. Portal Oeste</td><td><div class="nc-priority"><div class="nc-dot low"></div>Baixa</div></td><td>Almoxarife</td><td><span class="badge warn">12/04</span></td><td><span class="badge nok">Aberta</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
+                <tr><td><div class="fw">Base não curada antes do reboco</div></td><td>Revestimento Argamassado<div class="td-sub">Apt 302</div></td><td>Res. Portal Oeste</td><td><div class="nc-priority"><div class="nc-dot med"></div>Média</div></td><td>Equipe Reboco A</td><td><span class="badge warn">14/04</span></td><td><span class="badge nok">Aberta</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
+                <tr style="opacity:.6"><td><div class="fw">Prumo fora da tolerância</div></td><td>Alvenaria<div class="td-sub">Bloco B</div></td><td>Ed. Horizonte</td><td><div class="nc-priority"><div class="nc-dot med"></div>Média</div></td><td>Equipe Alvenaria</td><td>28/03</td><td><span class="badge ok">Resolvida</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
+                <tr style="opacity:.6"><td><div class="fw">Poeira na base antes do reboco</div></td><td>Revestimento<div class="td-sub">Apt 301</div></td><td>Res. Portal Oeste</td><td><div class="nc-priority"><div class="nc-dot low"></div>Baixa</div></td><td>Equipe Reboco A</td><td>25/03</td><td><span class="badge ok">Resolvida</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ FVS PADRÃO ═══ -->
+      <div class="screen" id="s-fvs-padrao">
+        <div class="row" style="margin-bottom:24px">
+          <div><div class="pg-title">FVS Padrão</div><div class="pg-sub">Biblioteca de fichas padrão com controle de revisões</div></div>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost btn-sm">Importar</button>
+          <button class="btn btn-primary" onclick="showModal('m-fvs-nova')">+ Nova FVS padrão</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="stat-card hi"><div class="val">14</div><div class="lbl">FVS cadastradas</div></div>
+          <div class="stat-card ok-c"><div class="val">11</div><div class="lbl">Ativas</div></div>
+          <div class="stat-card"><div class="val" style="color:var(--na)">3</div><div class="lbl">Inativas</div></div>
+          <div class="stat-card pg-c"><div class="val">23</div><div class="lbl">Revisões registradas</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Biblioteca de FVS</h3>
+            <div class="ch-actions">
+              <select style="padding:6px 10px;border:1px solid var(--brd1);border-radius:var(--r);font-size:12px;outline:none">
+                <option>Todas as categorias</option>
+                <option>Estrutura</option>
+                <option>Vedação</option>
+                <option>Revestimento</option>
+                <option>Instalações</option>
+                <option>Cobertura</option>
+              </select>
+              <input style="padding:6px 12px;border:1px solid var(--brd1);border-radius:var(--r);font-size:12px;width:180px;outline:none" placeholder="Buscar FVS..."/>
+            </div>
+          </div>
+          <div class="card-body np">
+            <table>
+              <thead><tr><th>Nome da FVS</th><th>Categoria</th><th>Itens</th><th>Revisão</th><th>Última alteração</th><th>Obras usando</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                <tr style="cursor:pointer" data-nome="Revestimento Argamassado" data-cat="Revestimento" data-rev="Rev. 3" data-dt="12/03/2025" data-itens="5" data-obras="8" data-st="ativo" onclick="handleFVS(this)">
+                  <td><div class="fw">Revestimento Argamassado</div><div class="td-sub">Paredes internas e externas</div></td>
+                  <td><span class="chip">Revestimento</span></td>
+                  <td>5 itens</td>
+                  <td><span class="badge pg">Rev. 3</span></td>
+                  <td>12/03/2025 · Hugo Borges</td>
+                  <td>8 obras</td>
+                  <td><label class="toggle-wrap" onclick="event.stopPropagation()"><input type="checkbox" checked onchange="this.closest('tr').querySelector('.st-badge').textContent=this.checked?'Ativo':'Inativo';this.closest('tr').querySelector('.st-badge').className='badge '+(this.checked?'ok':'na')"/><span class="toggle-track"></span></label></td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openFVSPadrao('Revestimento Argamassado','Revestimento','Rev. 3','12/03/2025',5,8,'ativo')">Editar</button></td>
+                </tr>
+                <tr style="cursor:pointer" data-nome="Revestimento Cerâmico" data-cat="Revestimento" data-rev="Rev. 2" data-dt="28/02/2025" data-itens="5" data-obras="6" data-st="ativo" onclick="handleFVS(this)">
+                  <td><div class="fw">Revestimento Cerâmico</div><div class="td-sub">Pisos e paredes</div></td>
+                  <td><span class="chip">Revestimento</span></td>
+                  <td>5 itens</td>
+                  <td><span class="badge pg">Rev. 2</span></td>
+                  <td>28/02/2025 · José Elias</td>
+                  <td>6 obras</td>
+                  <td><label class="toggle-wrap" onclick="event.stopPropagation()"><input type="checkbox" checked onchange="this.closest('tr').querySelector('.st-badge').textContent=this.checked?'Ativo':'Inativo';this.closest('tr').querySelector('.st-badge').className='badge '+(this.checked?'ok':'na')"/><span class="toggle-track"></span></label></td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">Editar</button></td>
+                </tr>
+                <tr style="cursor:pointer" data-nome="Instalação Elétrica" data-cat="Instalações" data-rev="Rev. 4" data-dt="05/03/2025" data-itens="4" data-obras="5" data-st="ativo" onclick="handleFVS(this)">
+                  <td><div class="fw">Instalação Elétrica</div><div class="td-sub">Pontos de força, iluminação e QGBT</div></td>
+                  <td><span class="chip">Instalações</span></td>
+                  <td>4 itens</td>
+                  <td><span class="badge pg">Rev. 4</span></td>
+                  <td>05/03/2025 · Hugo Borges</td>
+                  <td>5 obras</td>
+                  <td><label class="toggle-wrap" onclick="event.stopPropagation()"><input type="checkbox" checked onchange=""/><span class="toggle-track"></span></label></td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">Editar</button></td>
+                </tr>
+                <tr>
+                  <td><div class="fw">Instalação Hidrossanitária</div><div class="td-sub">Ramais internos e prumadas</div></td>
+                  <td><span class="chip">Instalações</span></td>
+                  <td>4 itens</td>
+                  <td><span class="badge pg">Rev. 2</span></td>
+                  <td>10/02/2025 · José Elias</td>
+                  <td>5 obras</td>
+                  <td><label class="toggle-wrap"><input type="checkbox" checked onchange=""/><span class="toggle-track"></span></label></td>
+                  <td><button class="btn btn-ghost btn-sm">Editar</button></td>
+                </tr>
+                <tr>
+                  <td><div class="fw">Alvenaria de Vedação</div><div class="td-sub">Paredes internas</div></td>
+                  <td><span class="chip">Vedação</span></td>
+                  <td>4 itens</td>
+                  <td><span class="badge pg">Rev. 1</span></td>
+                  <td>15/01/2025 · José Elias</td>
+                  <td>7 obras</td>
+                  <td><label class="toggle-wrap"><input type="checkbox" checked onchange=""/><span class="toggle-track"></span></label></td>
+                  <td><button class="btn btn-ghost btn-sm">Editar</button></td>
+                </tr>
+                <tr>
+                  <td><div class="fw">Fundação — Radier</div><div class="td-sub">Concretagem e armação</div></td>
+                  <td><span class="chip">Estrutura</span></td>
+                  <td>6 itens</td>
+                  <td><span class="badge pg">Rev. 2</span></td>
+                  <td>20/01/2025 · Hugo Borges</td>
+                  <td>3 obras</td>
+                  <td><label class="toggle-wrap"><input type="checkbox" checked onchange=""/><span class="toggle-track"></span></label></td>
+                  <td><button class="btn btn-ghost btn-sm">Editar</button></td>
+                </tr>
+                <tr>
+                  <td><div class="fw">Estrutura de Concreto</div><div class="td-sub">Pilares, vigas e lajes</div></td>
+                  <td><span class="chip">Estrutura</span></td>
+                  <td>6 itens</td>
+                  <td><span class="badge pg">Rev. 3</span></td>
+                  <td>18/02/2025 · Hugo Borges</td>
+                  <td>4 obras</td>
+                  <td><label class="toggle-wrap"><input type="checkbox" checked onchange=""/><span class="toggle-track"></span></label></td>
+                  <td><button class="btn btn-ghost btn-sm">Editar</button></td>
+                </tr>
+                <tr>
+                  <td><div class="fw">Pintura Interna</div><div class="td-sub">Paredes e teto</div></td>
+                  <td><span class="chip">Revestimento</span></td>
+                  <td>3 itens</td>
+                  <td><span class="badge na">Rev. 1</span></td>
+                  <td>10/01/2025 · José Elias</td>
+                  <td>2 obras</td>
+                  <td><label class="toggle-wrap"><input type="checkbox" checked onchange=""/><span class="toggle-track"></span></label></td>
+                  <td><button class="btn btn-ghost btn-sm">Editar</button></td>
+                </tr>
+                <tr style="opacity:.55">
+                  <td><div class="fw">Impermeabilização (antiga)</div><div class="td-sub">Versão descontinuada</div></td>
+                  <td><span class="chip">Cobertura</span></td>
+                  <td>4 itens</td>
+                  <td><span class="badge na">Rev. 1</span></td>
+                  <td>05/11/2024 · José Elias</td>
+                  <td>0 obras</td>
+                  <td><label class="toggle-wrap"><input type="checkbox" onchange=""/><span class="toggle-track"></span></label></td>
+                  <td><button class="btn btn-ghost btn-sm">Editar</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ FVS PADRÃO DETALHE ═══ -->
+      <div class="screen" id="s-fvs-padrao-detail">
+        <div class="row" style="margin-bottom:6px">
+          <button class="btn btn-ghost btn-sm" onclick="goScreen('fvs-padrao')">← FVS Padrão</button>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost btn-sm" onclick="showModal('m-rev-hist')">Histórico de revisões</button>
+          <button class="btn btn-primary btn-sm" onclick="showModal('m-nova-rev')">Salvar nova revisão</button>
+        </div>
+        <div class="row" style="margin-bottom:20px;align-items:flex-start">
+          <div>
+            <div class="pg-title" id="fpd-title">Revestimento Argamassado</div>
+            <div class="pg-sub" id="fpd-sub">Categoria: Revestimento · <span id="fpd-rev" style="color:var(--pg);font-weight:500">Rev. 3</span> · Última alteração: <span id="fpd-date">12/03/2025</span> por Hugo Borges</div>
+          </div>
+          <div class="spacer"></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:13px;color:var(--txt2)">Status:</span>
+            <label class="toggle-wrap"><input type="checkbox" id="fpd-toggle" checked/><span class="toggle-track"></span></label>
+            <span id="fpd-status-lbl" style="font-size:13px;font-weight:500;color:var(--ok)">Ativa</span>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:20px">
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <h3>Itens de verificação</h3>
+                <div class="ch-actions">
+                  <span class="text-muted" style="font-size:12px">5 itens · araste para reordenar</span>
+                </div>
+              </div>
+              <div class="card-body" style="padding:16px">
+                <div id="fvs-items-editor">
+                  <div class="cl-item">
+                    <div class="cl-item-header"><span class="num">1</span><h4>Preparação e limpeza da base</h4><button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:11px">✕ Remover</button></div>
+                    <div class="cl-item-body"><div class="cl-fields">
+                      <div class="form-group"><label class="form-label">Método de verificação</label><textarea class="form-input" style="min-height:56px">Inspeção visual da superfície após varredura — ausência de poeira, gordura e material solto.</textarea></div>
+                      <div class="form-group"><label class="form-label">Tolerância (opcional)</label><input class="form-input" placeholder="Sem tolerância numérica"/></div>
+                    </div></div>
+                  </div>
+                  <div class="cl-item">
+                    <div class="cl-item-header"><span class="num">2</span><h4>Espessura da argamassa</h4><button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:11px">✕ Remover</button></div>
+                    <div class="cl-item-body"><div class="cl-fields">
+                      <div class="form-group"><label class="form-label">Método de verificação</label><textarea class="form-input" style="min-height:56px">Pinos de medição a cada 1m — verificar espessura em múltiplos pontos da parede.</textarea></div>
+                      <div class="form-group"><label class="form-label">Tolerância</label><input class="form-input" value="4 a 6 mm"/></div>
+                    </div></div>
+                  </div>
+                  <div class="cl-item">
+                    <div class="cl-item-header"><span class="num">3</span><h4>Planeza da superfície</h4><button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:11px">✕ Remover</button></div>
+                    <div class="cl-item-body"><div class="cl-fields">
+                      <div class="form-group"><label class="form-label">Método de verificação</label><textarea class="form-input" style="min-height:56px">Régua de alumínio de 2m — medir maior desvio com cunha de aço.</textarea></div>
+                      <div class="form-group"><label class="form-label">Tolerância</label><input class="form-input" value="± 5 mm"/></div>
+                    </div></div>
+                  </div>
+                  <div class="cl-item">
+                    <div class="cl-item-header"><span class="num">4</span><h4>Prumo e alinhamento da fiada</h4><button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:11px">✕ Remover</button></div>
+                    <div class="cl-item-body"><div class="cl-fields">
+                      <div class="form-group"><label class="form-label">Método de verificação</label><textarea class="form-input" style="min-height:56px">Nível de mangueira e trena com linha de náilon após marcação da elevação.</textarea></div>
+                      <div class="form-group"><label class="form-label">Tolerância</label><input class="form-input" value="1 cm / 5 m"/></div>
+                    </div></div>
+                  </div>
+                  <div class="cl-item">
+                    <div class="cl-item-header"><span class="num">5</span><h4>Acabamento final e coroamento</h4><button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:11px">✕ Remover</button></div>
+                    <div class="cl-item-body"><div class="cl-fields">
+                      <div class="form-group"><label class="form-label">Método de verificação</label><textarea class="form-input" style="min-height:56px">Inspeção visual após conclusão da elevação e cura mínima de 3 dias.</textarea></div>
+                      <div class="form-group"><label class="form-label">Tolerância</label><input class="form-input" placeholder="Sem tolerância numérica"/></div>
+                    </div></div>
+                  </div>
+                </div>
+                <button class="btn btn-ghost" style="width:100%;margin-top:4px" onclick="addCLItem()">+ Adicionar item de verificação</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- sidebar direita -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div class="card-header"><h3>Informações da FVS</h3></div>
+              <div class="card-body">
+                <div class="form-group" style="margin-bottom:12px"><label class="form-label">Nome *</label><input class="form-input" value="Revestimento Argamassado"/></div>
+                <div class="form-group" style="margin-bottom:12px"><label class="form-label">Categoria *</label>
+                  <select class="form-input"><option>Estrutura</option><option>Vedação</option><option selected>Revestimento</option><option>Instalações</option><option>Cobertura</option><option>Acabamento</option></select>
+                </div>
+                <div class="form-group" style="margin-bottom:12px"><label class="form-label">Descrição / Aplicação</label><textarea class="form-input" style="min-height:64px">Verificação de revestimento com argamassa em paredes internas e externas.</textarea></div>
+                <div class="form-group"><label class="form-label">Norma de referência</label><input class="form-input" value="ABNT NBR 7200:2019"/></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><h3>Uso atual</h3></div>
+              <div class="card-body" style="padding:12px 16px">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div class="row"><span class="text-muted text-small">Obras usando</span><span style="font-weight:500;margin-left:auto">8 obras</span></div>
+                  <div class="row"><span class="text-muted text-small">Ambientes vinculados</span><span style="font-weight:500;margin-left:auto">47 ambientes</span></div>
+                  <div class="row"><span class="text-muted text-small">Verificações realizadas</span><span style="font-weight:500;margin-left:auto">134</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><h3>Histórico de revisões</h3></div>
+              <div class="card-body" style="padding:0">
+                <div style="padding:10px 14px;border-bottom:1px solid var(--brd0)">
+                  <div class="row"><span class="badge pg" style="font-size:10px">Rev. 3 — atual</span><span style="font-size:11px;color:var(--txt3);margin-left:auto">12/03/2025</span></div>
+                  <div style="font-size:12px;color:var(--txt2);margin-top:4px">Item 4 atualizado: tolerância ajustada para 1cm/5m conforme NBR 7200. Hugo Borges.</div>
+                </div>
+                <div style="padding:10px 14px;border-bottom:1px solid var(--brd0);opacity:.75">
+                  <div class="row"><span class="badge na" style="font-size:10px">Rev. 2</span><span style="font-size:11px;color:var(--txt3);margin-left:auto">10/01/2025</span></div>
+                  <div style="font-size:12px;color:var(--txt2);margin-top:4px">Adicionado item 5 (coroamento). Método do item 3 detalhado. José Elias.</div>
+                </div>
+                <div style="padding:10px 14px;opacity:.55">
+                  <div class="row"><span class="badge na" style="font-size:10px">Rev. 1</span><span style="font-size:11px;color:var(--txt3);margin-left:auto">15/10/2024</span></div>
+                  <div style="font-size:12px;color:var(--txt2);margin-top:4px">Versão inicial — 4 itens básicos. José Elias.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ VERIFICAÇÕES ═══ -->
+      <div class="screen" id="s-verificacoes">
+        <div class="row" style="margin-bottom:24px">
+          <div><div class="pg-title">Verificações</div><div class="pg-sub">Registro completo de todas as verificações de campo</div></div>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost btn-sm" onclick="showToast('Exportando...')">📥 Exportar Excel</button>
+          <button class="btn btn-ghost btn-sm" onclick="showToast('Gerando PDF...')">🖨 PDF</button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-body" style="padding:14px 16px">
+            <div style="display:grid;grid-template-columns:repeat(5,1fr) auto;gap:10px;align-items:end">
+              <div class="form-group"><label class="form-label">Obra</label>
+                <select class="form-input"><option>Todas as obras</option><option>Res. Portal Oeste</option><option>Ed. Horizonte</option><option>Cond. Nova Aurora</option></select>
+              </div>
+              <div class="form-group"><label class="form-label">Ambiente</label>
+                <select class="form-input"><option>Todos</option><option>Apt 301</option><option>Apt 302</option><option>Fachada Norte</option></select>
+              </div>
+              <div class="form-group"><label class="form-label">Serviço (FVS)</label>
+                <select class="form-input"><option>Todos os serviços</option><option>Revestimento Argamassado</option><option>Instalação Elétrica</option></select>
+              </div>
+              <div class="form-group"><label class="form-label">Status</label>
+                <select class="form-input"><option>Todos</option><option>Conforme</option><option>Não conforme</option><option>Em andamento</option></select>
+              </div>
+              <div class="form-group"><label class="form-label">Inspetor</label>
+                <select class="form-input"><option>Todos</option><option>Carlos Lima</option><option>Mariana Santos</option></select>
+              </div>
+              <button class="btn btn-primary" style="padding:9px 18px">Filtrar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Verificações registradas</h3>
+            <div class="ch-actions" style="gap:12px">
+              <span class="text-muted">Exibindo 24 de 134 registros</span>
+            </div>
+          </div>
+          <div class="card-body np">
+            <table>
+              <thead><tr><th>Nº Verif.</th><th>Serviço / FVS</th><th>Obra / Ambiente</th><th>% Exec.</th><th>Resultado</th><th>Inspetor</th><th>Data</th><th>Fotos</th><th></th></tr></thead>
+              <tbody>
+                <tr style="cursor:pointer" data-num="V-042" data-srv="Revestimento Cerâmico" data-loc="Apt 302 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="05/04/2025" data-exec="100" data-st="ok" data-nf="3" onclick="handleVerif(this)">
+                  <td><span class="fw" style="color:var(--pg)">V-042</span></td>
+                  <td><div class="fw">Revestimento Cerâmico</div><div class="td-sub">Piso</div></td>
+                  <td>Res. Portal Oeste<div class="td-sub">Apt 302</div></td>
+                  <td><div style="display:flex;align-items:center;gap:6px"><div class="progress" style="width:60px"><div class="fill ok" style="width:100%"></div></div><span class="text-small text-muted">100%</span></div></td>
+                  <td><span class="badge ok">Conforme</span></td>
+                  <td>Carlos Lima</td>
+                  <td>05/04/2025</td>
+                  <td><span style="font-size:12px;color:var(--pg);font-weight:500;cursor:pointer" data-num="V-042" data-srv="Revestimento Cerâmico" data-loc="Apt 302 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="05/04/2025" data-exec="100" data-st="ok" data-nf="3" onclick="event.stopPropagation();handleVerif(this)">📷 2 fotos</span></td>
+                  <td><button class="btn btn-ghost btn-sm" data-num="V-042" data-srv="Revestimento Cerâmico" data-loc="Apt 302 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="05/04/2025" data-exec="100" data-st="ok" data-nf="3" onclick="event.stopPropagation();handleVerif(this)">Ver</button></td>
+                </tr>
+                <tr style="cursor:pointer" data-num="V-041" data-srv="Revestimento Argamassado" data-loc="Apt 302 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="01/04/2025" data-exec="60" data-st="pg" data-nf="2" onclick="handleVerif(this)">
+                  <td><span class="fw" style="color:var(--pg)">V-041</span></td>
+                  <td><div class="fw">Revestimento Argamassado</div><div class="td-sub">Paredes</div></td>
+                  <td>Res. Portal Oeste<div class="td-sub">Apt 302</div></td>
+                  <td><div style="display:flex;align-items:center;gap:6px"><div class="progress" style="width:60px"><div class="fill" style="width:60%"></div></div><span class="text-small text-muted">60%</span></div></td>
+                  <td><span class="badge nok">Não conforme</span></td>
+                  <td>Carlos Lima</td>
+                  <td>01/04/2025</td>
+                  <td><span style="font-size:12px;color:var(--pg);font-weight:500;cursor:pointer" data-num="V-041" data-srv="Revestimento Argamassado" data-loc="Apt 302 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="01/04/2025" data-exec="60" data-st="nok" data-nf="2" onclick="event.stopPropagation();handleVerif(this)">📷 2 fotos</span></td>
+                  <td><button class="btn btn-ghost btn-sm" data-num="V-041" data-srv="Revestimento Argamassado" data-loc="Apt 302 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="01/04/2025" data-exec="60" data-st="nok" data-nf="2" onclick="event.stopPropagation();handleVerif(this)">Ver</button></td>
+                </tr>
+                <tr style="cursor:pointer" data-num="V-040" data-srv="Instalação Elétrica" data-loc="Apt 302 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="28/03/2025" data-exec="50" data-st="nok" data-nf="2" onclick="handleVerif(this)">
+                  <td><span class="fw" style="color:var(--pg)">V-040</span></td>
+                  <td><div class="fw">Instalação Elétrica</div><div class="td-sub">Pontos de força</div></td>
+                  <td>Res. Portal Oeste<div class="td-sub">Apt 302</div></td>
+                  <td><div style="display:flex;align-items:center;gap:6px"><div class="progress" style="width:60px"><div class="fill" style="width:50%"></div></div><span class="text-small text-muted">50%</span></div></td>
+                  <td><span class="badge nok">Não conforme</span></td>
+                  <td>Carlos Lima</td>
+                  <td>28/03/2025</td>
+                  <td><span style="font-size:12px;color:var(--pg);font-weight:500;cursor:pointer">📷 4 fotos</span></td>
+                  <td><button class="btn btn-ghost btn-sm" data-num="V-040" data-srv="Instalação Elétrica" data-loc="Apt 302 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="28/03/2025" data-exec="50" data-st="nok" data-nf="4" onclick="event.stopPropagation();handleVerif(this)">Ver</button></td>
+                </tr>
+                <tr style="cursor:pointer" data-num="V-039" data-srv="Alvenaria de Vedação" data-loc="Apt 301 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="25/03/2025" data-exec="100" data-st="ok" data-nf="1" onclick="handleVerif(this)">
+                  <td><span class="fw" style="color:var(--pg)">V-039</span></td>
+                  <td><div class="fw">Alvenaria de Vedação</div><div class="td-sub">Paredes internas</div></td>
+                  <td>Res. Portal Oeste<div class="td-sub">Apt 301</div></td>
+                  <td><div style="display:flex;align-items:center;gap:6px"><div class="progress" style="width:60px"><div class="fill ok" style="width:100%"></div></div><span class="text-small text-muted">100%</span></div></td>
+                  <td><span class="badge ok">Conforme</span></td>
+                  <td>Carlos Lima</td>
+                  <td>25/03/2025</td>
+                  <td><span style="font-size:12px;color:var(--pg);font-weight:500">📷 1 foto</span></td>
+                  <td><button class="btn btn-ghost btn-sm" data-num="V-039" data-srv="Alvenaria de Vedação" data-loc="Apt 301 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="25/03/2025" data-exec="100" data-st="ok" data-nf="1" onclick="event.stopPropagation();handleVerif(this)">Ver</button></td>
+                </tr>
+                <tr style="cursor:pointer" data-num="V-038" data-srv="Revestimento Argamassado" data-loc="Apt 302 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="15/03/2025" data-exec="20" data-st="nok" data-nf="1" onclick="handleVerif(this)">
+                  <td><span class="fw" style="color:var(--pg)">V-038</span></td>
+                  <td><div class="fw">Revestimento Argamassado</div><div class="td-sub">Paredes</div></td>
+                  <td>Res. Portal Oeste<div class="td-sub">Apt 302</div></td>
+                  <td><div style="display:flex;align-items:center;gap:6px"><div class="progress" style="width:60px"><div class="fill" style="width:20%;background:var(--nok)"></div></div><span class="text-small text-muted">20%</span></div></td>
+                  <td><span class="badge nok">Não conforme</span></td>
+                  <td>Carlos Lima</td>
+                  <td>15/03/2025</td>
+                  <td><span style="font-size:12px;color:var(--txt3)">Sem fotos</span></td>
+                  <td><button class="btn btn-ghost btn-sm" data-num="V-038" data-srv="Revestimento Argamassado" data-loc="Apt 302 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="15/03/2025" data-exec="20" data-st="nok" data-nf="0" onclick="event.stopPropagation();handleVerif(this)">Ver</button></td>
+                </tr>
+                <tr>
+                  <td><span class="fw" style="color:var(--pg)">V-037</span></td>
+                  <td><div class="fw">Instalação Hidráulica</div><div class="td-sub">Ramais internos</div></td>
+                  <td>Res. Portal Oeste<div class="td-sub">Apt 301</div></td>
+                  <td><div style="display:flex;align-items:center;gap:6px"><div class="progress" style="width:60px"><div class="fill" style="width:80%"></div></div><span class="text-small text-muted">80%</span></div></td>
+                  <td><span class="badge pg">Em andamento</span></td>
+                  <td>Carlos Lima</td>
+                  <td>20/03/2025</td>
+                  <td><span style="font-size:12px;color:var(--pg);font-weight:500">📷 3 fotos</span></td>
+                  <td><button class="btn btn-ghost btn-sm" data-num="V-037" data-srv="Instalação Hidráulica" data-loc="Apt 301 · Res. Portal Oeste" data-ins="Carlos Lima" data-dt="20/03/2025" data-exec="80" data-st="pg" data-nf="3" onclick="handleVerif(this)">Ver</button></td>
+                </tr>
+                <tr>
+                  <td><span class="fw" style="color:var(--pg)">V-036</span></td>
+                  <td><div class="fw">Revestimento Cerâmico</div><div class="td-sub">Piso</div></td>
+                  <td>Ed. Horizonte<div class="td-sub">Sala Tipo</div></td>
+                  <td><div style="display:flex;align-items:center;gap:6px"><div class="progress" style="width:60px"><div class="fill ok" style="width:100%"></div></div><span class="text-small text-muted">100%</span></div></td>
+                  <td><span class="badge ok">Conforme</span></td>
+                  <td>Mariana Santos</td>
+                  <td>18/03/2025</td>
+                  <td><span style="font-size:12px;color:var(--pg);font-weight:500">📷 2 fotos</span></td>
+                  <td><button class="btn btn-ghost btn-sm" data-num="V-036" data-srv="Revestimento Cerâmico" data-loc="Sala Tipo · Ed. Horizonte" data-ins="Mariana Santos" data-dt="18/03/2025" data-exec="100" data-st="ok" data-nf="2" onclick="handleVerif(this)">Ver</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="screen" id="s-relatorios">
+        <div class="pg-title">Relatórios</div>
+        <div class="pg-sub" style="margin-bottom:24px">Exportação e análise de dados</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+          <div class="card" style="cursor:pointer" onclick="showToast('Gerando PDF...')">
+            <div class="card-body" style="display:flex;flex-direction:column;align-items:center;padding:28px;text-align:center;gap:10px">
+              <div style="font-size:32px">📋</div>
+              <div style="font-size:14px;font-weight:600">Relatório de FVS</div>
+              <div class="text-muted">Por obra e período. Inclui todas as verificações com resultado.</div>
+              <button class="btn btn-primary" style="margin-top:8px;width:100%">Gerar PDF</button>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer" onclick="showToast('Gerando NCs...')">
+            <div class="card-body" style="display:flex;flex-direction:column;align-items:center;padding:28px;text-align:center;gap:10px">
+              <div style="font-size:32px">⚠</div>
+              <div style="font-size:14px;font-weight:600">Não Conformidades</div>
+              <div class="text-muted">Histórico completo de NCs, soluções e tempo de resolução.</div>
+              <button class="btn btn-primary" style="margin-top:8px;width:100%">Exportar Excel</button>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer" onclick="showToast('Gerando progresso...')">
+            <div class="card-body" style="display:flex;flex-direction:column;align-items:center;padding:28px;text-align:center;gap:10px">
+              <div style="font-size:32px">📊</div>
+              <div style="font-size:14px;font-weight:600">Progresso de Obras</div>
+              <div class="text-muted">% de conclusão por obra, ambiente e serviço.</div>
+              <button class="btn btn-primary" style="margin-top:8px;width:100%">Exportar Excel</button>
+            </div>
+          </div>
+          <div class="card" onclick="showToast('Gerando ficha FVS...')">
+            <div class="card-body" style="display:flex;flex-direction:column;align-items:center;padding:28px;text-align:center;gap:10px">
+              <div style="font-size:32px">🖨</div>
+              <div style="font-size:14px;font-weight:600">Ficha FVS Individual</div>
+              <div class="text-muted">PDF de uma ficha específica com assinatura e fotos.</div>
+              <button class="btn btn-ghost" style="margin-top:8px;width:100%">Selecionar e gerar</button>
+            </div>
+          </div>
+          <div class="card" onclick="showToast('Gerando equipes...')">
+            <div class="card-body" style="display:flex;flex-direction:column;align-items:center;padding:28px;text-align:center;gap:10px">
+              <div style="font-size:32px">👷</div>
+              <div style="font-size:14px;font-weight:600">Produtividade de Equipes</div>
+              <div class="text-muted">Verificações por inspetor e equipe executora.</div>
+              <button class="btn btn-ghost" style="margin-top:8px;width:100%">Exportar</button>
+            </div>
+          </div>
+          <div class="card" onclick="showToast('Abrindo painel...')">
+            <div class="card-body" style="display:flex;flex-direction:column;align-items:center;padding:28px;text-align:center;gap:10px">
+              <div style="font-size:32px">📈</div>
+              <div style="font-size:14px;font-weight:600">Painel Analítico</div>
+              <div class="text-muted">Indicadores de qualidade e tendências por período.</div>
+              <button class="btn btn-ghost" style="margin-top:8px;width:100%">Abrir dashboard</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══ MODAIS ═══ -->
+
+<!-- Modal: Nova Obra -->
+<div class="modal-bg" id="m-obra">
+  <div class="modal">
+    <div class="modal-header"><h2>Cadastrar nova obra</h2><button class="close" onclick="closeModal('m-obra')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid c2" style="margin-bottom:16px">
+        <div class="form-group" style="grid-column:span 2"><label class="form-label">Nome / Denominação da obra *</label><input class="form-input" value="Residencial Portal Oeste"/></div>
+        <div class="form-group"><label class="form-label">Empresa *</label><select class="form-input"><option>Construtora Alpha Ltda</option><option>Engenharia Beta S.A.</option></select></div>
+        <div class="form-group"><label class="form-label">Tipo de obra</label><select class="form-input"><option>Residencial multifamiliar</option><option>Comercial</option><option>Industrial</option><option>Infraestrutura</option></select></div>
+        <div class="form-group" style="grid-column:span 2"><label class="form-label">Endereço completo *</label><input class="form-input" value="Setor Habitacional Jardins, QD 12, Brasília-DF, CEP 71680-614"/></div>
+        <div class="form-group"><label class="form-label">Área total (m²)</label><input class="form-input" value="4.820"/></div>
+        <div class="form-group"><label class="form-label">Nº de pavimentos</label><input class="form-input" value="12"/></div>
+      </div>
+      <div class="form-section" style="margin-bottom:16px">
+        <div class="form-section-title">Responsável técnico</div>
+        <div class="form-grid c3">
+          <div class="form-group"><label class="form-label">Engenheiro responsável *</label><input class="form-input" value="Roberto Matos"/></div>
+          <div class="form-group"><label class="form-label">CREA / CAU *</label><input class="form-input" value="CREA-DF 12.345-D"/></div>
+          <div class="form-group"><label class="form-label">Nº da ART</label><input class="form-input" value="DF2025-0041"/></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Cronograma</div>
+        <div class="form-grid c2">
+          <div class="form-group"><label class="form-label">Início</label><input type="date" class="form-input" value="2025-01-15"/></div>
+          <div class="form-group"><label class="form-label">Previsão de término</label><input type="date" class="form-input" value="2026-06-30"/></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('m-obra')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('m-obra');showToast('Obra salva com sucesso!')">Salvar obra</button></div>
+  </div>
+</div>
+
+<!-- Modal: Empresa -->
+<div class="modal-bg" id="m-empresa">
+  <div class="modal" style="width:520px">
+    <div class="modal-header"><h2>Cadastrar empresa</h2><button class="close" onclick="closeModal('m-empresa')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid c2">
+        <div class="form-group" style="grid-column:span 2"><label class="form-label">Razão social *</label><input class="form-input" value="Construtora Alpha Ltda"/></div>
+        <div class="form-group"><label class="form-label">CNPJ *</label><input class="form-input" value="12.345.678/0001-00"/></div>
+        <div class="form-group"><label class="form-label">Inscrição estadual</label><input class="form-input" value="07.123.456-7"/></div>
+        <div class="form-group" style="grid-column:span 2"><label class="form-label">Endereço</label><input class="form-input" value="SEPS 714/914 BL C S.03, Brasília-DF"/></div>
+        <div class="form-group"><label class="form-label">Contato principal</label><input class="form-input" value="José Almeida"/></div>
+        <div class="form-group"><label class="form-label">E-mail</label><input class="form-input" value="contato@alpha.com.br"/></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('m-empresa')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('m-empresa');showToast('Empresa salva!')">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Modal: Ambiente -->
+<div class="modal-bg" id="m-amb">
+  <div class="modal" style="width:560px">
+    <div class="modal-header"><h2>Cadastrar ambiente</h2><button class="close" onclick="closeModal('m-amb')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid c2" style="margin-bottom:16px">
+        <div class="form-group" style="grid-column:span 2"><label class="form-label">Nome do ambiente *</label><input class="form-input" placeholder="Ex: Apartamento 503, Fachada Sul, Hall Piso 5..."/></div>
+        <div class="form-group"><label class="form-label">Tipo *</label><select class="form-input"><option>Interno</option><option>Externo</option></select></div>
+        <div class="form-group"><label class="form-label">Localização / Pavimento *</label><input class="form-input" placeholder="Ex: Piso 5, Torre B, Térreo..."/></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">FVS planejadas para este ambiente</div>
+        <p style="font-size:12px;color:var(--txt2);margin-bottom:12px">Selecione os serviços que serão verificados neste ambiente. O checklist de cada serviço poderá ser editado após o cadastro.</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox" checked/><span style="font-size:13px">Alvenaria de vedação</span></label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox" checked/><span style="font-size:13px">Revestimento argamassado</span></label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox" checked/><span style="font-size:13px">Revestimento cerâmico</span></label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox" checked/><span style="font-size:13px">Instalação elétrica</span></label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox" checked/><span style="font-size:13px">Instalação hidrossanitária</span></label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox"/><span style="font-size:13px">Pintura interna</span></label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox"/><span style="font-size:13px">Esquadrias</span></label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox"/><span style="font-size:13px">Louças e metais</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('m-amb')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('m-amb');showToast('Ambiente criado com 5 FVS planejadas!')">Salvar ambiente</button></div>
+  </div>
+</div>
+
+<!-- Modal: Checklist Editor -->
+<div class="modal-bg" id="m-checklist">
+  <div class="modal" style="width:720px">
+    <div class="modal-header"><h2>Checklist — Revestimento Argamassado</h2><button class="close" onclick="closeModal('m-checklist')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--txt2);margin-bottom:18px">Defina os itens de verificação, o método de inspeção e as tolerâncias. Estes dados serão exibidos para o inspetor de campo.</p>
+      <div class="cl-item">
+        <div class="cl-item-header"><span class="num">1</span><h4>Preparação e limpeza da base</h4><button class="btn btn-ghost btn-sm" style="margin-left:auto">Remover</button></div>
+        <div class="cl-item-body">
+          <div class="cl-fields">
+            <div class="form-group"><label class="form-label">Método de verificação</label><textarea class="form-input" style="min-height:60px">Inspeção visual da superfície após varredura — ausência de poeira, gordura e material solto.</textarea></div>
+            <div class="form-group"><label class="form-label">Tolerância (opcional)</label><input class="form-input" placeholder="Ex: ± 5mm, 1cm/5m..."/></div>
+          </div>
+        </div>
+      </div>
+      <div class="cl-item">
+        <div class="cl-item-header"><span class="num">2</span><h4>Espessura da argamassa</h4><button class="btn btn-ghost btn-sm" style="margin-left:auto">Remover</button></div>
+        <div class="cl-item-body">
+          <div class="cl-fields">
+            <div class="form-group"><label class="form-label">Método de verificação</label><textarea class="form-input" style="min-height:60px">Pinos de medição a cada 1m — verificar espessura em múltiplos pontos da parede.</textarea></div>
+            <div class="form-group"><label class="form-label">Tolerância (opcional)</label><input class="form-input" value="4 a 6 mm"/></div>
+          </div>
+        </div>
+      </div>
+      <div class="cl-item">
+        <div class="cl-item-header"><span class="num">3</span><h4>Planeza da superfície</h4><button class="btn btn-ghost btn-sm" style="margin-left:auto">Remover</button></div>
+        <div class="cl-item-body">
+          <div class="cl-fields">
+            <div class="form-group"><label class="form-label">Método de verificação</label><textarea class="form-input" style="min-height:60px">Régua de alumínio de 2m apoiada na superfície — medir maior desvio com cunha de aço.</textarea></div>
+            <div class="form-group"><label class="form-label">Tolerância</label><input class="form-input" value="± 5 mm"/></div>
+          </div>
+        </div>
+      </div>
+      <div class="cl-item">
+        <div class="cl-item-header"><span class="num">4</span><h4>Prumo e alinhamento da fiada</h4><button class="btn btn-ghost btn-sm" style="margin-left:auto">Remover</button></div>
+        <div class="cl-item-body">
+          <div class="cl-fields">
+            <div class="form-group"><label class="form-label">Método de verificação</label><textarea class="form-input" style="min-height:60px">Nível de mangueira e trena com linha de náilon após marcação da elevação.</textarea></div>
+            <div class="form-group"><label class="form-label">Tolerância</label><input class="form-input" value="1 cm / 5 m"/></div>
+          </div>
+        </div>
+      </div>
+      <div class="cl-item">
+        <div class="cl-item-header"><span class="num">5</span><h4>Acabamento final e coroamento</h4><button class="btn btn-ghost btn-sm" style="margin-left:auto">Remover</button></div>
+        <div class="cl-item-body">
+          <div class="cl-fields">
+            <div class="form-group"><label class="form-label">Método de verificação</label><textarea class="form-input" style="min-height:60px">Inspeção visual após conclusão da elevação e cura mínima de 3 dias.</textarea></div>
+            <div class="form-group"><label class="form-label">Tolerância</label><input class="form-input" placeholder="Sem tolerância numérica"/></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:4px" onclick="showToast('Item adicionado!')">+ Adicionar item</button>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('m-checklist')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('m-checklist');showToast('Checklist salvo!')">Salvar checklist</button></div>
+  </div>
+</div>
+
+<!-- Modal: Equipe -->
+<div class="modal-bg" id="m-equipe">
+  <div class="modal" style="width:520px">
+    <div class="modal-header"><h2>Cadastrar equipe / terceirizado</h2><button class="close" onclick="closeModal('m-equipe')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:14px"><label class="form-label">Tipo *</label>
+        <select class="form-input"><option>Funcionário próprio / equipe interna</option><option>Empresa terceirizada</option></select>
+      </div>
+      <div class="form-grid c2">
+        <div class="form-group" style="grid-column:span 2"><label class="form-label">Nome da equipe ou empresa *</label><input class="form-input" placeholder="Ex: Equipe Reboco A, Argecon Revestimentos ME"/></div>
+        <div class="form-group"><label class="form-label">Responsável / Mestre</label><input class="form-input" placeholder="Nome do responsável"/></div>
+        <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" placeholder="(61) 99999-9999"/></div>
+        <div class="form-group"><label class="form-label">CNPJ (se terceirizado)</label><input class="form-input" placeholder="00.000.000/0001-00"/></div>
+        <div class="form-group"><label class="form-label">Especialidade</label><input class="form-input" placeholder="Ex: Revestimentos, Elétrica..."/></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('m-equipe')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('m-equipe');showToast('Equipe cadastrada!')">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Modal: Usuário -->
+<div class="modal-bg" id="m-usuario">
+  <div class="modal" style="width:580px">
+    <div class="modal-header"><h2>Cadastrar usuário</h2><button class="close" onclick="closeModal('m-usuario')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid c2" style="margin-bottom:16px">
+        <div class="form-group"><label class="form-label">Nome completo *</label><input class="form-input" value="Carlos Lima"/></div>
+        <div class="form-group"><label class="form-label">Cargo</label><input class="form-input" value="Inspetor de Qualidade"/></div>
+        <div class="form-group"><label class="form-label">E-mail corporativo *</label><input class="form-input" value="carlos.lima@combrasen.com.br"/></div>
+        <div class="form-group"><label class="form-label">Celular</label><input class="form-input" value="(61) 99812-3456"/></div>
+        <div class="form-group"><label class="form-label">Perfil de acesso *</label><select class="form-input"><option>Inspetor</option><option>Gestor</option><option>Administrador</option></select></div>
+        <div class="form-group"><label class="form-label">Status</label><select class="form-input"><option>Ativo</option><option>Inativo</option></select></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Obras com acesso</div>
+        <p style="font-size:12px;color:var(--txt2);margin-bottom:10px">O usuário verá apenas as obras marcadas abaixo.</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox" checked/><span style="font-size:13px;flex:1">Res. Portal Oeste</span><span class="text-muted text-small">Construtora Alpha</span></label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox" checked/><span style="font-size:13px;flex:1">Ed. Horizonte</span><span class="text-muted text-small">Eng. Beta S.A.</span></label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox" checked/><span style="font-size:13px;flex:1">Cond. Nova Aurora</span><span class="text-muted text-small">Gamma Construções</span></label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg1);border:1px solid var(--brd0);cursor:pointer"><input type="checkbox"/><span style="font-size:13px;flex:1">Galpão Logístico Sul</span><span class="text-muted text-small">Construtora Alpha</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('m-usuario')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('m-usuario');showToast('Salvo!')">Salvar usuário</button></div>
+  </div>
+</div>
+
+<!-- Modal: Nova FVS Padrão -->
+<div class="modal-bg" id="m-fvs-nova">
+  <div class="modal" style="width:540px">
+    <div class="modal-header"><h2>Nova FVS padrão</h2><button class="close" onclick="closeModal('m-fvs-nova')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid c2">
+        <div class="form-group" style="grid-column:span 2"><label class="form-label">Nome da FVS *</label><input class="form-input" placeholder="Ex: Revestimento Cerâmico — Pisos"/></div>
+        <div class="form-group"><label class="form-label">Categoria *</label>
+          <select class="form-input"><option>Estrutura</option><option>Vedação</option><option>Revestimento</option><option>Instalações</option><option>Cobertura</option><option>Acabamento</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Norma de referência</label><input class="form-input" placeholder="Ex: ABNT NBR 7200:2019"/></div>
+        <div class="form-group" style="grid-column:span 2"><label class="form-label">Descrição / Aplicação</label><textarea class="form-input" placeholder="Onde e como esta FVS deve ser aplicada..."></textarea></div>
+      </div>
+      <div style="background:var(--pgb);border-radius:var(--r);padding:12px;margin-top:8px;font-size:12px;color:var(--pg)">
+        Após salvar, você poderá adicionar os itens de verificação com métodos e tolerâncias.
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('m-fvs-nova')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('m-fvs-nova');doNewFVS()">Criar e editar checklist</button></div>
+  </div>
+</div>
+
+<!-- Modal: Nova Revisão -->
+<div class="modal-bg" id="m-nova-rev">
+  <div class="modal" style="width:500px">
+    <div class="modal-header"><h2>Salvar nova revisão</h2><button class="close" onclick="closeModal('m-nova-rev')">×</button></div>
+    <div class="modal-body">
+      <div style="background:var(--pgb);border-radius:var(--r);padding:12px;margin-bottom:16px;font-size:13px;color:var(--pg)">
+        A revisão atual é a <strong>Rev. 3</strong>. Será criada a <strong>Rev. 4</strong>. A versão anterior ficará registrada no histórico.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descreva as alterações desta revisão *</label>
+        <textarea class="form-input" rows="4" placeholder="O que foi alterado nesta revisão? Ex: Item 3 atualizado com nova tolerância conforme NBR vigente..."></textarea>
+      </div>
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">Revisado por</label>
+        <input class="form-input" value="José Elias"/>
+      </div>
+      <div style="background:var(--warnb);border-radius:var(--r);padding:10px;margin-top:14px;font-size:12px;color:var(--warn)">
+        ⚠ Esta revisão afetará 47 ambientes que usam esta FVS em obras ativas. As verificações já realizadas manterão a revisão vigente na época.
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('m-nova-rev')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('m-nova-rev');showToast('Rev. 4 salva com sucesso!')">Publicar Rev. 4</button></div>
+  </div>
+</div>
+
+<!-- Modal: Verificação Detalhe -->
+<div class="modal-bg" id="m-verif-detail">
+  <div class="modal" style="width:760px">
+    <div class="modal-header">
+      <div>
+        <h2 id="vd-title">V-042 — Revestimento Cerâmico</h2>
+        <div style="font-size:12px;color:var(--txt2);margin-top:2px" id="vd-sub">Apt 302 · Res. Portal Oeste · Carlos Lima · 05/04/2025</div>
+      </div>
+      <div id="vd-badge" style="margin-left:12px"><span class="badge ok">Conforme</span></div>
+      <button class="close" style="margin-left:auto" onclick="closeModal('m-verif-detail')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:18px">
+        <div style="background:var(--bg0);border-radius:var(--r);padding:10px 12px"><div style="font-size:11px;color:var(--txt2)">% Execução</div><div style="font-size:18px;font-weight:600;color:var(--br)" id="vd-exec">100%</div></div>
+        <div style="background:var(--okb);border-radius:var(--r);padding:10px 12px"><div style="font-size:11px;color:var(--ok)">Conformes</div><div style="font-size:18px;font-weight:600;color:var(--ok)" id="vd-nok-n">4</div></div>
+        <div style="background:var(--nokb);border-radius:var(--r);padding:10px 12px"><div style="font-size:11px;color:var(--nok)">Não conf.</div><div style="font-size:18px;font-weight:600;color:var(--nok)" id="vd-ok-n">0</div></div>
+        <div style="background:var(--nab);border-radius:var(--r);padding:10px 12px"><div style="font-size:11px;color:var(--na)">N/A</div><div style="font-size:18px;font-weight:600;color:var(--na)">1</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div>
+          <div class="sec-title" style="margin-bottom:10px">Resultado dos itens</div>
+          <div style="border:1px solid var(--brd0);border-radius:var(--r);overflow:hidden">
+            <div class="cl-result">
+              <div class="cl-result-icon ok">✓</div>
+              <div class="cl-result-info"><h5>Preparação e limpeza da base</h5><div class="method">Inspeção visual — ausência de poeira</div></div>
+            </div>
+            <div class="cl-result">
+              <div class="cl-result-icon ok">✓</div>
+              <div class="cl-result-info"><h5>Espessura da argamassa colante</h5><div class="method">Tolerância: 3 a 5 mm</div></div>
+            </div>
+            <div class="cl-result">
+              <div class="cl-result-icon ok">✓</div>
+              <div class="cl-result-info">
+                <h5>Alinhamento e prumo das juntas</h5>
+                <div class="method">Tolerância: ± 3 mm</div>
+              </div>
+            </div>
+            <div class="cl-result">
+              <div class="cl-result-icon na">—</div>
+              <div class="cl-result-info"><h5>Rejuntamento conforme especificação</h5><div class="method">Não aplicável nesta verificação</div></div>
+            </div>
+            <div class="cl-result">
+              <div class="cl-result-icon ok">✓</div>
+              <div class="cl-result-info"><h5>Limpeza e acabamento final</h5><div class="method">Inspeção visual após cura do rejunte</div></div>
+            </div>
+          </div>
+
+          <div class="sec-title" style="margin-top:16px;margin-bottom:8px">Observações</div>
+          <div style="background:var(--bg0);border-radius:var(--r);padding:12px;font-size:13px;color:var(--txt2);line-height:1.6" id="vd-obs">
+            Rejuntamento concluído conforme projeto. Todos os itens verificados. Serviço aprovado.
+          </div>
+
+          <div class="sec-title" style="margin-top:16px;margin-bottom:8px">Assinatura digital</div>
+          <div class="sig-view-box">
+            <svg viewBox="0 0 240 60" style="width:200px;height:50px">
+              <path d="M20 45 Q35 20 45 35 Q55 50 65 30 Q75 10 85 40 Q95 60 110 35 Q125 15 135 40 Q145 55 155 30 Q165 10 175 38 Q185 55 200 35 Q210 20 220 45" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="15" y1="52" x2="225" y2="52" stroke="#ccc" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <div style="font-size:11px;color:var(--ok);font-weight:500;margin-top:6px" id="vd-sig-info">✓ Carlos Lima — 05/04/2025 14:22</div>
+        </div>
+
+        <div>
+          <div class="sec-title" style="margin-bottom:10px" id="vd-photo-title">Fotos de evidência (2)</div>
+          <div class="photo-gallery" id="vd-photos">
+            <div class="photo-thumb-lg" onclick="openLightbox(0)">
+              <img src="https://images.unsplash.com/photo-1588854337115-1c67d9247e4d?w=400" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23eee%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23bbb%22 font-size=%2240%22 x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22%3E📷%3C/text%3E%3C/svg%3E'"/>
+              <div class="ph-overlay"><span class="ph-icon">⊕</span></div>
+            </div>
+            <div class="photo-thumb-lg" onclick="openLightbox(1)">
+              <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23eee%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23bbb%22 font-size=%2240%22 x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22%3E📷%3C/text%3E%3C/svg%3E'"/>
+              <div class="ph-overlay"><span class="ph-icon">⊕</span></div>
+            </div>
+          </div>
+
+          <!-- NC panel (shows when nok) -->
+          <div id="vd-nc-panel" style="display:none;margin-top:16px">
+            <div class="sec-title" style="margin-bottom:8px">Não conformidade registrada</div>
+            <div style="background:var(--nokb);border:1px solid #f09595;border-radius:var(--r);padding:12px">
+              <div style="font-size:12px;font-weight:600;color:var(--nok);margin-bottom:6px" id="vd-nc-title">NC — Item 2: Espessura fora da tolerância</div>
+              <div style="font-size:12px;color:var(--nok);line-height:1.5" id="vd-nc-desc">Espessura medida entre 8–10mm em 4 pontos, acima do máximo de 6mm.</div>
+              <div style="font-size:11px;color:var(--txt2);margin-top:6px;font-style:italic" id="vd-nc-sol">Solução: remover e reaplicar com espessura 4–6mm.</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+                <div style="font-size:11px;color:var(--pg);font-weight:500" id="vd-nc-date">Nova verificação: 08/04/2025</div>
+                <span class="badge nok" id="vd-nc-status">Aberta</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px">
+            <div class="sec-title" style="margin-bottom:8px">Equipe executora</div>
+            <div style="background:var(--bg0);border-radius:var(--r);padding:12px;display:flex;align-items:center;gap:10px">
+              <div class="team-av own" style="width:30px;height:30px;font-size:11px">PM</div>
+              <div><div style="font-size:13px;font-weight:500">Equipe Reboco A</div><div style="font-size:11px;color:var(--txt2)">Paulo Mendes (Mestre) + 2 · Próprio</div></div>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="sec-title" style="margin-bottom:8px">Engenheiro responsável</div>
+            <div style="background:var(--bg0);border-radius:var(--r);padding:12px;display:flex;align-items:center;gap:10px">
+              <div class="team-av eng" style="width:30px;height:30px;font-size:11px">RM</div>
+              <div><div style="font-size:13px;font-weight:500">Eng. Roberto Matos</div><div style="font-size:11px;color:var(--txt2)">CREA-DF 12.345-D</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="showToast('Gerando PDF...')">🖨 Exportar PDF</button>
+      <button class="btn btn-ghost" onclick="closeModal('m-verif-detail')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox">
+  <button class="lb-close" onclick="closeLightbox()">×</button>
+  <img id="lb-img" src=""/>
+  <div class="lb-caption" id="lb-cap"></div>
+  <div class="lb-nav">
+    <button onclick="lbNav(-1)">← Anterior</button>
+    <button onclick="lbNav(1)">Próxima →</button>
+  </div>
+</div>
+
+
+<div id="toast">✓ <span id="toast-msg">Operação realizada!</span></div>
+
+<script>
+// ── navigation ──────────────────────────────────────────────────
+var screenCfg = {
+  'dash':              {id:'s-dash',           si:'si-dash',       bc:'Dashboard',         hbtn:'+ Nova obra',      hmod:'m-obra'},
+  'empresas':          {id:'s-empresas',        si:'si-empresas',   bc:'Empresas',           hbtn:'+ Nova empresa',   hmod:'m-empresa'},
+  'obras':             {id:'s-obras',           si:'si-obras',      bc:'Obras',              hbtn:'+ Nova obra',      hmod:'m-obra'},
+  'fvs-padrao':        {id:'s-fvs-padrao',      si:'si-fvs-padrao', bc:'FVS Padrao',         hbtn:'+ Nova FVS',       hmod:'m-fvs-nova'},
+  'fvs-padrao-detail': {id:'s-fvs-padrao-detail',si:'si-fvs-padrao',bc:'FVS Padrao',        hbtn:'Salvar revisao',   hmod:'m-nova-rev'},
+  'equipes':           {id:'s-equipes',         si:'si-equipes',    bc:'Equipes',            hbtn:'+ Nova equipe',    hmod:'m-equipe'},
+  'usuarios':          {id:'s-usuarios',        si:'si-usuarios',   bc:'Usuarios',           hbtn:'+ Novo usuario',   hmod:'m-usuario'},
+  'verificacoes':      {id:'s-verificacoes',    si:'si-verificacoes',bc:'Verificacoes',      hbtn:'',                 hmod:''},
+  'nc':                {id:'s-nc',              si:'si-nc',         bc:'Nao Conformidades',  hbtn:'Exportar',         hmod:''},
+  'relatorios':        {id:'s-relatorios',      si:'si-relatorios', bc:'Relatorios',         hbtn:'',                 hmod:''},
+  'obra-detail':       {id:'s-obra-detail',     si:'si-obras',      bc:'Obras',              hbtn:'+ Ambiente',       hmod:'m-amb'},
+  'amb-detail':        {id:'s-amb-detail',      si:'si-obras',      bc:'Obras',              hbtn:'Checklist',        hmod:'m-checklist'}
+};
+
+function goScreen(name) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+  document.querySelectorAll('.sb-item').forEach(function(s){ s.classList.remove('on'); });
+  var s = screenCfg[name];
+  if (!s) return;
+  document.getElementById(s.id).classList.add('on');
+  var si = document.getElementById(s.si);
+  if (si) si.classList.add('on');
+  document.getElementById('breadcrumb').textContent = s.bc;
+  var hb = document.getElementById('hdr-btn');
+  hb.textContent = s.hbtn;
+  hb.style.display = s.hbtn ? '' : 'none';
+  hb._modal = s.hmod;
+  hb.onclick = function() {
+    if (hb._modal) showModal(hb._modal);
+    else if (name === 'nc') showToast('Exportando NCs...');
+  };
+}
+
+// ── obras ────────────────────────────────────────────────────────
+var obraData = {
+  pow: {title:'Res. Portal Oeste', sub:'Construtora Alpha Ltda', namb:24, nfvs:96, ndone:64},
+  edh: {title:'Ed. Horizonte',     sub:'Engenharia Beta S.A.',   namb:18, nfvs:72, ndone:30},
+  cna: {title:'Cond. Nova Aurora', sub:'Gamma Construcoes ME',   namb:8,  nfvs:16, ndone:14}
+};
+
+function openObraDetail(id) {
+  var o = obraData[id] || obraData.pow;
+  document.getElementById('od-title').textContent = o.title;
+  document.getElementById('od-sub').textContent   = o.sub;
+  document.getElementById('od-namb').textContent  = o.namb;
+  document.getElementById('od-nfvs').textContent  = o.nfvs;
+  document.getElementById('od-ndone').textContent = o.ndone;
+  document.getElementById('breadcrumb').textContent = 'Obras > ' + o.title;
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+  document.getElementById('s-obra-detail').classList.add('on');
+  document.querySelectorAll('.sb-item').forEach(function(s){ s.classList.remove('on'); });
+  document.getElementById('si-obras').classList.add('on');
+  var hb = document.getElementById('hdr-btn');
+  hb.textContent = '+ Ambiente';
+  hb.style.display = '';
+  hb.onclick = function(){ showModal('m-amb'); };
+  switchTab('obra','ambientes');
+}
+
+function openAmbDetail() {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+  document.getElementById('s-amb-detail').classList.add('on');
+  document.getElementById('breadcrumb').textContent = 'Obras > Res. Portal Oeste > Apt 302';
+  var hb = document.getElementById('hdr-btn');
+  hb.textContent = 'Checklist';
+  hb.style.display = '';
+  hb.onclick = function(){ showModal('m-checklist'); };
+}
+
+function switchTab(group, name) {
+  document.querySelectorAll('[id^="tc-' + group + '-"]').forEach(function(t){ t.classList.remove('on'); });
+  var el = document.getElementById('tc-' + group + '-' + name);
+  if (el) el.classList.add('on');
+  var namesMap = {ambientes:0, equipe:1, docs:2};
+  var idx = namesMap[name];
+  document.querySelectorAll('#s-obra-detail .tab').forEach(function(t, i){ t.classList.toggle('on', i === idx); });
+}
+
+// ── modals ───────────────────────────────────────────────────────
+function showModal(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.add('on');
+}
+function closeModal(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.remove('on');
+}
+function openMainModal() { showModal('m-obra'); }
+
+document.querySelectorAll('.modal-bg').forEach(function(m){
+  m.addEventListener('click', function(e){ if (e.target === m) m.classList.remove('on'); });
+});
+
+// ── toast ────────────────────────────────────────────────────────
+var toastTimer;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 2800);
+}
+
+// ── FVS padrao ───────────────────────────────────────────────────
+function openFVSPadrao(nome, cat, rev, date, itens, obras, status) {
+  document.getElementById('fpd-title').textContent = nome;
+  document.getElementById('fpd-rev').textContent   = rev;
+  document.getElementById('fpd-date').textContent  = date;
+  var sub = document.getElementById('fpd-sub');
+  sub.textContent = 'Categoria: ' + cat + ' | ' + rev + ' | Ultima alteracao: ' + date;
+  var tog = document.getElementById('fpd-toggle');
+  var lbl = document.getElementById('fpd-status-lbl');
+  tog.checked = (status === 'ativo');
+  lbl.textContent = tog.checked ? 'Ativa' : 'Inativa';
+  lbl.style.color = tog.checked ? 'var(--ok)' : 'var(--na)';
+  tog.onchange = function() {
+    lbl.textContent = this.checked ? 'Ativa' : 'Inativa';
+    lbl.style.color = this.checked ? 'var(--ok)' : 'var(--na)';
+  };
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+  document.getElementById('s-fvs-padrao-detail').classList.add('on');
+  document.getElementById('breadcrumb').textContent = 'FVS Padrao > ' + nome;
+  var hb = document.getElementById('hdr-btn');
+  hb.textContent = 'Salvar revisao';
+  hb.style.display = '';
+  hb.onclick = function(){ showModal('m-nova-rev'); };
+}
+
+var clCount = 5;
+function addCLItem() {
+  clCount++;
+  var d = document.createElement('div');
+  d.className = 'cl-item';
+  var h = document.createElement('div');
+  h.className = 'cl-item-header';
+  var num = document.createElement('span');
+  num.className = 'num';
+  num.textContent = clCount;
+  var inp = document.createElement('input');
+  inp.className = 'inline-input';
+  inp.style.cssText = 'flex:1;margin:0 8px';
+  inp.placeholder = 'Titulo do item...';
+  var btn = document.createElement('button');
+  btn.className = 'btn btn-ghost btn-sm';
+  btn.style.fontSize = '11px';
+  btn.textContent = 'Remover';
+  btn.onclick = function(){ d.remove(); };
+  h.appendChild(num); h.appendChild(inp); h.appendChild(btn);
+  var body = document.createElement('div');
+  body.className = 'cl-item-body';
+  body.innerHTML = '<div class="cl-fields"><div class="form-group"><label class="form-label">Metodo de verificacao</label><textarea class="form-input" style="min-height:56px" placeholder="Descreva como verificar..."></textarea></div><div class="form-group"><label class="form-label">Tolerancia</label><input class="form-input" placeholder="Ex: 5mm"/></div></div>';
+  d.appendChild(h); d.appendChild(body);
+  document.getElementById('fvs-items-editor').appendChild(d);
+}
+
+// ── lightbox ─────────────────────────────────────────────────────
+var lbPhotos = [
+  {url:'https://images.unsplash.com/photo-1588854337115-1c67d9247e4d?w=1000', cap:'Revestimento ceramico'},
+  {url:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1000', cap:'Detalhe do rejuntamento'},
+  {url:'https://images.unsplash.com/photo-1590479773265-7464e5d48118?w=1000', cap:'Area com nao conformidade'},
+  {url:'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=1000', cap:'Vista geral do ambiente'}
+];
+var lbIdx = 0;
+
+function openLightbox(idx) {
+  lbIdx = idx || 0;
+  document.getElementById('lb-img').src = lbPhotos[lbIdx].url;
+  document.getElementById('lb-cap').textContent = lbPhotos[lbIdx].cap;
+  document.getElementById('lightbox').classList.add('on');
+}
+function closeLightbox() { document.getElementById('lightbox').classList.remove('on'); }
+function lbNav(dir) {
+  lbIdx = (lbIdx + dir + lbPhotos.length) % lbPhotos.length;
+  document.getElementById('lb-img').src = lbPhotos[lbIdx].url;
+  document.getElementById('lb-cap').textContent = lbPhotos[lbIdx].cap;
+}
+document.getElementById('lightbox').addEventListener('click', function(e){ if (e.target === this) closeLightbox(); });
+
+// ── verificacoes ─────────────────────────────────────────────────
+var photoSet = [
+  {s:'https://images.unsplash.com/photo-1588854337115-1c67d9247e4d?w=400', cap:'Foto 1'},
+  {s:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400', cap:'Foto 2'},
+  {s:'https://images.unsplash.com/photo-1590479773265-7464e5d48118?w=400', cap:'Foto 3 - NC'},
+  {s:'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400', cap:'Foto 4'}
+];
+
+function buildPhotoThumb(p, idx) {
+  var div = document.createElement('div');
+  div.className = 'photo-thumb-lg';
+  div.onclick = function(){ openLightbox(idx); };
+  var img = document.createElement('img');
+  img.src = p.s;
+  img.onerror = function(){ this.style.background = '#eee'; };
+  var ov = document.createElement('div');
+  ov.className = 'ph-overlay';
+  ov.innerHTML = '<span class="ph-icon">&#8853;</span>';
+  div.appendChild(img);
+  div.appendChild(ov);
+  return div;
+}
+
+function openVerifDetail(num, servico, local, inspetor, data, exec, status, nfotos) {
+  document.getElementById('vd-title').textContent = num + ' - ' + servico;
+  document.getElementById('vd-sub').textContent   = local + ' | ' + inspetor + ' | ' + data;
+  document.getElementById('vd-exec').textContent  = exec + '%';
+  document.getElementById('vd-nok-n').textContent = status === 'ok' ? 4 : status === 'nok' ? 2 : 3;
+  document.getElementById('vd-ok-n').textContent  = status === 'nok' ? 1 : 0;
+  document.getElementById('vd-sig-info').textContent = '    ' + inspetor + ' - ' + data + ' 14:22';
+
+  var b = document.getElementById('vd-badge');
+  var labels = {ok:'Conforme', nok:'Nao conforme', pg:'Em andamento'};
+  var classes = {ok:'ok', nok:'nok', pg:'pg'};
+  b.innerHTML = '';
+  var sp = document.createElement('span');
+  sp.className = 'badge ' + (classes[status] || 'ok');
+  sp.textContent = labels[status] || 'Conforme';
+  b.appendChild(sp);
+
+  document.getElementById('vd-photo-title').textContent = 'Fotos de evidencia (' + nfotos + ')';
+  var pg = document.getElementById('vd-photos');
+  pg.innerHTML = '';
+  if (nfotos === 0) {
+    pg.innerHTML = '<div style="grid-column:span 3;padding:20px;text-align:center;color:var(--txt3);font-size:13px">Nenhuma foto anexada</div>';
+  } else {
+    var show = photoSet.slice(0, Math.min(nfotos, 4));
+    show.forEach(function(p, i){ pg.appendChild(buildPhotoThumb(p, i)); });
+  }
+
+  var ncpanel = document.getElementById('vd-nc-panel');
+  if (status === 'nok') {
+    ncpanel.style.display = 'block';
+    document.getElementById('vd-nc-title').textContent = 'NC - Item 2: Espessura fora da tolerancia';
+    document.getElementById('vd-nc-desc').textContent  = 'Espessura medida entre 8-10mm em 4 pontos, acima do maximo de 6mm.';
+    document.getElementById('vd-nc-sol').textContent   = 'Solucao: remover e reaplicar com espessura 4-6mm.';
+    document.getElementById('vd-nc-date').textContent  = 'Nova verificacao: 08/04/2025';
+  } else {
+    ncpanel.style.display = 'none';
+  }
+  showModal('m-verif-detail');
+}
+
+// ── data-attribute handlers ──────────────────────────────────────
+function handleVerif(el) {
+  var d = el.dataset;
+  openVerifDetail(d.num, d.srv, d.loc, d.ins, d.dt, parseInt(d.exec), d.st, parseInt(d.nf));
+}
+function handleFVS(el) {
+  var d = el.dataset;
+  openFVSPadrao(d.nome, d.cat, d.rev, d.dt, parseInt(d.itens), parseInt(d.obras), d.st);
+}
+function doNewFVS() {
+  closeModal('m-fvs-nova');
+  openFVSPadrao('Nova FVS', 'Revestimento', 'Rev. 1', '-', 0, 0, 'ativo');
+}
+
+// ── auth ─────────────────────────────────────────────────────────
+function doLogin() {
+  document.getElementById('login-wrap').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+}
+function doLogout() {
+  document.getElementById('login-wrap').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+</script>
+</body>
+</html>

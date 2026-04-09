@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "PrumoQ",
+    "slug": "prumoq",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "prumoq",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#E84A1A"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        { "cameraPermission": "PrumoQ precisa da câmera para registrar evidências de verificação." }
+      ],
+      [
+        "expo-image-picker",
+        { "photosPermission": "PrumoQ precisa acessar suas fotos para anexar evidências de verificação." }
+      ],
+      "expo-secure-store"
+    ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E84A1A"
+      },
+      "package": "br.com.prumoq.app"
+    },
+    "ios": {
+      "bundleIdentifier": "br.com.prumoq.app",
+      "supportsTablet": false
+    }
+  }
+}

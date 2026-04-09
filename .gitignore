@@ -1,0 +1,28 @@
+# Environment — never commit secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# pnpm
+node_modules/
+.pnpm-store/
+
+# Expo / React Native
+apps/mobile/.expo/
+apps/mobile/dist/
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+
+# TypeScript
+*.tsbuildinfo
+
+# Supabase local dev
+supabase/.branches/
+supabase/.temp/
+
+# OS
+.DS_Store
+Thumbs.db

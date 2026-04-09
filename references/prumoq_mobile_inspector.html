@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PrumoQ — App Mobile (Inspetor)</title>
+<style>
+:root{--br:#E84A1A;--brd:#C03A10;--brl:#FDF0EC;--ok:#2E7D32;--okb:#E8F5E9;--nok:#C62828;--nokb:#FFEBEE;--na:#666;--nab:#F2F2F2;--pg:#1565C0;--pgb:#E3F2FD;--r:12px;--rs:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F1EFE8;display:flex;justify-content:center;padding:1rem 0;min-height:100vh}
+#ph{width:375px;min-height:812px;background:#fff;border-radius:40px;overflow:hidden;position:relative;display:flex;flex-direction:column;border:1px solid rgba(0,0,0,.12)}
+.sb{background:var(--br);height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0}
+.sb span{color:white;font-size:12px;font-weight:500}
+.sc{flex:1;overflow-y:auto;display:none;flex-direction:column;padding-bottom:76px}
+.sc.on{display:flex}
+.topbar{background:var(--br);padding:14px 18px 20px;flex-shrink:0}
+.topbar.compact{padding:12px 18px 16px}
+.trow{display:flex;align-items:center;gap:10px}
+.bkbtn{background:rgba(255,255,255,.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.topbar h1{color:white;font-size:19px;font-weight:500}
+.topbar p{color:rgba(255,255,255,.72);font-size:12px;margin-top:2px}
+.ct{flex:1;padding:14px}
+.bnav{position:absolute;bottom:0;left:0;right:0;height:72px;background:#fff;border-top:.5px solid rgba(0,0,0,.08);display:flex;padding-bottom:4px}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:none}
+.ni .ic{font-size:19px;color:#9C9A93}
+.ni span{font-size:10px;color:#9C9A93}
+.ni.on .ic,.ni.on span{color:var(--br);font-weight:500}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.sk{background:#F1EFE8;border-radius:var(--r);padding:13px}
+.sk .v{font-size:26px;font-weight:500;color:#1A1A18}
+.sk .l{font-size:11px;color:#5C5B57;margin-top:2px}
+.sk.hi{background:var(--brl)}.sk.hi .v{color:var(--br)}
+.sk.nokc{background:var(--nokb)}.sk.nokc .v{color:var(--nok)}
+.sk.okc{background:var(--okb)}.sk.okc .v{color:var(--ok)}
+.sk.pgc{background:var(--pgb)}.sk.pgc .v{color:var(--pg)}
+.st{font-size:11px;font-weight:500;color:#5C5B57;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.cd{background:#fff;border:.5px solid rgba(0,0,0,.08);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;cursor:pointer}
+.cd:hover{border-color:var(--br)}
+.cr{display:flex;align-items:center;justify-content:space-between}
+.cd h3{font-size:14px;font-weight:500;color:#1A1A18}
+.cd p{font-size:12px;color:#5C5B57;margin-top:2px}
+.bg{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;white-space:nowrap}
+.bg.ok{background:var(--okb);color:var(--ok)}
+.bg.nok{background:var(--nokb);color:var(--nok)}
+.bg.pg{background:var(--pgb);color:var(--pg)}
+.bg.na{background:var(--nab);color:var(--na)}
+.pb{height:6px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;margin-top:7px}
+.pb .fill{height:100%;border-radius:3px;background:var(--br)}
+.pb .fill.ok{background:var(--ok)}
+.pct{font-size:11px;color:#5C5B57;margin-top:3px}
+.dv{height:.5px;background:rgba(0,0,0,.08);margin:13px 0}
+.fl{font-size:12px;font-weight:500;color:#5C5B57;margin-bottom:5px;display:block}
+.fc{width:100%;padding:9px 11px;border:.5px solid rgba(0,0,0,.12);border-radius:var(--rs);font-size:13px;background:#fff;color:#1A1A18;font-family:inherit}
+.fc:focus{outline:none;border-color:var(--br)}
+select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath fill='%23888' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.fg{margin-bottom:12px}
+.btn{width:100%;padding:13px;background:var(--br);color:white;border:none;border-radius:var(--r);font-size:14px;font-weight:500;cursor:pointer}
+.btn:hover{background:var(--brd)}
+.btn.sec{background:#F1EFE8;color:#1A1A18}
+.chip{font-size:11px;color:#5C5B57;background:#F1EFE8;padding:3px 9px;border-radius:20px;margin-right:4px;margin-top:4px;display:inline-block}
+.row{display:flex;align-items:center;gap:12px}
+.amb{border:.5px solid rgba(0,0,0,.08);border-radius:var(--r);padding:12px;margin-bottom:8px;cursor:pointer}
+.amb:hover{border-color:var(--br)}
+.amb.int{border-left:3px solid var(--pg)}
+.amb.ext{border-left:3px solid var(--ok)}
+.atag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
+.atag.int{background:var(--pgb);color:var(--pg)}
+.atag.ext{background:var(--okb);color:var(--ok)}
+.fi{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--rs);background:#F1EFE8;margin-bottom:7px;cursor:pointer}
+.fi:hover{background:var(--brl)}
+.fic{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.fic.ok{background:var(--okb)}
+.fic.nok{background:var(--nokb)}
+.fic.pg{background:var(--pgb)}
+.fic.na{background:var(--nab)}
+.fii{flex:1}
+.fii h4{font-size:13px;font-weight:500;color:#1A1A18}
+.fii p{font-size:11px;color:#5C5B57;margin-top:2px}
+.nc-card{border:.5px solid #f09595;border-radius:var(--r);padding:13px;margin-bottom:10px;background:#fff;cursor:pointer}
+.nc-card:hover{border-color:var(--nok)}
+.nc-card.resolved{border-color:var(--ok);opacity:.7}
+.nc-tag{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.nc-tag.open{background:var(--nokb);color:var(--nok)}
+.nc-tag.resolved{background:var(--okb);color:var(--ok)}
+.nc-tag.pending{background:#FFF3E0;color:#E65100}
+.ciw{border:.5px solid rgba(0,0,0,.08);border-radius:var(--rs);margin-bottom:9px;overflow:hidden}
+.cih{padding:11px 13px;background:#F1EFE8}
+.cinum{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.12);font-size:11px;font-weight:500;color:#5C5B57;margin-right:6px;flex-shrink:0}
+.cit{font-size:13px;font-weight:500;color:#1A1A18;line-height:1.4}
+.cim{padding:9px 13px;border-top:.5px solid rgba(0,0,0,.08);background:#fff;display:flex;gap:10px}
+.ciml{font-size:10px;font-weight:500;color:#5C5B57;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.cimt{font-size:12px;color:#5C5B57;line-height:1.5}
+.citol{font-size:12px;font-weight:500;color:var(--pg);background:var(--pgb);padding:2px 8px;border-radius:20px;white-space:nowrap;display:inline-block;margin-top:2px}
+.cia{padding:10px 13px;border-top:.5px solid rgba(0,0,0,.08);background:#F1EFE8}
+.rg{display:flex;gap:5px}
+.rb{flex:1;padding:8px 3px;border-radius:5px;border:.5px solid rgba(0,0,0,.08);background:#fff;font-size:11px;font-weight:500;cursor:pointer;text-align:center}
+.rb.ok{background:var(--okb);color:var(--ok);border-color:var(--ok)}
+.rb.nok{background:var(--nokb);color:var(--nok);border-color:var(--nok)}
+.rb.na{background:var(--nab);color:var(--na);border-color:#ccc}
+.ncp{background:var(--nokb);border:.5px solid var(--nok);border-radius:var(--rs);padding:12px;margin-top:8px;display:none}
+.ncp.open{display:block}
+.ncpt{font-size:12px;font-weight:500;color:var(--nok);margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.ncreq{font-size:10px;background:var(--nok);color:white;padding:2px 7px;border-radius:20px}
+.ncf{margin-bottom:9px}
+.ncfl{font-size:11px;font-weight:500;color:var(--nok);margin-bottom:4px;display:block}
+.nci{width:100%;padding:8px 10px;border:.5px solid #f09595;border-radius:6px;font-size:12px;background:white;color:#333;font-family:inherit}
+.nci:focus{outline:none;border-color:var(--nok)}
+.ncpb{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:9px;border:.5px dashed var(--nok);border-radius:6px;background:white;cursor:pointer;font-size:12px;color:var(--nok);font-weight:500}
+.tl{position:relative;padding-left:26px}
+.tl::before{content:'';position:absolute;left:8px;top:10px;bottom:10px;width:1.5px;background:rgba(0,0,0,.12)}
+.tli{position:relative;margin-bottom:14px}
+.tld{position:absolute;left:-26px;top:4px;width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+.tld.ok{background:var(--okb);color:var(--ok);border:.5px solid var(--ok)}
+.tld.nok{background:var(--nokb);color:var(--nok);border:.5px solid var(--nok)}
+.tld.pg{background:var(--pgb);color:var(--pg);border:.5px solid var(--pg)}
+.tlc{background:#F1EFE8;border-radius:var(--rs);padding:10px 12px}
+.tldate{font-size:11px;color:#5C5B57;margin-bottom:4px}
+.tltt{font-size:13px;font-weight:500;color:#1A1A18}
+.tltxt{font-size:12px;color:#5C5B57;line-height:1.5;margin-top:5px}
+.tlnc{background:var(--nokb);border-radius:6px;padding:8px 10px;margin-top:8px;border:.5px solid #f09595}
+.tlnct{font-size:11px;font-weight:500;color:var(--nok);margin-bottom:3px}
+.tlncx{font-size:12px;color:var(--nok);line-height:1.5}
+.tlncs{font-size:11px;color:#5C5B57;margin-top:3px;font-style:italic}
+.tlncr{background:var(--okb);border-radius:5px;padding:5px 9px;margin-top:5px;font-size:11px;color:var(--ok);font-weight:500}
+.tlphotos{display:flex;gap:5px;margin-top:7px}
+.tlph{width:44px;height:44px;border-radius:5px;overflow:hidden;background:#F1EFE8}
+.tlph img{width:100%;height:100%;object-fit:cover;display:block}
+.tlsig{font-size:11px;color:var(--ok);font-weight:500;margin-top:6px}
+.uc{background:var(--brl);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.uav{width:40px;height:40px;border-radius:50%;background:var(--br);color:white;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.uinfo h4{font-size:13px;font-weight:500;color:var(--br)}
+.uinfo p{font-size:11px;color:#5C5B57;margin-top:2px}
+.ulck{font-size:11px;color:var(--br);margin-left:auto;background:white;padding:4px 10px;border-radius:20px;border:.5px solid #f5c5b3;white-space:nowrap}
+.tc{background:#F1EFE8;border-radius:var(--r);padding:12px;margin-bottom:14px}
+.trow_{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.trow_:last-child{margin-bottom:0}
+.tav{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.tav.eng{background:var(--pgb);color:var(--pg)}
+.tav.own{background:var(--okb);color:var(--ok)}
+.tav.sub{background:#FFF3E0;color:#E65100}
+.tinf h5{font-size:13px;font-weight:500;color:#1A1A18}
+.tinf p{font-size:11px;color:#5C5B57;margin-top:1px}
+.ttag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;margin-left:auto;flex-shrink:0}
+.ttag.eng{background:var(--pgb);color:var(--pg)}
+.ttag.own{background:var(--okb);color:var(--ok)}
+.ttag.sub{background:#FFF3E0;color:#E65100}
+.exbar{display:flex;align-items:center;gap:10px}
+.exbar input[type=range]{flex:1}
+.exv{font-size:13px;font-weight:500;color:var(--br);min-width:38px;text-align:right}
+.siga{border:.5px solid rgba(0,0,0,.12);border-radius:var(--rs);overflow:hidden;background:#fff}
+.sigc{display:block;width:100%;touch-action:none;cursor:crosshair}
+.sigtb{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#F1EFE8;border-top:.5px solid rgba(0,0,0,.08)}
+.sigtb span{font-size:11px;color:#5C5B57}
+.sigtb button{font-size:11px;color:var(--nok);background:none;border:none;cursor:pointer;font-weight:500}
+.sigdone{background:var(--okb);border:.5px solid var(--ok);border-radius:var(--rs);padding:10px 12px;display:none;align-items:center;gap:8px}
+.sigdone.show{display:flex}
+.pf-hero{background:var(--br);padding:24px 18px 30px;display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0}
+.pf-av{width:72px;height:72px;border-radius:50%;background:white;color:var(--br);font-size:22px;font-weight:500;display:flex;align-items:center;justify-content:center;border:3px solid rgba(255,255,255,.3)}
+.pf-name{color:white;font-size:18px;font-weight:500}
+.pf-role{color:rgba(255,255,255,.8);font-size:13px}
+.pf-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:.5px solid rgba(0,0,0,.08)}
+.pf-row:last-child{border-bottom:none}
+.pf-icon{width:36px;height:36px;border-radius:10px;background:#F1EFE8;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.pf-info{flex:1}
+.pf-info .lbl{font-size:11px;color:#5C5B57}
+.pf-info .val{font-size:13px;font-weight:500;color:#1A1A18;margin-top:2px}
+.sbx{background:#F1EFE8;border-radius:var(--rs);padding:9px 12px;font-size:13px;color:#1A1A18;border:.5px solid rgba(0,0,0,.08);width:100%;margin-bottom:12px}
+.sbx::placeholder{color:#9C9A93}
+.oh{background:var(--brl);border-radius:var(--r);padding:13px;margin-bottom:14px}
+.oh h3{font-size:15px;font-weight:500;color:var(--br)}
+.oh p{font-size:12px;color:#5C5B57;margin-top:2px}
+.login-bg{background:var(--br);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px}
+.login-logo{color:white;font-size:28px;font-weight:500;margin-bottom:6px;letter-spacing:-.5px}
+.login-sub{color:rgba(255,255,255,.75);font-size:13px;margin-bottom:36px}
+.login-card{background:white;border-radius:var(--r);padding:24px;width:100%}
+.login-card h2{font-size:16px;font-weight:500;color:#333;margin-bottom:18px}
+.login-input{width:100%;padding:11px 14px;border:.5px solid #ddd;border-radius:var(--rs);font-size:14px;color:#333;font-family:inherit;margin-bottom:12px}
+.login-input:focus{outline:none;border-color:var(--br)}
+.login-btn{width:100%;padding:13px;background:var(--br);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:500;cursor:pointer;margin-top:4px}
+.login-btn:hover{background:var(--brd)}
+.login-hint{font-size:12px;color:#999;text-align:center;margin-top:14px}
+.ncalert{background:var(--nokb);border:.5px solid var(--nok);border-radius:var(--rs);padding:10px 13px;margin-bottom:10px;cursor:pointer}
+.ncalert .ncah{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.ncalert h4{font-size:13px;font-weight:500;color:var(--nok)}
+.ncalert p{font-size:12px;color:var(--nok);opacity:.8}
+.obra-prog-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.obra-prog-row .lbl{font-size:11px;color:#5C5B57;width:72px}
+.obra-prog-row .bar{flex:1;height:6px;background:#F1EFE8;border-radius:3px;overflow:hidden}
+.obra-prog-row .bar .f{height:100%;border-radius:3px}
+.obra-prog-row .val{font-size:11px;font-weight:500;color:#1A1A18;width:32px;text-align:right}
+.toast{position:absolute;bottom:82px;left:12px;right:12px;background:#2E7D32;color:white;padding:11px 14px;border-radius:var(--rs);font-size:13px;text-align:center;display:none;z-index:200}
+.toast.on{display:block}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:#4CAF50}
+.dot.nok{background:var(--nok)}
+.dot.pg{background:var(--pg)}
+.dot.na{background:#bbb}
+</style>
+</head>
+<body>
+<div id="ph">
+  <div class="sb" id="sbar"><span>9:41</span><span>PrumoQ</span><span>●●●●</span></div>
+
+  <!-- LOGIN -->
+  <div class="sc on" id="s-login" style="padding-bottom:0">
+    <div class="login-bg">
+      <div class="login-logo">PrumoQ</div>
+      <div class="login-sub">Qualidade em Obras</div>
+      <div class="login-card">
+        <h2>Entrar no sistema</h2>
+        <input class="login-input" type="email" placeholder="E-mail corporativo" value="carlos.lima@combrasen.com.br"/>
+        <input class="login-input" type="password" placeholder="Senha" value="••••••••"/>
+        <button class="login-btn" onclick="doLogin()">Entrar</button>
+        <p class="login-hint">Acesso restrito a usuários cadastrados</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="sc" id="s-dash">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><h1>Ola, Carlos</h1><p>Inspetor de Qualidade · Combrasen</p></div>
+        <div onclick="goTo('s-perfil');setN('ni-pf')" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;cursor:pointer;flex-shrink:0">CL</div>
+      </div>
+    </div>
+    <div class="ct">
+      <div class="sg">
+        <div class="sk pgc"><div class="v">3</div><div class="l">Obras ativas</div></div>
+        <div class="sk nokc"><div class="v">4</div><div class="l">NC abertas</div></div>
+        <div class="sk"><div class="v">7</div><div class="l">Verif. esta semana</div></div>
+        <div class="sk hi"><div class="v">2</div><div class="l">Vencer hoje</div></div>
+      </div>
+      <div class="st">Nao conformidades urgentes</div>
+      <div class="ncalert" onclick="goTo('s-nc');setN('ni-nc')">
+        <div class="ncah"><h4>Instalacao Eletrica - Apt 302</h4><span class="nc-tag open">Vence hoje</span></div>
+        <p>Res. Portal Oeste · Prazo: 08/04/2025</p>
+      </div>
+      <div class="ncalert" onclick="goTo('s-nc');setN('ni-nc')">
+        <div class="ncah"><h4>Espessura Argamassa - Apt 201</h4><span class="nc-tag pending">2 dias</span></div>
+        <p>Res. Portal Oeste · Prazo: 10/04/2025</p>
+      </div>
+      <div class="dv"></div>
+      <div class="st">Minhas obras</div>
+      <div class="cd" onclick="goObra('Res. Portal Oeste','Construtora Alpha Ltda','Setor Hab. Jardins, Brasilia-DF',67,24,64,96)">
+        <div class="cr"><h3>Res. Portal Oeste</h3><span class="bg pg">Em andamento</span></div>
+        <p>Construtora Alpha · 24 ambientes</p>
+        <div class="pb"><div class="fill" style="width:67%"></div></div>
+        <div class="pct">67% · 64/96 FVS concluidas</div>
+      </div>
+      <div class="cd" onclick="goObra('Ed. Horizonte','Engenharia Beta S.A.','Setor Marista, Goiania-GO',42,18,30,72)">
+        <div class="cr"><h3>Ed. Horizonte</h3><span class="bg pg">Em andamento</span></div>
+        <p>Eng. Beta · 18 ambientes</p>
+        <div class="pb"><div class="fill" style="width:42%"></div></div>
+        <div class="pct">42% · 30/72 FVS concluidas</div>
+      </div>
+      <div class="cd" onclick="goObra('Cond. Nova Aurora','Gamma Construcoes ME','Luziania, GO',88,8,14,16)">
+        <div class="cr"><h3>Cond. Nova Aurora</h3><span class="bg pg">Em andamento</span></div>
+        <p>Gamma Construcoes · 8 ambientes</p>
+        <div class="pb"><div class="fill" style="width:88%"></div></div>
+        <div class="pct">88% · 14/16 FVS concluidas</div>
+      </div>
+      <div class="dv"></div>
+      <div class="st">Atividade recente</div>
+      <div class="cd" onclick="goTo('s-hist')">
+        <div class="cr"><div><h3 style="font-size:13px">Revestimento Argamassado</h3><p>Apt 302 · Res. Portal Oeste · 01/04/2025</p></div><span class="bg pg">Em andamento</span></div>
+      </div>
+      <div class="cd" onclick="goTo('s-hist')">
+        <div class="cr"><div><h3 style="font-size:13px">Revestimento Ceramico</h3><p>Apt 301 · Res. Portal Oeste · 31/03/2025</p></div><span class="bg ok">Conforme</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OBRAS -->
+  <div class="sc" id="s-obras">
+    <div class="topbar compact"><h1>Minhas Obras</h1><p>3 obras ativas</p></div>
+    <div class="ct">
+      <input class="sbx" placeholder="Buscar obra ou empresa..."/>
+      <div class="cd" onclick="goObra('Res. Portal Oeste','Construtora Alpha Ltda','Setor Hab. Jardins, Brasilia-DF',67,24,64,96)">
+        <div class="cr"><h3>Res. Portal Oeste</h3><span class="bg pg">Em andamento</span></div>
+        <p>Construtora Alpha Ltda · Brasilia-DF</p>
+        <div class="pb"><div class="fill" style="width:67%"></div></div>
+        <div class="pct">67% · 64/96 FVS · 4 NCs abertas</div>
+      </div>
+      <div class="cd" onclick="goObra('Ed. Horizonte','Engenharia Beta S.A.','Setor Marista, Goiania-GO',42,18,30,72)">
+        <div class="cr"><h3>Ed. Horizonte</h3><span class="bg pg">Em andamento</span></div>
+        <p>Engenharia Beta S.A. · Goiania-GO</p>
+        <div class="pb"><div class="fill" style="width:42%"></div></div>
+        <div class="pct">42% · 30/72 FVS · 0 NCs abertas</div>
+      </div>
+      <div class="cd" onclick="goObra('Cond. Nova Aurora','Gamma Construcoes ME','Luziania, GO',88,8,14,16)">
+        <div class="cr"><h3>Cond. Nova Aurora</h3><span class="bg pg">Em andamento</span></div>
+        <p>Gamma Construcoes ME · Luziania-GO</p>
+        <div class="pb"><div class="fill" style="width:88%"></div></div>
+        <div class="pct">88% · 14/16 FVS · 0 NCs abertas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OBRA DETALHE -->
+  <div class="sc" id="s-obra">
+    <div class="topbar compact">
+      <div class="trow"><button class="bkbtn" id="obra-bk">&#8249;</button><div><h1 id="obra-nome">Res. Portal Oeste</h1><p id="obra-emp">Construtora Alpha Ltda</p></div></div>
+    </div>
+    <div class="ct">
+      <div class="oh">
+        <h3 id="od-nome">Res. Portal Oeste</h3>
+        <p id="od-end">Setor Hab. Jardins, Brasilia-DF</p>
+        <div class="obra-prog-row"><span class="lbl">FVS totais</span><div class="bar"><div class="f" id="od-pb" style="width:67%;background:var(--br)"></div></div><span class="val" id="od-pct">67%</span></div>
+        <div class="obra-prog-row"><span class="lbl">Conformes</span><div class="bar"><div class="f" style="width:52%;background:var(--ok)"></div></div><span class="val">52%</span></div>
+        <div class="obra-prog-row"><span class="lbl">NC abertas</span><div class="bar"><div class="f" style="width:8%;background:var(--nok)"></div></div><span class="val">8%</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="text-align:center;background:#F1EFE8;border-radius:var(--rs);padding:9px"><div style="font-size:17px;font-weight:500;color:#1A1A18" id="od-amb">24</div><div style="font-size:10px;color:#5C5B57">Ambientes</div></div>
+        <div style="text-align:center;background:#F1EFE8;border-radius:var(--rs);padding:9px"><div style="font-size:17px;font-weight:500;color:#1A1A18" id="od-tot">96</div><div style="font-size:10px;color:#5C5B57">FVS plan.</div></div>
+        <div style="text-align:center;background:var(--okb);border-radius:var(--rs);padding:9px"><div style="font-size:17px;font-weight:500;color:var(--ok)" id="od-done">64</div><div style="font-size:10px;color:var(--ok)">Concluidas</div></div>
+        <div style="text-align:center;background:var(--nokb);border-radius:var(--rs);padding:9px"><div style="font-size:17px;font-weight:500;color:var(--nok)">4</div><div style="font-size:10px;color:var(--nok)">NC abertas</div></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto">
+        <button class="bg pg" style="border:none;cursor:pointer;padding:5px 14px">Todos</button>
+        <button class="bg na" style="border:none;cursor:pointer;padding:5px 14px;white-space:nowrap">Internos</button>
+        <button class="bg na" style="border:none;cursor:pointer;padding:5px 14px;white-space:nowrap">Externos</button>
+        <button class="bg nok" style="border:none;cursor:pointer;padding:5px 14px;white-space:nowrap">Com NC</button>
+      </div>
+      <div class="st">Ambientes</div>
+      <div class="amb int" onclick="goAmb('Apartamento 301','Interno','Piso 3',8,7)"><div class="cr"><div><h3>Apartamento 301</h3><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span class="atag int">Interno</span><span style="font-size:11px;color:#5C5B57">Piso 3</span></div></div><span class="bg ok">7/8 FVS</span></div><div class="pb"><div class="fill ok" style="width:87%"></div></div></div>
+      <div class="amb int" onclick="goAmb('Apartamento 302','Interno','Piso 3',8,3)" style="border-top-color:var(--nok)"><div class="cr"><div><h3>Apartamento 302</h3><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span class="atag int">Interno</span><span style="font-size:11px;color:#5C5B57">Piso 3</span></div></div><span class="bg nok">3/8 · NC</span></div><div class="pb"><div class="fill" style="width:37%;background:var(--nok)"></div></div></div>
+      <div class="amb ext" onclick="goAmb('Fachada Norte','Externo','Elevacao N',5,2)"><div class="cr"><div><h3>Fachada Norte</h3><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span class="atag ext">Externo</span><span style="font-size:11px;color:#5C5B57">Elevacao N</span></div></div><span class="bg pg">2/5 FVS</span></div><div class="pb"><div class="fill" style="width:40%"></div></div></div>
+      <div class="amb ext" onclick="goAmb('Area de Lazer','Externo','Terreo',4,0)"><div class="cr"><div><h3>Area de Lazer</h3><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span class="atag ext">Externo</span><span style="font-size:11px;color:#5C5B57">Terreo</span></div></div><span class="bg na">0/4 FVS</span></div><div class="pb"><div class="fill" style="width:0%"></div></div></div>
+      <div class="amb int" onclick="goAmb('Hall de Entrada','Interno','Terreo',3,3)"><div class="cr"><div><h3>Hall de Entrada</h3><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span class="atag int">Interno</span><span style="font-size:11px;color:#5C5B57">Terreo</span></div></div><span class="bg ok">3/3 FVS</span></div><div class="pb"><div class="fill ok" style="width:100%"></div></div></div>
+    </div>
+  </div>
+
+  <!-- AMBIENTE -->
+  <div class="sc" id="s-amb">
+    <div class="topbar compact"><div class="trow"><button class="bkbtn" onclick="goTo('s-obra')">&#8249;</button><div><h1 id="amb-nome">Apartamento 302</h1><p id="amb-sub">Interno · Piso 3 · Res. Portal Oeste</p></div></div></div>
+    <div class="ct">
+      <div style="background:#F1EFE8;border-radius:var(--r);padding:12px;margin-bottom:14px">
+        <div class="cr">
+          <div><p style="font-size:11px;color:#5C5B57">FVS planejadas</p><p style="font-size:20px;font-weight:500" id="amb-tot">8 servicos</p></div>
+          <div style="text-align:right"><p style="font-size:11px;color:#5C5B57">Concluidas</p><p style="font-size:20px;font-weight:500;color:var(--ok)" id="amb-done">3/8</p></div>
+        </div>
+        <div class="pb" style="margin-top:9px"><div class="fill" id="amb-pb" style="width:37%"></div></div>
+      </div>
+      <div class="st">Servicos planejados</div>
+      <div class="fi" onclick="goFVS('Revestimento Ceramico','Piso','ok',3)"><div class="fic ok">&#10003;</div><div class="fii"><h4>Revestimento Ceramico</h4><p>Piso · Ultima verif: 05/04/2025</p></div><div style="text-align:right"><span class="bg ok" style="font-size:10px">Concluido</span><div style="font-size:11px;color:#5C5B57;margin-top:3px">3 verif.</div></div></div>
+      <div class="fi" onclick="goFVS('Revestimento Argamassado','Paredes','pg',2)"><div class="fic pg">&#8594;</div><div class="fii"><h4>Revestimento Argamassado</h4><p>Paredes · Ultima verif: 01/04/2025</p></div><div style="text-align:right"><span class="bg pg" style="font-size:10px">Em andamento</span><div style="font-size:11px;color:#5C5B57;margin-top:3px">2 verif.</div></div></div>
+      <div class="fi" onclick="goFVS('Instalacao Eletrica','Pontos de forca','nok',2)"><div class="fic nok">!</div><div class="fii"><h4>Instalacao Eletrica</h4><p>Pontos de forca · Ultima verif: 28/03/2025</p></div><div style="text-align:right"><span class="bg nok" style="font-size:10px">NC aberta</span><div style="font-size:11px;color:#5C5B57;margin-top:3px">2 verif.</div></div></div>
+      <div class="fi" onclick="goFVS('Instalacao Hidraulica','Ramais internos','pg',1)"><div class="fic pg">&#8594;</div><div class="fii"><h4>Instalacao Hidraulica</h4><p>Ramais internos · Ultima verif: 25/03/2025</p></div><div style="text-align:right"><span class="bg pg" style="font-size:10px">Em andamento</span><div style="font-size:11px;color:#5C5B57;margin-top:3px">1 verif.</div></div></div>
+      <div class="fi" onclick="goFVS('Alvenaria de Vedacao','Paredes internas','ok',1)"><div class="fic ok">&#10003;</div><div class="fii"><h4>Alvenaria de Vedacao</h4><p>Paredes internas · Ultima verif: 18/03/2025</p></div><div style="text-align:right"><span class="bg ok" style="font-size:10px">Concluido</span><div style="font-size:11px;color:#5C5B57;margin-top:3px">1 verif.</div></div></div>
+      <div class="fi" onclick="goFVS('Pintura Interna','Paredes e teto','na',0)"><div class="fic na">&#9675;</div><div class="fii"><h4>Pintura Interna</h4><p>Paredes e teto · Nao iniciado</p></div><div style="text-align:right"><span class="bg na" style="font-size:10px">Pendente</span><div style="font-size:11px;color:#5C5B57;margin-top:3px">0 verif.</div></div></div>
+      <div class="fi" onclick="goFVS('Esquadrias','Portas e janelas','na',0)"><div class="fic na">&#9675;</div><div class="fii"><h4>Esquadrias</h4><p>Portas e janelas · Nao iniciado</p></div><div style="text-align:right"><span class="bg na" style="font-size:10px">Pendente</span><div style="font-size:11px;color:#5C5B57;margin-top:3px">0 verif.</div></div></div>
+      <div class="fi" onclick="goFVS('Loucas e Metais','Banheiro e cozinha','na',0)"><div class="fic na">&#9675;</div><div class="fii"><h4>Loucas e Metais</h4><p>Banheiro e cozinha · Nao iniciado</p></div><div style="text-align:right"><span class="bg na" style="font-size:10px">Pendente</span><div style="font-size:11px;color:#5C5B57;margin-top:3px">0 verif.</div></div></div>
+    </div>
+  </div>
+
+  <!-- FVS HISTORICO -->
+  <div class="sc" id="s-hist">
+    <div class="topbar compact"><div class="trow"><button class="bkbtn" onclick="goTo('s-amb')">&#8249;</button><div><h1 id="fvs-nome">Revestimento Argamassado</h1><p id="fvs-sub">Paredes · Apt 302</p></div></div></div>
+    <div class="ct">
+      <div style="background:#F1EFE8;border-radius:var(--r);padding:12px;margin-bottom:14px">
+        <div class="cr"><div><p style="font-size:11px;color:#5C5B57">Status</p><span class="bg pg" id="fvs-badge" style="margin-top:4px;display:inline-block">Em andamento</span></div><div style="text-align:right"><p style="font-size:11px;color:#5C5B57">Verificacoes</p><p style="font-size:18px;font-weight:500" id="fvs-nverif">2 entradas</p></div></div>
+        <div style="margin-top:10px;display:flex;gap:6px">
+          <div style="flex:1;text-align:center;background:var(--okb);padding:7px;border-radius:var(--rs)"><div style="font-size:17px;font-weight:500;color:var(--ok)" id="fvs-ok">3</div><div style="font-size:10px;color:var(--ok)">Conformes</div></div>
+          <div style="flex:1;text-align:center;background:var(--nokb);padding:7px;border-radius:var(--rs)"><div style="font-size:17px;font-weight:500;color:var(--nok)" id="fvs-nok">1</div><div style="font-size:10px;color:var(--nok)">Nao conf.</div></div>
+          <div style="flex:1;text-align:center;background:var(--pgb);padding:7px;border-radius:var(--rs)"><div style="font-size:17px;font-weight:500;color:var(--pg)" id="fvs-pg">1</div><div style="font-size:10px;color:var(--pg)">Pendentes</div></div>
+        </div>
+      </div>
+      <div class="cr" style="margin-bottom:12px"><div class="st" style="margin:0">Historico de verificacoes</div><button class="bg pg" style="border:none;cursor:pointer;padding:5px 14px" onclick="goTo('s-verif')">+ Nova verificacao</button></div>
+      <div class="tl">
+        <div class="tli">
+          <div class="tld pg">&#8594;</div>
+          <div class="tlc">
+            <div class="tldate">01/04/2025 · 10:22 · Carlos Lima</div>
+            <div style="display:flex;align-items:center;gap:6px"><div class="tltt">Verificacao 2 - 60% execucao</div><span class="bg pg" style="font-size:10px">Em andamento</span></div>
+            <div class="tltxt">Argamassa aplicada ate a metade. Espessura e planeza dentro da tolerancia.</div>
+            <div class="tlnc"><div class="tlnct">NC - Item 2: Espessura fora da tolerancia</div><div class="tlncx">Espessura medida entre 8-10mm em 4 pontos (max. 6mm).</div><div class="tlncs">Solucao: remover e reaplicar com espessura 4-6mm.</div></div>
+            <div class="tlphotos"><div class="tlph"><img src="https://images.unsplash.com/photo-1590479773265-7464e5d48118?w=80" onerror="this.parentNode.style.background='#eee'"/></div><div class="tlph"><img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=80" onerror="this.parentNode.style.background='#eee'"/></div></div>
+          </div>
+        </div>
+        <div class="tli">
+          <div class="tld nok">!</div>
+          <div class="tlc">
+            <div class="tldate">15/03/2025 · 09:10 · Carlos Lima</div>
+            <div style="display:flex;align-items:center;gap:6px"><div class="tltt">Verificacao 1 - 20% execucao</div><span class="bg nok" style="font-size:10px">Nao conforme</span></div>
+            <div class="tltxt">Inicio da aplicacao. Base com poeira e restos de forma.</div>
+            <div class="tlnc"><div class="tlnct">NC - Item 1: Preparacao da base</div><div class="tlncx">Superficie com contaminacao. Cura minima nao respeitada.</div><div class="tlncr">&#10003; Resolvida na Verificacao 2 · 01/04/2025</div></div>
+            <div class="tlsig">&#10003; Assinado digitalmente · 15/03/2025</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOVA VERIFICACAO -->
+  <div class="sc" id="s-verif">
+    <div class="topbar compact"><div class="trow"><button class="bkbtn" onclick="goTo('s-hist')">&#8249;</button><div><h1>Nova Verificacao</h1><p id="nv-sub">Verif. n 3 · Revestimento Argamassado</p></div></div></div>
+    <div class="ct">
+      <div class="uc"><div class="uav">CL</div><div class="uinfo"><h4>Carlos Lima</h4><p>Inspetor de Qualidade · Combrasen</p></div><span class="ulck">Logado</span></div>
+      <div class="fg"><label class="fl">Data da verificacao</label><input type="date" class="fc" value="2025-04-08"/></div>
+      <div class="dv"></div>
+      <div class="st">Responsavel tecnico e equipe executora</div>
+      <div class="tc">
+        <div class="trow_"><div class="tav eng">RM</div><div class="tinf"><h5>Eng. Roberto Matos</h5><p>CREA-DF 12.345-D · Responsavel pela obra</p></div><span class="ttag eng">Engenheiro</span></div>
+        <div style="height:.5px;background:rgba(0,0,0,.08);margin:8px 0"></div>
+        <div class="fg" style="margin-bottom:8px"><label class="fl">Equipe executora deste servico</label>
+          <select class="fc"><option>Equipe Reboco A - Paulo Mendes + 2</option><option>Equipe Reboco B - Fabio Costa + 2</option><option>Argecon Revestimentos ME</option></select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:var(--okb);padding:8px 10px;border-radius:var(--rs)">
+          <div class="tav own" style="width:28px;height:28px;font-size:10px">PM</div>
+          <div class="tinf"><h5 style="font-size:12px">Equipe Reboco A</h5><p style="font-size:11px">Paulo Mendes (Mestre) + 2 serventes · Proprio</p></div>
+          <span class="ttag own">Proprio</span>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Percentual de execucao</label>
+        <div class="exbar"><input type="range" min="0" max="100" step="5" value="85" id="ex-r" oninput="updEx(this.value)"/><span class="exv" id="ex-v">85%</span></div>
+        <div class="pb"><div class="fill" id="ex-pb" style="width:85%"></div></div>
+      </div>
+      <div class="dv"></div>
+      <div class="st">Itens de verificacao</div>
+      <div class="ciw"><div class="cih"><div style="display:flex;align-items:flex-start"><span class="cinum">1</span><span class="cit">Preparacao e limpeza da base</span></div></div><div class="cim"><div style="flex:1"><div class="ciml">Metodo</div><div class="cimt">Inspecao visual - ausencia de poeira, gordura e material solto na superficie.</div></div></div><div class="cia"><div class="rg" id="rg1"><button class="rb ok" onclick="selItem(1,'ok')">&#10003; Conforme</button><button class="rb" onclick="selItem(1,'nok')">&#10007; Nao conf.</button><button class="rb" onclick="selItem(1,'na')">- N/A</button></div><div class="ncp" id="nc1"></div></div></div>
+      <div class="ciw" id="ciw2" style="border-color:var(--nok)"><div class="cih" style="background:var(--nokb)"><div style="display:flex;align-items:flex-start"><span class="cinum" style="background:var(--nokb);color:var(--nok);border:.5px solid var(--nok)">2</span><span class="cit">Espessura da argamassa</span></div></div><div class="cim"><div style="flex:1"><div class="ciml">Metodo</div><div class="cimt">Pinos de medicao a cada 1m - verificar espessura em multiplos pontos da parede.</div></div><div style="flex-shrink:0;text-align:right"><div class="ciml">Tolerancia</div><span class="citol">4 a 6 mm</span></div></div><div class="cia"><div class="rg" id="rg2"><button class="rb" onclick="selItem(2,'ok')">&#10003; Conforme</button><button class="rb nok" onclick="selItem(2,'nok')">&#10007; Nao conf.</button><button class="rb" onclick="selItem(2,'na')">- N/A</button></div><div class="ncp open" id="nc2"><div class="ncpt">Registro de nao conformidade <span class="ncreq">Obrigatorio</span></div><div class="ncf"><label class="ncfl">Descricao da nao conformidade *</label><textarea class="nci" rows="2">Espessura entre 8-10mm em 4 pontos, acima do max. de 6mm.</textarea></div><div class="ncf"><label class="ncfl">Foto da evidencia *</label><div style="display:flex;align-items:center;gap:8px"><div style="width:52px;height:52px;border-radius:6px;overflow:hidden;border:.5px solid var(--nok)"><img src="https://images.unsplash.com/photo-1590479773265-7464e5d48118?w=80" style="width:100%;height:100%;object-fit:cover"/></div><span style="font-size:11px;color:var(--ok);font-weight:500">&#10003; Foto adicionada</span></div></div><div class="ncf"><label class="ncfl">Solucao proposta *</label><textarea class="nci" rows="2">Remover e reaplicar com espessura 4-6mm. Verificar taliscas.</textarea></div><div class="ncf"><div style="display:flex;gap:8px"><div style="flex:1"><label class="ncfl">Nova data de verificacao *</label><input type="date" class="nci" value="2025-04-15"/></div><div style="flex:1"><label class="ncfl">Responsavel pela correcao</label><select class="nci"><option>Equipe Reboco A</option></select></div></div></div></div></div></div>
+      <div class="ciw"><div class="cih"><div style="display:flex;align-items:flex-start"><span class="cinum">3</span><span class="cit">Planeza da superficie</span></div></div><div class="cim"><div style="flex:1"><div class="ciml">Metodo</div><div class="cimt">Regua de aluminio de 2m apoiada na superficie - medir maior desvio.</div></div><div style="flex-shrink:0;text-align:right"><div class="ciml">Tolerancia</div><span class="citol">+/- 5 mm</span></div></div><div class="cia"><div class="rg" id="rg3"><button class="rb ok" onclick="selItem(3,'ok')">&#10003; Conforme</button><button class="rb" onclick="selItem(3,'nok')">&#10007; Nao conf.</button><button class="rb" onclick="selItem(3,'na')">- N/A</button></div><div class="ncp" id="nc3"></div></div></div>
+      <div class="ciw"><div class="cih"><div style="display:flex;align-items:flex-start"><span class="cinum">4</span><span class="cit">Prumo e alinhamento da fiada</span></div></div><div class="cim"><div style="flex:1"><div class="ciml">Metodo</div><div class="cimt">Nivel de mangueira e trena com linha de nailon apos marcacao da elevacao.</div></div><div style="flex-shrink:0;text-align:right"><div class="ciml">Tolerancia</div><span class="citol">1 cm / 5 m</span></div></div><div class="cia"><div class="rg" id="rg4"><button class="rb" onclick="selItem(4,'ok')">&#10003; Conforme</button><button class="rb" onclick="selItem(4,'nok')">&#10007; Nao conf.</button><button class="rb na" onclick="selItem(4,'na')">- N/A</button></div><div class="ncp" id="nc4"></div></div></div>
+      <div class="ciw"><div class="cih"><div style="display:flex;align-items:flex-start"><span class="cinum">5</span><span class="cit">Acabamento final e coroamento</span></div></div><div class="cim"><div style="flex:1"><div class="ciml">Metodo</div><div class="cimt">Inspecao visual apos conclusao da elevacao e cura minima de 3 dias.</div></div></div><div class="cia"><div class="rg" id="rg5"><button class="rb" onclick="selItem(5,'ok')">&#10003; Conforme</button><button class="rb" onclick="selItem(5,'nok')">&#10007; Nao conf.</button><button class="rb na" onclick="selItem(5,'na')">- N/A</button></div><div class="ncp" id="nc5"></div></div></div>
+      <div class="dv"></div>
+      <div class="fg"><label class="fl">Observacoes gerais</label><textarea class="fc" rows="3" placeholder="Ocorrencias, condicoes do ambiente..."></textarea></div>
+      <div class="fg"><label class="fl">Conclusao desta verificacao</label>
+        <div style="display:flex;gap:7px">
+          <button id="vc-ok" class="rb" style="flex:1;padding:10px" onclick="setVC('ok')">&#10003; Conforme</button>
+          <button id="vc-nok" class="rb nok" style="flex:1;padding:10px;font-size:10px" onclick="setVC('nok')">&#10007; Nao conforme</button>
+          <button id="vc-pg" class="rb" style="flex:1;padding:10px;font-size:10px" onclick="setVC('pg')">&#8594; Em andamento</button>
+        </div>
+      </div>
+      <div class="dv"></div>
+      <div class="st">Assinatura digital</div>
+      <p style="font-size:12px;color:#5C5B57;margin-bottom:8px">Responsavel: <strong style="color:#1A1A18">Carlos Lima</strong></p>
+      <div class="siga" id="sig-area">
+        <canvas id="sig-c" class="sigc" width="345" height="110"></canvas>
+        <div class="sigtb"><span>Assine com o dedo ou mouse</span><button onclick="clrSig()">Limpar</button></div>
+      </div>
+      <div class="sigdone" id="sig-done">
+        <canvas id="sig-prev" width="140" height="36" style="height:36px;border-radius:4px;background:white;border:.5px solid var(--ok)"></canvas>
+        <div style="flex:1"><p style="font-size:12px;font-weight:500;color:var(--ok)">&#10003; Assinatura registrada</p><p style="font-size:11px;color:#5C5B57">Carlos Lima · 08/04/2025</p></div>
+        <button onclick="rstSig()" style="font-size:11px;color:var(--nok);background:none;border:none;cursor:pointer">Refazer</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn sec" style="flex:1" onclick="confSig()">Confirmar assinatura</button>
+        <button class="btn" style="flex:1" onclick="saveV()">Salvar verificacao</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NC ABERTAS -->
+  <div class="sc" id="s-nc">
+    <div class="topbar compact"><h1>Nao Conformidades</h1><p>4 abertas · 3 resolvidas</p></div>
+    <div class="ct">
+      <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto">
+        <button class="bg nok" style="border:none;cursor:pointer;padding:5px 14px;white-space:nowrap">Abertas (4)</button>
+        <button class="bg ok" style="border:none;cursor:pointer;padding:5px 14px;white-space:nowrap">Resolvidas (3)</button>
+        <button class="bg na" style="border:none;cursor:pointer;padding:5px 14px;white-space:nowrap">Todas</button>
+      </div>
+      <div class="st">Abertas - acao necessaria</div>
+      <div class="nc-card" onclick="goTo('s-verif')"><div class="cr"><h3 style="font-size:13px;color:var(--nok)">Instalacao Eletrica - Pontos de forca</h3><span class="nc-tag open">Vence hoje</span></div><p style="font-size:12px;margin-top:3px">Apt 302 · Res. Portal Oeste</p><div style="margin-top:8px;font-size:12px;color:var(--nok);line-height:1.5">Fiacao fora do eletroduto em 3 pontos.</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><span style="font-size:11px;color:#5C5B57">Resp: Eletro Irmaos Silva</span><button class="bg pg" style="border:none;cursor:pointer;font-size:11px;padding:4px 12px" onclick="event.stopPropagation();goTo('s-verif')">Re-inspecionar</button></div></div>
+      <div class="nc-card" onclick="goTo('s-verif')"><div class="cr"><h3 style="font-size:13px;color:var(--nok)">Espessura Argamassa - Paredes</h3><span class="nc-tag pending">Vence 10/04</span></div><p style="font-size:12px;margin-top:3px">Apt 201 · Res. Portal Oeste</p><div style="margin-top:8px;font-size:12px;color:var(--nok);line-height:1.5">Espessura 8-10mm em 4 pontos (max. 6mm).</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><span style="font-size:11px;color:#5C5B57">Resp: Equipe Reboco A</span><button class="bg pg" style="border:none;cursor:pointer;font-size:11px;padding:4px 12px" onclick="event.stopPropagation();goTo('s-verif')">Re-inspecionar</button></div></div>
+      <div class="nc-card" onclick="goTo('s-verif')"><div class="cr"><h3 style="font-size:13px;color:var(--nok)">NF Materiais - Ceramica</h3><span class="nc-tag pending">Vence 12/04</span></div><p style="font-size:12px;margin-top:3px">Apt 105 · Res. Portal Oeste</p><div style="margin-top:8px;font-size:12px;color:var(--nok);line-height:1.5">Nota fiscal da ceramica nao apresentada em canteiro.</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><span style="font-size:11px;color:#5C5B57">Resp: Almoxarife</span><button class="bg pg" style="border:none;cursor:pointer;font-size:11px;padding:4px 12px">Re-inspecionar</button></div></div>
+      <div class="st" style="margin-top:4px">Resolvidas recentemente</div>
+      <div class="nc-card resolved"><div class="cr"><h3 style="font-size:13px;color:#5C5B57">Preparacao Base - Reboco</h3><span class="nc-tag resolved">Resolvida</span></div><p style="font-size:12px;margin-top:3px">Apt 301 · Res. Portal Oeste · Resolvida em 28/03</p></div>
+      <div class="nc-card resolved"><div class="cr"><h3 style="font-size:13px;color:#5C5B57">Prumo Alvenaria - Bloco B</h3><span class="nc-tag resolved">Resolvida</span></div><p style="font-size:12px;margin-top:3px">Ed. Horizonte · Resolvida em 25/03</p></div>
+    </div>
+  </div>
+
+  <!-- PERFIL -->
+  <div class="sc" id="s-perfil" style="padding-bottom:72px">
+    <div class="pf-hero">
+      <div class="pf-av">CL</div>
+      <div class="pf-name">Carlos Lima</div>
+      <div class="pf-role">Inspetor de Qualidade · Combrasen</div>
+    </div>
+    <div class="ct">
+      <div class="st">Dados do usuario</div>
+      <div class="pf-row"><div class="pf-icon">&#128100;</div><div class="pf-info"><div class="lbl">Nome completo</div><div class="val">Carlos Eduardo Lima</div></div></div>
+      <div class="pf-row"><div class="pf-icon">&#127970;</div><div class="pf-info"><div class="lbl">Empresa</div><div class="val">Combrasen Engenharia Ltda</div></div></div>
+      <div class="pf-row"><div class="pf-icon">&#128231;</div><div class="pf-info"><div class="lbl">E-mail</div><div class="val">carlos.lima@combrasen.com.br</div></div></div>
+      <div class="pf-row"><div class="pf-icon">&#128241;</div><div class="pf-info"><div class="lbl">Celular</div><div class="val">(61) 99812-3456</div></div></div>
+      <div class="pf-row"><div class="pf-icon">&#128273;</div><div class="pf-info"><div class="lbl">Perfil de acesso</div><div class="val">Inspetor · Acesso de campo</div></div></div>
+      <div class="dv"></div>
+      <div class="st">Minhas estatisticas</div>
+      <div class="sg">
+        <div class="sk pgc"><div class="v">3</div><div class="l">Obras ativas</div></div>
+        <div class="sk"><div class="v">42</div><div class="l">Total verif.</div></div>
+        <div class="sk okc"><div class="v">38</div><div class="l">Conformes</div></div>
+        <div class="sk nokc"><div class="v">4</div><div class="l">NC abertas</div></div>
+      </div>
+      <div class="dv"></div>
+      <div class="st">Obras com acesso</div>
+      <div class="cd"><div class="cr"><h3>Res. Portal Oeste</h3><span class="bg pg">Ativo</span></div><p>Construtora Alpha Ltda · Brasilia-DF</p></div>
+      <div class="cd"><div class="cr"><h3>Ed. Horizonte</h3><span class="bg pg">Ativo</span></div><p>Engenharia Beta S.A. · Goiania-GO</p></div>
+      <div class="cd"><div class="cr"><h3>Cond. Nova Aurora</h3><span class="bg pg">Ativo</span></div><p>Gamma Construcoes ME · Luziania-GO</p></div>
+      <div class="dv"></div>
+      <button class="btn" style="background:#F1EFE8;color:var(--nok)" onclick="doLogout()">Sair do sistema</button>
+    </div>
+  </div>
+
+  <nav class="bnav" id="bnav" style="display:none">
+    <button class="ni on" id="ni-d" onclick="goTo('s-dash');setN('ni-d')"><span class="ic">&#8853;</span><span>Inicio</span></button>
+    <button class="ni" id="ni-o" onclick="goTo('s-obras');setN('ni-o')"><span class="ic">&#9701;</span><span>Obras</span></button>
+    <button class="ni" id="ni-nc" onclick="goTo('s-nc');setN('ni-nc')"><span class="ic">&#9888;</span><span>NC</span></button>
+    <button class="ni" id="ni-pf" onclick="goTo('s-perfil');setN('ni-pf')"><span class="ic">&#9711;</span><span>Perfil</span></button>
+  </nav>
+  <div class="toast" id="toast">Verificacao salva com sucesso!</div>
+</div>
+
+<script>
+function goTo(id) {
+  document.querySelectorAll('.sc').forEach(function(s){ s.classList.remove('on'); });
+  var el = document.getElementById(id);
+  if (el) { el.classList.add('on'); el.scrollTo(0,0); }
+  var noNav = ['s-login'];
+  document.getElementById('bnav').style.display = noNav.indexOf(id) >= 0 ? 'none' : 'flex';
+}
+function setN(id) {
+  document.querySelectorAll('.ni').forEach(function(n){ n.classList.remove('on'); });
+  var el = document.getElementById(id);
+  if (el) el.classList.add('on');
+}
+function doLogin() {
+  document.getElementById('sbar').style.background = 'var(--br)';
+  goTo('s-dash'); setN('ni-d');
+}
+function doLogout() {
+  document.getElementById('bnav').style.display = 'none';
+  goTo('s-login');
+}
+var obraData = {
+  a: {nome:'Res. Portal Oeste',emp:'Construtora Alpha Ltda',end:'Setor Hab. Jardins, Brasilia-DF',pct:67,namb:24,ndone:64,ntot:96},
+  b: {nome:'Ed. Horizonte',emp:'Engenharia Beta S.A.',end:'Setor Marista, Goiania-GO',pct:42,namb:18,ndone:30,ntot:72},
+  c: {nome:'Cond. Nova Aurora',emp:'Gamma Construcoes ME',end:'Luziania, GO',pct:88,namb:8,ndone:14,ntot:16}
+};
+var obraKeys = {0:'a',1:'b',2:'c'};
+var obraIdx = 0;
+function goObra(nome,emp,end,pct,namb,ndone,ntot) {
+  document.getElementById('obra-nome').textContent = nome;
+  document.getElementById('obra-emp').textContent = emp;
+  document.getElementById('od-nome').textContent = nome;
+  document.getElementById('od-end').textContent = end;
+  document.getElementById('od-pb').style.width = pct+'%';
+  document.getElementById('od-pct').textContent = pct+'%';
+  document.getElementById('od-amb').textContent = namb;
+  document.getElementById('od-tot').textContent = ntot;
+  document.getElementById('od-done').textContent = ndone;
+  document.getElementById('obra-bk').onclick = function(){ goTo('s-obras'); };
+  goTo('s-obra');
+}
+function goAmb(nome,tipo,loc,tot,done) {
+  document.getElementById('amb-nome').textContent = nome;
+  document.getElementById('amb-sub').textContent = tipo+' · '+loc+' · Res. Portal Oeste';
+  document.getElementById('amb-tot').textContent = tot+' servicos';
+  document.getElementById('amb-done').textContent = done+'/'+tot;
+  document.getElementById('amb-pb').style.width = Math.round(done/tot*100)+'%';
+  goTo('s-amb');
+}
+var fvsMeta = {
+  ok:{label:'Concluido',cls:'ok',ok:5,nok:0,pg:0,n:'3 entradas'},
+  pg:{label:'Em andamento',cls:'pg',ok:3,nok:1,pg:1,n:'2 entradas'},
+  nok:{label:'NC aberta',cls:'nok',ok:2,nok:2,pg:0,n:'2 entradas'},
+  na:{label:'Pendente',cls:'na',ok:0,nok:0,pg:0,n:'0 entradas'}
+};
+function goFVS(nome,det,st,n) {
+  document.getElementById('fvs-nome').textContent = nome;
+  document.getElementById('fvs-sub').textContent = det+' · Apt 302';
+  document.getElementById('nv-sub').textContent = 'Verif. n '+(n+1)+' · '+nome;
+  var m = fvsMeta[st] || fvsMeta.na;
+  var b = document.getElementById('fvs-badge');
+  b.textContent = m.label; b.className = 'bg '+m.cls;
+  b.style.marginTop='4px'; b.style.display='inline-block';
+  document.getElementById('fvs-nverif').textContent = m.n;
+  document.getElementById('fvs-ok').textContent = m.ok;
+  document.getElementById('fvs-nok').textContent = m.nok;
+  document.getElementById('fvs-pg').textContent = m.pg;
+  goTo('s-hist');
+}
+var ncTPL = '<div class="ncpt">Registro de nao conformidade <span class="ncreq">Obrigatorio</span></div><div class="ncf"><label class="ncfl">Descricao da nao conformidade *</label><textarea class="nci" rows="2" placeholder="Descreva o que foi encontrado..."></textarea></div><div class="ncf"><label class="ncfl">Foto da evidencia *</label><button class="ncpb" onclick="addNCPh(this)">Adicionar foto obrigatoria</button></div><div class="ncf"><label class="ncfl">Solucao proposta *</label><textarea class="nci" rows="2" placeholder="Como deve ser corrigido..."></textarea></div><div class="ncf"><div style="display:flex;gap:8px"><div style="flex:1"><label class="ncfl">Nova data de verificacao *</label><input type="date" class="nci"/></div><div style="flex:1"><label class="ncfl">Responsavel</label><select class="nci"><option>Equipe Reboco A</option><option>Argecon Revestimentos</option></select></div></div></div>';
+function selItem(n,type) {
+  var rg = document.getElementById('rg'+n);
+  rg.querySelectorAll('.rb').forEach(function(b){ b.className='rb'; });
+  var btns = rg.querySelectorAll('.rb');
+  if(type==='ok') btns[0].classList.add('ok');
+  else if(type==='nok') btns[1].classList.add('nok');
+  else btns[2].classList.add('na');
+  var nc = document.getElementById('nc'+n);
+  var wrap = nc.closest('.ciw');
+  var hdr = wrap.querySelector('.cih');
+  var num = wrap.querySelector('.cinum');
+  if(type==='nok') {
+    nc.innerHTML = ncTPL; nc.classList.add('open');
+    wrap.style.borderColor='var(--nok)'; hdr.style.background='var(--nokb)';
+    num.style.cssText='background:var(--nokb);color:var(--nok);border:.5px solid var(--nok)';
+  } else {
+    nc.innerHTML=''; nc.classList.remove('open');
+    wrap.style.borderColor=''; hdr.style.background=''; num.style.cssText='';
+  }
+}
+function addNCPh(btn) {
+  var d = document.createElement('div');
+  d.style.cssText='display:flex;align-items:center;gap:8px;margin-top:4px';
+  d.innerHTML='<div style="width:52px;height:52px;border-radius:6px;overflow:hidden;border:.5px solid var(--nok)"><img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=80" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.style.background=\'#eee\'"/></div><span style="font-size:11px;color:var(--ok);font-weight:500">Foto adicionada</span>';
+  btn.replaceWith(d);
+}
+function setVC(s) {
+  var ids = ['vc-ok','vc-nok','vc-pg'];
+  ids.forEach(function(id){ var el=document.getElementById(id); if(el) el.className='rb'; });
+  var map = {ok:'vc-ok',nok:'vc-nok',pg:'vc-pg'};
+  var el = document.getElementById(map[s]);
+  if(el) el.classList.add(s==='pg'?'pg':s);
+}
+function updEx(v) {
+  document.getElementById('ex-v').textContent = v+'%';
+  document.getElementById('ex-pb').style.width = v+'%';
+}
+var cv = document.getElementById('sig-c');
+var ctx = cv ? cv.getContext('2d') : null;
+var drw = false, sigE = true;
+if(ctx){ ctx.strokeStyle='#1a1a1a'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height); }
+function gp(e){ var r=cv.getBoundingClientRect(); var sx=cv.width/r.width, sy=cv.height/r.height; if(e.touches) return{x:(e.touches[0].clientX-r.left)*sx,y:(e.touches[0].clientY-r.top)*sy}; return{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy}; }
+if(cv){
+  cv.addEventListener('mousedown',function(e){drw=true;sigE=false;ctx.beginPath();var p=gp(e);ctx.moveTo(p.x,p.y)});
+  cv.addEventListener('mousemove',function(e){if(!drw)return;var p=gp(e);ctx.lineTo(p.x,p.y);ctx.stroke()});
+  cv.addEventListener('mouseup',function(){drw=false});
+  cv.addEventListener('mouseleave',function(){drw=false});
+  cv.addEventListener('touchstart',function(e){e.preventDefault();drw=true;sigE=false;ctx.beginPath();var p=gp(e);ctx.moveTo(p.x,p.y)},{passive:false});
+  cv.addEventListener('touchmove',function(e){e.preventDefault();if(!drw)return;var p=gp(e);ctx.lineTo(p.x,p.y);ctx.stroke()},{passive:false});
+  cv.addEventListener('touchend',function(){drw=false});
+}
+function clrSig(){ if(ctx){ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);sigE=true;} }
+function confSig(){ if(sigE){alert('Por favor, assine antes de confirmar.');return;} var pv=document.getElementById('sig-prev'); var pc=pv.getContext('2d'); pc.drawImage(cv,0,0,cv.width,cv.height,0,0,pv.width,pv.height); document.getElementById('sig-area').style.display='none'; document.getElementById('sig-done').classList.add('show'); }
+function rstSig(){ document.getElementById('sig-area').style.display='block'; document.getElementById('sig-done').classList.remove('show'); clrSig(); }
+function saveV(){ var t=document.getElementById('toast'); t.classList.add('on'); setTimeout(function(){t.classList.remove('on');goTo('s-hist');},2200); }
+</script>
+</body>
+</html>
