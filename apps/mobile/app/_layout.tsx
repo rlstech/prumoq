@@ -33,8 +33,7 @@ export default function RootLayout() {
           router.replace('/(app)/(tabs)');
         }
         if (event === 'SIGNED_OUT') {
-          await db.disconnect();
-          await db.clearLocal();
+          await db.disconnectAndClear();
           router.replace('/(auth)/login');
         }
       }

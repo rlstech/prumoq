@@ -33,7 +33,7 @@ export default function LoginPage() {
       .from('usuarios')
       .select('perfil')
       .eq('id', data.user.id)
-      .single();
+      .single<{ perfil: string }>();
 
     if (usuario?.perfil === 'inspetor') {
       await supabase.auth.signOut();

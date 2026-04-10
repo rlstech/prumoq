@@ -26,6 +26,49 @@ prumoq/
 
 Próximos passos: Fase 2 (telas mobile) e Fase 3 (telas admin).
 
+## Arquitetura
+
+### Mobile — Roteamento e Auth
+
+O Expo Router usa dois grupos de rotas no diretório `apps/mobile/app/`:
+
+```
+app/
+  _layout.tsx          ← Root layout: inicializa PowerSync, escuta auth state
+  (auth)/
+    login.tsx
+  (app)/
+    _layout.tsx        ← Redireciona para login se não autenticado
+    (tabs)/
+      _layout.tsx      ← Tab bar (Dashboard, Obras, NCs, Perfil)
+      index.tsx        ← Dashboard
+      obras/index.tsx
+      nc/index.tsx
+      perfil/index.tsx
+```
+
+O `app/_layout.tsx` é o ponto central: inicializa `db.init()`, chama `db.connect(new SupabaseConnector())` ao fazer login e `db.disconnect()` + `db.clearLocal()` ao fazer logout.
+
+**Row types do PowerSync** — exportados de `apps/mobile/lib/schema.ts`:
+`ObrasRow`, `AmbientesRow`, `VerificacoesRow`, `NaoConformidadesRow`, etc.
+
+### Web — Clientes Supabase
+
+Dois padrões distintos em `apps/web/lib/supabase/`:
+
+- `server.ts` — usa `@supabase/ssr` com cookies do Next.js. Use em Server Components e Server Actions.
+- `client.ts` — cliente browser padrão. Use em Client Components (`'use client'`).
+
+Ambos tipados com `Database` de `@prumoq/shared`.
+
+### Shared Package
+
+`@prumoq/shared` exporta apenas:
+- `Database` — tipos gerados pelo Supabase (regenerar após migrations com `supabase gen types`)
+- Enums (`StatusObra`, `PerfilUsuario`, etc.)
+
+Não há Zod schemas no shared ainda — validação fica em cada app.
+
 ## Arquivos de referência (ler nesta ordem antes de implementar)
 
 1. `SPEC.md` — Visão geral, stack, personas, hierarquia de dados, regras de negócio
@@ -55,7 +98,7 @@ pnpm web                  # inicia Next.js dev server (apps/web)
 pnpm build:web            # build de produção do painel web
 
 pnpm typecheck            # typecheck em todos os workspaces
-pnpm lint                 # lint em todos os workspaces
+pnpm lint                 # lint (somente apps/web — mobile não tem lint script)
 ```
 
 ### Supabase
@@ -107,8 +150,8 @@ Copie `.env.example` e preencha:
 6. Pendente: executar SQL no Supabase, configurar PowerSync dashboard, configurar R2
 
 ### Fase 2 — App Mobile
-1. Expo Router setup + autenticação
-2. PowerSync + SupabaseConnector
+1. ✅ Expo Router setup + autenticação (grupos de rota + auth state)
+2. ✅ PowerSync + SupabaseConnector (schema + connector implementados)
 3. Dashboard com queries reais
 4. Fluxo Obras → Ambiente → FVS → Histórico
 5. Nova Verificação (a tela mais complexa)

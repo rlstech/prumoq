@@ -168,18 +168,23 @@ export const AppSchema = new Schema({
   usuarios,
 });
 
-// Row types inferred from the schema
-export type ObrasRow              = (typeof AppSchema.tables.obras)['$inferSelect'];
-export type ObraUsuariosRow       = (typeof AppSchema.tables.obra_usuarios)['$inferSelect'];
-export type AmbientesRow          = (typeof AppSchema.tables.ambientes)['$inferSelect'];
-export type FvsPadraoRow          = (typeof AppSchema.tables.fvs_padrao)['$inferSelect'];
-export type FvsPadraoRevisoesRow  = (typeof AppSchema.tables.fvs_padrao_revisoes)['$inferSelect'];
-export type FvsPadraoItensRow     = (typeof AppSchema.tables.fvs_padrao_itens)['$inferSelect'];
-export type FvsPlanejdasRow       = (typeof AppSchema.tables.fvs_planejadas)['$inferSelect'];
-export type VerificacoesRow       = (typeof AppSchema.tables.verificacoes)['$inferSelect'];
-export type VerificacaoItensRow   = (typeof AppSchema.tables.verificacao_itens)['$inferSelect'];
-export type VerificacaoFotosRow   = (typeof AppSchema.tables.verificacao_fotos)['$inferSelect'];
-export type NaoConformidadesRow   = (typeof AppSchema.tables.nao_conformidades)['$inferSelect'];
-export type NcFotosRow            = (typeof AppSchema.tables.nc_fotos)['$inferSelect'];
-export type EquipesRow            = (typeof AppSchema.tables.equipes)['$inferSelect'];
-export type UsuariosRow           = (typeof AppSchema.tables.usuarios)['$inferSelect'];
+// Row types — manual interfaces matching the SQLite columns above
+// (PowerSync's Schema class does not expose per-table TypeScript types)
+export interface ObrasRow {
+  id: string; empresa_id: string; nome: string; eng_responsavel: string;
+  crea_cau: string; status: string; municipio: string; uf: string;
+  data_inicio_prev: string; data_termino_prev: string; ativo: number; updated_at: string;
+}
+export interface ObraUsuariosRow { id: string; obra_id: string; usuario_id: string; papel: string; ativo: number }
+export interface AmbientesRow { id: string; obra_id: string; nome: string; tipo: string; localizacao: string; observacoes: string; ativo: number; updated_at: string }
+export interface FvsPadraoRow { id: string; empresa_id: string; nome: string; descricao: string; categoria: string; norma_ref: string; revisao_atual: number; ativo: number; created_by: string; updated_at: string }
+export interface FvsPadraoRevisoesRow { id: string; fvs_padrao_id: string; numero_revisao: number; descricao_alt: string; revisado_por: string; created_at: string }
+export interface FvsPadraoItensRow { id: string; fvs_padrao_id: string; revisao: number; ordem: number; titulo: string; metodo_verif: string; tolerancia: string }
+export interface FvsPlanejdasRow { id: string; ambiente_id: string; fvs_padrao_id: string; revisao_associada: number; subservico: string; status: string; concluida_em: string; updated_at: string }
+export interface VerificacoesRow { id: string; fvs_planejada_id: string; numero_verif: number; inspetor_id: string; equipe_id: string; data_verif: string; percentual_exec: number; status: string; observacoes: string; assinatura_url: string; assinada_em: string; created_offline: number; updated_at: string }
+export interface VerificacaoItensRow { id: string; verificacao_id: string; fvs_padrao_item_id: string; ordem: number; titulo: string; metodo_verif: string; tolerancia: string; resultado: string }
+export interface VerificacaoFotosRow { id: string; verificacao_id: string; r2_key: string; r2_thumb_key: string; nome_arquivo: string; tamanho_bytes: number; mime_type: string; ordem: number }
+export interface NaoConformidadesRow { id: string; verificacao_id: string; verificacao_item_id: string; descricao: string; solucao_proposta: string; responsavel_id: string; data_nova_verif: string; prioridade: string; status: string; resolvida_na_verif_id: string; resolvida_em: string; updated_at: string }
+export interface NcFotosRow { id: string; nc_id: string; r2_key: string; r2_thumb_key: string; nome_arquivo: string; mime_type: string; ordem: number }
+export interface EquipesRow { id: string; empresa_id: string; nome: string; tipo: string; responsavel: string; especialidade: string; ativo: number }
+export interface UsuariosRow { id: string; empresa_id: string; nome: string; cargo: string; perfil: string; avatar_url: string }
