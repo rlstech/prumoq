@@ -35,6 +35,18 @@
     "ios": {
       "bundleIdentifier": "br.com.prumoq.app",
       "supportsTablet": false
+    },
+    "web": {
+      "output": "static",
+      "bundler": "metro",
+      "favicon": "./assets/icon.png",
+      "name": "PrumoQ",
+      "shortName": "PrumoQ",
+      "description": "Gestão da Qualidade para Obras",
+      "themeColor": "#E84A1A",
+      "backgroundColor": "#E84A1A",
+      "display": "standalone",
+      "orientation": "portrait"
     }
   }
 }

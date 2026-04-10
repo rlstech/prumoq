@@ -13,25 +13,61 @@ import { StatusBar } from 'expo-status-bar';
 import { supabase } from '../../lib/supabase';
 import { Colors, Radius, Spacing } from '../../lib/constants';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function LoginScreen() {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [error, setError]       = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
 
+  function validateFields(): string | null {
+    if (!email.trim()) return 'Informe o e-mail';
+    if (!EMAIL_RE.test(email.trim())) return 'E-mail inválido';
+    if (!password) return 'Informe a senha';
+    if (password.length < 6) return 'A senha deve ter pelo menos 6 caracteres';
+    return null;
+  }
+
   async function handleLogin() {
+    const fieldError = validateFields();
+    if (fieldError) {
+      setError(fieldError);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
       password,
     });
 
     if (authError) {
-      setError('E-mail ou senha inválidos.');
+      setError(authError.message);
+      setLoading(false);
+      return;
     }
 
+    // Check profile — only inspetor can access mobile
+    if (authData.user) {
+      const { data: perfilData } = await supabase
+        .from('usuarios' as never)
+        .select('perfil')
+        .eq('id', authData.user.id)
+        .single();
+
+      const perfil = perfilData as { perfil: string } | null;
+      if (perfil && perfil.perfil !== 'inspetor') {
+        setError('Acesso permitido apenas para inspetores. Use o painel web para administradores e gestores.');
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Auth state change listener in _layout.tsx handles navigation
     setLoading(false);
   }
 
@@ -54,7 +90,7 @@ export default function LoginScreen() {
           <TextInput
             style={styles.input}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(t) => { setEmail(t); setError(null); }}
             placeholder="seu@email.com"
             placeholderTextColor={Colors.textTertiary}
             keyboardType="email-address"
@@ -68,7 +104,7 @@ export default function LoginScreen() {
           <TextInput
             style={styles.input}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(t) => { setPassword(t); setError(null); }}
             placeholder="••••••••"
             placeholderTextColor={Colors.textTertiary}
             secureTextEntry

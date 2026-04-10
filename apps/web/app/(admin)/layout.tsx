@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
+import QueryProvider from '@/lib/query-provider';
+import { ToastProvider } from '@/components/ui/Toast';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -9,13 +11,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect('/login');
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg0)' }}>
-      <Sidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
-          {children}
+    <QueryProvider>
+      <ToastProvider>
+        <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg0)' }}>
+          <Sidebar />
+          <main className="flex-1 flex flex-col overflow-hidden bg-bg-0">
+            {children}
+          </main>
         </div>
-      </main>
-    </div>
+      </ToastProvider>
+    </QueryProvider>
   );
 }

@@ -13,12 +13,17 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function init() {
-      await db.init();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await db.connect(new SupabaseConnector());
+      try {
+        await db.init();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await db.connect(new SupabaseConnector());
+        }
+      } catch (e) {
+        console.error('[RootLayout] init error:', e);
+      } finally {
+        setReady(true);
       }
-      setReady(true);
     }
     init();
   }, []);

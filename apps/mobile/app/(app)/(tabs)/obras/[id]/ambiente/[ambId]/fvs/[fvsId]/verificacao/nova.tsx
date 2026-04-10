@@ -1,7 +1,5 @@
 import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as FileSystem from 'expo-file-system';
-import * as ImagePicker from 'expo-image-picker';
 import {
   Camera,
   ChevronLeft,
@@ -24,8 +22,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import SignatureCanvas from 'react-native-signature-canvas';
 import { PhotoGrid } from '../../../../../../../../../../components/PhotoGrid';
+import { SignatureField } from '../../../../../../../../../../components/SignatureField';
+import { captureNcPhoto } from '../../../../../../../../../../hooks/useNcPhoto';
 import { usePhotoCapture } from '../../../../../../../../../../hooks/usePhotoCapture';
 import { Colors, Radius, Spacing } from '../../../../../../../../../../lib/constants';
 import { db } from '../../../../../../../../../../lib/powersync';
@@ -61,11 +60,13 @@ function NcPanel({
   detail,
   onChange,
   onAddPhoto,
+  equipes,
 }: {
   visible: boolean;
   detail: NcDetail;
   onChange: (d: Partial<NcDetail>) => void;
   onAddPhoto: () => void;
+  equipes: EquipeRow[];
 }) {
   const height = useRef(new Animated.Value(visible ? 1 : 0)).current;
 
@@ -128,6 +129,21 @@ function NcPanel({
         keyboardType="numbers-and-punctuation"
         maxLength={10}
       />
+
+      <Text style={ncStyles.label}>Responsável pela correção</Text>
+      <View style={ncStyles.respRow}>
+        {equipes.map(eq => (
+          <Pressable
+            key={eq.id}
+            style={[ncStyles.respChip, detail.responsavel_id === eq.id && ncStyles.respChipActive]}
+            onPress={() => onChange({ responsavel_id: eq.id })}
+          >
+            <Text style={[ncStyles.respChipText, detail.responsavel_id === eq.id && ncStyles.respChipTextActive]}>
+              {eq.nome}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
@@ -172,6 +188,18 @@ const ncStyles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   photoBtnText: { fontSize: 13, color: Colors.progress, fontWeight: '500' },
+  respRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
+  respChip: {
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: Colors.borderNormal,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 5,
+    backgroundColor: Colors.surface,
+  },
+  respChipActive: { backgroundColor: Colors.progress, borderColor: Colors.progress },
+  respChipText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
+  respChipTextActive: { color: '#fff' },
 });
 
 export default function NovaVerificacaoScreen() {
@@ -254,22 +282,15 @@ export default function NovaVerificacaoScreen() {
   }
 
   async function addNcPhoto(itemId: string) {
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      const src = result.assets[0].uri;
-      const dest = `${FileSystem.cacheDirectory}nc_${uuid()}.jpg`;
-      await FileSystem.copyAsync({ from: src, to: dest });
-      updateNc(itemId, { foto: dest });
-    }
+    const path = await captureNcPhoto();
+    if (path) updateNc(itemId, { foto: path });
   }
 
   function validate(): boolean {
     const errs: Record<string, string> = {};
     if (selectedEquipeIds.length === 0) errs.equipe = 'Selecione ao menos uma equipe';
     if (!conclusao) errs.conclusao = 'Selecione o resultado da verificação';
+    if (!signaturePath) errs.assinatura = 'Assinatura digital obrigatória';
 
     for (const item of itens) {
       if (!itemResults[item.id]) errs[`item_${item.id}`] = 'Classifique este item';
@@ -501,6 +522,7 @@ export default function NovaVerificacaoScreen() {
                     detail={ncDetails[item.id] ?? { descricao: '', solucao_proposta: '', data_nova_verif: '', responsavel_id: '', foto: null }}
                     onChange={patch => updateNc(item.id, patch)}
                     onAddPhoto={() => addNcPhoto(item.id)}
+                    equipes={equipes}
                   />
                 )}
               </View>
@@ -562,6 +584,7 @@ export default function NovaVerificacaoScreen() {
           {/* 9. Assinatura */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>ASSINATURA DIGITAL</Text>
+            {errors.assinatura && <Text style={styles.errorText}>{errors.assinatura}</Text>}
             {signaturePath ? (
               <View style={styles.signedConfirm}>
                 <PenLine size={16} color={Colors.ok} />
@@ -571,9 +594,9 @@ export default function NovaVerificacaoScreen() {
                 </Pressable>
               </View>
             ) : (
-              <Pressable style={styles.signatureArea} onPress={() => setShowSignature(true)}>
-                <PenLine size={20} color={Colors.textTertiary} />
-                <Text style={styles.signatureHint}>Toque para assinar com o dedo</Text>
+              <Pressable style={[styles.signatureArea, errors.assinatura && { borderColor: Colors.nok }]} onPress={() => setShowSignature(true)}>
+                <PenLine size={20} color={errors.assinatura ? Colors.nok : Colors.textTertiary} />
+                <Text style={[styles.signatureHint, errors.assinatura && { color: Colors.nok }]}>Toque para assinar com o dedo</Text>
               </Pressable>
             )}
           </View>
@@ -584,34 +607,11 @@ export default function NovaVerificacaoScreen() {
       </KeyboardAvoidingView>
 
       {/* Signature modal */}
-      {showSignature && (
-        <View style={styles.signatureModal}>
-          <SignatureCanvas
-            onOK={async (sig) => {
-              try {
-                const base64 = sig.replace(/^data:image\/png;base64,/, '');
-                const dest = `${FileSystem.cacheDirectory}sig_${uuid()}.png`;
-                await FileSystem.writeAsStringAsync(dest, base64, {
-                  encoding: FileSystem.EncodingType.Base64,
-                });
-                setSignaturePath(dest);
-              } catch (e) {
-                console.error('Signature save error', e);
-              }
-              setShowSignature(false);
-            }}
-            onEmpty={() => setShowSignature(false)}
-            descriptionText="Assine aqui"
-            clearText="Limpar"
-            confirmText="Confirmar"
-            webStyle={`.m-signature-pad--footer { background: ${Colors.surface2}; }`}
-            style={{ flex: 1 }}
-          />
-          <Pressable style={styles.signatureClose} onPress={() => setShowSignature(false)}>
-            <Text style={styles.signatureCloseText}>Cancelar</Text>
-          </Pressable>
-        </View>
-      )}
+      <SignatureField
+        visible={showSignature}
+        onSign={(path) => { setSignaturePath(path); setShowSignature(false); }}
+        onCancel={() => setShowSignature(false)}
+      />
 
       {/* Fixed save button */}
       <View style={styles.saveBar}>

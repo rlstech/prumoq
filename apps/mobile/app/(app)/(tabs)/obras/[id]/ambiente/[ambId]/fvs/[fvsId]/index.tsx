@@ -13,7 +13,7 @@ interface FvsRow { id: string; subservico: string; status: string; ambiente_nome
 interface VerifRow {
   id: string; numero_verif: number; data_verif: string; status: string;
   observacoes: string; assinatura_url: string | null;
-  inspetor_nome: string; percentual_exec: number; created_offline: number;
+  inspetor_nome: string; percentual_exec: number; created_offline: number | boolean;
 }
 interface NcRow {
   id: string; verificacao_id: string; descricao: string;
@@ -151,7 +151,7 @@ export default function FvsHistoryScreen() {
                 Verificação #{item.numero_verif} — {item.percentual_exec}% de execução
               </Text>
 
-              {item.created_offline === 1 && (
+              {(item.created_offline === 1 || item.created_offline === true) && (
                 <View style={styles.offlineBadge}>
                   <Text style={styles.offlineBadgeText}>Aguardando sync</Text>
                 </View>

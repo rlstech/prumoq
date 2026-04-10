@@ -113,11 +113,11 @@ export default function DashboardScreen() {
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Text style={styles.greeting}>Olá, {usuario?.nome?.split(' ')[0] ?? 'Inspetor'}</Text>
-            <Text style={styles.headerSub}>PrumoQ · Painel do Inspetor</Text>
+            <Text style={styles.headerSub}>{usuario?.cargo ?? 'Inspetor de Campo'}</Text>
           </View>
-          <View style={styles.avatar}>
+          <Pressable onPress={() => router.push('/(app)/(tabs)/perfil' as never)} style={styles.avatar}>
             <Text style={styles.avatarText}>{usuario ? initials(usuario.nome) : 'IN'}</Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* KPIs */}

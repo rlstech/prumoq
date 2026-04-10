@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { KPICard } from '../../../../components/KPICard';
 import { Colors, Radius, Spacing } from '../../../../lib/constants';
+import { db } from '../../../../lib/powersync';
 import { supabase } from '../../../../lib/supabase';
 
 function initials(name: string): string {
@@ -11,7 +12,8 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-interface UsuarioRow { id: string; nome: string; cargo: string; perfil: string }
+interface UsuarioRow { id: string; nome: string; cargo: string; perfil: string; empresa_id: string }
+interface EmpresaRow { id: string; nome: string }
 interface CountRow { count: number }
 interface ObraRow { id: string; nome: string }
 
@@ -27,9 +29,16 @@ export default function PerfilScreen() {
   }, []);
 
   const { data: usuarioRows } = useQuery<UsuarioRow>(
-    `SELECT id, nome, cargo, perfil FROM usuarios LIMIT 1`
+    `SELECT id, nome, cargo, perfil, empresa_id FROM usuarios LIMIT 1`
   );
   const usuario = usuarioRows[0];
+
+  const { data: empresaRows } = useQuery<EmpresaRow>(
+    usuario?.empresa_id
+      ? `SELECT id, nome FROM empresas WHERE id = '${usuario.empresa_id}'`
+      : `SELECT id, nome FROM empresas WHERE 1=0`
+  );
+  const empresa = empresaRows[0];
 
   const { data: obrasRows } = useQuery<ObraRow>(
     `SELECT o.id, o.nome FROM obras o WHERE o.ativo = 1 ORDER BY o.nome`
@@ -61,6 +70,11 @@ export default function PerfilScreen() {
   }), [obrasRows, totalVerifRows, conformeRows, ncsRows]);
 
   async function handleLogout() {
+    try {
+      await db.disconnectAndClear();
+    } catch (e) {
+      console.error('[Perfil] PowerSync disconnect error:', e);
+    }
     await supabase.auth.signOut();
   }
 
@@ -86,8 +100,10 @@ export default function PerfilScreen() {
         {/* Info rows */}
         <View style={styles.infoCard}>
           {[
-            { label: 'Cargo', value: usuario?.cargo },
+            { label: 'Nome', value: usuario?.nome },
+            { label: 'Empresa', value: empresa?.nome },
             { label: 'E-mail', value: userEmail },
+            { label: 'Cargo', value: usuario?.cargo },
             { label: 'Perfil', value: usuario ? (perfilLabel[usuario.perfil] ?? usuario.perfil) : undefined },
           ].map(row => (
             row.value ? (

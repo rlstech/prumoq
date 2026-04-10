@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "mobile": "pnpm --filter @prumoq/mobile start",
+    "mobile:web": "pnpm --filter @prumoq/mobile web",
+    "mobile:build:web": "pnpm --filter @prumoq/mobile build:web",
     "web": "pnpm --filter @prumoq/web dev",
     "build:web": "pnpm --filter @prumoq/web build",
     "typecheck": "pnpm -r typecheck",

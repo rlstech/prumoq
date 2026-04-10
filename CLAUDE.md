@@ -11,20 +11,22 @@ Leia todos os arquivos de spec antes de começar qualquer implementação.
 
 ## Estado Atual do Projeto
 
-**Fase 1 concluída** — infraestrutura do monorepo criada, sem código de telas ainda.
+**Fase 1 concluída** — infraestrutura do monorepo criada.  
+**Fase 2 concluída** — todas as 9 telas mobile implementadas com queries reais, offline-first, upload de fotos e assinatura digital.
 
 ```
 prumoq/
-  apps/mobile/       ← Expo 52 + Expo Router + PowerSync (stubs de telas)
+  apps/mobile/       ← Expo 52 + Expo Router + PowerSync (9 telas completas)
   apps/web/          ← Next.js 14 + Tailwind (stubs de telas)
   packages/shared/   ← tipos TypeScript + enums (todos os 15 tipos do schema)
   supabase/
     migrations/001_initial_schema.sql
+    migrations/002_web_views_and_rpcs.sql
     functions/r2-presign/   ← Edge Function Cloudflare R2
   references/        ← protótipos HTML (não modificar)
 ```
 
-Próximos passos: Fase 2 (telas mobile) e Fase 3 (telas admin).
+Próximo passo: Fase 3 (telas admin web).
 
 ## Arquitetura
 
@@ -149,15 +151,15 @@ Copie `.env.example` e preencha:
 5. ✅ Criar Edge Function de presigned URL para Cloudflare R2
 6. Pendente: executar SQL no Supabase, configurar PowerSync dashboard, configurar R2
 
-### Fase 2 — App Mobile
+### Fase 2 — App Mobile ✅ (concluída)
 1. ✅ Expo Router setup + autenticação (grupos de rota + auth state)
 2. ✅ PowerSync + SupabaseConnector (schema + connector implementados)
-3. Dashboard com queries reais
-4. Fluxo Obras → Ambiente → FVS → Histórico
-5. Nova Verificação (a tela mais complexa)
-6. Upload de fotos offline-first
-7. Assinatura digital
-8. NC abertas
+3. ✅ Dashboard com queries reais
+4. ✅ Fluxo Obras → Ambiente → FVS → Histórico
+5. ✅ Nova Verificação (a tela mais complexa)
+6. ✅ Upload de fotos offline-first
+7. ✅ Assinatura digital
+8. ✅ NC abertas
 
 ### Fase 3 — Painel Admin
 1. Next.js setup + Supabase SSR
