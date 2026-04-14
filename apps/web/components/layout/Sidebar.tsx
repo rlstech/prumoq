@@ -44,12 +44,12 @@ export default function Sidebar() {
   useEffect(() => {
     async function loadData() {
       const supabase = createClient();
-      const { data: authData } = await supabase.auth.getUser();
-      if (authData.user) {
+      const { data: authData } = await supabase.auth.getSession();
+      if (authData.session?.user) {
         const { data: profile } = await supabase
           .from('usuarios')
           .select('nome, cargo')
-          .eq('id', authData.user.id)
+          .eq('id', authData.session.user.id)
           .single();
         if (profile) setUser(profile as { nome: string; cargo: string });
       }

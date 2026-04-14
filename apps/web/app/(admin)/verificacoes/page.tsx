@@ -7,8 +7,8 @@ export default async function VerificacoesPage() {
 
   const { data: verifs } = await supabase
     .from('verificacoes' as never)
-    .select('*, fvs_planejadas(subservico, ambientes(nome, obras(nome))), usuarios(nome)')
-    .order('data_verificacao', { ascending: false })
+    .select('*, fvs_planejadas(subservico, ambientes(nome, obras(nome))), usuarios(nome), verificacao_fotos(count)')
+    .order('data_verif', { ascending: false })
     .limit(100);
 
   return (

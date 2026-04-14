@@ -82,7 +82,7 @@ export default async function DashboardPage() {
                   {obrasProgresso.length ? obrasProgresso.map((obra: any) => {
                     const percent = obra.total_fvs > 0 ? Math.round((obra.fvs_concluidas / obra.total_fvs) * 100) : 0;
                     return (
-                      <tr key={obra.id} className="border-b border-brd-0 last:border-0 hover:bg-bg-0 cursor-pointer" onClick={() => {}}>
+                      <tr key={obra.id} className="border-b border-brd-0 last:border-0 hover:bg-bg-0">
                         <td className="py-3 px-4">
                           <Link href={`/obras/${obra.id}`} className="font-medium text-[13px] text-txt hover:text-[var(--br)] transition-colors">
                             {obra.nome}

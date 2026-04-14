@@ -32,10 +32,21 @@ export default function ObraModal({ isOpen, onClose, empresas }: { isOpen: boole
     
     setLoading(true);
     const supabase = createClient();
-    const { error } = await supabase.from('obras' as never).insert([{
-      ...formData,
+    const payload = {
+      nome: formData.nome,
+      empresa_id: formData.empresa_id,
+      status: formData.status,
+      municipio: formData.municipio,
+      uf: formData.uf,
+      endereco: formData.endereco,
+      eng_responsavel: formData.engenheiro_nome || 'A definir',
+      crea_cau: formData.engenheiro_crea || 'A definir',
+      data_inicio_prev: formData.previsao_inicio || null,
+      data_termino_prev: formData.previsao_fim || null,
       ativo: true
-    }] as any);
+    };
+
+    const { error } = await supabase.from('obras' as never).insert([payload] as any);
 
     setLoading(false);
 

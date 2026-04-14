@@ -10,12 +10,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Colors, Radius, Spacing } from '../../lib/constants';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [error, setError]       = useState<string | null>(null);
@@ -44,31 +46,39 @@ export default function LoginScreen() {
       password,
     });
 
+    console.log('[Login] signIn result:', authData?.user?.id ?? 'no user', authError?.message ?? 'no error');
+
     if (authError) {
       setError(authError.message);
       setLoading(false);
       return;
     }
 
-    // Check profile — only inspetor can access mobile
+    // Check profile — inspetor, admin e gestor podem acessar o mobile
     if (authData.user) {
-      const { data: perfilData } = await supabase
+      const { data: perfilData, error: perfilError } = await supabase
         .from('usuarios' as never)
         .select('perfil')
         .eq('id', authData.user.id)
         .single();
 
+      console.log('[Login] perfil check:', perfilData, perfilError?.message ?? 'no error');
+
       const perfil = perfilData as { perfil: string } | null;
-      if (perfil && perfil.perfil !== 'inspetor') {
-        setError('Acesso permitido apenas para inspetores. Use o painel web para administradores e gestores.');
+      const allowedPerfis = ['inspetor', 'admin', 'gestor'];
+      if (perfil && !allowedPerfis.includes(perfil.perfil)) {
+        setError('Perfil sem acesso ao aplicativo.');
         await supabase.auth.signOut();
         setLoading(false);
         return;
       }
     }
 
-    // Auth state change listener in _layout.tsx handles navigation
+    // Navigate only after profile check passes — avoids the race condition
+    // where SIGNED_IN fires before the check completes.
+    console.log('[Login] navigating to tabs');
     setLoading(false);
+    router.replace('/(app)/(tabs)');
   }
 
   return (

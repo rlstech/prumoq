@@ -12,21 +12,20 @@ Leia todos os arquivos de spec antes de começar qualquer implementação.
 ## Estado Atual do Projeto
 
 **Fase 1 concluída** — infraestrutura do monorepo criada.  
-**Fase 2 concluída** — todas as 9 telas mobile implementadas com queries reais, offline-first, upload de fotos e assinatura digital.
+**Fase 2 concluída** — todas as 9 telas mobile implementadas com queries reais, offline-first, upload de fotos e assinatura digital. App também roda como PWA no browser via shim.  
+**Fase 3 em andamento** — painel admin Next.js com login, dashboard, obras, FVS, equipes, usuários e verificações implementados.
 
 ```
 prumoq/
-  apps/mobile/       ← Expo 52 + Expo Router + PowerSync (9 telas completas)
-  apps/web/          ← Next.js 14 + Tailwind (stubs de telas)
+  apps/mobile/       ← Expo 52 + Expo Router + PowerSync (9 telas completas + PWA)
+  apps/web/          ← Next.js 14 + Tailwind (Fase 3 em andamento)
   packages/shared/   ← tipos TypeScript + enums (todos os 15 tipos do schema)
   supabase/
     migrations/001_initial_schema.sql
-    migrations/002_web_views_and_rpcs.sql
+    migrations/002_web_views_and_rpcs.sql   ← RPCs usados pelo web shim
     functions/r2-presign/   ← Edge Function Cloudflare R2
   references/        ← protótipos HTML (não modificar)
 ```
-
-Próximo passo: Fase 3 (telas admin web).
 
 ## Arquitetura
 
@@ -36,23 +35,50 @@ O Expo Router usa dois grupos de rotas no diretório `apps/mobile/app/`:
 
 ```
 app/
-  _layout.tsx          ← Root layout: inicializa PowerSync, escuta auth state
-  (auth)/
-    login.tsx
+  _layout.native.tsx   ← Root layout nativo: inicializa PowerSync, escuta auth state
+  _layout.web.tsx      ← Root layout web: importa setup-rn-web.ts PRIMEIRO, sem PowerSync
+  _layout.tsx          ← Fallback (não deve ser alcançado — native/web são resolvidos antes)
+  (auth)/login.tsx
   (app)/
     _layout.tsx        ← Redireciona para login se não autenticado
     (tabs)/
       _layout.tsx      ← Tab bar (Dashboard, Obras, NCs, Perfil)
       index.tsx        ← Dashboard
-      obras/index.tsx
+      obras/
+        index.tsx
+        [id]/index.tsx
+        [id]/ambiente/[ambId]/index.tsx
+        [id]/ambiente/[ambId]/fvs/[fvsId]/index.tsx         ← Histórico FVS
+        [id]/ambiente/[ambId]/fvs/[fvsId]/verificacao/nova.tsx  ← Nova Verificação
       nc/index.tsx
       perfil/index.tsx
 ```
 
-O `app/_layout.tsx` é o ponto central: inicializa `db.init()`, chama `db.connect(new SupabaseConnector())` ao fazer login e `db.disconnect()` + `db.clearLocal()` ao fazer logout.
+O `_layout.native.tsx` é o ponto central nativo: inicializa `db.init()`, chama `db.connect(new SupabaseConnector())` ao fazer login e `db.disconnectAndClear()` ao fazer logout.
 
 **Row types do PowerSync** — exportados de `apps/mobile/lib/schema.ts`:
 `ObrasRow`, `AmbientesRow`, `VerificacoesRow`, `NaoConformidadesRow`, etc.
+
+### Mobile — Arquivos de Plataforma
+
+Metro resolve automaticamente variantes por plataforma na ordem:
+1. `arquivo.native.tsx` → nativo (iOS/Android)
+2. `arquivo.web.tsx` → web/PWA
+3. `arquivo.tsx` → fallback
+
+Arquivos com split de plataforma em `apps/mobile/lib/`:
+- `powersync.ts` / `powersync.web.ts` — nativo usa `PowerSyncDatabase`; web re-exporta do shim
+- `schema.ts` / `schema.web.ts` — nativo usa schema PowerSync completo; web exporta `{}`
+- `supabase.ts` / `supabase.web.ts` — mesma API, cliente browser no web
+- `powersync-web-shim.ts` — substitui PowerSync no browser, mapeando SQL para Supabase REST/RPCs
+
+### Mobile — PWA / Web Shim
+
+O app mobile roda como PWA no browser. O arquivo `apps/mobile/lib/powersync-web-shim.ts` implementa a mesma interface de `db` e `usePowerSyncQuery`, mas despacha para Supabase REST diretamente. Cada tela usa o mesmo código; o shim recebe as queries SQL e as mapeia para chamadas Supabase.
+
+**Ao adicionar uma nova tela/query no mobile**, também é preciso adicionar o padrão correspondente em `powersync-web-shim.ts` para que a versão web funcione. Queries complexas com JOINs usam RPCs definidas em `supabase/migrations/002_web_views_and_rpcs.sql`.
+
+**`apps/mobile/lib/setup-rn-web.ts`** — DEVE ser o primeiro import em `_layout.web.tsx`. Corrige crash do NativeWind no web ao inicializar o dark mode antes que o MutationObserver do React Native Web seja registrado.
 
 ### Web — Clientes Supabase
 
@@ -61,7 +87,17 @@ Dois padrões distintos em `apps/web/lib/supabase/`:
 - `server.ts` — usa `@supabase/ssr` com cookies do Next.js. Use em Server Components e Server Actions.
 - `client.ts` — cliente browser padrão. Use em Client Components (`'use client'`).
 
+Para operações admin (criar/editar usuários via `auth.admin.*`), use `createClient` direto com `SUPABASE_SERVICE_ROLE_KEY` — veja `apps/web/app/(admin)/usuarios/actions.ts` como modelo.
+
 Ambos tipados com `Database` de `@prumoq/shared`.
+
+### Web — Server Actions
+
+Server Actions ficam em `actions.ts` dentro da pasta da rota (convenção do projeto):
+- `apps/web/app/(admin)/usuarios/actions.ts` — CRUD de usuários (usa service role key)
+- `apps/web/app/(auth)/login/actions.ts` — login; bloqueia perfil `inspetor` (uso restrito ao mobile)
+
+Perfis `inspetor` são impedidos de acessar o painel web — o `loginAction` retorna erro e faz signOut.
 
 ### Shared Package
 
@@ -107,6 +143,7 @@ pnpm lint                 # lint (somente apps/web — mobile não tem lint scri
 ```bash
 # Executar schema no Supabase:
 # Colar supabase/migrations/001_initial_schema.sql no SQL Editor do Supabase Dashboard
+# Colar supabase/migrations/002_web_views_and_rpcs.sql também
 
 # Gerar tipos TypeScript após aplicar o schema:
 npx supabase gen types typescript --project-id <id> \
@@ -160,18 +197,18 @@ Copie `.env.example` e preencha:
 6. ✅ Upload de fotos offline-first
 7. ✅ Assinatura digital
 8. ✅ NC abertas
+9. ✅ PWA web com shim Supabase (powersync-web-shim.ts)
 
-### Fase 3 — Painel Admin
-1. Next.js setup + Supabase SSR
-2. Login + middleware de autenticação
-3. Dashboard com dados reais
-4. CRUD Empresas + Obras
-5. FVS Padrão (biblioteca + editor de revisões)
-6. Ambientes + FVS Planner
-7. Equipes + Usuários
-8. Verificações (tabela + modal com galeria de fotos)
-9. NC centralizada
-10. Relatórios + geração de PDF
+### Fase 3 — Painel Admin (em andamento)
+1. ✅ Next.js setup + Supabase SSR
+2. ✅ Login + middleware de autenticação
+3. ✅ Dashboard com dados reais
+4. ✅ CRUD Obras
+5. ✅ FVS Padrão (biblioteca + editor de revisões)
+6. ✅ Equipes
+7. ✅ Usuários
+8. ✅ Verificações (tabela + modal)
+9. Pendente: CRUD Empresas, Ambientes + FVS Planner, NC centralizada, Relatórios + PDF
 
 ## Diretrizes de Código
 
@@ -195,6 +232,7 @@ Copie `.env.example` e preencha:
 - Client Components só quando necessário (`'use client'`)
 - Tailwind CSS — tokens de cor em `tailwind.config.ts`
 - Middleware (`middleware.ts`) protege todas as rotas admin
+- Server Actions em `actions.ts` junto à rota que as usa
 
 ### Banco de Dados
 - Usar `@prumoq/shared` — client tipado com `Database`
@@ -209,6 +247,7 @@ Copie `.env.example` e preencha:
 - `db.execute()` para writes offline
 - Sempre passar `created_offline: 1` em novos registros
 - Checar `db.currentStatus.connected` para status offline
+- Ao fazer logout: `db.disconnectAndClear()` (não `disconnect()` + `clearLocal()` separados)
 - Bucket definitions (YAML) configuradas no PowerSync Dashboard — ver `sync-rules.md`
 
 ### Cloudflare R2
@@ -225,6 +264,7 @@ Copie `.env.example` e preencha:
 - **RN-03:** Inspetor = usuário logado (não editável)
 - **RN-04:** FVS versioning — `revisao_associada` captura a revisão no momento da associação
 - **RN-05:** Progresso calculado automaticamente pelo trigger `update_fvs_status`
+- **RN-06:** Perfis `inspetor`, `admin` e `gestor` acessam o mobile. O painel web bloqueia perfil `inspetor`.
 - **RN-09:** App 100% funcional offline — todo write vai via PowerSync
 
 ## Design

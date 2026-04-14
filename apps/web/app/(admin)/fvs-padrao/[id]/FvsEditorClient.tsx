@@ -50,7 +50,13 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
 
     setIsPublishing(true);
     const supabase = createClient();
-    const { data: auth } = await supabase.auth.getUser();
+    const { data: auth } = await supabase.auth.getSession();
+    const user = auth.session?.user;
+    if (!user) {
+      toast('Sessão expirada. Faça login novamente.', 'error');
+      setIsPublishing(false);
+      return;
+    }
     
     const novaRevisao = fvsData.revisao_atual + 1;
 
@@ -69,11 +75,11 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
     }
 
     // Insere logs
-    await supabase.from('fvs_padrao_logs' as never).insert([{
+    await supabase.from('fvs_padrao_revisoes' as never).insert([{
       fvs_padrao_id: fvs.id,
-      revisao: novaRevisao,
-      usuario_id: auth.user!.id,
-      resumo_alteracoes: resumoAlteracoes
+      numero_revisao: novaRevisao,
+      revisado_por: user!.id,
+      descricao_alt: resumoAlteracoes
     }] as any);
 
     // Insere items nova revisão
@@ -185,16 +191,16 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
              <div className="p-5 flex-1 overflow-y-auto space-y-4">
                 {logs.length === 0 && <p className="text-xs text-txt-3 text-center">Nenhum log gravado.</p>}
                 {logs.map((log: any) => (
-                  <div key={log.id} className="border-l-2 pl-3 pb-2 last:pb-0" style={{ borderColor: log.revisao === fvsData.revisao_atual ? 'var(--br)' : 'var(--brd0)' }}>
+                  <div key={log.id} className="border-l-2 pl-3 pb-2 last:pb-0" style={{ borderColor: log.numero_revisao === fvsData.revisao_atual ? 'var(--br)' : 'var(--brd0)' }}>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${log.revisao === fvsData.revisao_atual ? 'bg-[var(--brl)] text-[var(--br)]' : 'bg-bg-2 text-txt-2'}`}>
-                        v{log.revisao}
+                      <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${log.numero_revisao === fvsData.revisao_atual ? 'bg-[var(--brl)] text-[var(--br)]' : 'bg-bg-2 text-txt-2'}`}>
+                        v{log.numero_revisao}
                       </span>
                       <span className="text-[10px] text-txt-3">
                         {new Date(log.created_at).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
-                    <p className="text-xs text-txt-2 mb-0.5">{log.resumo_alteracoes}</p>
+                    <p className="text-xs text-txt-2 mb-0.5">{log.descricao_alt}</p>
                     <p className="text-[10px] text-txt-3 italic">por {log.usuarios?.nome || 'Sistema'}</p>
                   </div>
                 ))}

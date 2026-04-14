@@ -14,19 +14,38 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
     { data: kpi },
     { data: ambientes },
     { data: fvsPadrao },
-    { data: equipeData }
   ] = await Promise.all([
     supabase.from('obras' as never).select('*, empresas(nome)').eq('id', id).single(),
     (supabase.rpc as any)('get_obra_kpi', { p_obra_id: id }).single(),
     (supabase.rpc as any)('get_ambientes_obra', { p_obra_id: id }),
     supabase.from('fvs_padrao' as never).select('id, nome, revisao_atual, categoria').eq('ativo', true),
-    supabase.from('equipes' as never).select('*').eq('ativo', true)
   ]);
 
   const typedObra = obra as any;
-  const typedKpi = kpi as any;
-
   if (!typedObra) return notFound();
+
+  // 1. IDs das equipes já vinculadas a esta obra
+  const { data: obraEquipesLinks } = await supabase
+    .from('obra_equipes' as never)
+    .select('equipe_id')
+    .eq('obra_id', id);
+
+  const linkedIds: string[] = ((obraEquipesLinks as any[]) ?? []).map((r: any) => r.equipe_id).filter(Boolean);
+
+  // 2. Detalhes de TODAS as equipes da empresa
+  const { data: allEquipes } = await supabase
+    .from('equipes' as never)
+    .select('id, nome, tipo, especialidade')
+    .eq('empresa_id', typedObra.empresa_id)
+    .eq('ativo', true);
+
+  const allEquipesList: any[] = (allEquipes as any[]) ?? [];
+
+  // Separar equipes vinculadas das disponíveis
+  const obraEquipes: any[]     = allEquipesList.filter((e: any) => linkedIds.includes(e.id));
+  const availableEquipes: any[] = allEquipesList.filter((e: any) => !linkedIds.includes(e.id));
+
+  const typedKpi = kpi as any;
 
   return (
     <>
@@ -76,11 +95,12 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
           </div>
         </div>
 
-        <ObraDetailClient 
+        <ObraDetailClient
           obraId={typedObra.id}
-          initialAmbientes={ambientes || []} 
+          initialAmbientes={ambientes || []}
           fvsPadraoList={fvsPadrao || []}
-          equipeData={equipeData as any[] || []}
+          obraEquipes={obraEquipes}
+          availableEquipes={availableEquipes}
         />
       </div>
     </>

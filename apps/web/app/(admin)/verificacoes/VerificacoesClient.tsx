@@ -20,8 +20,8 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
     if (filters.obra !== 'Todas' && v.fvs_planejadas?.ambientes?.obras?.nome !== filters.obra) return false;
     if (filters.inspetor !== 'Todos' && v.usuarios?.nome !== filters.inspetor) return false;
     if (filters.status !== 'Todos') {
-      if (filters.status === 'Conforme' && v.resultado !== 'conforme') return false;
-      if (filters.status === 'Não conforme' && v.resultado !== 'nao_conforme') return false;
+      if (filters.status === 'Conforme' && v.status !== 'conforme') return false;
+      if (filters.status === 'Não conforme' && v.status !== 'nao_conforme') return false;
     }
     return true;
   });
@@ -116,7 +116,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
             <tbody>
               {filtered.length ? filtered.map((v: any, idx: number) => (
                 <tr key={v.id || idx} className="border-b border-brd-0 last:border-0 hover:bg-bg-0 cursor-pointer" onClick={() => setSelectedVerif(v)}>
-                  <td className="py-3 px-4"><span className="font-medium text-pg text-[13px]">V-{String(v.numero || idx + 1).padStart(3, '0')}</span></td>
+                  <td className="py-3 px-4"><span className="font-medium text-pg text-[13px]">V-{String(v.numero_verif || idx + 1).padStart(3, '0')}</span></td>
                   <td className="py-3 px-4">
                     <div className="font-medium text-[13px] text-txt">{v.fvs_planejadas?.subservico || 'N/A'}</div>
                   </td>
@@ -126,13 +126,13 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-1.5">
-                      <div className="w-[60px]"><ProgressBar value={v.percentual_execucao || 0} variant={v.percentual_execucao >= 100 ? 'ok' : 'brand'} /></div>
-                      <span className="text-xs text-txt-3">{v.percentual_execucao || 0}%</span>
+                      <div className="w-[60px]"><ProgressBar value={v.percentual_exec || 0} variant={v.percentual_exec >= 100 ? 'ok' : 'brand'} /></div>
+                      <span className="text-xs text-txt-3">{v.percentual_exec || 0}%</span>
                     </div>
                   </td>
-                  <td className="py-3 px-4"><StatusBadge status={v.resultado || 'aberta'} size="sm" /></td>
+                  <td className="py-3 px-4"><StatusBadge status={v.status || 'em_andamento'} size="sm" /></td>
                   <td className="py-3 px-4 text-[13px] text-txt">{v.usuarios?.nome || '-'}</td>
-                  <td className="py-3 px-4 text-[13px] text-txt">{v.data_verificacao ? new Date(v.data_verificacao).toLocaleDateString('pt-BR') : '-'}</td>
+                  <td className="py-3 px-4 text-[13px] text-txt">{v.data_verif ? new Date(v.data_verif).toLocaleDateString('pt-BR') : '-'}</td>
                   <td className="py-3 px-4">
                     {v.total_fotos > 0 ? (
                       <span className="text-xs text-pg font-medium cursor-pointer">📷 {v.total_fotos} fotos</span>

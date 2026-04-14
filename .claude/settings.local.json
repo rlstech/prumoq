@@ -26,20 +26,21 @@
       "Bash(git commit -m ':*)",
       "Bash(git fetch:*)",
       "Bash(git pull:*)",
-      "Bash(npm install:*)",
+      "Bash(mv .claude/settings.local.json /tmp/settings.local.json.bak)",
+      "Bash(mv /tmp/settings.local.json.bak .claude/settings.local.json)",
       "Bash(pnpm mobile:*)",
-      "Bash(ipconfig)",
-      "Bash(ls apps/mobile/.env*)",
+      "Bash(pnpm web:*)",
+      "Bash(pnpm --filter @prumoq/mobile start -- --web)",
+      "Bash(tasklist)",
+      "Bash(EXPO_NO_DOCTOR=1 npx expo start --web --port 8082)",
       "Bash(netstat -ano)",
+      "Bash(taskkill:*)",
+      "Bash(NODE_OPTIONS=\"--no-experimental-fetch\" EXPO_NO_DOCTOR=1 npx expo start --web --port 8081)",
+      "Bash(start:*)",
+      "Bash(node -e \"console.log\\(require\\('C:/Code/prumoq/apps/mobile/node_modules/react/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('C:/Code/prumoq/node_modules/react/package.json'\\).version\\)\")",
       "Bash(awk '{print $5}')",
-      "Bash(xargs -I{} taskkill //PID {} //F)",
-      "Bash(pnpm mobile:web)",
-      "Bash(pnpm --filter @prumoq/mobile web)",
-      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(json.dumps\\(p.get\\('exports', {}\\), indent=2\\)\\)\")",
-      "Bash(python3 -c ':*)",
-      "Bash(node -e ':*)",
-      "Bash(start \"\" \"http://localhost:8081\")",
-      "Bash(pnpm --filter @prumoq/mobile exec expo start --web --clear)"
+      "Bash(node:*)"
     ]
   }
 }

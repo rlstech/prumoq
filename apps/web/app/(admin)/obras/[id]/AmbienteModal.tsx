@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
+import { createAmbiente } from './actions';
 
 export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }: { isOpen: boolean, onClose: () => void, obraId: string, fvsPadraoList: any[] }) {
   const { toast } = useToast();
@@ -12,7 +12,7 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
-    tipo: 'Interno',
+    tipo: 'interno',
     localizacao: '',
     observacoes: '',
   });
@@ -29,48 +29,18 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
       toast('Preencha os campos obrigatórios', 'error');
       return;
     }
-    
+
     setLoading(true);
-    const supabase = createClient();
-    
-    // Create Ambiente
-    const { data: ambiente, error: ambError } = await supabase.from('ambientes' as never).insert([{
-      ...formData,
-      obra_id: obraId,
-      ativo: true
-    }] as any).select().single();
-
-    const typedAmbiente = ambiente as any;
-
-    if (ambError) {
-      toast(ambError.message, 'error');
-      setLoading(false);
-      return;
-    }
-
-    // Create FVS Planejadas
-    if (selectedFvs.length > 0 && typedAmbiente) {
-      const fvsToInsert = selectedFvs.map(fvsId => {
-        const pd = fvsPadraoList.find(f => f.id === fvsId);
-        return {
-          ambiente_id: typedAmbiente.id,
-          fvs_padrao_id: fvsId,
-          subservico: pd?.nome || 'Serviço Padrão',
-          revisao_associada: pd?.revisao_atual || 1,
-          status: 'aberta'
-        };
-      });
-
-      const { error: fvsError } = await supabase.from('fvs_planejadas').insert(fvsToInsert as any);
-      if (fvsError) {
-        toast('Ambiente criado, mas houve erro ao agendar as FVS.', 'error');
-      }
-    }
-
+    const result = await createAmbiente(obraId, formData, selectedFvs, fvsPadraoList);
     setLoading(false);
-    toast('Ambiente cadastrado com sucesso!', 'success');
-    router.refresh();
-    onClose();
+
+    if (result.success) {
+      toast('Ambiente cadastrado com sucesso!', 'success');
+      router.refresh();
+      onClose();
+    } else {
+      toast(result.error ?? 'Erro ao salvar ambiente.', 'error');
+    }
   };
 
   return (
@@ -102,8 +72,8 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
                 value={formData.tipo}
                 onChange={e => setFormData({ ...formData, tipo: e.target.value })}
               >
-                <option value="Interno">Interno</option>
-                <option value="Externo">Externo</option>
+                <option value="interno">Interno</option>
+                <option value="externo">Externo</option>
               </select>
             </div>
             <div>

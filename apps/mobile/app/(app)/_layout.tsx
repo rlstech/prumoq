@@ -7,6 +7,7 @@ export default function AppLayout() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('[AppLayout] getSession ->', session ? `user=${session.user.id}` : 'null → redirecting to login');
       if (!session) router.replace('/(auth)/login');
     });
   }, []);

@@ -49,17 +49,28 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const supabase = createClient();
-    const { data: novafvs, error } = await supabase.from('fvs_padrao' as never).insert([{
-      ...formData,
+    
+    const { data: userData } = await supabase.from('usuarios' as never).select('empresa_id').single();
+    if (!userData || !userData.empresa_id) {
+       toast('Sua conta não tem empresa vinculada.', 'error');
+       return;
+    }
+
+    const payload = {
+      nome: formData.nome,
+      categoria: formData.categoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
+      empresa_id: userData.empresa_id,
       revisao_atual: 1,
       ativo: true
-    }] as never).select().single();
+    };
+
+    const { data: novafvs, error } = await supabase.from('fvs_padrao' as never).insert([payload] as never).select().single();
 
     if (!error && novafvs) {
       toast('FVS Padrão criada!', 'success');
       router.push(`/fvs-padrao/${(novafvs as any).id}`);
     } else {
-      toast('Erro ao criar FVS', 'error');
+      toast('Erro ao criar FVS: ' + (error?.message || ''), 'error');
     }
   };
 
@@ -81,7 +92,10 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
       ),
       className: 'w-1/3'
     },
-    { header: 'Categoria', accessorKey: 'categoria' },
+    { 
+      header: 'Categoria', 
+      cell: (item) => <span className="capitalize">{item.categoria.replace('vedacao', 'Vedação').replace('instalacoes', 'Instalações')}</span> 
+    },
     { 
       header: 'Itens', 
       cell: (item) => <span className="font-medium text-txt-2 text-center">{item.fvs_padrao_itens[0]?.count || 0}</span> 

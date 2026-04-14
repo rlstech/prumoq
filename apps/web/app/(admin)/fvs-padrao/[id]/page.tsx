@@ -15,7 +15,7 @@ export default async function FvsPadraoDetailPage(props: { params: Promise<{ id:
   ] = await Promise.all([
     supabase.from('fvs_padrao' as never).select('*, fvs_planejadas(count)').eq('id', id).single(),
     supabase.from('fvs_padrao_itens' as never).select('*').eq('fvs_padrao_id', id).order('ordem'),
-    supabase.from('fvs_padrao_logs' as never).select('*, usuarios(nome)').eq('fvs_padrao_id', id).order('created_at', { ascending: false })
+    supabase.from('fvs_padrao_revisoes' as never).select('*, usuarios(nome)').eq('fvs_padrao_id', id).order('created_at', { ascending: false })
   ]);
 
   const fvs = fvsData as any;

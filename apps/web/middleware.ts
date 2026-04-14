@@ -34,11 +34,19 @@ export async function middleware(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/favicon');
 
   if (!user && isProtected) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const redirectResponse = NextResponse.redirect(new URL('/login', request.url));
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return redirectResponse;
   }
 
   if (user && isLoginPage) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return redirectResponse;
   }
 
   return supabaseResponse;

@@ -37,7 +37,7 @@
       "supportsTablet": false
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "bundler": "metro",
       "favicon": "./assets/icon.png",
       "name": "PrumoQ",

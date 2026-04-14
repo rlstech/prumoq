@@ -247,15 +247,21 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
     const assinadaEm = params[1] as string;
     const id = params[2] as string;
 
-    // On web, signature comes as a data: URL — upload to R2 immediately
+    // On web, signature arrives as "pending:data:image/png;base64,..." — strip the pending: prefix
+    // then upload the data URL to R2.
     let finalUrl = assinaturaUrl;
-    if (assinaturaUrl.startsWith('data:')) {
-      finalUrl = await uploadDataUrlToR2(assinaturaUrl, `sig_${id}.png`);
-    } else if (assinaturaUrl.startsWith('pending:')) {
-      finalUrl = assinaturaUrl; // will be resolved by native connector if ever used
+    const rawSig = assinaturaUrl.startsWith('pending:') ? assinaturaUrl.slice('pending:'.length) : assinaturaUrl;
+    if (rawSig.startsWith('data:')) {
+      try {
+        finalUrl = await uploadDataUrlToR2(rawSig, `sig_${id}.png`);
+      } catch (e) {
+        console.warn('[web shim] signature upload failed, storing data URL directly:', e);
+        finalUrl = rawSig; // fallback: store data URL (works for display but not ideal)
+      }
     }
 
-    await supabase.from('verificacoes').update({ assinatura_url: finalUrl, assinada_em: assinadaEm }).eq('id', id);
+    const { error } = await supabase.from('verificacoes').update({ assinatura_url: finalUrl, assinada_em: assinadaEm }).eq('id', id);
+    if (error) throw new Error(`Erro ao salvar assinatura: ${error.message}`);
     return;
   }
 
@@ -293,7 +299,10 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
     delete row['created_offline'];
 
     const { error } = await supabase.from(table).insert(row);
-    if (error) console.error(`[web shim] INSERT ${table} error:`, error.message);
+    if (error) {
+      console.error(`[web shim] INSERT ${table} error:`, error.message, row);
+      throw new Error(`Erro ao salvar ${table}: ${error.message}`);
+    }
   }
 }
 
