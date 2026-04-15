@@ -15,10 +15,10 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
     { data: ambientes },
     { data: fvsPadrao },
   ] = await Promise.all([
-    supabase.from('obras' as never).select('*, empresas(nome)').eq('id', id).single(),
+    supabase.from('obras' as any).select('*, empresas(nome)').eq('id', id).single(),
     (supabase.rpc as any)('get_obra_kpi', { p_obra_id: id }).single(),
     (supabase.rpc as any)('get_ambientes_obra', { p_obra_id: id }),
-    supabase.from('fvs_padrao' as never).select('id, nome, revisao_atual, categoria').eq('ativo', true),
+    supabase.from('fvs_padrao' as any).select('id, nome, revisao_atual, categoria').eq('ativo', true),
   ]);
 
   const typedObra = obra as any;
@@ -26,7 +26,7 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
 
   // 1. IDs das equipes já vinculadas a esta obra
   const { data: obraEquipesLinks } = await supabase
-    .from('obra_equipes' as never)
+    .from('obra_equipes' as any)
     .select('equipe_id')
     .eq('obra_id', id);
 
@@ -34,7 +34,7 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
 
   // 2. Detalhes de TODAS as equipes da empresa
   const { data: allEquipes } = await supabase
-    .from('equipes' as never)
+    .from('equipes' as any)
     .select('id, nome, tipo, especialidade')
     .eq('empresa_id', typedObra.empresa_id)
     .eq('ativo', true);

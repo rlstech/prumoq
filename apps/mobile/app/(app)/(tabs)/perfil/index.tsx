@@ -2,7 +2,7 @@ import { useQuery } from '@powersync/react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { KPICard } from '../../../../components/KPICard';
-import { Colors, Radius, Spacing } from '../../../../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
 import { db } from '../../../../lib/powersync';
 import { supabase } from '../../../../lib/supabase';
 
@@ -168,9 +168,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: Colors.brand, fontSize: 22, fontWeight: '600' },
-  name: { color: '#fff', fontSize: 18, fontWeight: '500' },
-  role: { color: 'rgba(255,255,255,0.8)', fontSize: 13 },
+  avatarText: { color: Colors.brand, fontSize: FontSizes.xxl, fontWeight: '600' },
+  name: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
+  role: { color: 'rgba(255,255,255,0.8)', fontSize: FontSizes.base },
   body: { flex: 1, backgroundColor: Colors.bg },
   bodyContent: { padding: Spacing.lg, gap: Spacing.lg, paddingBottom: Spacing.xxl },
   infoCard: {
@@ -188,10 +188,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  infoLabel: { fontSize: 13, color: Colors.textSecondary },
-  infoValue: { fontSize: 13, color: Colors.text, fontWeight: '500', maxWidth: '60%', textAlign: 'right' },
+  infoLabel: { fontSize: FontSizes.base, color: Colors.textSecondary },
+  infoValue: { fontSize: FontSizes.base, color: Colors.text, fontWeight: '500', maxWidth: '60%', textAlign: 'right' },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: FontSizes.xs,
     fontWeight: '600',
     color: Colors.textTertiary,
     letterSpacing: 0.5,
@@ -209,12 +209,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  obraNome: { fontSize: 13, color: Colors.text },
+  obraNome: { fontSize: FontSizes.base, color: Colors.text },
   logoutBtn: {
     backgroundColor: Colors.nokBg,
     borderRadius: Radius.md,
     padding: 13,
     alignItems: 'center',
   },
-  logoutText: { color: Colors.nok, fontSize: 14, fontWeight: '500' },
+  logoutText: { color: Colors.nok, fontSize: FontSizes.md, fontWeight: '500' },
 });

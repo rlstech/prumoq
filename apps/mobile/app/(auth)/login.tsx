@@ -12,7 +12,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Colors, Radius, Spacing } from '../../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../../lib/constants';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -155,13 +155,13 @@ const styles = StyleSheet.create({
   },
   logo: {
     color: '#fff',
-    fontSize: 28,
+    fontSize: FontSizes.title,
     fontWeight: '600',
     letterSpacing: -0.5,
   },
   subtitle: {
     color: 'rgba(255,255,255,0.75)',
-    fontSize: 13,
+    fontSize: FontSizes.base,
     marginTop: 4,
   },
   card: {
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: FontSizes.md,
     fontWeight: '500',
     color: Colors.text,
     marginBottom: 20,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   label: {
-    fontSize: 12,
+    fontSize: FontSizes.sm,
     fontWeight: '500',
     color: Colors.textSecondary,
     marginBottom: 5,
@@ -191,12 +191,12 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: FontSizes.md,
     color: Colors.text,
     backgroundColor: '#fff',
   },
   error: {
-    fontSize: 12,
+    fontSize: FontSizes.sm,
     color: Colors.nok,
     marginBottom: 10,
   },
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: FontSizes.base,
     fontWeight: '500',
   },
 });

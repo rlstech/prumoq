@@ -4,7 +4,7 @@ import { FileText, Download } from 'lucide-react';
 
 export default async function RelatoriosPage() {
   const supabase = await createClient();
-  const { data: obras } = await supabase.from('obras' as never).select('id, nome').eq('ativo', true);
+  const { data: obras } = await supabase.from('obras' as any).select('id, nome').eq('ativo', true);
 
   return (
     <>

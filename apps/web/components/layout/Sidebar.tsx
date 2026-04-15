@@ -54,7 +54,7 @@ export default function Sidebar() {
         if (profile) setUser(profile as { nome: string; cargo: string });
       }
       // Fetch NC count for badge
-      const { count } = await supabase.from('nao_conformidades' as never).select('*', { count: 'exact', head: true }).eq('status', 'aberta');
+      const { count } = await supabase.from('nao_conformidades' as any).select('*', { count: 'exact', head: true }).eq('status', 'aberta');
       setNcCount(count || 0);
     }
     loadData();

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
-import { Colors, Radius, Spacing } from '../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
 
 interface Props {
   value: number;       // 0–100 (concluídos / conforme)
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
   },
   label: {
-    fontSize: 11,
+    fontSize: FontSizes.xs,
     fontWeight: '500',
     color: Colors.textSecondary,
     minWidth: 28,

@@ -13,15 +13,15 @@ import {
 } from 'react-native';
 import { KPICard } from '../../../../../components/KPICard';
 import { ProgressBar } from '../../../../../components/ProgressBar';
-import { Colors, Radius, Spacing } from '../../../../../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../../../../../lib/constants';
 
 type FilterKey = 'todos' | 'interno' | 'externo' | 'com_nc';
 
 interface ObraRow { id: string; nome: string; municipio: string; uf: string; eng_responsavel: string }
-interface KpiRow { total_ambientes: number; total_fvs: number; fvs_concluidas: number; ncs_abertas: number }
+interface KpiRow { total_ambientes: number; total_fvs: number; fvs_concluidas: number; ncs_abertas: number; progresso_percentual: number }
 interface AmbienteRow {
   id: string; nome: string; tipo: string; localizacao: string;
-  total_fvs: number; fvs_concluidas: number; ncs_abertas: number;
+  total_fvs: number; fvs_concluidas: number; ncs_abertas: number; progresso_percentual: number;
 }
 
 const FILTERS: { key: FilterKey; label: string }[] = [
@@ -45,32 +45,34 @@ export default function ObraDetailScreen() {
     SELECT
       COUNT(DISTINCT a.id) AS total_ambientes,
       COUNT(DISTINCT f.id) AS total_fvs,
-      COUNT(DISTINCT f2.id) AS fvs_concluidas,
-      COUNT(DISTINCT n.id) AS ncs_abertas
+      COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
+      (SELECT COUNT(*) FROM nao_conformidades n
+       WHERE n.status = 'aberta' AND n.verificacao_id IN (
+         SELECT v.id FROM verificacoes v
+         JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
+         JOIN ambientes a2 ON a2.id = fp.ambiente_id
+         WHERE a2.obra_id = o.id
+       )) AS ncs_abertas,
+      CAST(SUM(CASE f.status WHEN 'conforme' THEN 100 WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
     FROM obras o
     LEFT JOIN ambientes a ON a.obra_id = o.id
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
-    LEFT JOIN fvs_planejadas f2 ON f2.ambiente_id = a.id AND f2.status = 'conforme'
-    LEFT JOIN nao_conformidades n ON n.status = 'aberta' AND n.verificacao_id IN (
-      SELECT id FROM verificacoes
-      WHERE fvs_planejada_id IN (SELECT id FROM fvs_planejadas WHERE ambiente_id = a.id)
-    )
     WHERE o.id = ?
   `, [id]);
-  const kpi = kpiRows[0] ?? { total_ambientes: 0, total_fvs: 0, fvs_concluidas: 0, ncs_abertas: 0 };
+  const kpi = kpiRows[0] ?? { total_ambientes: 0, total_fvs: 0, fvs_concluidas: 0, ncs_abertas: 0, progresso_percentual: 0 };
 
   const { data: ambientes } = useQuery<AmbienteRow>(`
     SELECT a.id, a.nome, a.tipo, a.localizacao,
       COUNT(DISTINCT f.id) AS total_fvs,
-      COUNT(DISTINCT f2.id) AS fvs_concluidas,
-      COUNT(DISTINCT n.id) AS ncs_abertas
+      COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
+      (SELECT COUNT(*) FROM nao_conformidades n
+       WHERE n.status = 'aberta' AND n.verificacao_id IN (
+         SELECT v.id FROM verificacoes v
+         WHERE v.fvs_planejada_id IN (SELECT id FROM fvs_planejadas WHERE ambiente_id = a.id)
+       )) AS ncs_abertas,
+      CAST(SUM(CASE f.status WHEN 'conforme' THEN 100 WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
     FROM ambientes a
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
-    LEFT JOIN fvs_planejadas f2 ON f2.ambiente_id = a.id AND f2.status = 'conforme'
-    LEFT JOIN nao_conformidades n ON n.status = 'aberta' AND n.verificacao_id IN (
-      SELECT id FROM verificacoes
-      WHERE fvs_planejada_id IN (SELECT id FROM fvs_planejadas WHERE ambiente_id = a.id)
-    )
     WHERE a.obra_id = ? AND a.ativo = 1
     GROUP BY a.id
     ORDER BY a.nome
@@ -84,7 +86,7 @@ export default function ObraDetailScreen() {
     return ambientes;
   }, [ambientes, filter]);
 
-  const totalProgress = kpi.total_fvs > 0 ? (kpi.fvs_concluidas / kpi.total_fvs) * 100 : 0;
+  const totalProgress = kpi.progresso_percentual ?? 0;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -144,7 +146,7 @@ export default function ObraDetailScreen() {
         {/* Ambientes grid */}
         <View style={styles.grid}>
           {filtered.map(amb => {
-            const pct = amb.total_fvs > 0 ? (amb.fvs_concluidas / amb.total_fvs) * 100 : 0;
+            const pct = amb.progresso_percentual ?? 0;
             const borderColor = amb.tipo === 'interno' ? Colors.progress : Colors.ok;
             return (
               <Pressable
@@ -193,8 +195,8 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 2 },
   headerText: { flex: 1 },
-  title: { color: '#fff', fontSize: 17, fontWeight: '500' },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
+  title: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
+  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.sm, marginTop: 2 },
   progressPanel: {
     backgroundColor: Colors.surface,
     padding: Spacing.lg,
@@ -203,9 +205,9 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  progressLabel: { fontSize: 12, fontWeight: '500', color: Colors.textSecondary },
-  progressPct: { fontSize: 14, fontWeight: '600', color: Colors.ok },
-  engText: { fontSize: 11, color: Colors.textTertiary, marginTop: 2 },
+  progressLabel: { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.textSecondary },
+  progressPct: { fontSize: FontSizes.md, fontWeight: '600', color: Colors.ok },
+  engText: { fontSize: FontSizes.xs, color: Colors.textTertiary, marginTop: 2 },
   kpiSection: { padding: Spacing.lg, gap: Spacing.sm },
   kpiGrid: { flexDirection: 'row', gap: Spacing.sm },
   filterRow: { paddingLeft: Spacing.lg },
@@ -219,7 +221,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   chipActive: { backgroundColor: Colors.brand, borderColor: Colors.brand },
-  chipText: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
+  chipText: { fontSize: FontSizes.base, color: Colors.textSecondary, fontWeight: '500' },
   chipTextActive: { color: '#fff' },
   grid: {
     flexDirection: 'row',
@@ -239,7 +241,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   ambCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  ambNome: { fontSize: 13, fontWeight: '500', color: Colors.text, flex: 1 },
+  ambNome: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text, flex: 1 },
   ncPill: {
     backgroundColor: Colors.nokBg,
     borderRadius: Radius.full,
@@ -249,11 +251,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 4,
   },
-  ncPillText: { fontSize: 10, fontWeight: '700', color: Colors.nok },
-  ambTipo: { fontSize: 10, color: Colors.textTertiary, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.3 },
-  ambLoc: { fontSize: 11, color: Colors.textSecondary },
+  ncPillText: { fontSize: FontSizes.tiny, fontWeight: '700', color: Colors.nok },
+  ambTipo: { fontSize: FontSizes.tiny, color: Colors.textTertiary, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.3 },
+  ambLoc: { fontSize: FontSizes.xs, color: Colors.textSecondary },
   ambProgress: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginTop: 2 },
-  ambPct: { fontSize: 10, color: Colors.textSecondary, minWidth: 24 },
+  ambPct: { fontSize: FontSizes.tiny, color: Colors.textSecondary, minWidth: 24 },
   empty: { flex: 1, paddingVertical: Spacing.xxl, alignItems: 'center' },
-  emptyText: { fontSize: 13, color: Colors.textTertiary },
+  emptyText: { fontSize: FontSizes.base, color: Colors.textTertiary },
 });

@@ -28,7 +28,7 @@ import { PhotoGrid } from '../../../../../../../../../../components/PhotoGrid';
 import { SignatureField } from '../../../../../../../../../../components/SignatureField';
 import { captureNcPhoto } from '../../../../../../../../../../hooks/useNcPhoto';
 import { usePhotoCapture } from '../../../../../../../../../../hooks/usePhotoCapture';
-import { Colors, Radius, Spacing } from '../../../../../../../../../../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../../../../../../../../../../lib/constants';
 import { db } from '../../../../../../../../../../lib/powersync';
 import { supabase } from '../../../../../../../../../../lib/supabase';
 
@@ -53,9 +53,10 @@ type Conclusao = 'conforme' | 'nao_conforme' | 'em_andamento';
 
 interface ItemRow { id: string; ordem: number; titulo: string; metodo_verif: string; tolerancia: string }
 interface EquipeRow { id: string; nome: string; tipo: string }
-interface FvsRow { id: string; subservico: string; revisao_associada: number }
+interface FvsRow { id: string; subservico: string; revisao_associada: number; status: string }
 interface UsuarioRow { id: string; nome: string; cargo: string }
 interface CountRow { count: number }
+interface LastPercentRow { percentual_exec: number }
 
 interface NcDetail {
   descricao: string;
@@ -104,7 +105,7 @@ const sliderSt = StyleSheet.create({
   row:   { flexDirection: 'row', alignItems: 'center', gap: 10 },
   track: { flex: 1, height: 6, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: 3, overflow: 'hidden' },
   fill:  { height: '100%' as any, backgroundColor: Colors.brand },
-  value: { width: 40, textAlign: 'right', fontSize: 13, color: Colors.brand, fontWeight: '500' },
+  value: { width: 44, textAlign: 'right', fontSize: FontSizes.base, color: Colors.brand, fontWeight: '500' },
 });
 
 // ── NC Panel ─────────────────────────────────────────────────────────────────
@@ -211,7 +212,7 @@ function NcPanel({
                 borderRadius: 6,
                 border: '0.5px solid rgba(0,0,0,0.12)',
                 padding: '7px 10px',
-                fontSize: 12,
+                fontSize: FontSizes.tiny,
                 color: '#1A1A18',
                 width: '100%',
                 boxSizing: 'border-box',
@@ -256,10 +257,10 @@ const ncSt = StyleSheet.create({
     marginTop: Spacing.xs,
   },
   header:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  title:     { fontSize: 12, fontWeight: '500', color: Colors.nok },
+  title:     { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.nok },
   badge:     { backgroundColor: Colors.nok, borderRadius: Radius.full, paddingHorizontal: 7, paddingVertical: 2 },
-  badgeText: { fontSize: 10, color: '#fff', fontWeight: '600' },
-  label:     { fontSize: 11, fontWeight: '500', color: Colors.nok },
+  badgeText: { fontSize: FontSizes.tiny, color: '#fff', fontWeight: '600' },
+  label:     { fontSize: FontSizes.xs, fontWeight: '500', color: Colors.nok },
   input: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.sm,
@@ -267,14 +268,14 @@ const ncSt = StyleSheet.create({
     borderColor: '#f09595',
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
-    fontSize: 12,
+    fontSize: FontSizes.sm,
     color: Colors.text,
     textAlignVertical: 'top',
   },
   photoRow:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   photoThumb:  { width: 52, height: 52, borderRadius: 6, borderWidth: 0.5, borderColor: Colors.nok },
-  photoOk:     { flex: 1, fontSize: 11, color: Colors.ok, fontWeight: '500' },
-  photoRemove: { fontSize: 11, color: Colors.nok },
+  photoOk:     { flex: 1, fontSize: FontSizes.xs, color: Colors.ok, fontWeight: '500' },
+  photoRemove: { fontSize: FontSizes.xs, color: Colors.nok },
   photoBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: Spacing.xs,
@@ -282,7 +283,7 @@ const ncSt = StyleSheet.create({
     borderWidth: 0.5, borderStyle: 'dashed', borderColor: Colors.nok,
     borderRadius: Radius.sm, backgroundColor: Colors.surface,
   },
-  photoBtnText: { fontSize: 12, color: Colors.nok, fontWeight: '500' },
+  photoBtnText: { fontSize: FontSizes.sm, color: Colors.nok, fontWeight: '500' },
   twoCol:    { flexDirection: 'row', gap: Spacing.sm },
   selectBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -291,14 +292,14 @@ const ncSt = StyleSheet.create({
     paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs,
     minHeight: 34,
   },
-  selectText: { flex: 1, fontSize: 12, color: Colors.text },
+  selectText: { flex: 1, fontSize: FontSizes.sm, color: Colors.text },
   // picker modal
   overlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
   pickerBox:     { width: '90%', maxHeight: 280, backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md },
-  pickerTitle:   { fontSize: 13, fontWeight: '600', color: Colors.text, marginBottom: Spacing.sm },
+  pickerTitle:   { fontSize: FontSizes.base, fontWeight: '600', color: Colors.text, marginBottom: Spacing.sm },
   pickerItem:    { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm },
   pickerItemActive:     { backgroundColor: Colors.progressBg },
-  pickerItemText:       { fontSize: 13, color: Colors.text },
+  pickerItemText:       { fontSize: FontSizes.base, color: Colors.text },
   pickerItemTextActive: { color: Colors.progress, fontWeight: '500' },
 });
 
@@ -313,9 +314,13 @@ export default function NovaVerificacaoScreen() {
   const usuario = usuarioRows[0];
 
   const { data: fvsRows } = useQuery<FvsRow>(`
-    SELECT id, subservico, revisao_associada FROM fvs_planejadas WHERE id = ?
+    SELECT id, subservico, revisao_associada, status FROM fvs_planejadas WHERE id = ?
   `, [fvsId]);
   const fvs = fvsRows[0];
+
+  const { data: lastPercentRows } = useQuery<LastPercentRow>(`
+    SELECT percentual_exec FROM verificacoes WHERE fvs_planejada_id = ? ORDER BY created_at DESC LIMIT 1
+  `, [fvsId]);
 
   const { data: itens } = useQuery<ItemRow>(`
     SELECT fpi.id, fpi.ordem, fpi.titulo, fpi.metodo_verif, fpi.tolerancia
@@ -327,8 +332,12 @@ export default function NovaVerificacaoScreen() {
   `, [fvsId]);
 
   const { data: equipes } = useQuery<EquipeRow>(`
-    SELECT id, nome, tipo FROM equipes WHERE ativo = 1 ORDER BY nome
-  `);
+    SELECT e.id, e.nome, e.tipo
+    FROM equipes e
+    JOIN obra_equipes oe ON oe.equipe_id = e.id
+    WHERE oe.obra_id = ? AND e.ativo = 1
+    ORDER BY e.nome
+  `, [id]);
 
   const { data: countRows } = useQuery<CountRow>(`
     SELECT COUNT(*) AS count FROM verificacoes WHERE fvs_planejada_id = ?
@@ -344,11 +353,31 @@ export default function NovaVerificacaoScreen() {
   const [ncDetails, setNcDetails] = useState<Record<string, NcDetail>>({});
   const [observacoes, setObservacoes] = useState('');
   const [conclusao, setConclusao] = useState<Conclusao | null>(null);
+  const [concluirFvs, setConcluirFvs] = useState(false);
   const [signaturePath, setSignaturePath] = useState<string | null>(null);
   const [showSignature, setShowSignature] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  // Derived values — must be declared BEFORE the useEffect calls that reference them
+  const todosItensComResultado = itens.length > 0 && itens.every(i => itemResults[i.id] !== undefined);
+  const algumNaoConforme = Object.values(itemResults).some(r => r === 'nao_conforme');
+  const podeConcluir = todosItensComResultado && !algumNaoConforme;
+
+  // Pre-populate slider with last percentual_exec when FVS is em_andamento
+  useEffect(() => {
+    if (fvs?.status === 'em_andamento' && lastPercentRows[0]?.percentual_exec != null) {
+      setPercentExec(lastPercentRows[0].percentual_exec);
+    }
+  }, [fvs?.status, lastPercentRows[0]?.percentual_exec]);
+
+  // Auto-uncheck "Concluir FVS" if any item becomes nao_conforme
+  useEffect(() => {
+    if (algumNaoConforme && concluirFvs) {
+      setConcluirFvs(false);
+    }
+  }, [algumNaoConforme]);
 
   function showToast(msg: string, type: 'success' | 'error', onDone?: () => void) {
     setToast({ msg, type });
@@ -395,7 +424,7 @@ export default function NovaVerificacaoScreen() {
   function validate(): boolean {
     const errs: Record<string, string> = {};
     if (!selectedEquipeId) errs.equipe = 'Selecione a equipe executora';
-    if (!conclusao) errs.conclusao = 'Selecione o resultado da verificação';
+    if (!conclusao && !concluirFvs) errs.conclusao = 'Selecione o resultado da verificação';
     if (!signaturePath && Platform.OS !== 'web') errs.assinatura = 'Assinatura digital obrigatória';
 
     for (const item of itens) {
@@ -424,8 +453,17 @@ export default function NovaVerificacaoScreen() {
   }
 
   async function handleSave() {
+    // Validate concluirFvs intent before running full validation
+    if (concluirFvs && !todosItensComResultado) {
+      Alert.alert('Itens incompletos', 'Classifique todos os itens antes de concluir a FVS.');
+      return;
+    }
+
     if (!validate()) return;
     setIsSaving(true);
+
+    const finalPercentExec = concluirFvs ? 100 : percentExec;
+    const finalConclusao: Conclusao = concluirFvs ? 'conforme' : (conclusao ?? 'em_andamento');
 
     const verificacaoId = uuid();
     const now = new Date().toISOString();
@@ -439,7 +477,7 @@ export default function NovaVerificacaoScreen() {
       `, [
         verificacaoId, fvsId, proximoNumero,
         userId ?? '', dataVerif,
-        percentExec, conclusao ?? 'em_andamento',
+        finalPercentExec, finalConclusao,
         observacoes, 1, now,
       ]);
 
@@ -557,7 +595,7 @@ export default function NovaVerificacaoScreen() {
                   borderRadius: 6,
                   border: '0.5px solid rgba(0,0,0,0.12)',
                   padding: '9px 12px',
-                  fontSize: 13,
+                  fontSize: FontSizes.base,
                   color: '#1A1A18',
                   width: '100%',
                   boxSizing: 'border-box',
@@ -784,6 +822,33 @@ export default function NovaVerificacaoScreen() {
             </View>
           </View>
 
+          {/* ── 8b. Concluir FVS ── */}
+          <View style={st.section}>
+            <Pressable
+              style={[st.concluirRow, concluirFvs && st.concluirRowActive, algumNaoConforme && st.concluirRowDisabled]}
+              onPress={() => {
+                if (algumNaoConforme) return;
+                setConcluirFvs(prev => !prev);
+              }}
+            >
+              <View style={[st.checkbox, concluirFvs && st.checkboxActive, algumNaoConforme && st.checkboxDisabled]}>
+                {concluirFvs && <Text style={st.checkboxTick}>✓</Text>}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[st.concluirLabel, algumNaoConforme && st.concluirLabelDisabled]}>
+                  Concluir esta FVS
+                </Text>
+                {algumNaoConforme ? (
+                  <Text style={st.concluirHint}>Não é possível concluir com itens não conformes</Text>
+                ) : !todosItensComResultado ? (
+                  <Text style={st.concluirHint}>Classifique todos os itens para concluir</Text>
+                ) : (
+                  <Text style={st.concluirHint}>Força percentual = 100% e status Conforme</Text>
+                )}
+              </View>
+            </Pressable>
+          </View>
+
           {/* ── 9. Assinatura digital ── */}
           <View style={st.section}>
             <Text style={st.sectionTitle}>Assinatura digital</Text>
@@ -881,7 +946,7 @@ const st = StyleSheet.create({
   },
   toastSuccess: { backgroundColor: Colors.ok },
   toastError:   { backgroundColor: Colors.nok },
-  toastText:    { color: '#fff', fontSize: 14, fontWeight: '500', textAlign: 'center' },
+  toastText:    { color: '#fff', fontSize: FontSizes.md, fontWeight: '500', textAlign: 'center' },
   header:  {
     backgroundColor: Colors.brand,
     flexDirection: 'row', alignItems: 'center',
@@ -890,11 +955,11 @@ const st = StyleSheet.create({
     gap: Spacing.sm,
   },
   headerText: { flex: 1 },
-  title:      { color: '#fff', fontSize: 19, fontWeight: '500' },
-  subtitle:   { color: 'rgba(255,255,255,0.72)', fontSize: 12, marginTop: 2 },
+  title:      { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
+  subtitle:   { color: 'rgba(255,255,255,0.72)', fontSize: FontSizes.sm, marginTop: 2 },
   content:    { padding: Spacing.lg, gap: Spacing.lg },
   section:    { gap: Spacing.sm },
-  sectionTitle: { fontSize: 12, fontWeight: '500', color: Colors.textSecondary, marginBottom: 4 },
+  sectionTitle: { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.textSecondary, marginBottom: 4 },
 
   // Inspector card
   inspectorCard: {
@@ -910,16 +975,16 @@ const st = StyleSheet.create({
     backgroundColor: Colors.brand,
     alignItems: 'center', justifyContent: 'center',
   },
-  inspectorAvatarText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  inspectorName:       { fontSize: 13, fontWeight: '500', color: Colors.brand },
-  inspectorRole:       { fontSize: 11, color: Colors.textSecondary, marginTop: 1 },
+  inspectorAvatarText: { color: '#fff', fontSize: FontSizes.base, fontWeight: '700' },
+  inspectorName:       { fontSize: FontSizes.base, fontWeight: '500', color: Colors.brand },
+  inspectorRole:       { fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 1 },
   logadoBadge: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.full,
     paddingHorizontal: 8, paddingVertical: 3,
     borderWidth: 0.5, borderColor: Colors.borderNormal,
   },
-  logadoText: { fontSize: 10, color: Colors.textSecondary, fontWeight: '500' },
+  logadoText: { fontSize: FontSizes.tiny, color: Colors.textSecondary, fontWeight: '500' },
 
   // Input
   input: {
@@ -927,7 +992,7 @@ const st = StyleSheet.create({
     borderRadius: Radius.sm,
     borderWidth: 0.5, borderColor: Colors.borderNormal,
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
-    fontSize: 13, color: Colors.text,
+    fontSize: FontSizes.base, color: Colors.text,
   },
 
   // Equipe
@@ -937,14 +1002,14 @@ const st = StyleSheet.create({
     overflow: 'hidden',
   },
   teamSelect: { padding: Spacing.md, gap: 6 },
-  teamSelectLabel: { fontSize: 11, color: Colors.textSecondary, fontWeight: '500' },
+  teamSelectLabel: { fontSize: FontSizes.xs, color: Colors.textSecondary, fontWeight: '500' },
   teamSelectBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: Colors.surface,
     borderRadius: Radius.sm, borderWidth: 0.5, borderColor: Colors.borderNormal,
     paddingHorizontal: Spacing.sm, paddingVertical: Spacing.sm,
   },
-  teamSelectBtnText: { flex: 1, fontSize: 13, color: Colors.text },
+  teamSelectBtnText: { flex: 1, fontSize: FontSizes.base, color: Colors.text },
   teamDivider: { height: 0.5, backgroundColor: 'rgba(0,0,0,0.08)', marginHorizontal: Spacing.md },
   teamSelected: {
     flexDirection: 'row', alignItems: 'center',
@@ -956,15 +1021,15 @@ const st = StyleSheet.create({
     backgroundColor: Colors.ok,
     alignItems: 'center', justifyContent: 'center',
   },
-  teamAvatarText:  { color: '#fff', fontSize: 11, fontWeight: '700' },
-  teamName:        { fontSize: 12, fontWeight: '500', color: Colors.text },
+  teamAvatarText:  { color: '#fff', fontSize: FontSizes.xs, fontWeight: '700' },
+  teamName:        { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.text },
   tipoBadge:       { borderRadius: Radius.full, paddingHorizontal: 8, paddingVertical: 2 },
   tipoBadgeGreen:  { backgroundColor: Colors.okBg },
   tipoBadgeBlue:   { backgroundColor: Colors.progressBg },
-  tipoBadgeText:       { fontSize: 10, fontWeight: '500' },
+  tipoBadgeText:       { fontSize: FontSizes.tiny, fontWeight: '500' },
   tipoBadgeTextGreen:  { color: Colors.ok },
   tipoBadgeTextBlue:   { color: Colors.progress },
-  equipePickerTipo:    { fontSize: 11, color: Colors.textTertiary, marginTop: 2 },
+  equipePickerTipo:    { fontSize: FontSizes.xs, color: Colors.textTertiary, marginTop: 2 },
 
   // Checklist item — 3 camadas
   itemWrapper: {
@@ -991,9 +1056,9 @@ const st = StyleSheet.create({
     flexShrink: 0,
   },
   itemNumNok: { backgroundColor: Colors.nokBg, borderWidth: 0.5, borderColor: Colors.nok },
-  itemNumText:    { fontSize: 11, fontWeight: '600', color: Colors.textSecondary },
+  itemNumText:    { fontSize: FontSizes.xs, fontWeight: '600', color: Colors.textSecondary },
   itemNumTextNok: { color: Colors.nok },
-  itemTitulo:     { flex: 1, fontSize: 13, fontWeight: '500', color: Colors.text, lineHeight: 18 },
+  itemTitulo:     { flex: 1, fontSize: FontSizes.base, fontWeight: '500', color: Colors.text, lineHeight: 18 },
 
   itemMethod: {
     backgroundColor: Colors.surface,
@@ -1002,12 +1067,12 @@ const st = StyleSheet.create({
     paddingHorizontal: 13, paddingVertical: 9,
     gap: 10,
   },
-  itemMethodLabel: { fontSize: 10, fontWeight: '500', color: Colors.textTertiary, letterSpacing: 0.4, marginBottom: 2 },
-  itemMethodText:  { fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
+  itemMethodLabel: { fontSize: FontSizes.tiny, fontWeight: '500', color: Colors.textTertiary, letterSpacing: 0.4, marginBottom: 2 },
+  itemMethodText:  { fontSize: FontSizes.sm, color: Colors.textSecondary, lineHeight: 17 },
 
   toleranciaBadge: { alignItems: 'flex-end' },
-  toleranciaLabel: { fontSize: 10, fontWeight: '500', color: Colors.textTertiary, letterSpacing: 0.4, marginBottom: 2 },
-  toleranciaText:  { fontSize: 12, fontWeight: '500', color: Colors.progress },
+  toleranciaLabel: { fontSize: FontSizes.tiny, fontWeight: '500', color: Colors.textTertiary, letterSpacing: 0.4, marginBottom: 2 },
+  toleranciaText:  { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.progress },
 
   itemActions: {
     backgroundColor: Colors.surface2,
@@ -1025,7 +1090,7 @@ const st = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surface,
   },
-  resultBtnText: { fontSize: 11, fontWeight: '500', color: Colors.textSecondary, textAlign: 'center' },
+  resultBtnText: { fontSize: FontSizes.xs, fontWeight: '500', color: Colors.textSecondary, textAlign: 'center' },
 
   // Photos
   photoBtns:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
@@ -1035,8 +1100,8 @@ const st = StyleSheet.create({
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
   },
-  photoActionText: { fontSize: 13, color: Colors.progress, fontWeight: '500' },
-  photoCount:      { fontSize: 12, color: Colors.textTertiary, marginLeft: 'auto' as any },
+  photoActionText: { fontSize: FontSizes.base, color: Colors.progress, fontWeight: '500' },
+  photoCount:      { fontSize: FontSizes.sm, color: Colors.textTertiary, marginLeft: 'auto' as any },
 
   // Conclusão
   conclusaoRow: { flexDirection: 'row', gap: Spacing.sm },
@@ -1048,10 +1113,10 @@ const st = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surface,
   },
-  conclusaoBtnText: { fontSize: 10, fontWeight: '500', color: Colors.textSecondary, textAlign: 'center' },
+  conclusaoBtnText: { fontSize: FontSizes.tiny, fontWeight: '500', color: Colors.textSecondary, textAlign: 'center' },
 
   // Assinatura
-  signatureResponsavel: { fontSize: 12, color: Colors.textSecondary, marginBottom: 2 },
+  signatureResponsavel: { fontSize: FontSizes.sm, color: Colors.textSecondary, marginBottom: 2 },
   signedConfirm: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: Colors.okBg,
@@ -1059,8 +1124,8 @@ const st = StyleSheet.create({
     borderWidth: 0.5, borderColor: Colors.ok,
     padding: Spacing.md, gap: Spacing.sm,
   },
-  signedText:  { flex: 1, fontSize: 12, color: Colors.ok, fontWeight: '500' },
-  refazerText: { fontSize: 11, color: Colors.nok, fontWeight: '500' },
+  signedText:  { flex: 1, fontSize: FontSizes.sm, color: Colors.ok, fontWeight: '500' },
+  refazerText: { fontSize: FontSizes.xs, color: Colors.nok, fontWeight: '500' },
   signatureArea: {
     height: 100,
     backgroundColor: Colors.surface,
@@ -1071,7 +1136,7 @@ const st = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     gap: Spacing.xs,
   },
-  signatureHint: { fontSize: 11, color: Colors.textTertiary },
+  signatureHint: { fontSize: FontSizes.xs, color: Colors.textTertiary },
 
   // Save bar
   saveBar: {
@@ -1082,7 +1147,32 @@ const st = StyleSheet.create({
   },
   saveBtn:         { backgroundColor: Colors.brand, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText:     { color: '#fff', fontSize: 15, fontWeight: '600' },
+  saveBtnText:     { color: '#fff', fontSize: FontSizes.md, fontWeight: '600' },
 
-  errorText: { fontSize: 11, color: Colors.nok, fontWeight: '500' },
+  errorText: { fontSize: FontSizes.xs, color: Colors.nok, fontWeight: '500' },
+
+  // Concluir FVS
+  concluirRow: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1, borderColor: Colors.borderNormal,
+    padding: Spacing.md,
+  },
+  concluirRowActive: { borderColor: Colors.ok, backgroundColor: Colors.okBg },
+  concluirRowDisabled: { opacity: 0.5 },
+  checkbox: {
+    width: 22, height: 22, borderRadius: 5,
+    borderWidth: 1.5, borderColor: Colors.borderNormal,
+    backgroundColor: Colors.surface,
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: 1,
+    flexShrink: 0,
+  },
+  checkboxActive: { backgroundColor: Colors.ok, borderColor: Colors.ok },
+  checkboxDisabled: { borderColor: Colors.na, backgroundColor: Colors.surface2 },
+  checkboxTick: { color: '#fff', fontSize: FontSizes.base, fontWeight: '700' },
+  concluirLabel: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text },
+  concluirLabelDisabled: { color: Colors.textTertiary },
+  concluirHint: { fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 },
 });

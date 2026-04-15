@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@prumoq/shared'],
+  transpilePackages: ['@prumoq/shared', 'lucide-react'],
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
+    },
+  },
   images: {
     remotePatterns: [
       {

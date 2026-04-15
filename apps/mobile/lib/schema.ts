@@ -24,6 +24,11 @@ const obra_usuarios = new Table({
   ativo:      column.integer,
 });
 
+const obra_equipes = new Table({
+  obra_id:   column.text,
+  equipe_id: column.text,
+});
+
 const ambientes = new Table({
   obra_id:     column.text,
   nome:        column.text,
@@ -69,6 +74,7 @@ const fvs_planejadas = new Table({
   revisao_associada: column.integer,
   subservico:        column.text,
   status:            column.text,
+  percentual_exec:   column.integer,
   concluida_em:      column.text,
   updated_at:        column.text,
 });
@@ -86,6 +92,7 @@ const verificacoes = new Table(
     assinatura_url:   column.text,
     assinada_em:      column.text,
     created_offline:  column.integer,
+    created_at:       column.text,
     updated_at:       column.text,
   },
   { indexes: { fvs_planejada: ['fvs_planejada_id'] } }
@@ -154,6 +161,7 @@ const usuarios = new Table({
 export const AppSchema = new Schema({
   obras,
   obra_usuarios,
+  obra_equipes,
   ambientes,
   fvs_padrao,
   fvs_padrao_revisoes,
@@ -176,12 +184,13 @@ export interface ObrasRow {
   data_inicio_prev: string; data_termino_prev: string; ativo: number; updated_at: string;
 }
 export interface ObraUsuariosRow { id: string; obra_id: string; usuario_id: string; papel: string; ativo: number }
+export interface ObraEquipesRow { id: string; obra_id: string; equipe_id: string }
 export interface AmbientesRow { id: string; obra_id: string; nome: string; tipo: string; localizacao: string; observacoes: string; ativo: number; updated_at: string }
 export interface FvsPadraoRow { id: string; empresa_id: string; nome: string; descricao: string; categoria: string; norma_ref: string; revisao_atual: number; ativo: number; created_by: string; updated_at: string }
 export interface FvsPadraoRevisoesRow { id: string; fvs_padrao_id: string; numero_revisao: number; descricao_alt: string; revisado_por: string; created_at: string }
 export interface FvsPadraoItensRow { id: string; fvs_padrao_id: string; revisao: number; ordem: number; titulo: string; metodo_verif: string; tolerancia: string }
-export interface FvsPlanejdasRow { id: string; ambiente_id: string; fvs_padrao_id: string; revisao_associada: number; subservico: string; status: string; concluida_em: string; updated_at: string }
-export interface VerificacoesRow { id: string; fvs_planejada_id: string; numero_verif: number; inspetor_id: string; equipe_id: string; data_verif: string; percentual_exec: number; status: string; observacoes: string; assinatura_url: string; assinada_em: string; created_offline: number; updated_at: string }
+export interface FvsPlanejdasRow { id: string; ambiente_id: string; fvs_padrao_id: string; revisao_associada: number; subservico: string; status: string; percentual_exec: number; concluida_em: string; updated_at: string }
+export interface VerificacoesRow { id: string; fvs_planejada_id: string; numero_verif: number; inspetor_id: string; equipe_id: string; data_verif: string; percentual_exec: number; status: string; observacoes: string; assinatura_url: string; assinada_em: string; created_offline: number; created_at: string; updated_at: string }
 export interface VerificacaoItensRow { id: string; verificacao_id: string; fvs_padrao_item_id: string; ordem: number; titulo: string; metodo_verif: string; tolerancia: string; resultado: string }
 export interface VerificacaoFotosRow { id: string; verificacao_id: string; r2_key: string; r2_thumb_key: string; nome_arquivo: string; tamanho_bytes: number; mime_type: string; ordem: number }
 export interface NaoConformidadesRow { id: string; verificacao_id: string; verificacao_item_id: string; descricao: string; solucao_proposta: string; responsavel_id: string; data_nova_verif: string; prioridade: string; status: string; resolvida_na_verif_id: string; resolvida_em: string; updated_at: string }

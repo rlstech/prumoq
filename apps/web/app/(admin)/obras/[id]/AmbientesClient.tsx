@@ -97,9 +97,9 @@ export default function AmbientesClient({ obraId, initialAmbientes, fvsPadraoLis
               </div>
               <div className="mt-4 flex items-center justify-between text-xs text-txt-3 mb-1.5">
                 <span>{amb.fvs_concluidas} de {amb.total_fvs} FVS</span>
-                <span>{amb.total_fvs > 0 ? Math.round((amb.fvs_concluidas / amb.total_fvs) * 100) : 0}%</span>
+                <span>{Math.round(amb.progresso_percentual ?? (amb.total_fvs > 0 ? (amb.fvs_concluidas / amb.total_fvs) * 100 : 0))}%</span>
               </div>
-              <ProgressBar value={amb.total_fvs > 0 ? (amb.fvs_concluidas / amb.total_fvs) * 100 : 0} variant="pg" />
+              <ProgressBar value={amb.progresso_percentual ?? (amb.total_fvs > 0 ? (amb.fvs_concluidas / amb.total_fvs) * 100 : 0)} variant="pg" />
             </div>
           ))}
         </div>

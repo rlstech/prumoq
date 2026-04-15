@@ -48,3 +48,15 @@ export const Spacing = {
   xl:  20,
   xxl: 24,
 } as const;
+
+export const FontSizes = {
+  tiny:  12, // era 10
+  xs:    13, // era 11
+  sm:    14, // era 12
+  base:  15, // era 13/14
+  md:    16, // novo
+  lg:    18, // era 16/17
+  xl:    21, // era 19
+  xxl:   24, // era 22
+  title: 32, // era 28
+} as const;

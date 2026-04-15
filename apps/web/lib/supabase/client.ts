@@ -1,7 +1,8 @@
-import { createBrowserClient, SupabaseClient } from '@supabase/ssr';
+import { createBrowserClient } from '@supabase/ssr';
+import { type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@prumoq/shared';
 
-let _supabaseBrowserClient: SupabaseClient<Database> | undefined;
+let _supabaseBrowserClient: any;
 
 export function createClient() {
   if (_supabaseBrowserClient) {
@@ -13,5 +14,5 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   
-  return _supabaseBrowserClient;
+  return _supabaseBrowserClient as any;
 }

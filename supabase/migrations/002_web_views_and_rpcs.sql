@@ -19,13 +19,17 @@ SELECT
   e.nome                                     AS empresa_nome,
   COUNT(DISTINCT a.id)                       AS total_ambientes,
   COUNT(DISTINCT f.id)                       AS total_fvs,
-  COUNT(DISTINCT f2.id)                      AS fvs_concluidas,
+  COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
+  SUM(CASE f.status
+    WHEN 'conforme'     THEN 100
+    WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0)
+    ELSE 0
+  END)::float / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual,
   COUNT(DISTINCT n.id)                       AS ncs_abertas
 FROM obras o
 LEFT JOIN empresas e         ON e.id = o.empresa_id
 LEFT JOIN ambientes a        ON a.obra_id = o.id
 LEFT JOIN fvs_planejadas f   ON f.ambiente_id = a.id
-LEFT JOIN fvs_planejadas f2  ON f2.ambiente_id = a.id AND f2.status = 'conforme'
 LEFT JOIN nao_conformidades n ON n.status = 'aberta'
   AND n.verificacao_id IN (
     SELECT v.id FROM verificacoes v
@@ -41,12 +45,14 @@ CREATE OR REPLACE FUNCTION get_obras_com_fvs()
 RETURNS TABLE (
   id uuid, nome text, status text, endereco text, municipio text, uf text,
   engenheiro_nome text, engenheiro_crea text, empresa_nome text,
-  total_ambientes bigint, total_fvs bigint, fvs_concluidas bigint, ncs_abertas bigint
+  total_ambientes bigint, total_fvs bigint, fvs_concluidas bigint,
+  progresso_percentual float, ncs_abertas bigint
 )
 LANGUAGE sql STABLE AS $$
   SELECT id, nome, status, endereco, municipio, uf,
          engenheiro_nome, engenheiro_crea, empresa_nome,
-         total_ambientes, total_fvs, fvs_concluidas, ncs_abertas
+         total_ambientes, total_fvs, fvs_concluidas,
+         progresso_percentual, ncs_abertas
   FROM v_obras_com_fvs;
 $$;
 
@@ -75,16 +81,21 @@ $$;
 -- Dashboard: até 5 obras ativas com progresso (sem ncs_abertas)
 CREATE OR REPLACE FUNCTION get_obras_progresso_dashboard()
 RETURNS TABLE (
-  id uuid, nome text, total_fvs bigint, fvs_concluidas bigint
+  id uuid, nome text, total_fvs bigint, fvs_concluidas bigint,
+  progresso_percentual float
 )
 LANGUAGE sql SECURITY INVOKER STABLE AS $$
   SELECT o.id, o.nome,
-         COUNT(DISTINCT f.id)  AS total_fvs,
-         COUNT(DISTINCT f2.id) AS fvs_concluidas
+         COUNT(DISTINCT f.id) AS total_fvs,
+         COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
+         SUM(CASE f.status
+           WHEN 'conforme'     THEN 100
+           WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0)
+           ELSE 0
+         END)::float / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
   FROM obras o
   LEFT JOIN ambientes a  ON a.obra_id = o.id
   LEFT JOIN fvs_planejadas f  ON f.ambiente_id = a.id
-  LEFT JOIN fvs_planejadas f2 ON f2.ambiente_id = a.id AND f2.status = 'conforme'
   WHERE o.ativo = true
   GROUP BY o.id
   LIMIT 5;
@@ -152,18 +163,23 @@ $$;
 CREATE OR REPLACE FUNCTION get_obra_kpi(p_obra_id uuid)
 RETURNS TABLE (
   total_ambientes bigint, total_fvs bigint,
-  fvs_concluidas bigint, ncs_abertas bigint
+  fvs_concluidas bigint, ncs_abertas bigint,
+  progresso_percentual float
 )
 LANGUAGE sql SECURITY INVOKER STABLE AS $$
   SELECT
     COUNT(DISTINCT a.id)  AS total_ambientes,
     COUNT(DISTINCT f.id)  AS total_fvs,
-    COUNT(DISTINCT f2.id) AS fvs_concluidas,
-    COUNT(DISTINCT n.id)  AS ncs_abertas
+    COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
+    COUNT(DISTINCT n.id)  AS ncs_abertas,
+    SUM(CASE f.status
+      WHEN 'conforme'     THEN 100
+      WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0)
+      ELSE 0
+    END)::float / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
   FROM obras o
   LEFT JOIN ambientes a   ON a.obra_id = o.id
   LEFT JOIN fvs_planejadas f   ON f.ambiente_id = a.id
-  LEFT JOIN fvs_planejadas f2  ON f2.ambiente_id = a.id AND f2.status = 'conforme'
   LEFT JOIN nao_conformidades n ON n.status = 'aberta'
     AND n.verificacao_id IN (
       SELECT v.id FROM verificacoes v
@@ -178,16 +194,21 @@ $$;
 CREATE OR REPLACE FUNCTION get_ambientes_obra(p_obra_id uuid)
 RETURNS TABLE (
   id uuid, nome text, tipo text, localizacao text,
-  total_fvs bigint, fvs_concluidas bigint, ncs_abertas bigint
+  total_fvs bigint, fvs_concluidas bigint, ncs_abertas bigint,
+  progresso_percentual float
 )
 LANGUAGE sql SECURITY INVOKER STABLE AS $$
   SELECT a.id, a.nome, a.tipo, a.localizacao,
-    COUNT(DISTINCT f.id)  AS total_fvs,
-    COUNT(DISTINCT f2.id) AS fvs_concluidas,
-    COUNT(DISTINCT n.id)  AS ncs_abertas
+    COUNT(DISTINCT f.id) AS total_fvs,
+    COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
+    COUNT(DISTINCT n.id) AS ncs_abertas,
+    SUM(CASE f.status
+      WHEN 'conforme'     THEN 100
+      WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0)
+      ELSE 0
+    END)::float / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
   FROM ambientes a
   LEFT JOIN fvs_planejadas f   ON f.ambiente_id = a.id
-  LEFT JOIN fvs_planejadas f2  ON f2.ambiente_id = a.id AND f2.status = 'conforme'
   LEFT JOIN nao_conformidades n ON n.status = 'aberta'
     AND n.verificacao_id IN (
       SELECT v.id FROM verificacoes v
@@ -239,16 +260,17 @@ CREATE OR REPLACE FUNCTION get_verificacoes_fvs(p_fvs_id uuid)
 RETURNS TABLE (
   id uuid, numero_verif int, data_verif date, status text,
   observacoes text, assinatura_url text, percentual_exec int,
-  created_offline boolean, inspetor_nome text
+  created_offline boolean, inspetor_nome text, created_at timestamptz
 )
 LANGUAGE sql SECURITY INVOKER STABLE AS $$
   SELECT v.id, v.numero_verif, v.data_verif, v.status,
          v.observacoes, v.assinatura_url, v.percentual_exec,
-         v.created_offline, u.nome AS inspetor_nome
+         v.created_offline, u.nome AS inspetor_nome,
+         v.created_at
   FROM verificacoes v
   LEFT JOIN usuarios u ON u.id = v.inspetor_id
   WHERE v.fvs_planejada_id = p_fvs_id
-  ORDER BY v.data_verif DESC;
+  ORDER BY v.created_at DESC;
 $$;
 
 -- ── get_ncs_fvs ───────────────────────────────────────────────

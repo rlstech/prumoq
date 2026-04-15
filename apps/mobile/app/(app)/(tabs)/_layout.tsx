@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { LayoutGrid, Building2, AlertTriangle, User } from 'lucide-react-native';
-import { Colors } from '../../../lib/constants';
+import { Colors, FontSizes } from '../../../lib/constants';
 
 export default function TabsLayout() {
   return (
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: FontSizes.tiny,
   },
   tabIcon: {
     marginTop: 2,

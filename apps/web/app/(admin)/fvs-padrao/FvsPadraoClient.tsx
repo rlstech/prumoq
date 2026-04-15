@@ -50,8 +50,9 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
     e.preventDefault();
     const supabase = createClient();
     
-    const { data: userData } = await supabase.from('usuarios' as never).select('empresa_id').single();
-    if (!userData || !userData.empresa_id) {
+    const { data: userData } = await supabase.from('usuarios' as any).select('empresa_id').single();
+    const typedUser = userData as any;
+    if (!typedUser || !typedUser.empresa_id) {
        toast('Sua conta não tem empresa vinculada.', 'error');
        return;
     }
@@ -59,12 +60,12 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
     const payload = {
       nome: formData.nome,
       categoria: formData.categoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
-      empresa_id: userData.empresa_id,
+      empresa_id: typedUser.empresa_id,
       revisao_atual: 1,
       ativo: true
     };
 
-    const { data: novafvs, error } = await supabase.from('fvs_padrao' as never).insert([payload] as never).select().single();
+    const { data: novafvs, error } = await supabase.from('fvs_padrao' as any).insert([payload] as any).select().single();
 
     if (!error && novafvs) {
       toast('FVS Padrão criada!', 'success');

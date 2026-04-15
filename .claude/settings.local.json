@@ -1,4 +1,7 @@
 {
+  "env": {
+    "SUPABASE_ACCESS_TOKEN": "sbp_df329415a105d98cb29fc64faa5eae1fd394c019"
+  },
   "permissions": {
     "allow": [
       "Bash(npm --version)",

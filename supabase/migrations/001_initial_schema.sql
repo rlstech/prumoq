@@ -406,7 +406,7 @@ begin
   where id = new.fvs_planejada_id;
   return new;
 end;
-$$ language plpgsql;
+$$ language plpgsql security definer;
 
 create trigger trg_update_fvs_status
   after insert or update of status on verificacoes

@@ -7,7 +7,7 @@ import { KPICard } from '../../../components/KPICard';
 import { OfflineBanner } from '../../../components/OfflineBanner';
 import { ProgressBar } from '../../../components/ProgressBar';
 import { StatusBadge } from '../../../components/StatusBadge';
-import { Colors, Radius, Spacing } from '../../../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../../../lib/constants';
 import { supabase } from '../../../lib/supabase';
 
 function initials(name: string): string {
@@ -46,7 +46,7 @@ interface CountRow { count: number }
 interface ObraProgressRow {
   id: string; nome: string; empresa_nome: string; status: string;
   total_ambientes: number; total_fvs: number;
-  fvs_concluidas: number; fvs_iniciadas: number; ncs_abertas: number;
+  fvs_concluidas: number; progresso_percentual: number;
 }
 interface NcUrgentRow {
   id: string; item_titulo: string; ambiente_nome: string;
@@ -116,14 +116,12 @@ export default function DashboardScreen() {
            e.nome AS empresa_nome,
            COUNT(DISTINCT a.id) AS total_ambientes,
            COUNT(DISTINCT f.id) AS total_fvs,
-           COUNT(DISTINCT f2.id) AS fvs_concluidas,
-           COUNT(DISTINCT f3.id) AS fvs_iniciadas
+           COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
+           CAST(SUM(CASE f.status WHEN 'conforme' THEN 100 WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
     FROM obras o
     LEFT JOIN empresas e ON e.id = o.empresa_id
     LEFT JOIN ambientes a ON a.obra_id = o.id
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
-    LEFT JOIN fvs_planejadas f2 ON f2.ambiente_id = a.id AND f2.status = 'conforme'
-    LEFT JOIN fvs_planejadas f3 ON f3.ambiente_id = a.id AND f3.status != 'pendente'
     WHERE o.ativo = 1
     GROUP BY o.id, e.nome
     LIMIT 5
@@ -226,8 +224,7 @@ export default function DashboardScreen() {
               <Text style={styles.sectionTitle}>MINHAS OBRAS</Text>
               {obrasProgresso.map(o => {
                 const total = o.total_fvs ?? 0;
-                const pctDone = total > 0 ? ((o.fvs_concluidas ?? 0) / total) * 100 : 0;
-                const pctBg   = total > 0 ? ((o.fvs_iniciadas  ?? 0) / total) * 100 : 0;
+                const pctDone = o.progresso_percentual ?? 0;
                 return (
                   <Pressable
                     key={o.id}
@@ -247,7 +244,6 @@ export default function DashboardScreen() {
                       <View style={{ flex: 1 }}>
                         <ProgressBar
                           value={pctDone}
-                          bgValue={pctBg}
                           height={5}
                           color={pctDone === 100 ? Colors.ok : Colors.brand}
                         />
@@ -306,15 +302,15 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   headerText: { flex: 1 },
-  greeting:   { color: '#fff', fontSize: 19, fontWeight: '500' },
-  headerSub:  { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
+  greeting:   { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
+  headerSub:  { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.sm, marginTop: 2 },
   avatar: {
     width: 40, height: 40,
     borderRadius: Radius.full,
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  avatarText: { color: '#fff', fontSize: FontSizes.base, fontWeight: '600' },
 
   divider: {
     height: 1,
@@ -329,8 +325,8 @@ const styles = StyleSheet.create({
   },
   lastSection: { paddingBottom: Spacing.xxl },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle:  { fontSize: 11, fontWeight: '600', color: Colors.textTertiary, letterSpacing: 0.5 },
-  sectionLink:   { fontSize: 12, color: Colors.brand, fontWeight: '500' },
+  sectionTitle:  { fontSize: FontSizes.xs, fontWeight: '600', color: Colors.textTertiary, letterSpacing: 0.5 },
+  sectionLink:   { fontSize: FontSizes.sm, color: Colors.brand, fontWeight: '500' },
   kpiGrid:       { flexDirection: 'row', gap: Spacing.sm },
 
   // NC cards
@@ -345,12 +341,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ncCardTop:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  ncItem:        { fontSize: 13, fontWeight: '500', color: Colors.text, flex: 1 },
+  ncItem:        { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text, flex: 1 },
   ncBadge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.full },
-  ncBadgeText:   { fontSize: 10, fontWeight: '600' },
-  ncMeta:        { fontSize: 11, color: Colors.textSecondary },
+  ncBadgeText:   { fontSize: FontSizes.tiny, fontWeight: '600' },
+  ncMeta:        { fontSize: FontSizes.xs, color: Colors.textSecondary },
   ncDeadline:    { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  ncDeadlineText:{ fontSize: 11, color: Colors.warn, fontWeight: '500' },
+  ncDeadlineText:{ fontSize: FontSizes.xs, color: Colors.warn, fontWeight: '500' },
 
   // Obra cards
   obraCard: {
@@ -362,10 +358,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   obraCardTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  obraNome:       { fontSize: 13, fontWeight: '600', color: Colors.text, flex: 1 },
-  obraMeta:       { fontSize: 11, color: Colors.textSecondary },
+  obraNome:       { fontSize: FontSizes.base, fontWeight: '600', color: Colors.text, flex: 1 },
+  obraMeta:       { fontSize: FontSizes.xs, color: Colors.textSecondary },
   obraProgressRow:{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 },
-  obraFvs:        { fontSize: 11, color: Colors.textSecondary, whiteSpace: 'nowrap' as any },
+  obraFvs:        { fontSize: FontSizes.xs, color: Colors.textSecondary, whiteSpace: 'nowrap' as any },
 
   // Activity
   activityRow: {
@@ -380,6 +376,6 @@ const styles = StyleSheet.create({
   },
   activityLeft:  { width: 24, alignItems: 'center' },
   activityBody:  { flex: 1 },
-  activityTitle: { fontSize: 13, fontWeight: '500', color: Colors.text },
-  activityMeta:  { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
+  activityTitle: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text },
+  activityMeta:  { fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 },
 });

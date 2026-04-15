@@ -4,7 +4,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, Circle, XCircle } from 'lucide
 import { useMemo } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { ProgressBar } from '../../../../../../../components/ProgressBar';
-import { Colors, Radius, Spacing } from '../../../../../../../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../../../../../../../lib/constants';
 
 interface AmbienteRow { id: string; nome: string; tipo: string; localizacao: string; obra_nome: string }
 interface FvsRow {
@@ -127,8 +127,8 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   headerText: { flex: 1 },
-  title: { color: '#fff', fontSize: 17, fontWeight: '500' },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
+  title: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
+  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.sm, marginTop: 2 },
   summaryPanel: {
     backgroundColor: Colors.surface,
     padding: Spacing.lg,
@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  summaryLabel: { fontSize: 12, fontWeight: '500', color: Colors.textSecondary },
-  summaryCount: { fontSize: 13, fontWeight: '600', color: Colors.ok },
+  summaryLabel: { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.textSecondary },
+  summaryCount: { fontSize: FontSizes.base, fontWeight: '600', color: Colors.ok },
   list: { padding: Spacing.lg, gap: Spacing.xs, paddingBottom: Spacing.xxl },
   fvsCard: {
     backgroundColor: Colors.surface,
@@ -152,8 +152,8 @@ const styles = StyleSheet.create({
   },
   fvsLeft: { width: 24, alignItems: 'center' },
   fvsBody: { flex: 1 },
-  fvsNome: { fontSize: 13, fontWeight: '500', color: Colors.text },
-  fvsDate: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
+  fvsNome: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text },
+  fvsDate: { fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 },
   empty: { paddingTop: 48, alignItems: 'center' },
-  emptyText: { fontSize: 13, color: Colors.textTertiary },
+  emptyText: { fontSize: FontSizes.base, color: Colors.textTertiary },
 });

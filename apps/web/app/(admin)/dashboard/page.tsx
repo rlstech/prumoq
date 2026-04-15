@@ -16,10 +16,10 @@ export default async function DashboardPage() {
     { data: verifsRecentesData },
     { data: ncsUrgentesData },
   ] = await Promise.all([
-    supabase.from('obras' as never).select('*', { count: 'exact', head: true }).neq('status', 'concluida').eq('ativo', true),
-    supabase.from('ambientes' as never).select('*', { count: 'exact', head: true }).eq('ativo', true),
-    supabase.from('fvs_planejadas' as never).select('*', { count: 'exact', head: true }).eq('status', 'conforme'),
-    supabase.from('nao_conformidades' as never).select('*', { count: 'exact', head: true }).eq('status', 'aberta'),
+    supabase.from('obras' as any).select('*', { count: 'exact', head: true }).neq('status', 'concluida').eq('ativo', true),
+    supabase.from('ambientes' as any).select('*', { count: 'exact', head: true }).eq('ativo', true),
+    supabase.from('fvs_planejadas' as any).select('*', { count: 'exact', head: true }).eq('status', 'conforme'),
+    supabase.from('nao_conformidades' as any).select('*', { count: 'exact', head: true }).eq('status', 'aberta'),
     (supabase.rpc as any)('get_obras_progresso_dashboard'),
     (supabase.rpc as any)('get_verificacoes_recentes'),
     (supabase.rpc as any)('get_ncs_urgentes'),
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
                 </thead>
                 <tbody>
                   {obrasProgresso.length ? obrasProgresso.map((obra: any) => {
-                    const percent = obra.total_fvs > 0 ? Math.round((obra.fvs_concluidas / obra.total_fvs) * 100) : 0;
+                    const percent = Math.round(obra.progresso_percentual ?? (obra.total_fvs > 0 ? (obra.fvs_concluidas / obra.total_fvs) * 100 : 0));
                     return (
                       <tr key={obra.id} className="border-b border-brd-0 last:border-0 hover:bg-bg-0">
                         <td className="py-3 px-4">

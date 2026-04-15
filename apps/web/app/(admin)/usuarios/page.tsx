@@ -6,7 +6,7 @@ export default async function UsuariosPage() {
   const supabase = await createClient();
 
   const { data: usuarios } = await (supabase.rpc as any)('get_usuarios_com_obras');
-  const { data: obras } = await supabase.from('obras' as never).select('id, nome').eq('ativo', true);
+  const { data: obras } = await supabase.from('obras' as any).select('id, nome').eq('ativo', true);
 
   return (
     <>

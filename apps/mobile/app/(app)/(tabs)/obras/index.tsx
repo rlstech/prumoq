@@ -13,7 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { ProgressBar } from '../../../../components/ProgressBar';
 import { StatusBadge } from '../../../../components/StatusBadge';
-import { Colors, Radius, Spacing } from '../../../../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
 import type { BadgeStatus } from '../../../../components/StatusBadge';
 
 interface ObraRow {
@@ -24,6 +24,7 @@ interface ObraRow {
   uf: string;
   total_fvs: number;
   fvs_concluidas: number;
+  progresso_percentual: number;
   ncs_abertas: number;
 }
 
@@ -34,19 +35,19 @@ const OBRAS_QUERY = `
     o.status,
     o.municipio,
     o.uf,
-    COUNT(DISTINCT f.id)  AS total_fvs,
-    COUNT(DISTINCT f2.id) AS fvs_concluidas,
-    COUNT(DISTINCT n.id)  AS ncs_abertas
+    COUNT(DISTINCT f.id) AS total_fvs,
+    COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
+    CAST(SUM(CASE f.status WHEN 'conforme' THEN 100 WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual,
+    (SELECT COUNT(*) FROM nao_conformidades n
+     WHERE n.status = 'aberta' AND n.verificacao_id IN (
+       SELECT v.id FROM verificacoes v
+       JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
+       JOIN ambientes a2 ON a2.id = fp.ambiente_id
+       WHERE a2.obra_id = o.id
+     )) AS ncs_abertas
   FROM obras o
-  LEFT JOIN ambientes a  ON a.obra_id = o.id
-  LEFT JOIN fvs_planejadas f  ON f.ambiente_id = a.id
-  LEFT JOIN fvs_planejadas f2 ON f2.ambiente_id = a.id AND f2.status = 'conforme'
-  LEFT JOIN nao_conformidades n ON n.status = 'aberta' AND n.verificacao_id IN (
-    SELECT id FROM verificacoes
-    WHERE fvs_planejada_id IN (
-      SELECT id FROM fvs_planejadas WHERE ambiente_id = a.id
-    )
-  )
+  LEFT JOIN ambientes a ON a.obra_id = o.id
+  LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
   WHERE o.ativo = 1
   GROUP BY o.id
   ORDER BY o.nome
@@ -88,9 +89,7 @@ export default function ObrasScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => {
-          const progress = item.total_fvs > 0
-            ? (item.fvs_concluidas / item.total_fvs) * 100
-            : 0;
+          const progress = item.progresso_percentual ?? 0;
           return (
             <Pressable
               style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -143,8 +142,8 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   headerRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
-  title: { color: '#fff', fontSize: 19, fontWeight: '500' },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
+  title: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
+  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.base },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -157,7 +156,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 38,
     color: '#fff',
-    fontSize: 14,
+    fontSize: FontSizes.md,
   },
   list: { padding: Spacing.lg, gap: Spacing.sm },
   card: {
@@ -171,19 +170,19 @@ const styles = StyleSheet.create({
   cardPressed: { opacity: 0.75 },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
   cardLeft: { flex: 1 },
-  cardNome: { fontSize: 14, fontWeight: '500', color: Colors.text },
+  cardNome: { fontSize: FontSizes.md, fontWeight: '500', color: Colors.text },
   cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  cardCity: { fontSize: 12, color: Colors.textSecondary },
+  cardCity: { fontSize: FontSizes.sm, color: Colors.textSecondary },
   cardBottom: { gap: Spacing.xs },
   cardStats: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  statText: { fontSize: 11, color: Colors.textSecondary },
+  statText: { fontSize: FontSizes.xs, color: Colors.textSecondary },
   ncBadge: {
     backgroundColor: Colors.nokBg,
     borderRadius: Radius.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  ncBadgeText: { fontSize: 10, fontWeight: '600', color: Colors.nok },
+  ncBadgeText: { fontSize: FontSizes.tiny, fontWeight: '600', color: Colors.nok },
   empty: { alignItems: 'center', gap: Spacing.md, paddingTop: 60 },
-  emptyText: { fontSize: 14, color: Colors.textTertiary },
+  emptyText: { fontSize: FontSizes.md, color: Colors.textTertiary },
 });

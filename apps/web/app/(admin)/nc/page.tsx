@@ -7,7 +7,7 @@ export default async function NcPage() {
   const supabase = await createClient();
 
   const { data: ncsData } = await supabase
-    .from('nao_conformidades' as never)
+    .from('nao_conformidades' as any)
     .select('*, equipes(nome), fvs_planejadas(subservico, ambientes(nome, obras(nome))), usuarios(nome)')
     .order('prazo_correcao', { ascending: true });
 

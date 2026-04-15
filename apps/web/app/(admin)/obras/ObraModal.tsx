@@ -46,7 +46,7 @@ export default function ObraModal({ isOpen, onClose, empresas }: { isOpen: boole
       ativo: true
     };
 
-    const { error } = await supabase.from('obras' as never).insert([payload] as any);
+    const { error } = await supabase.from('obras' as any).insert([payload] as any);
 
     setLoading(false);
 

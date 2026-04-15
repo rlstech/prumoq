@@ -9,7 +9,7 @@ export default async function EmpresasPage() {
 
   // Using a custom select to get 'obras(count)' correctly without breaking Supabase RPCs
   const { data: empresasData } = await supabase
-    .from('empresas' as never)
+    .from('empresas' as any)
     .select('*, obras(count)');
 
   const empresas = (empresasData as any[]) || [];

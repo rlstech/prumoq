@@ -7,13 +7,14 @@ import { PhotoGrid } from '../../../../../../../../../components/PhotoGrid';
 import { PhotoViewer } from '../../../../../../../../../components/PhotoViewer';
 import { StatusBadge } from '../../../../../../../../../components/StatusBadge';
 import type { BadgeStatus } from '../../../../../../../../../components/StatusBadge';
-import { Colors, Radius, Spacing } from '../../../../../../../../../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../../../../../../../../../lib/constants';
 
 interface FvsRow { id: string; subservico: string; status: string; ambiente_nome: string; obra_nome: string }
 interface VerifRow {
   id: string; numero_verif: number; data_verif: string; status: string;
   observacoes: string; assinatura_url: string | null;
   inspetor_nome: string; percentual_exec: number; created_offline: number | boolean;
+  created_at: string;
 }
 interface NcRow {
   id: string; verificacao_id: string; descricao: string;
@@ -45,11 +46,11 @@ export default function FvsHistoryScreen() {
   const { data: verificacoes } = useQuery<VerifRow>(`
     SELECT v.id, v.numero_verif, v.data_verif, v.status, v.observacoes,
            v.assinatura_url, v.percentual_exec, v.created_offline,
-           u.nome AS inspetor_nome
+           v.created_at, u.nome AS inspetor_nome
     FROM verificacoes v
     LEFT JOIN usuarios u ON u.id = v.inspetor_id
     WHERE v.fvs_planejada_id = ?
-    ORDER BY v.data_verif DESC
+    ORDER BY v.created_at DESC
   `, [fvsId]);
 
   const { data: ncs } = useQuery<NcRow>(`
@@ -140,7 +141,11 @@ export default function FvsHistoryScreen() {
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
                   <Text style={styles.cardDate}>
-                    {new Date(item.data_verif).toLocaleDateString('pt-BR')}
+                    {new Date(item.created_at || item.data_verif).toLocaleString('pt-BR', {
+                      timeZone: 'America/Sao_Paulo',
+                      day: '2-digit', month: '2-digit', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit',
+                    })}
                   </Text>
                   <Text style={styles.cardInspector}>{item.inspetor_nome ?? 'Inspetor'}</Text>
                 </View>
@@ -251,8 +256,8 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   headerText: { flex: 1 },
-  title: { color: '#fff', fontSize: 17, fontWeight: '500' },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
+  title: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
+  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.sm, marginTop: 2 },
   novaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -262,7 +267,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     gap: 4,
   },
-  novaBtnText: { color: '#fff', fontSize: 13, fontWeight: '500' },
+  novaBtnText: { color: '#fff', fontSize: FontSizes.base, fontWeight: '500' },
   statusPanel: {
     backgroundColor: Colors.surface,
     padding: Spacing.lg,
@@ -273,8 +278,8 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   summaryRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  summaryItem: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
-  summaryTotal: { fontSize: 12, color: Colors.textTertiary },
+  summaryItem: { fontSize: FontSizes.base, color: Colors.textSecondary, fontWeight: '500' },
+  summaryTotal: { fontSize: FontSizes.sm, color: Colors.textTertiary },
   list: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
   timelineItem: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
   dotCol: { alignItems: 'center', paddingTop: 4, width: 16 },
@@ -291,9 +296,9 @@ const styles = StyleSheet.create({
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   cardHeaderLeft: { gap: 2 },
-  cardDate: { fontSize: 13, fontWeight: '500', color: Colors.text },
-  cardInspector: { fontSize: 11, color: Colors.textSecondary },
-  cardVerifNum: { fontSize: 12, color: Colors.textSecondary },
+  cardDate: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text },
+  cardInspector: { fontSize: FontSizes.xs, color: Colors.textSecondary },
+  cardVerifNum: { fontSize: FontSizes.sm, color: Colors.textSecondary },
   offlineBadge: {
     alignSelf: 'flex-start',
     backgroundColor: Colors.warnBg,
@@ -301,8 +306,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  offlineBadgeText: { fontSize: 10, color: Colors.warn, fontWeight: '500' },
-  cardObs: { fontSize: 12, color: Colors.textSecondary, fontStyle: 'italic' },
+  offlineBadgeText: { fontSize: FontSizes.tiny, color: Colors.warn, fontWeight: '500' },
+  cardObs: { fontSize: FontSizes.sm, color: Colors.textSecondary, fontStyle: 'italic' },
   ncPanel: {
     backgroundColor: Colors.nokBg,
     borderRadius: Radius.md,
@@ -312,21 +317,21 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ncHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.sm },
-  ncItem: { fontSize: 12, fontWeight: '500', color: Colors.nok, flex: 1 },
-  ncDesc: { fontSize: 12, color: Colors.text },
-  ncSolucao: { fontSize: 11, color: Colors.textSecondary },
+  ncItem: { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.nok, flex: 1 },
+  ncDesc: { fontSize: FontSizes.sm, color: Colors.text },
+  ncSolucao: { fontSize: FontSizes.xs, color: Colors.textSecondary },
   ncFooter: { flexDirection: 'row', gap: Spacing.md, flexWrap: 'wrap', marginTop: 2 },
-  ncMeta: { fontSize: 11, color: Colors.textSecondary },
+  ncMeta: { fontSize: FontSizes.xs, color: Colors.textSecondary },
   signedRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  signedText: { fontSize: 11, color: Colors.ok, fontWeight: '500' },
-  unsignedText: { fontSize: 11, color: Colors.textTertiary },
+  signedText: { fontSize: FontSizes.xs, color: Colors.ok, fontWeight: '500' },
+  unsignedText: { fontSize: FontSizes.xs, color: Colors.textTertiary },
   empty: { alignItems: 'center', gap: Spacing.lg, paddingTop: 60 },
-  emptyText: { fontSize: 14, color: Colors.textTertiary },
+  emptyText: { fontSize: FontSizes.md, color: Colors.textTertiary },
   emptyBtn: {
     backgroundColor: Colors.brand,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
   },
-  emptyBtnText: { color: '#fff', fontWeight: '500', fontSize: 14 },
+  emptyBtnText: { color: '#fff', fontWeight: '500', fontSize: FontSizes.md },
 });

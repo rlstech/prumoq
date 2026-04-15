@@ -1,7 +1,7 @@
 import { useStatus } from '@powersync/react-native';
 import { WifiOff } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors, Spacing } from '../lib/constants';
+import { Colors, FontSizes, Spacing } from '../lib/constants';
 
 export function OfflineBanner() {
   const status = useStatus();
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.warn + '33',
   },
   text: {
-    fontSize: 12,
+    fontSize: FontSizes.sm,
     color: Colors.warn,
     fontWeight: '500',
     flex: 1,

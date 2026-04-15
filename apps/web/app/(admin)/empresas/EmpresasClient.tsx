@@ -48,7 +48,7 @@ export default function EmpresasClient({ initialData }: { initialData: any[] }) 
     setLoading(true);
     const supabase = createClient();
 
-    const { error } = await supabase.from('empresas' as never).insert([{
+    const { error } = await supabase.from('empresas' as any).insert([{
       nome: formData.nome.trim(),
       cnpj: cnpjClean,
       municipio: formData.municipio.trim() || null,

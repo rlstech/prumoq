@@ -1,6 +1,6 @@
 import { LucideIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Colors, Radius, Spacing } from '../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
 
 interface Props {
   label: string;
@@ -47,12 +47,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   value: {
-    fontSize: 22,
+    fontSize: FontSizes.xxl,
     fontWeight: '600',
     letterSpacing: -0.5,
   },
   label: {
-    fontSize: 11,
+    fontSize: FontSizes.xs,
     fontWeight: '500',
     color: Colors.textSecondary,
     letterSpacing: 0.2,

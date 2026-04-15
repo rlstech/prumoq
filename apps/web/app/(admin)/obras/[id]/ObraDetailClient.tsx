@@ -119,7 +119,7 @@ export default function ObraDetailClient({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {filtered.map(amb => {
-              const percent = amb.total_fvs > 0 ? Math.round((amb.fvs_concluidas / amb.total_fvs) * 100) : 0;
+              const percent = Math.round(amb.progresso_percentual ?? (amb.total_fvs > 0 ? (amb.fvs_concluidas / amb.total_fvs) * 100 : 0));
               const hasNC = amb.ncs_abertas > 0;
               return (
                 <div

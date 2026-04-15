@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { AlertTriangle, CheckCircle2, Clock } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { Colors, Radius, Spacing } from '../../../../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
 
 type TabKey = 'abertas' | 'resolvidas' | 'todas';
 
@@ -166,8 +166,8 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
     gap: 4,
   },
-  title: { color: '#fff', fontSize: 19, fontWeight: '500' },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
+  title: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
+  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.sm },
   tabRow: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, paddingVertical: Spacing.md, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
   tabActive: { borderBottomColor: Colors.brand },
-  tabText: { fontSize: 13, fontWeight: '500', color: Colors.textSecondary },
+  tabText: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.textSecondary },
   tabTextActive: { color: Colors.brand },
   list: { padding: Spacing.lg, gap: Spacing.sm, paddingBottom: Spacing.xxl },
   card: {
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   cardResolved: { opacity: 0.7, borderLeftColor: Colors.ok },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: Spacing.sm },
   cardHeaderLeft: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, flex: 1 },
-  cardItem: { fontSize: 13, fontWeight: '500', color: Colors.text, flex: 1 },
+  cardItem: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text, flex: 1 },
   cardItemResolved: { color: Colors.textSecondary },
   deadlineBadge: {
     flexDirection: 'row',
@@ -202,19 +202,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  deadlineText: { fontSize: 11, fontWeight: '600' },
-  cardDesc: { fontSize: 12, color: Colors.textSecondary },
-  cardMeta: { fontSize: 11, color: Colors.textTertiary },
-  cardResp: { fontSize: 11, color: Colors.textSecondary },
+  deadlineText: { fontSize: FontSizes.xs, fontWeight: '600' },
+  cardDesc: { fontSize: FontSizes.sm, color: Colors.textSecondary },
+  cardMeta: { fontSize: FontSizes.xs, color: Colors.textTertiary },
+  cardResp: { fontSize: FontSizes.xs, color: Colors.textSecondary },
   cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  cardDate: { fontSize: 11, color: Colors.textSecondary },
+  cardDate: { fontSize: FontSizes.xs, color: Colors.textSecondary },
   reinspBtn: {
     backgroundColor: Colors.progressBg,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
   },
-  reinspBtnText: { fontSize: 12, color: Colors.progress, fontWeight: '500' },
+  reinspBtnText: { fontSize: FontSizes.sm, color: Colors.progress, fontWeight: '500' },
   empty: { alignItems: 'center', gap: Spacing.md, paddingTop: 60 },
-  emptyText: { fontSize: 14, color: Colors.textTertiary },
+  emptyText: { fontSize: FontSizes.md, color: Colors.textTertiary },
 });

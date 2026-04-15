@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors, Radius, Spacing } from '../lib/constants';
+import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
 
 export type BadgeStatus =
   | 'conforme'
@@ -70,11 +70,11 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   label: {
-    fontSize: 11,
+    fontSize: FontSizes.xs,
     fontWeight: '500',
     letterSpacing: 0.1,
   },
   labelSm: {
-    fontSize: 10,
+    fontSize: FontSizes.tiny,
   },
 });

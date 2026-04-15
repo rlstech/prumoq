@@ -74,8 +74,8 @@ export async function addEquipeToObra(obraId: string, equipeId: string) {
     await getAuthenticatedUser();
     console.log('[addEquipeToObra] inserting', { obraId, equipeId });
     const { data, error } = await supabaseAdmin
-      .from('obra_equipes' as never)
-      .insert({ obra_id: obraId, equipe_id: equipeId } as never)
+      .from('obra_equipes' as any)
+      .insert({ obra_id: obraId, equipe_id: equipeId } as any)
       .select();
     console.log('[addEquipeToObra] result', { data, error });
     if (error) throw error;
@@ -91,12 +91,47 @@ export async function removeEquipeFromObra(obraId: string, equipeId: string) {
   try {
     await getAuthenticatedUser();
     const { error } = await supabaseAdmin
-      .from('obra_equipes' as never)
+      .from('obra_equipes' as any)
       .delete()
       .eq('obra_id', obraId)
       .eq('equipe_id', equipeId);
     if (error) throw error;
     revalidatePath(`/obras/${obraId}`);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function addFvsToAmbiente(
+  obraId: string,
+  ambId: string,
+  selectedFvsIds: string[],
+  fvsPadraoList: { id: string; nome: string; revisao_atual: number }[]
+) {
+  try {
+    await getAuthenticatedUser();
+
+    if (selectedFvsIds.length === 0) return { success: true };
+
+    const fvsToInsert = selectedFvsIds.map(fvsId => {
+      const pd = fvsPadraoList.find(f => f.id === fvsId);
+      return {
+        ambiente_id: ambId,
+        fvs_padrao_id: fvsId,
+        subservico: pd?.nome ?? 'Serviço Padrão',
+        revisao_associada: pd?.revisao_atual ?? 1,
+        status: 'pendente',
+      };
+    });
+
+    const { error: fvsError } = await supabaseAdmin
+      .from('fvs_planejadas')
+      .insert(fvsToInsert);
+
+    if (fvsError) throw fvsError;
+
+    revalidatePath(`/obras/${obraId}/ambiente/${ambId}`);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

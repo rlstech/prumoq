@@ -59,7 +59,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── obras ativas (obras list screen) ──────────────────
-  if (s.includes('count(distinct f.id)') && s.includes('count(distinct f2.id)') && s.includes('count(distinct n.id)') && s.includes('from obras o') && s.includes('where o.ativo = 1') && s.includes('group by o.id')) {
+  if (s.includes('progresso_percentual') && s.includes('o.municipio') && s.includes('from obras o') && s.includes('where o.ativo = 1')) {
     const { data } = await supabase.rpc('get_obras_com_fvs');
     return (data ?? []) as T[];
   }
@@ -122,9 +122,9 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── obras com progresso (dashboard) ───────────────────
-  if (s.includes('count(distinct f.id)') && s.includes('count(distinct f2.id)') && s.includes('from obras o') && s.includes('where o.ativo = 1') && s.includes('limit 5')) {
-    const { data } = await supabase.rpc('get_obras_progresso_dashboard');
-    return (data ?? []) as T[];
+  if (s.includes('progresso_percentual') && s.includes('empresa_nome') && s.includes('from obras o') && s.includes('where o.ativo = 1') && s.includes('limit 5')) {
+    const { data } = await supabase.rpc('get_obras_com_fvs');
+    return ((data ?? []) as T[]).slice(0, 5);
   }
 
   // ── verificações recentes (dashboard) ─────────────────
@@ -219,9 +219,37 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
     return (data ?? []) as T[];
   }
 
-  // ── nova verificação: equipes ─────────────────────────
-  if (s.includes('from equipes') && s.includes('ativo = 1')) {
-    const { data } = await supabase.from('equipes').select('id, nome, tipo').eq('ativo', 1).order('nome');
+  // ── nova verificação: equipes da obra ────────────────
+  if (s.includes('from equipes e') && s.includes('join obra_equipes oe') && s.includes('oe.obra_id = ?') && params[0]) {
+    const { data: oeRows } = await supabase
+      .from('obra_equipes')
+      .select('equipe_id')
+      .eq('obra_id', params[0] as string);
+    const equipeIds = (oeRows ?? []).map(r => r.equipe_id);
+    if (equipeIds.length === 0) return [] as T[];
+    const { data } = await supabase
+      .from('equipes')
+      .select('id, nome, tipo')
+      .in('id', equipeIds)
+      .eq('ativo', true)
+      .order('nome');
+    return (data ?? []) as T[];
+  }
+
+  // ── nova verificação: último percentual_exec do FVS ──
+  if (s.includes('select percentual_exec from verificacoes where fvs_planejada_id = ?') && params[0]) {
+    const { data } = await supabase
+      .from('verificacoes')
+      .select('percentual_exec')
+      .eq('fvs_planejada_id', params[0] as string)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    return (data ?? []) as T[];
+  }
+
+  // ── nova verificação: status do FVS ──────────────────
+  if (s.includes('select id, subservico, revisao_associada, status from fvs_planejadas where id = ?') && params[0]) {
+    const { data } = await supabase.from('fvs_planejadas').select('id, subservico, revisao_associada, status').eq('id', params[0] as string);
     return (data ?? []) as T[];
   }
 

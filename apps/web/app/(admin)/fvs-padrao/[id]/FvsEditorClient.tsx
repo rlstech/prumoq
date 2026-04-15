@@ -75,7 +75,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
     }
 
     // Insere logs
-    await supabase.from('fvs_padrao_revisoes' as never).insert([{
+    await supabase.from('fvs_padrao_revisoes' as any).insert([{
       fvs_padrao_id: fvs.id,
       numero_revisao: novaRevisao,
       revisado_por: user!.id,
@@ -92,7 +92,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
       tolerancia: it.tolerancia
     }));
 
-    await supabase.from('fvs_padrao_itens' as never).insert(novosItens as any);
+    await supabase.from('fvs_padrao_itens' as any).insert(novosItens as any);
 
     toast(`Revisão ${novaRevisao} publicada com sucesso!`, 'success');
     setIsPublishing(false);

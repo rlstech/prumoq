@@ -4,26 +4,39 @@ import { useState } from 'react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
 import ChecklistEditorModal from './ChecklistEditorModal';
+import AddFvsModal from './AddFvsModal';
 
 interface FvsPlannerClientProps {
   ambiente: any;
   initialFvsList: any[];
+  fvsPadraoList: any[];
 }
 
-export default function FvsPlannerClient({ ambiente, initialFvsList }: FvsPlannerClientProps) {
+export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoList }: FvsPlannerClientProps) {
   const [selectedFvsId, setSelectedFvsId] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const concluidasCount = initialFvsList.filter(f => f.status === 'conforme').length;
   const progress = initialFvsList.length > 0 ? Math.round((concluidasCount / initialFvsList.length) * 100) : 0;
+
+  const alreadyLinkedIds = initialFvsList.map(f => f.fvs_padrao_id);
 
   return (
     <div className="flex flex-col lg:flex-row h-full max-w-[1400px] mx-auto p-6 gap-6">
       
       {/* Left Panel: FVS Planejadas */}
       <div className="flex-1 flex flex-col bg-bg-1 border border-brd-0 rounded-xl overflow-hidden min-h-[500px]">
-        <div className="px-5 py-4 border-b border-brd-0 bg-bg-0">
-          <h2 className="text-[14px] font-semibold text-txt tracking-tight">FVS Planejadas</h2>
-          <p className="text-xs text-txt-2">{initialFvsList.length} serviços • {concluidasCount} concluídos</p>
+        <div className="px-5 py-4 border-b border-brd-0 bg-bg-0 flex items-center justify-between">
+          <div>
+            <h2 className="text-[14px] font-semibold text-txt tracking-tight">FVS Planejadas</h2>
+            <p className="text-xs text-txt-2">{initialFvsList.length} serviços • {concluidasCount} concluídos</p>
+          </div>
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-3 py-1.5 bg-[var(--br)] text-white rounded-lg text-xs font-medium hover:bg-[var(--brd)] transition-colors"
+          >
+            + Adicionar
+          </button>
         </div>
         
         <div className="flex-1 overflow-y-auto">
@@ -57,8 +70,14 @@ export default function FvsPlannerClient({ ambiente, initialFvsList }: FvsPlanne
              </tbody>
            </table>
           ) : (
-            <div className="p-12 text-center text-sm text-txt-3 flex flex-col items-center justify-center h-full">
-              Nenhuma FVS vinculada a este ambiente.
+            <div className="p-12 text-center text-sm text-txt-3 flex flex-col items-center justify-center h-full gap-3">
+              <p>Nenhuma FVS vinculada a este ambiente.</p>
+              <button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="text-xs font-semibold text-[var(--br)] underline"
+              >
+                Vincular primeira FVS
+              </button>
             </div>
           )}
         </div>
@@ -113,6 +132,17 @@ export default function FvsPlannerClient({ ambiente, initialFvsList }: FvsPlanne
           onClose={() => setSelectedFvsId(null)} 
           fvsId={selectedFvsId} 
           fvsName={initialFvsList.find(f => f.id === selectedFvsId)?.subservico || ''}
+        />
+      )}
+
+      {isAddModalOpen && (
+        <AddFvsModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          obraId={ambiente.obra_id}
+          ambId={ambiente.id}
+          fvsPadraoList={fvsPadraoList}
+          alreadyLinkedIds={alreadyLinkedIds}
         />
       )}
     </div>

@@ -10,8 +10,8 @@ export default async function AmbientePage(props: { params: Promise<{ id: string
 
   // Fetch ambiente with obra relations
   const { data: ambiente } = await supabase
-    .from('ambientes' as never)
-    .select('*, obras(nome)')
+    .from('ambientes' as any)
+    .select('*, obras(nome, empresa_id)')
     .eq('id', ambId)
     .single();
 
@@ -20,6 +20,13 @@ export default async function AmbientePage(props: { params: Promise<{ id: string
 
   // Fetch FVS planejadas using RPC
   const { data: fvsList } = await (supabase.rpc as any)('get_fvs_ambiente', { p_ambiente_id: ambId });
+
+  // Fetch available standard FVS for this company
+  const { data: fvsPadraoList } = await supabase
+    .from('fvs_padrao' as any)
+    .select('id, nome, revisao_atual, categoria')
+    .eq('empresa_id', typedAmb.obras?.empresa_id)
+    .eq('ativo', true);
 
   return (
     <>
@@ -34,6 +41,7 @@ export default async function AmbientePage(props: { params: Promise<{ id: string
         <FvsPlannerClient 
           ambiente={typedAmb} 
           initialFvsList={fvsList || []} 
+          fvsPadraoList={fvsPadraoList || []}
         />
       </div>
     </>

@@ -60,7 +60,7 @@ export default function ObrasClient({ initialObras, empresas }: ObrasClientProps
     {
       header: 'Progresso',
       cell: (item) => {
-        const percent = item.total_fvs > 0 ? Math.round((item.fvs_concluidas / item.total_fvs) * 100) : 0;
+        const percent = Math.round(item.progresso_percentual ?? (item.total_fvs > 0 ? (item.fvs_concluidas / item.total_fvs) * 100 : 0));
         return (
           <div className="w-[90px]">
             <ProgressBar value={percent} variant={percent === 100 ? 'ok' : 'brand'} />
