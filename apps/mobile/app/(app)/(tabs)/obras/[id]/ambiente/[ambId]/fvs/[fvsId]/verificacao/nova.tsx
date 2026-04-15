@@ -200,15 +200,36 @@ function NcPanel({
       <View style={ncSt.twoCol}>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={ncSt.label}>Nova data de verif. *</Text>
-          <TextInput
-            style={ncSt.input}
-            placeholder="AAAA-MM-DD"
-            placeholderTextColor={Colors.textTertiary}
-            value={detail.data_nova_verif}
-            onChangeText={t => onChange({ data_nova_verif: t })}
-            keyboardType="numbers-and-punctuation"
-            maxLength={10}
-          />
+          {Platform.OS === 'web' ? (
+            // @ts-ignore — input HTML nativo no PWA
+            <input
+              type="date"
+              value={detail.data_nova_verif}
+              onChange={(e: any) => onChange({ data_nova_verif: e.target.value })}
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 6,
+                border: '0.5px solid rgba(0,0,0,0.12)',
+                padding: '7px 10px',
+                fontSize: 12,
+                color: '#1A1A18',
+                width: '100%',
+                boxSizing: 'border-box',
+                outline: 'none',
+                fontFamily: 'inherit',
+              }}
+            />
+          ) : (
+            <TextInput
+              style={ncSt.input}
+              placeholder="AAAA-MM-DD"
+              placeholderTextColor={Colors.textTertiary}
+              value={detail.data_nova_verif}
+              onChangeText={t => onChange({ data_nova_verif: t })}
+              keyboardType="numbers-and-punctuation"
+              maxLength={10}
+            />
+          )}
         </View>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={ncSt.label}>Responsável</Text>
@@ -327,6 +348,15 @@ export default function NovaVerificacaoScreen() {
   const [showSignature, setShowSignature] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  function showToast(msg: string, type: 'success' | 'error', onDone?: () => void) {
+    setToast({ msg, type });
+    setTimeout(() => {
+      setToast(null);
+      onDone?.();
+    }, 2200);
+  }
 
   const { photos: generalPhotos, addFromCamera, addFromGallery, removePhoto } = usePhotoCapture();
 
@@ -366,7 +396,7 @@ export default function NovaVerificacaoScreen() {
     const errs: Record<string, string> = {};
     if (!selectedEquipeId) errs.equipe = 'Selecione a equipe executora';
     if (!conclusao) errs.conclusao = 'Selecione o resultado da verificação';
-    if (!signaturePath) errs.assinatura = 'Assinatura digital obrigatória';
+    if (!signaturePath && Platform.OS !== 'web') errs.assinatura = 'Assinatura digital obrigatória';
 
     for (const item of itens) {
       if (!itemResults[item.id]) errs[`item_${item.id}`] = 'Classifique este item';
@@ -465,10 +495,11 @@ export default function NovaVerificacaoScreen() {
         );
       }
 
-      router.back();
+      showToast('Verificação salva com sucesso!', 'success', () => router.back());
     } catch (err) {
       console.error('[NovaVerificacao] save error:', err);
-      Alert.alert('Erro', 'Não foi possível salvar. Tente novamente.');
+      const msg = err instanceof Error ? err.message : 'Não foi possível salvar. Tente novamente.';
+      showToast(msg, 'error');
     } finally {
       setIsSaving(false);
     }
@@ -806,12 +837,19 @@ export default function NovaVerificacaoScreen() {
         />
       )}
 
+      {/* Toast feedback */}
+      {toast && (
+        <View style={[st.toast, toast.type === 'success' ? st.toastSuccess : st.toastError]}>
+          <Text style={st.toastText}>{toast.msg}</Text>
+        </View>
+      )}
+
       {/* Fixed save button */}
       <View style={st.saveBar}>
         <Pressable
           style={[st.saveBtn, isSaving && st.saveBtnDisabled]}
           onPress={handleSave}
-          disabled={isSaving}
+          disabled={isSaving || !!toast}
         >
           {isSaving
             ? <ActivityIndicator size="small" color="#fff" />
@@ -834,6 +872,16 @@ function resultBtnTextActive(): object {
 
 const st = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.bg },
+  toast: {
+    position: 'absolute', bottom: 90, left: 16, right: 16,
+    paddingVertical: 14, paddingHorizontal: 20,
+    borderRadius: 12, zIndex: 999,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18, shadowRadius: 8, elevation: 8,
+  },
+  toastSuccess: { backgroundColor: Colors.ok },
+  toastError:   { backgroundColor: Colors.nok },
+  toastText:    { color: '#fff', fontSize: 14, fontWeight: '500', textAlign: 'center' },
   header:  {
     backgroundColor: Colors.brand,
     flexDirection: 'row', alignItems: 'center',

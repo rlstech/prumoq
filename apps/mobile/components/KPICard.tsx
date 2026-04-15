@@ -7,12 +7,13 @@ interface Props {
   value: number | string;
   Icon?: LucideIcon;
   color?: string;
+  bgColor?: string;
   onPress?: () => void;
 }
 
-export function KPICard({ label, value, Icon, color = Colors.brand, onPress }: Props) {
+export function KPICard({ label, value, Icon, color = Colors.brand, bgColor, onPress }: Props) {
   const content = (
-    <View style={styles.card}>
+    <View style={[styles.card, bgColor ? { backgroundColor: bgColor, borderColor: 'transparent' } : null]}>
       {Icon && <Icon size={18} color={color} />}
       <Text style={[styles.value, { color }]}>{value}</Text>
       <Text style={styles.label}>{label}</Text>

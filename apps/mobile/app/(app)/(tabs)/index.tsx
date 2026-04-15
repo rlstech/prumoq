@@ -2,7 +2,7 @@ import { useQuery } from '@powersync/react-native';
 import { useRouter } from 'expo-router';
 import { AlertTriangle, Building2, CheckCircle2, ClipboardList, Clock } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { KPICard } from '../../../components/KPICard';
 import { OfflineBanner } from '../../../components/OfflineBanner';
 import { ProgressBar } from '../../../components/ProgressBar';
@@ -26,18 +26,62 @@ function weekAgo(): string {
   return d.toISOString().slice(0, 10);
 }
 
+function tempoRelativo(dateStr: string): string {
+  const d = new Date(dateStr);
+  const t = new Date();
+  const diffDays = Math.round((d.setHours(0,0,0,0) - t.setHours(0,0,0,0)) / 86_400_000);
+  if (diffDays === 0) return 'Hoje';
+  if (diffDays === -1) return 'Ontem';
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
+
+function ncBadge(dateStr: string): { label: string; color: string; bg: string } {
+  const diff = Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000);
+  if (diff <= 0) return { label: 'Vence hoje', color: Colors.nok,  bg: Colors.nokBg };
+  if (diff === 1) return { label: 'Amanhã',     color: Colors.warn, bg: Colors.warnBg };
+  return              { label: `${diff} dias`,  color: Colors.warn, bg: Colors.warnBg };
+}
+
 interface CountRow { count: number }
-interface ObraProgressRow { id: string; nome: string; total_fvs: number; fvs_concluidas: number }
-interface NcUrgentRow { id: string; item_titulo: string; ambiente_nome: string; obra_nome: string; data_nova_verif: string }
-interface VerifRecentRow { id: string; status: string; data_verif: string; ambiente_nome: string; obra_nome: string; fvs_nome: string }
-interface UsuarioRow { id: string; nome: string; cargo: string }
+interface ObraProgressRow {
+  id: string; nome: string; empresa_nome: string; status: string;
+  total_ambientes: number; total_fvs: number;
+  fvs_concluidas: number; fvs_iniciadas: number; ncs_abertas: number;
+}
+interface NcUrgentRow {
+  id: string; item_titulo: string; ambiente_nome: string;
+  obra_nome: string; data_nova_verif: string; prioridade: string;
+}
+interface VerifRecentRow {
+  id: string; status: string; data_verif: string;
+  ambiente_nome: string; obra_nome: string;
+  fvs_nome: string; tempo_relativo: string;
+}
+
+interface UserInfo { nome: string; cargo: string; empresa_nome: string }
 
 export default function DashboardScreen() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      setUserId(data.user.id);
+      const { data: u } = await supabase
+        .from('usuarios')
+        .select('nome, cargo, empresas(nome)')
+        .eq('id', data.user.id)
+        .single();
+      if (u) {
+        setUserInfo({
+          nome: u.nome as string,
+          cargo: u.cargo as string,
+          empresa_nome: (u.empresas as { nome: string } | null)?.nome ?? '',
+        });
+      }
+    });
   }, []);
 
   const { data: obrasAtivas } = useQuery<CountRow>(
@@ -55,7 +99,7 @@ export default function DashboardScreen() {
 
   const { data: ncsUrgentes } = useQuery<NcUrgentRow>(`
     SELECT n.id, vi.titulo AS item_titulo, a.nome AS ambiente_nome,
-           o.nome AS obra_nome, n.data_nova_verif
+           o.nome AS obra_nome, n.data_nova_verif, n.prioridade
     FROM nao_conformidades n
     JOIN verificacao_itens vi ON vi.id = n.verificacao_item_id
     JOIN verificacoes v ON v.id = n.verificacao_id
@@ -68,15 +112,20 @@ export default function DashboardScreen() {
   `);
 
   const { data: obrasProgresso } = useQuery<ObraProgressRow>(`
-    SELECT o.id, o.nome,
+    SELECT o.id, o.nome, o.status,
+           e.nome AS empresa_nome,
+           COUNT(DISTINCT a.id) AS total_ambientes,
            COUNT(DISTINCT f.id) AS total_fvs,
-           COUNT(DISTINCT f2.id) AS fvs_concluidas
+           COUNT(DISTINCT f2.id) AS fvs_concluidas,
+           COUNT(DISTINCT f3.id) AS fvs_iniciadas
     FROM obras o
+    LEFT JOIN empresas e ON e.id = o.empresa_id
     LEFT JOIN ambientes a ON a.obra_id = o.id
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
     LEFT JOIN fvs_planejadas f2 ON f2.ambiente_id = a.id AND f2.status = 'conforme'
+    LEFT JOIN fvs_planejadas f3 ON f3.ambiente_id = a.id AND f3.status != 'pendente'
     WHERE o.ativo = 1
-    GROUP BY o.id
+    GROUP BY o.id, e.nome
     LIMIT 5
   `);
 
@@ -92,12 +141,6 @@ export default function DashboardScreen() {
     LIMIT 3
   `);
 
-  const { data: usuarioRows } = useQuery<UsuarioRow>(
-    userId ? `SELECT id, nome, cargo FROM usuarios LIMIT 1` : `SELECT id, nome, cargo FROM usuarios WHERE 1=0`
-  );
-
-  const usuario = usuarioRows[0];
-
   const kpis = useMemo(() => ({
     obrasAtivas: obrasAtivas[0]?.count ?? 0,
     ncsAbertas: ncsAbertas[0]?.count ?? 0,
@@ -109,104 +152,150 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.safe}>
       <OfflineBanner />
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+
+        {/* ── Header ── */}
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.greeting}>Olá, {usuario?.nome?.split(' ')[0] ?? 'Inspetor'}</Text>
-            <Text style={styles.headerSub}>{usuario?.cargo ?? 'Inspetor de Campo'}</Text>
+            <Text style={styles.greeting}>Olá, {userInfo?.nome?.split(' ')[0] ?? 'Inspetor'}</Text>
+            <Text style={styles.headerSub}>
+              {userInfo?.cargo ?? 'Inspetor de Campo'}
+              {userInfo?.empresa_nome ? ` · ${userInfo.empresa_nome}` : ''}
+            </Text>
           </View>
           <Pressable onPress={() => router.push('/(app)/(tabs)/perfil' as never)} style={styles.avatar}>
-            <Text style={styles.avatarText}>{usuario ? initials(usuario.nome) : 'IN'}</Text>
+            <Text style={styles.avatarText}>{userInfo ? initials(userInfo.nome) : 'IN'}</Text>
           </Pressable>
         </View>
 
-        {/* KPIs */}
+        {/* ── KPIs ── */}
         <View style={styles.section}>
           <View style={styles.kpiGrid}>
-            <KPICard label="Obras ativas" value={kpis.obrasAtivas} Icon={Building2} color={Colors.progress} />
-            <KPICard label="NCs abertas" value={kpis.ncsAbertas} Icon={AlertTriangle} color={Colors.nok} />
+            <KPICard label="Obras ativas"     value={kpis.obrasAtivas} Icon={Building2}    color={Colors.progress}     bgColor={Colors.progressBg} />
+            <KPICard label="NCs abertas"      value={kpis.ncsAbertas}  Icon={AlertTriangle} color={Colors.nok}          bgColor={Colors.nokBg} />
           </View>
           <View style={styles.kpiGrid}>
-            <KPICard label="Verificações (7d)" value={kpis.verifsWeek} Icon={ClipboardList} color={Colors.ok} />
-            <KPICard label="Vencendo hoje" value={kpis.ncsHoje} Icon={Clock} color={Colors.warn} />
+            <KPICard label="Verif. esta semana" value={kpis.verifsWeek} Icon={ClipboardList} color={Colors.textSecondary} bgColor={Colors.surface2} />
+            <KPICard label="Vencendo hoje"    value={kpis.ncsHoje}     Icon={Clock}          color={Colors.warn}         bgColor={Colors.warnBg} />
           </View>
         </View>
 
-        {/* Urgent NCs */}
+        {/* ── NCs Urgentes ── */}
         {ncsUrgentes.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>NCs URGENTES</Text>
-              <Pressable onPress={() => router.push('/(app)/(tabs)/nc' as never)}>
-                <Text style={styles.sectionLink}>Ver todas</Text>
-              </Pressable>
+          <>
+            <View style={styles.divider} />
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>NÃO CONFORMIDADES URGENTES</Text>
+                <Pressable onPress={() => router.push('/(app)/(tabs)/nc' as never)}>
+                  <Text style={styles.sectionLink}>Ver todas</Text>
+                </Pressable>
+              </View>
+              {ncsUrgentes.map(nc => {
+                const badge = nc.data_nova_verif ? ncBadge(nc.data_nova_verif) : null;
+                return (
+                  <View key={nc.id} style={styles.ncCard}>
+                    <View style={styles.ncCardTop}>
+                      <Text style={styles.ncItem} numberOfLines={1}>{nc.item_titulo}</Text>
+                      {badge && (
+                        <View style={[styles.ncBadge, { backgroundColor: badge.bg }]}>
+                          <Text style={[styles.ncBadgeText, { color: badge.color }]}>{badge.label}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.ncMeta}>{nc.obra_nome} · {nc.ambiente_nome}</Text>
+                    {nc.data_nova_verif && (
+                      <View style={styles.ncDeadline}>
+                        <Clock size={10} color={Colors.warn} />
+                        <Text style={styles.ncDeadlineText}>
+                          {new Date(nc.data_nova_verif).toLocaleDateString('pt-BR')}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
-            {ncsUrgentes.map(nc => (
-              <View key={nc.id} style={styles.ncCard}>
-                <Text style={styles.ncItem} numberOfLines={1}>{nc.item_titulo}</Text>
-                <Text style={styles.ncMeta}>{nc.obra_nome} · {nc.ambiente_nome}</Text>
-                {nc.data_nova_verif && (
-                  <View style={styles.ncDeadline}>
-                    <Clock size={10} color={Colors.warn} />
-                    <Text style={styles.ncDeadlineText}>
-                      {new Date(nc.data_nova_verif).toLocaleDateString('pt-BR')}
+          </>
+        )}
+
+        {/* ── Minhas Obras ── */}
+        {obrasProgresso.length > 0 && (
+          <>
+            <View style={styles.divider} />
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>MINHAS OBRAS</Text>
+              {obrasProgresso.map(o => {
+                const total = o.total_fvs ?? 0;
+                const pctDone = total > 0 ? ((o.fvs_concluidas ?? 0) / total) * 100 : 0;
+                const pctBg   = total > 0 ? ((o.fvs_iniciadas  ?? 0) / total) * 100 : 0;
+                return (
+                  <Pressable
+                    key={o.id}
+                    style={({ pressed }) => [styles.obraCard, pressed && { opacity: 0.75 }]}
+                    onPress={() => router.push(`/obras/${o.id}` as never)}
+                  >
+                    <View style={styles.obraCardTop}>
+                      <Text style={styles.obraNome} numberOfLines={1}>{o.nome}</Text>
+                      {o.status && <StatusBadge status={o.status as any} size="sm" />}
+                    </View>
+                    {(o.empresa_nome || (o.total_ambientes ?? 0) > 0) && (
+                      <Text style={styles.obraMeta}>
+                        {[o.empresa_nome, (o.total_ambientes ?? 0) > 0 ? `${o.total_ambientes} amb.` : null].filter(Boolean).join(' · ')}
+                      </Text>
+                    )}
+                    <View style={styles.obraProgressRow}>
+                      <View style={{ flex: 1 }}>
+                        <ProgressBar
+                          value={pctDone}
+                          bgValue={pctBg}
+                          height={5}
+                          color={pctDone === 100 ? Colors.ok : Colors.brand}
+                        />
+                      </View>
+                      <Text style={styles.obraFvs}>
+                        {Math.round(pctDone)}% · {o.fvs_concluidas ?? 0}/{total} FVS
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        )}
+
+        {/* ── Atividade Recente ── */}
+        {verifsRecentes.length > 0 && (
+          <>
+            <View style={styles.divider} />
+            <View style={[styles.section, styles.lastSection]}>
+              <Text style={styles.sectionTitle}>ATIVIDADE RECENTE</Text>
+              {verifsRecentes.map(v => (
+                <View key={v.id} style={styles.activityRow}>
+                  <View style={styles.activityLeft}>
+                    <CheckCircle2 size={16} color={Colors.textTertiary} />
+                  </View>
+                  <View style={styles.activityBody}>
+                    <Text style={styles.activityTitle} numberOfLines={1}>{v.fvs_nome || 'Verificação'}</Text>
+                    <Text style={styles.activityMeta}>
+                      {v.obra_nome} · {v.ambiente_nome}
+                      {'  •  '}{(v as any).tempo_relativo ?? (v.data_verif ? tempoRelativo(v.data_verif) : '')}
                     </Text>
                   </View>
-                )}
-              </View>
-            ))}
-          </View>
+                  <StatusBadge status={v.status as any} size="sm" />
+                </View>
+              ))}
+            </View>
+          </>
         )}
 
-        {/* Obras com progresso */}
-        {obrasProgresso.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>OBRAS ATIVAS</Text>
-            {obrasProgresso.map(o => {
-              const pct = o.total_fvs > 0 ? (o.fvs_concluidas / o.total_fvs) * 100 : 0;
-              return (
-                <Pressable
-                  key={o.id}
-                  style={({ pressed }) => [styles.obraCard, pressed && { opacity: 0.75 }]}
-                  onPress={() => router.push(`/obras/${o.id}` as never)}
-                >
-                  <View style={styles.obraCardTop}>
-                    <Text style={styles.obraNome} numberOfLines={1}>{o.nome}</Text>
-                    <Text style={styles.obraPct}>{Math.round(pct)}%</Text>
-                  </View>
-                  <ProgressBar value={pct} height={5} color={Colors.ok} />
-                </Pressable>
-              );
-            })}
-          </View>
-        )}
-
-        {/* Atividade recente */}
-        {verifsRecentes.length > 0 && (
-          <View style={[styles.section, styles.lastSection]}>
-            <Text style={styles.sectionTitle}>ATIVIDADE RECENTE</Text>
-            {verifsRecentes.map(v => (
-              <View key={v.id} style={styles.activityRow}>
-                <View style={styles.activityLeft}>
-                  <CheckCircle2 size={16} color={Colors.textTertiary} />
-                </View>
-                <View style={styles.activityBody}>
-                  <Text style={styles.activityTitle} numberOfLines={1}>{v.fvs_nome || 'Verificação'}</Text>
-                  <Text style={styles.activityMeta}>{v.obra_nome} · {v.ambiente_nome}</Text>
-                </View>
-                <StatusBadge status={v.status as any} size="sm" />
-              </View>
-            ))}
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  header: {
+  safe:    { flex: 1, backgroundColor: Colors.bg },
+  header:  {
     backgroundColor: Colors.brand,
     flexDirection: 'row',
     alignItems: 'center',
@@ -217,17 +306,22 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   headerText: { flex: 1 },
-  greeting: { color: '#fff', fontSize: 19, fontWeight: '500' },
-  headerSub: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
+  greeting:   { color: '#fff', fontSize: 19, fontWeight: '500' },
+  headerSub:  { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
   avatar: {
-    width: 40,
-    height: 40,
+    width: 40, height: 40,
     borderRadius: Radius.full,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+  },
   section: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
@@ -235,37 +329,45 @@ const styles = StyleSheet.create({
   },
   lastSection: { paddingBottom: Spacing.xxl },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.textTertiary,
-    letterSpacing: 0.5,
-  },
-  sectionLink: { fontSize: 12, color: Colors.brand, fontWeight: '500' },
-  kpiGrid: { flexDirection: 'row', gap: Spacing.sm },
+  sectionTitle:  { fontSize: 11, fontWeight: '600', color: Colors.textTertiary, letterSpacing: 0.5 },
+  sectionLink:   { fontSize: 12, color: Colors.brand, fontWeight: '500' },
+  kpiGrid:       { flexDirection: 'row', gap: Spacing.sm },
+
+  // NC cards
   ncCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     borderLeftWidth: 3,
     borderLeftColor: Colors.nok,
+    borderWidth: 0.5,
+    borderColor: 'rgba(198,40,40,0.2)',
     gap: 4,
   },
-  ncItem: { fontSize: 13, fontWeight: '500', color: Colors.text },
-  ncMeta: { fontSize: 11, color: Colors.textSecondary },
-  ncDeadline: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  ncDeadlineText: { fontSize: 11, color: Colors.warn, fontWeight: '500' },
+  ncCardTop:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  ncItem:        { fontSize: 13, fontWeight: '500', color: Colors.text, flex: 1 },
+  ncBadge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.full },
+  ncBadgeText:   { fontSize: 10, fontWeight: '600' },
+  ncMeta:        { fontSize: 11, color: Colors.textSecondary },
+  ncDeadline:    { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  ncDeadlineText:{ fontSize: 11, color: Colors.warn, fontWeight: '500' },
+
+  // Obra cards
   obraCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     padding: Spacing.md,
-    gap: Spacing.xs,
-    borderWidth: 1,
+    gap: 6,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
-  obraCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  obraNome: { fontSize: 13, fontWeight: '500', color: Colors.text, flex: 1 },
-  obraPct: { fontSize: 12, color: Colors.textSecondary, marginLeft: Spacing.sm },
+  obraCardTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  obraNome:       { fontSize: 13, fontWeight: '600', color: Colors.text, flex: 1 },
+  obraMeta:       { fontSize: 11, color: Colors.textSecondary },
+  obraProgressRow:{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 },
+  obraFvs:        { fontSize: 11, color: Colors.textSecondary, whiteSpace: 'nowrap' as any },
+
+  // Activity
   activityRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -273,9 +375,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     padding: Spacing.md,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
-  activityLeft: { width: 24, alignItems: 'center' },
-  activityBody: { flex: 1 },
+  activityLeft:  { width: 24, alignItems: 'center' },
+  activityBody:  { flex: 1 },
   activityTitle: { fontSize: 13, fontWeight: '500', color: Colors.text },
-  activityMeta: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
+  activityMeta:  { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
 });

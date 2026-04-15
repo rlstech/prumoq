@@ -6,19 +6,24 @@
 
 -- ── v_obras_com_fvs ──────────────────────────────────────────
 -- Usada pela tela de lista de obras (obras/index.tsx)
-CREATE OR REPLACE VIEW v_obras_com_fvs
-WITH (security_invoker = true) AS
+CREATE OR REPLACE VIEW v_obras_com_fvs AS
 SELECT
   o.id,
   o.nome,
   o.status,
+  o.endereco,
   o.municipio,
   o.uf,
-  COUNT(DISTINCT f.id)  AS total_fvs,
-  COUNT(DISTINCT f2.id) AS fvs_concluidas,
-  COUNT(DISTINCT n.id)  AS ncs_abertas
+  o.eng_responsavel                          AS engenheiro_nome,
+  o.crea_cau                                 AS engenheiro_crea,
+  e.nome                                     AS empresa_nome,
+  COUNT(DISTINCT a.id)                       AS total_ambientes,
+  COUNT(DISTINCT f.id)                       AS total_fvs,
+  COUNT(DISTINCT f2.id)                      AS fvs_concluidas,
+  COUNT(DISTINCT n.id)                       AS ncs_abertas
 FROM obras o
-LEFT JOIN ambientes a   ON a.obra_id = o.id
+LEFT JOIN empresas e         ON e.id = o.empresa_id
+LEFT JOIN ambientes a        ON a.obra_id = o.id
 LEFT JOIN fvs_planejadas f   ON f.ambiente_id = a.id
 LEFT JOIN fvs_planejadas f2  ON f2.ambiente_id = a.id AND f2.status = 'conforme'
 LEFT JOIN nao_conformidades n ON n.status = 'aberta'
@@ -28,17 +33,20 @@ LEFT JOIN nao_conformidades n ON n.status = 'aberta'
     WHERE fp.ambiente_id = a.id
   )
 WHERE o.ativo = true
-GROUP BY o.id
+GROUP BY o.id, e.nome
 ORDER BY o.nome;
 
--- RPC wrapper (shim usa rpc() para esta query)
+-- RPC wrapper
 CREATE OR REPLACE FUNCTION get_obras_com_fvs()
 RETURNS TABLE (
-  id uuid, nome text, status text, municipio text, uf text,
-  total_fvs bigint, fvs_concluidas bigint, ncs_abertas bigint
+  id uuid, nome text, status text, endereco text, municipio text, uf text,
+  engenheiro_nome text, engenheiro_crea text, empresa_nome text,
+  total_ambientes bigint, total_fvs bigint, fvs_concluidas bigint, ncs_abertas bigint
 )
-LANGUAGE sql SECURITY INVOKER STABLE AS $$
-  SELECT id, nome, status, municipio, uf, total_fvs, fvs_concluidas, ncs_abertas
+LANGUAGE sql STABLE AS $$
+  SELECT id, nome, status, endereco, municipio, uf,
+         engenheiro_nome, engenheiro_crea, empresa_nome,
+         total_ambientes, total_fvs, fvs_concluidas, ncs_abertas
   FROM v_obras_com_fvs;
 $$;
 

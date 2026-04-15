@@ -28,10 +28,9 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { filename, contentType } = (await req.json()) as {
-      filename: string;
-      contentType: string;
-    };
+    const body = (await req.json()) as { filename: string; contentType?: string; mimeType?: string };
+    const filename = body.filename;
+    const contentType = body.contentType ?? body.mimeType ?? 'application/octet-stream';
 
     // Build deterministic, collision-resistant key:
     // fotos/{empresa_id}/{year}/{month}/{timestamp}_{sanitized_filename}
@@ -59,9 +58,9 @@ Deno.serve(async (req: Request) => {
     });
 
     // Presigned URL valid for 15 minutes
-    const url = await getSignedUrl(r2, command, { expiresIn: 900 });
+    const uploadUrl = await getSignedUrl(r2, command, { expiresIn: 900 });
 
-    return new Response(JSON.stringify({ url, key }), {
+    return new Response(JSON.stringify({ uploadUrl, key }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

@@ -190,13 +190,13 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── NCs do FVS ────────────────────────────────────────
-  if (s.includes('from nao_conformidades n') && s.includes('join verificacao_itens vi') && s.includes('where n.verificacao_id in (select id from verificacoes where fvs_planejada_id = ?)') && params[0]) {
+  if (s.includes('from nao_conformidades n') && s.includes('join verificacao_itens vi') && s.includes('n.verificacao_id in') && s.includes('fvs_planejada_id = ?') && params[0]) {
     const { data } = await supabase.rpc('get_ncs_fvs', { p_fvs_id: params[0] as string });
     return (data ?? []) as T[];
   }
 
   // ── fotos do FVS ──────────────────────────────────────
-  if (s.includes('from verificacao_fotos') && s.includes('where verificacao_id in (select id from verificacoes where fvs_planejada_id = ?)') && params[0]) {
+  if (s.includes('from verificacao_fotos') && s.includes('verificacao_id in') && s.includes('fvs_planejada_id = ?') && params[0]) {
     const { data } = await supabase.rpc('get_fotos_fvs', { p_fvs_id: params[0] as string });
     return (data ?? []) as T[];
   }
