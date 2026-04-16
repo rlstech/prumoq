@@ -50,7 +50,7 @@ export default function RootLayout() {
   }, [ready]); // segments deliberately excluded — use segmentsRef instead
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, overflow: 'hidden' }}>
       <InstallBanner />
       <Slot />
     </View>

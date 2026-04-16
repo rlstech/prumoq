@@ -11,9 +11,10 @@ interface Props {
   onClose: () => void;
   obraId: string;
   availableEquipes: { id: string; nome: string; tipo: string; especialidade?: string }[];
+  totalEmpresaEquipes: number;
 }
 
-export default function ObraEquipeModal({ isOpen, onClose, obraId, availableEquipes }: Props) {
+export default function ObraEquipeModal({ isOpen, onClose, obraId, availableEquipes, totalEmpresaEquipes }: Props) {
   const { toast } = useToast();
   const router = useRouter();
   const [selected, setSelected] = useState<string | null>(null);
@@ -45,9 +46,18 @@ export default function ObraEquipeModal({ isOpen, onClose, obraId, availableEqui
     <Modal isOpen={isOpen} onClose={onClose} title="Adicionar Equipe" size="md">
       <div className="flex flex-col gap-4">
         {availableEquipes.length === 0 ? (
-          <p className="text-sm text-txt-2 py-4 text-center">
-            Todas as equipes já estão vinculadas a esta obra.
-          </p>
+          <div className="py-4 text-center space-y-2">
+            {totalEmpresaEquipes === 0 ? (
+              <>
+                <p className="text-sm text-txt-2">Nenhuma equipe cadastrada para esta empresa.</p>
+                <a href="/equipes" className="text-xs text-[var(--br)] hover:underline font-medium">
+                  Ir para Equipes →
+                </a>
+              </>
+            ) : (
+              <p className="text-sm text-txt-2">Todas as equipes já estão vinculadas a esta obra.</p>
+            )}
+          </div>
         ) : (
           <div className="border border-brd-0 rounded-lg overflow-hidden">
             {availableEquipes.map(eq => {

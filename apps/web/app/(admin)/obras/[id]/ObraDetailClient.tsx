@@ -18,6 +18,7 @@ interface ObraDetailClientProps {
   fvsPadraoList: any[];
   obraEquipes: { id: string; nome: string; tipo: string; especialidade?: string }[];
   availableEquipes: { id: string; nome: string; tipo: string; especialidade?: string }[];
+  totalEmpresaEquipes: number;
 }
 
 export default function ObraDetailClient({
@@ -28,6 +29,7 @@ export default function ObraDetailClient({
   fvsPadraoList,
   obraEquipes,
   availableEquipes,
+  totalEmpresaEquipes,
 }: ObraDetailClientProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -231,13 +233,27 @@ export default function ObraDetailClient({
           ) : (
             <div className="py-10 text-center text-sm text-txt-3 flex flex-col items-center gap-2">
               <HardHat size={24} className="opacity-40" />
-              <span>Nenhuma equipe vinculada a esta obra.</span>
-              <button
-                onClick={() => setIsEquipeModalOpen(true)}
-                className="mt-1 text-xs text-[var(--br)] hover:underline font-medium"
-              >
-                + Adicionar equipe
-              </button>
+              {totalEmpresaEquipes === 0 ? (
+                <>
+                  <span>Nenhuma equipe cadastrada para esta empresa.</span>
+                  <a
+                    href="/equipes"
+                    className="mt-1 text-xs text-[var(--br)] hover:underline font-medium"
+                  >
+                    Cadastrar equipes →
+                  </a>
+                </>
+              ) : (
+                <>
+                  <span>Nenhuma equipe vinculada a esta obra.</span>
+                  <button
+                    onClick={() => setIsEquipeModalOpen(true)}
+                    className="mt-1 text-xs text-[var(--br)] hover:underline font-medium"
+                  >
+                    + Adicionar equipe
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -265,6 +281,7 @@ export default function ObraDetailClient({
           onClose={() => setIsEquipeModalOpen(false)}
           obraId={obraId}
           availableEquipes={availableEquipes}
+          totalEmpresaEquipes={totalEmpresaEquipes}
         />
       )}
 

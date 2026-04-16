@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, AlertTriangle, ChevronRight, ExternalLink } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ChevronRight, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
@@ -32,22 +32,10 @@ function normalizeCategoria(raw: string): string {
   return VALID_CATEGORIAS.includes(normalized) ? normalized : 'outro';
 }
 
-// Detecta se uma linha parece ser cabeçalho de planilha (não dado real).
-// Nunca deve fazer match em valores de dados como "FVS 04.01".
 function isHeaderLine(cols: string[]): boolean {
   if (cols.length < 2) return false;
   const first = cols[0].trim().toLowerCase();
-  // Só considera header se o primeiro campo for uma palavra de rótulo pura,
-  // sem números (ex: "código", "nome", "item") — exclui "FVS 04.01".
   return /^(código|codigo|nome|item|título|titulo|checklist|verific)$/.test(first);
-}
-
-// Classifica um critério como método de verificação ou tolerância.
-// Padrões de medição (+/-, ±, números com unidade) → tolerância.
-// Texto descritivo (ex: "Visual", "Inspeção visual") → método.
-function classifyCriterion(value: string): 'metodo' | 'tolerancia' {
-  if (/^[+\-±]|^\d|mm\b|cm\b|\bm\b|MPa\b|kN\b|%\b/i.test(value.trim())) return 'tolerancia';
-  return 'metodo';
 }
 
 function parseTSV(text: string): { fvsList: ParsedFvs[]; errors: ParseError[] } {
@@ -61,74 +49,23 @@ function parseTSV(text: string): { fvsList: ParsedFvs[]; errors: ParseError[] } 
     const lineNum = i + 1;
     const cols = lines[i].split('\t');
 
-    // Primeiras 3 colunas sempre fixas
+    // Mapeamento direto 1:1 das 6 colunas
     const codigo       = cols[0]?.trim() ?? '';
     const nome         = cols[1]?.trim() ?? '';
     const categoriaRaw = cols[2]?.trim() ?? '';
-    // col[3] = Grupo/Subtítulo (sempre)
-    const grupo        = cols[3]?.trim() ?? '';
-    // col[4] = Descrição do item (pode ter critério embutido após 3+ espaços)
-    const col4         = cols[4]?.trim() ?? '';
-    // col[5] e col[6] = campos opcionais de método e tolerância separados
-    const col5         = cols[5]?.trim() ?? '';
-    const col6         = cols[6]?.trim() ?? '';
+    // col[3] → título do item (ex: "Condições de Início")
+    const titulo       = cols[3]?.trim() ?? '';
+    // col[4] → método de verificação (ex: "Verificar se o projeto de formas...")
+    const metodo_verif = cols[4]?.trim() ?? '';
+    // col[5] → tolerância (opcional: "Visual", "+/- 3mm", etc.)
+    const tolerancia   = cols[5]?.trim() ?? '';
 
     if (!nome) {
       errors.push({ line: lineNum, message: 'Nome da FVS ausente — linha ignorada.' });
       continue;
     }
-    if (!col4 && !grupo) {
-      errors.push({ line: lineNum, message: `FVS "${nome}": título do item ausente — linha ignorada.` });
-      continue;
-    }
-
-    let tituloBase: string;
-    let metodo_verif: string;
-    let tolerancia: string;
-
-    if (col5 || col6) {
-      // Colunas explícitas de método/tolerância presentes
-      tituloBase = col4;
-      if (col5 && col6) {
-        // 7+ colunas com método e tolerância separados
-        metodo_verif = col5;
-        tolerancia   = col6;
-      } else {
-        // Uma das duas está preenchida: classificar automaticamente
-        const criterion = col6 || col5;
-        if (classifyCriterion(criterion) === 'tolerancia') {
-          metodo_verif = '';
-          tolerancia   = criterion;
-        } else {
-          metodo_verif = criterion;
-          tolerancia   = '';
-        }
-      }
-    } else {
-      // Sem colunas explícitas: verificar se há critério embutido em col4
-      // (separado por 3 ou mais espaços consecutivos)
-      const embedded = col4.match(/^(.*?)\s{3,}(\S.+)$/);
-      if (embedded) {
-        tituloBase = embedded[1].trim();
-        const criterion = embedded[2].trim();
-        if (classifyCriterion(criterion) === 'tolerancia') {
-          metodo_verif = '';
-          tolerancia   = criterion;
-        } else {
-          metodo_verif = criterion;
-          tolerancia   = '';
-        }
-      } else {
-        tituloBase   = col4;
-        metodo_verif = '';
-        tolerancia   = '';
-      }
-    }
-
-    const titulo = grupo ? `${grupo} — ${tituloBase}` : tituloBase;
-
-    if (!titulo.trim()) {
-      errors.push({ line: lineNum, message: `FVS "${nome}": título do item ausente — linha ignorada.` });
+    if (!titulo) {
+      errors.push({ line: lineNum, message: `FVS "${nome}": coluna "Descrição do Item" (col 4) vazia — linha ignorada.` });
       continue;
     }
 
@@ -165,12 +102,13 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
   const { toast } = useToast();
   const router = useRouter();
 
-  const [step, setStep] = useState<'paste' | 'preview' | 'done'>('paste');
+  const [step, setStep] = useState<'paste' | 'preview' | 'review' | 'done'>('paste');
   const [rawText, setRawText] = useState('');
   const [parsed, setParsed] = useState<ParsedFvs[]>([]);
   const [errors, setErrors] = useState<ParseError[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [created, setCreated] = useState<{ id: string; nome: string }[]>([]);
+  const [expandedFvs, setExpandedFvs] = useState<Set<number>>(new Set([0]));
 
   const handleClose = () => {
     setStep('paste');
@@ -178,6 +116,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
     setParsed([]);
     setErrors([]);
     setCreated([]);
+    setExpandedFvs(new Set([0]));
     onClose();
     if (step === 'done') router.refresh();
   };
@@ -194,6 +133,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
       toast('Nenhuma FVS válida encontrada. Verifique o formato.', 'error');
       return;
     }
+    setExpandedFvs(new Set([0]));
     setStep('preview');
   };
 
@@ -215,7 +155,6 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
     const createdList: { id: string; nome: string }[] = [];
 
     for (const fvs of parsed) {
-      // 1. Criar FVS Padrão
       const { data: novafvs, error: fvsError } = await (supabase.from('fvs_padrao') as any)
         .insert([{
           nome: fvs.nome,
@@ -235,7 +174,6 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
 
       const fvsId = (novafvs as any).id;
 
-      // 2. Inserir itens
       const itens = fvs.itens.map((it, idx) => ({
         fvs_padrao_id: fvsId,
         revisao: 0,
@@ -247,7 +185,6 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
 
       await supabase.from('fvs_padrao_itens' as any).insert(itens as any);
 
-      // 3. Registrar revisão inicial
       await supabase.from('fvs_padrao_revisoes' as any).insert([{
         fvs_padrao_id: fvsId,
         numero_revisao: 0,
@@ -264,27 +201,79 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
   };
 
   const totalItens = parsed.reduce((acc, f) => acc + f.itens.length, 0);
+  const totalWarnings = parsed.reduce(
+    (acc, f) => acc + f.itens.filter(it => !it.metodo_verif && !it.tolerancia).length, 0
+  );
+
+  const toggleFvs = (idx: number) => {
+    setExpandedFvs(prev => {
+      const next = new Set(prev);
+      next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
+  };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Importar FVS em Lote" size="lg">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Importar FVS em Lote" size="xl">
+
+      {/* ── ETAPA 1: COLAR DADOS ── */}
       {step === 'paste' && (
         <div className="flex flex-col gap-4 p-1">
-          <div className="bg-bg-2 border border-brd-0 rounded-lg p-4 text-xs text-txt-2 space-y-1.5">
-            <p className="font-semibold text-txt">Formato esperado (TSV — cole direto do Excel ou Google Sheets):</p>
-            <p>Cada linha = um item. Cole diretamente da sua planilha (Excel / Google Sheets).</p>
-            <code className="block bg-bg-0 border border-brd-1 rounded px-3 py-2 font-mono text-[11px] text-txt-2 leading-relaxed">
-              Código &nbsp;→&nbsp; Nome da FVS &nbsp;→&nbsp; Categoria &nbsp;→&nbsp; Grupo &nbsp;→&nbsp; Descrição do Item
-            </code>
-            <p className="text-txt-3 text-[11px]">O critério de aceitação ("Visual", "+/- 3mm") pode estar na mesma célula da descrição (separado por espaços) ou em uma coluna separada. Textos vão para <em>Método</em>, medições vão para <em>Tolerância</em>.</p>
-            <p className="text-txt-3">Categorias válidas: estrutura, vedação, revestimento, instalações, cobertura, acabamento, fundação, terraplanagem, outro</p>
-            <p className="text-txt-3">Linhas com o mesmo nome + categoria são agrupadas em uma única FVS.</p>
+          <div className="bg-bg-2 border border-brd-0 rounded-lg p-4 space-y-3 text-xs text-txt-2">
+            <p className="font-semibold text-txt text-[13px]">Formato esperado — 6 colunas (cole direto do Excel ou Google Sheets)</p>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-[11px] border border-brd-1 rounded">
+                <thead>
+                  <tr className="bg-bg-0 text-txt-2 uppercase tracking-wide">
+                    {['Código', 'Nome da FVS', 'Categoria', 'Descrição do Item', 'Método de verificação', 'Tolerância (opcional)'].map(h => (
+                      <th key={h} className="px-2 py-1.5 text-left font-semibold border-b border-brd-1 whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-bg-1">
+                    <td className="px-2 py-1.5 font-mono border-b border-brd-0">FVS 04.01</td>
+                    <td className="px-2 py-1.5 border-b border-brd-0">Montagem de Forma</td>
+                    <td className="px-2 py-1.5 border-b border-brd-0">Estrutura</td>
+                    <td className="px-2 py-1.5 border-b border-brd-0">Condições de Início</td>
+                    <td className="px-2 py-1.5 border-b border-brd-0">Verificar o projeto de formas</td>
+                    <td className="px-2 py-1.5 border-b border-brd-0 text-ok font-medium">Visual</td>
+                  </tr>
+                  <tr className="bg-bg-1">
+                    <td className="px-2 py-1.5 font-mono">FVS 04.01</td>
+                    <td className="px-2 py-1.5">Montagem de Forma</td>
+                    <td className="px-2 py-1.5">Estrutura</td>
+                    <td className="px-2 py-1.5">Locação</td>
+                    <td className="px-2 py-1.5">Conferir locação dos gastalhos</td>
+                    <td className="px-2 py-1.5 text-pg font-medium">+/- 3mm</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="space-y-1 text-[11px]">
+              <p><span className="font-semibold text-txt">Descrição do Item</span> — título direto do item (ex: "Condições de Início", "Locação"). Salvo como título no banco.</p>
+              <p><span className="font-semibold text-txt">Método de verificação</span> — como verificar o item (ex: "Verificar o projeto de formas e escoramento"). Salvo como método.</p>
+              <p><span className="font-semibold text-txt">Tolerância (opcional)</span> — critério de aceitação (ex: "Visual", "+/- 3mm"). Salvo diretamente no campo tolerância.</p>
+              <p><span className="font-semibold text-txt">Linhas com mesmo Nome + Categoria</span> são agrupadas em uma única FVS.</p>
+            </div>
+
+            <div className="flex items-start gap-2 bg-warn-bg border border-warn/25 rounded px-3 py-2 text-[11px] text-warn">
+              <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+              <span><span className="font-semibold">Atenção:</span> não use células mescladas — cada linha precisa ter seu próprio valor em todas as colunas preenchidas. No Excel, selecione as células e use "Desfazer Mesclar Células" antes de copiar.</span>
+            </div>
+
+            <p className="text-[11px] text-txt-3">
+              Categorias válidas: estrutura, vedação, revestimento, instalações, cobertura, acabamento, fundação, terraplanagem, outro
+            </p>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-txt-2 mb-1.5">Cole os dados aqui *</label>
             <textarea
               className="w-full h-52 px-3 py-2 border border-brd-1 rounded bg-bg-0 text-[13px] font-mono outline-none focus:border-[var(--br)] resize-none"
-              placeholder={"FVS 03.01\tExecução de Alvenaria\tvedacao\tPrumo das paredes\tNível de bolha\t±5 mm\nFVS 03.01\tExecução de Alvenaria\tvedacao\tEspessura de argamassa\tPaquímetro\t10-15 mm"}
+              placeholder={"FVS 04.01\tMontagem de Forma - Pilar e Cortina\tEstrutura\tCondições de Início\tVerificar o projeto de formas e escoramento\tVisual\nFVS 04.01\tMontagem de Forma - Pilar e Cortina\tEstrutura\tLocação\tConferir a locação dos gastalhos\t+/- 3mm"}
               value={rawText}
               onChange={e => setRawText(e.target.value)}
             />
@@ -301,6 +290,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
         </div>
       )}
 
+      {/* ── ETAPA 2: RESUMO DAS FVS ── */}
       {step === 'preview' && (
         <div className="flex flex-col gap-4 p-1">
           <div className="flex items-center gap-3 bg-ok-bg border border-ok/20 rounded-lg px-4 py-3">
@@ -314,14 +304,14 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
             <div className="bg-warn-bg border border-warn/20 rounded-lg p-3 space-y-1">
               <p className="text-xs font-semibold text-warn flex items-center gap-1.5"><AlertTriangle size={13} /> {errors.length} aviso{errors.length !== 1 ? 's' : ''}</p>
               {errors.map((e, i) => (
-                <p key={i} className="text-xs text-warn/80 pl-4">Linha {e.line}: {e.message}</p>
+                <p key={i} className="text-xs text-warn/80 pl-4">{e.message}</p>
               ))}
             </div>
           )}
 
-          <div className="border border-brd-0 rounded-lg overflow-hidden max-h-72 overflow-y-auto">
+          <div className="border border-brd-0 rounded-lg overflow-hidden max-h-64 overflow-y-auto">
             <table className="w-full text-sm">
-              <thead className="bg-bg-2 text-xs text-txt-2 uppercase tracking-wide">
+              <thead className="bg-bg-2 text-xs text-txt-2 uppercase tracking-wide sticky top-0">
                 <tr>
                   <th className="text-left px-4 py-2.5 font-semibold w-24">Código</th>
                   <th className="text-left px-4 py-2.5 font-semibold">Nome da FVS</th>
@@ -346,13 +336,114 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
             <button type="button" onClick={() => setStep('paste')} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">
               Voltar
             </button>
-            <button type="button" onClick={handleImport} disabled={isImporting} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
-              {isImporting ? 'Importando...' : `Importar ${parsed.length} FVS`}
+            <button type="button" onClick={() => setStep('review')} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)]">
+              Revisar itens <ChevronRight size={16} />
             </button>
           </div>
         </div>
       )}
 
+      {/* ── ETAPA 3: REVISÃO DETALHADA DOS ITENS ── */}
+      {step === 'review' && (
+        <div className="flex flex-col gap-4 p-1">
+          <div className="flex items-start gap-3 bg-bg-2 border border-brd-0 rounded-lg px-4 py-3">
+            <CheckCircle2 size={15} className="text-txt-2 shrink-0 mt-0.5" />
+            <p className="text-xs text-txt-2">
+              Verifique se os itens foram mapeados corretamente. Itens marcados com{' '}
+              <span className="inline-flex items-center gap-0.5 text-warn font-medium"><AlertTriangle size={11} /> sem critério</span>{' '}
+              estão sem método e tolerância — isso pode indicar células mescladas na planilha.
+            </p>
+          </div>
+
+          {totalWarnings > 0 && (
+            <div className="flex items-center gap-2 bg-warn-bg border border-warn/20 rounded-lg px-3 py-2 text-xs text-warn">
+              <AlertTriangle size={13} className="shrink-0" />
+              <span><span className="font-semibold">{totalWarnings} item{totalWarnings !== 1 ? 'ns' : ''}</span> sem método nem tolerância. Verifique se há células mescladas no Excel.</span>
+            </div>
+          )}
+
+          <div className="border border-brd-0 rounded-lg overflow-hidden max-h-[420px] overflow-y-auto divide-y divide-brd-0">
+            {parsed.map((fvs, fi) => {
+              const isOpen = expandedFvs.has(fi);
+              const fvsWarnings = fvs.itens.filter(it => !it.metodo_verif && !it.tolerancia).length;
+              return (
+                <div key={fi}>
+                  {/* Header do accordion */}
+                  <button
+                    type="button"
+                    onClick={() => toggleFvs(fi)}
+                    className="w-full flex items-center gap-3 px-4 py-3 bg-bg-2 hover:bg-brd-0 transition-colors text-left"
+                  >
+                    {isOpen ? <ChevronUp size={14} className="text-txt-3 shrink-0" /> : <ChevronDown size={14} className="text-txt-3 shrink-0" />}
+                    <span className="font-mono text-xs text-txt-2 w-20 shrink-0">{fvs.codigo || '—'}</span>
+                    <span className="font-medium text-[13px] text-txt flex-1 truncate">{fvs.nome}</span>
+                    <span className="text-xs text-txt-3 shrink-0">{CATEGORIA_LABELS[fvs.categoria]}</span>
+                    <span className="text-xs text-txt-3 shrink-0 ml-3">{fvs.itens.length} itens</span>
+                    {fvsWarnings > 0 && (
+                      <span className="flex items-center gap-1 text-[11px] text-warn font-medium shrink-0 ml-2">
+                        <AlertTriangle size={11} /> {fvsWarnings}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Itens expandidos */}
+                  {isOpen && (
+                    <table className="w-full text-xs">
+                      <thead className="bg-bg-1 text-txt-3 uppercase tracking-wide border-b border-brd-0">
+                        <tr>
+                          <th className="text-right px-3 py-2 font-semibold w-8">Nº</th>
+                          <th className="text-left px-3 py-2 font-semibold w-44">Título</th>
+                          <th className="text-left px-3 py-2 font-semibold">Método</th>
+                          <th className="text-left px-3 py-2 font-semibold w-28">Tolerância</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-brd-0">
+                        {fvs.itens.map((item, ii) => {
+                          const hasWarning = !item.metodo_verif && !item.tolerancia;
+                          return (
+                            <tr key={ii} className={`${hasWarning ? 'bg-warn-bg/40' : 'bg-bg-0'}`}>
+                              <td className="px-3 py-2 text-right text-txt-3 tabular-nums">{ii + 1}</td>
+                              <td className="px-3 py-2 text-txt leading-snug">
+                                <span className="line-clamp-2">{item.titulo}</span>
+                              </td>
+                              <td className="px-3 py-2">
+                                {item.metodo_verif
+                                  ? <span className="text-ok font-medium">{item.metodo_verif}</span>
+                                  : <span className="text-txt-3">—</span>
+                                }
+                              </td>
+                              <td className="px-3 py-2">
+                                <span className="flex items-center gap-1">
+                                  {item.tolerancia
+                                    ? <span className="text-pg font-medium">{item.tolerancia}</span>
+                                    : <span className="text-txt-3">—</span>
+                                  }
+                                  {hasWarning && <AlertTriangle size={11} className="text-warn shrink-0" />}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex gap-3 justify-end pt-1 border-t border-brd-0">
+            <button type="button" onClick={() => setStep('preview')} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">
+              Voltar
+            </button>
+            <button type="button" onClick={handleImport} disabled={isImporting} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
+              {isImporting ? 'Importando...' : `Confirmar e Importar ${parsed.length} FVS`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── ETAPA 4: CONCLUÍDO ── */}
       {step === 'done' && (
         <div className="flex flex-col gap-4 p-1">
           <div className="flex items-center gap-3 bg-ok-bg border border-ok/20 rounded-lg px-4 py-3">

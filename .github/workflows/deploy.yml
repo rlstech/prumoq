@@ -1,0 +1,115 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: rlstech/prumoq-web
+
+jobs:
+  # ── 1. Build Docker image and push to GHCR ──────────────────────────────
+  build:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image_tag: ${{ steps.tag.outputs.value }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image tag (short SHA)
+        id: tag
+        run: echo "value=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+  # ── 2. Create or update Portainer stack ─────────────────────────────────
+  deploy:
+    name: Deploy to Portainer
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy stack via Portainer API
+        env:
+          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+          PORTAINER_API_KEY: ${{ secrets.PORTAINER_API_KEY }}
+          PORTAINER_ENDPOINT_ID: ${{ secrets.PORTAINER_ENDPOINT_ID }}
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          STACK_NAME="prumoq"
+          COMPOSE_CONTENT=$(cat docker-compose.prod.yml)
+
+          # Build the env array for Portainer (IMAGE_TAG forces re-pull of the new image)
+          ENV_JSON=$(jq -n \
+            --arg tag "$IMAGE_TAG" \
+            --arg key "$SUPABASE_SERVICE_ROLE_KEY" \
+            '[
+              {"name": "IMAGE_TAG",                "value": $tag},
+              {"name": "SUPABASE_SERVICE_ROLE_KEY", "value": $key}
+            ]')
+
+          # Check if the stack already exists
+          STACK_ID=$(curl -sf \
+            -H "X-API-Key: $PORTAINER_API_KEY" \
+            "$PORTAINER_URL/api/stacks" \
+            | jq -r ".[] | select(.Name==\"$STACK_NAME\") | .Id // empty")
+
+          if [ -z "$STACK_ID" ]; then
+            echo "Stack '$STACK_NAME' not found — creating..."
+            curl -sf -X POST \
+              -H "X-API-Key: $PORTAINER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n \
+                    --arg name    "$STACK_NAME" \
+                    --arg content "$COMPOSE_CONTENT" \
+                    --argjson env "$ENV_JSON" \
+                    '{name: $name, stackFileContent: $content, env: $env}')" \
+              "$PORTAINER_URL/api/stacks/create/standalone/string?endpointId=$PORTAINER_ENDPOINT_ID"
+          else
+            echo "Updating stack '$STACK_NAME' (ID: $STACK_ID) → image $IMAGE_TAG"
+            curl -sf -X PUT \
+              -H "X-API-Key: $PORTAINER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n \
+                    --arg content "$COMPOSE_CONTENT" \
+                    --argjson env "$ENV_JSON" \
+                    '{stackFileContent: $content, env: $env, prune: false, pullImage: true}')" \
+              "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$PORTAINER_ENDPOINT_ID"
+          fi
+
+          echo "✓ Deploy complete — $IMAGE_TAG"

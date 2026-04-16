@@ -1,0 +1,20 @@
+services:
+  prumoq-web:
+    image: ghcr.io/rlstech/prumoq-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    # SUPABASE_SERVICE_ROLE_KEY is a server-only secret — never baked into the image.
+    # NEXT_PUBLIC_* vars were baked in at build time; no need to repeat them here.
+    environment:
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prumoq.rule=Host(`prumoq.railton.eu.org`)"
+      - "traefik.http.routers.prumoq.entrypoints=websecure"
+      - "traefik.http.routers.prumoq.tls.certresolver=letsencrypt"
+      - "traefik.http.services.prumoq.loadbalancer.server.port=3000"
+    networks:
+      - network_public
+
+networks:
+  network_public:
+    external: true

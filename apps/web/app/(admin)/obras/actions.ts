@@ -13,7 +13,15 @@ async function getAuthenticatedUser() {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Não autenticado');
-  return user;
+
+  // Busca empresa_id do usuário logado (a empresa que opera o sistema)
+  const { data: perfil } = await supabaseAdmin
+    .from('usuarios')
+    .select('empresa_id')
+    .eq('id', user.id)
+    .single();
+
+  return { ...user, empresa_id: (perfil as any)?.empresa_id as string | null };
 }
 
 interface ObraFormData {
@@ -31,7 +39,7 @@ interface ObraFormData {
 
 export async function createObra(formData: ObraFormData) {
   try {
-    await getAuthenticatedUser();
+    const creator = await getAuthenticatedUser();
     const { data, error } = await supabaseAdmin
       .from('obras')
       .insert({
@@ -51,6 +59,31 @@ export async function createObra(formData: ObraFormData) {
       .single();
 
     if (error) throw error;
+
+    // Vincular todos os usuários ativos da empresa operadora (quem usa o sistema)
+    // à nova obra em obra_usuarios.
+    // Necessário para: (1) RLS de inspetores, (2) sincronização do PowerSync.
+    // Nota: a obra pode ser de uma empresa cliente (ex: COMBRASEN), mas os
+    // inspetores pertencem à empresa operadora (ex: PrumoQ).
+    const obraId = (data as any).id;
+    const operadoraEmpresaId = creator.empresa_id;
+    if (obraId) {
+      const query = supabaseAdmin.from('usuarios').select('id').eq('ativo', true);
+      // Filtra pela empresa do criador se disponível; caso contrário pega todos
+      const { data: usuarios } = operadoraEmpresaId
+        ? await query.eq('empresa_id', operadoraEmpresaId)
+        : await query;
+
+      if (usuarios && usuarios.length > 0) {
+        const rows = (usuarios as any[]).map((u: any) => ({
+          obra_id: obraId,
+          usuario_id: u.id,
+          ativo: true,
+        }));
+        await supabaseAdmin.from('obra_usuarios' as any).insert(rows as any);
+      }
+    }
+
     revalidatePath('/obras');
     return { success: true, data };
   } catch (error: any) {

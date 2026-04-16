@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ObraDetailClient from './ObraDetailClient';
+
+// Admin client bypasses RLS — safe in Server Components
+const supabaseAdmin = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export default async function ObraDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -14,30 +21,35 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
     { data: kpi },
     { data: ambientes },
     { data: fvsPadrao },
+    { data: empresas },
   ] = await Promise.all([
-    supabase.from('obras' as any).select('*, empresas(nome)').eq('id', id).single(),
+    supabaseAdmin.from('obras' as any).select('*').eq('id', id).single(),
     (supabase.rpc as any)('get_obra_kpi', { p_obra_id: id }).single(),
-    (supabase.rpc as any)('get_ambientes_obra', { p_obra_id: id }),
-    supabase.from('fvs_padrao' as any).select('id, nome, revisao_atual, categoria').eq('ativo', true),
+    (supabaseAdmin.rpc as any)('get_ambientes_obra', { p_obra_id: id }),
+    supabaseAdmin.from('fvs_padrao' as any).select('id, nome, revisao_atual, categoria').eq('ativo', true),
+    supabaseAdmin.from('empresas').select('id, nome').eq('ativo', true),
   ]);
 
   const typedObra = obra as any;
   if (!typedObra) return notFound();
 
+  const empresasList: any[] = (empresas as any[] | null) ?? [];
+  const empresaNome = empresasList.find((e: any) => e.id === typedObra.empresa_id)?.nome ?? '';
+
   // 1. IDs das equipes já vinculadas a esta obra
-  const { data: obraEquipesLinks } = await supabase
+  const { data: obraEquipesLinks } = await supabaseAdmin
     .from('obra_equipes' as any)
     .select('equipe_id')
     .eq('obra_id', id);
 
   const linkedIds: string[] = ((obraEquipesLinks as any[]) ?? []).map((r: any) => r.equipe_id).filter(Boolean);
 
-  // 2. Detalhes de TODAS as equipes da empresa
-  const { data: allEquipes } = await supabase
+  // 2. Todas as equipes ativas (sem filtro de empresa — igual à tela de Equipes)
+  const { data: allEquipes } = await supabaseAdmin
     .from('equipes' as any)
     .select('id, nome, tipo, especialidade')
-    .eq('empresa_id', typedObra.empresa_id)
-    .eq('ativo', true);
+    .eq('ativo', true)
+    .order('nome');
 
   const allEquipesList: any[] = (allEquipes as any[]) ?? [];
 
@@ -49,18 +61,11 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
 
   return (
     <>
-      <Header 
+      <Header
         breadcrumbs={[
           { label: 'Obras', href: '/obras' },
           { label: typedObra.nome }
         ]}
-        actions={
-          <div className="flex gap-2">
-            <button className="px-3 py-1.5 bg-bg-0 border border-brd-1 rounded-lg text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors">
-              Editar obra
-            </button>
-          </div>
-        }
       />
 
       <div className="max-w-[1200px] mx-auto space-y-5 mt-6 px-6 pb-12">
@@ -70,8 +75,8 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
             <StatusBadge status={typedObra.status} />
           </div>
           <p className="text-[13px] text-txt-2">
-            {typedObra.empresas?.nome} · {typedObra.endereco || typedObra.municipio}{typedObra.uf ? `-${typedObra.uf}` : ''}
-            {typedObra.engenheiro_nome && <> · {typedObra.engenheiro_nome}{typedObra.engenheiro_crea ? ` (${typedObra.engenheiro_crea})` : ''}</>}
+            {empresaNome} · {typedObra.endereco || typedObra.municipio}{typedObra.uf ? `-${typedObra.uf}` : ''}
+            {typedObra.eng_responsavel && <> · {typedObra.eng_responsavel}{typedObra.crea_cau ? ` (${typedObra.crea_cau})` : ''}</>}
           </p>
         </div>
 
@@ -97,10 +102,13 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
 
         <ObraDetailClient
           obraId={typedObra.id}
+          obra={typedObra}
+          empresas={(empresas as any[] | null) || []}
           initialAmbientes={ambientes || []}
           fvsPadraoList={fvsPadrao || []}
           obraEquipes={obraEquipes}
           availableEquipes={availableEquipes}
+          totalEmpresaEquipes={allEquipesList.length}
         />
       </div>
     </>
