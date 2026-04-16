@@ -3,12 +3,13 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import Header from '@/components/layout/Header';
 import EquipesClient from './EquipesClient';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export default async function EquipesPage() {
+  // Admin client criado dentro da função — env vars só existem em runtime, não no build
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // Garante que o usuário está autenticado antes de buscar dados
   const serverClient = await createServerClient();
   const { data: { user } } = await serverClient.auth.getUser();

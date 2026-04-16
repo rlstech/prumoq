@@ -5,13 +5,12 @@ import Header from '@/components/layout/Header';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ObraDetailClient from './ObraDetailClient';
 
-// Admin client bypasses RLS — safe in Server Components
-const supabaseAdmin = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export default async function ObraDetailPage(props: { params: Promise<{ id: string }> }) {
+  // Admin client criado dentro da função — env vars só existem em runtime, não no build
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   const params = await props.params;
   const { id } = params;
   const supabase = await createClient();
