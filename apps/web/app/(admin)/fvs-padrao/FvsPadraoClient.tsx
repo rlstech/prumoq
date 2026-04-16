@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Upload, Trash2 } from 'lucide-react';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/Toast';
 import { createClient } from '@/lib/supabase/client';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Modal from '@/components/ui/Modal';
+import FvsImportModal from './FvsImportModal';
 
 export default function FvsPadraoClient({ initialData }: { initialData: any[] }) {
   const router = useRouter();
@@ -19,9 +20,11 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
   
   // Modals state
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [confirmToggle, setConfirmToggle] = useState<{ id: string, name: string, active: boolean, inUse: number } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string, name: string } | null>(null);
 
-  const [formData, setFormData] = useState({ nome: '', categoria: 'Estrutura' });
+  const [formData, setFormData] = useState({ nome: '', codigo: '', categoria: 'Estrutura' });
 
   const toggleStatus = async (item: any) => {
     const inUse = item.fvs_planejadas[0]?.count || 0;
@@ -46,6 +49,19 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
     setConfirmToggle(null);
   };
 
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    const supabase = createClient();
+    const { error } = await (supabase.from('fvs_padrao') as any).delete().eq('id', confirmDelete.id);
+    if (!error) {
+      setData(prev => prev.filter(f => f.id !== confirmDelete.id));
+      toast('FVS excluída com sucesso.', 'success');
+    } else {
+      toast('Erro ao excluir FVS: ' + (error.message || ''), 'error');
+    }
+    setConfirmDelete(null);
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const supabase = createClient();
@@ -59,9 +75,10 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
 
     const payload = {
       nome: formData.nome,
+      codigo: formData.codigo.trim() || null,
       categoria: formData.categoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
       empresa_id: typedUser.empresa_id,
-      revisao_atual: 1,
+      revisao_atual: -1,
       ativo: true
     };
 
@@ -84,6 +101,13 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
 
   const columns: Column<any>[] = [
     {
+      header: 'Código',
+      cell: (item) => (
+        <span className="font-mono text-xs text-txt-2 whitespace-nowrap">{item.codigo || '—'}</span>
+      ),
+      className: 'w-24'
+    },
+    {
       header: 'Nome da FVS',
       accessorKey: 'nome',
       cell: (item) => (
@@ -99,11 +123,13 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
     },
     { 
       header: 'Itens', 
-      cell: (item) => <span className="font-medium text-txt-2 text-center">{item.fvs_padrao_itens[0]?.count || 0}</span> 
+      cell: (item) => <span className="font-medium text-txt-2 text-center">{item.fvs_padrao_itens_current?.[0]?.count || 0}</span>
     },
     { 
       header: 'Rev.', 
-      cell: (item) => <span className="inline-flex items-center bg-pg-bg text-pg px-2 py-0.5 rounded-full text-[11px] font-medium">Rev. {item.revisao_atual}</span> 
+      cell: (item) => item.revisao_atual < 0
+        ? <span className="inline-flex items-center bg-bg-2 text-txt-3 px-2 py-0.5 rounded-full text-[11px] font-medium">Rascunho</span>
+        : <span className="inline-flex items-center bg-pg-bg text-pg px-2 py-0.5 rounded-full text-[11px] font-medium">Rev. {item.revisao_atual}</span>
     },
     {
       header: 'Última alteração',
@@ -123,8 +149,8 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
       header: 'Status',
       cell: (item) => (
         <div className="flex items-center gap-2">
-          <ToggleSwitch 
-            checked={item.ativo} 
+          <ToggleSwitch
+            checked={item.ativo}
             onChange={() => toggleStatus(item)}
           />
           <span className={`text-xs font-medium ${item.ativo ? 'text-ok' : 'text-txt-3'}`}>
@@ -132,6 +158,23 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
           </span>
         </div>
       )
+    },
+    {
+      header: '',
+      cell: (item) => {
+        const inUse = item.fvs_planejadas[0]?.count > 0;
+        return (
+          <button
+            onClick={() => !inUse && setConfirmDelete({ id: item.id, name: item.nome })}
+            disabled={inUse}
+            title={inUse ? 'FVS em uso — não pode ser excluída' : 'Excluir FVS'}
+            className={`p-1.5 rounded transition-colors ${inUse ? 'text-txt-3 cursor-not-allowed opacity-40' : 'text-nok hover:bg-nok/10'}`}
+          >
+            <Trash2 size={15} />
+          </button>
+        );
+      },
+      className: 'w-10'
     }
   ];
 
@@ -159,12 +202,20 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
           </select>
         </div>
 
-        <button 
-          onClick={() => setCreateModalOpen(true)}
-          className="flex items-center gap-2 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-        >
-          <Plus size={16} /> Nova FVS Padrão
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setImportModalOpen(true)}
+            className="flex items-center gap-2 bg-bg-1 border border-brd-1 hover:bg-bg-2 text-txt-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+          >
+            <Upload size={16} /> Importar em Lote
+          </button>
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className="flex items-center gap-2 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+          >
+            <Plus size={16} /> Nova FVS Padrão
+          </button>
+        </div>
       </div>
 
       <DataTable 
@@ -183,8 +234,30 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
         variant="warning"
       />
 
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleDelete}
+        title="Excluir FVS Padrão"
+        message={`Tem certeza que deseja excluir "${confirmDelete?.name}"? Todos os itens e histórico de revisões serão removidos permanentemente.`}
+        confirmText="Sim, Excluir"
+        variant="danger"
+      />
+
+      <FvsImportModal isOpen={importModalOpen} onClose={() => setImportModalOpen(false)} />
+
       <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Nova FVS Padrão" size="sm">
         <form onSubmit={handleCreate} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-xs font-medium text-txt-2 mb-1">Código</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1 focus:border-[var(--br)] outline-none font-mono"
+              value={formData.codigo}
+              onChange={e => setFormData({ ...formData, codigo: e.target.value })}
+              placeholder="Ex: FVS 03.01"
+            />
+          </div>
           <div>
             <label className="block text-xs font-medium text-txt-2 mb-1">Nome da Verificação *</label>
             <input 

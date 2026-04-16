@@ -96,6 +96,8 @@ Ambos tipados com `Database` de `@prumoq/shared`.
 Server Actions ficam em `actions.ts` dentro da pasta da rota (convenção do projeto):
 - `apps/web/app/(admin)/usuarios/actions.ts` — CRUD de usuários (usa service role key)
 - `apps/web/app/(auth)/login/actions.ts` — login; bloqueia perfil `inspetor` (uso restrito ao mobile)
+- `apps/web/app/(admin)/equipes/actions.ts` — CRUD de equipes
+- `apps/web/app/(admin)/obras/[id]/actions.ts` — operações sobre obra específica (ambientes, associações)
 
 Perfis `inspetor` são impedidos de acessar o painel web — o `loginAction` retorna erro e faz signOut.
 
@@ -132,6 +134,8 @@ npm install -g pnpm
 pnpm install              # instala todas as dependências do monorepo
 
 pnpm mobile               # inicia Expo (apps/mobile)
+pnpm mobile:web           # inicia Expo no browser (PWA)
+pnpm mobile:build:web     # build do PWA
 pnpm web                  # inicia Next.js dev server (apps/web)
 pnpm build:web            # build de produção do painel web
 
@@ -208,7 +212,10 @@ Copie `.env.example` e preencha:
 6. ✅ Equipes
 7. ✅ Usuários
 8. ✅ Verificações (tabela + modal)
-9. Pendente: CRUD Empresas, Ambientes + FVS Planner, NC centralizada, Relatórios + PDF
+9. ✅ CRUD Empresas
+10. ✅ Ambientes + FVS Planner (`obras/[id]/ambiente/[ambId]/`)
+11. ✅ NC centralizada
+12. Pendente: Relatórios + PDF (página existe mas funcionalidade incompleta)
 
 ## Diretrizes de Código
 

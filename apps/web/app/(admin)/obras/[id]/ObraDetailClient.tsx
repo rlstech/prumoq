@@ -1,16 +1,19 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { HardHat, Trash2 } from 'lucide-react';
+import { HardHat, Pencil, Trash2 } from 'lucide-react';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import AmbienteModal from './AmbienteModal';
 import ObraEquipeModal from './ObraEquipeModal';
 import { removeEquipeFromObra } from './actions';
+import ObraModal from '../ObraModal';
 
 interface ObraDetailClientProps {
   obraId: string;
+  obra: any;
+  empresas: { id: string; nome: string }[];
   initialAmbientes: any[];
   fvsPadraoList: any[];
   obraEquipes: { id: string; nome: string; tipo: string; especialidade?: string }[];
@@ -19,6 +22,8 @@ interface ObraDetailClientProps {
 
 export default function ObraDetailClient({
   obraId,
+  obra,
+  empresas,
   initialAmbientes,
   fvsPadraoList,
   obraEquipes,
@@ -31,6 +36,7 @@ export default function ObraDetailClient({
   const [filterType, setFilterType] = useState('Todos');
   const [isAmbienteModalOpen, setIsAmbienteModalOpen] = useState(false);
   const [isEquipeModalOpen, setIsEquipeModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -63,10 +69,25 @@ export default function ObraDetailClient({
     { id: 'docs',      label: 'Documentos' },
   ];
 
+  const editInitialData = obra ? {
+    id:               obra.id,
+    nome:             obra.nome ?? '',
+    empresa_id:       obra.empresa_id ?? '',
+    status:           obra.status ?? 'nao_iniciada',
+    municipio:        obra.municipio ?? '',
+    uf:               obra.uf ?? '',
+    endereco:         obra.endereco ?? '',
+    eng_responsavel:  obra.eng_responsavel ?? '',
+    crea_cau:         obra.crea_cau ?? '',
+    data_inicio_prev: obra.data_inicio_prev ?? null,
+    data_termino_prev: obra.data_termino_prev ?? null,
+  } : undefined;
+
   return (
     <div>
-      {/* Tabs */}
-      <div className="flex gap-0 border-b border-brd-0 mb-6">
+      {/* Tabs + Edit button */}
+      <div className="flex items-center justify-between border-b border-brd-0 mb-6">
+      <div className="flex gap-0">
         {tabs.map(tab => (
           <div
             key={tab.id}
@@ -85,6 +106,13 @@ export default function ObraDetailClient({
             )}
           </div>
         ))}
+      </div>
+        <button
+          onClick={() => setIsEditModalOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-0 border border-brd-1 rounded-lg text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors mb-px"
+        >
+          <Pencil size={13} /> Editar obra
+        </button>
       </div>
 
       {/* Tab: Ambientes */}
@@ -239,6 +267,13 @@ export default function ObraDetailClient({
           availableEquipes={availableEquipes}
         />
       )}
+
+      <ObraModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        empresas={empresas}
+        initialData={editInitialData}
+      />
     </div>
   );
 }

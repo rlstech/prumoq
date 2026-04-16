@@ -1,7 +1,14 @@
 import { useQuery } from '@powersync/react-native';
+import { Building2, Key, Mail, Phone, User } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { KPICard } from '../../../../components/KPICard';
+import {
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
 import { db } from '../../../../lib/powersync';
 import { supabase } from '../../../../lib/supabase';
@@ -13,12 +20,38 @@ function initials(name: string): string {
 }
 
 interface UsuarioRow { id: string; nome: string; cargo: string; perfil: string; empresa_id: string }
-interface EmpresaRow { id: string; nome: string }
-interface CountRow { count: number }
-interface ObraRow { id: string; nome: string }
+interface ObraRow    { id: string; nome: string; municipio: string; uf: string }
+interface CountRow   { count: number }
+
+function StatCard({
+  value, label, bg, color,
+}: { value: number; label: string; bg: string; color: string }) {
+  return (
+    <View style={[sc.card, { backgroundColor: bg }]}>
+      <Text style={[sc.val, { color }]}>{value}</Text>
+      <Text style={[sc.lbl, { color: color === Colors.text ? Colors.textSecondary : color }]}>{label}</Text>
+    </View>
+  );
+}
+const sc = StyleSheet.create({
+  card: { flex: 1, borderRadius: Radius.lg, padding: 13 },
+  val:  { fontSize: 26, fontWeight: '500' },
+  lbl:  { fontSize: FontSizes.tiny - 1, marginTop: 2 },
+});
+
+const PERFIL_LABEL: Record<string, string> = {
+  admin:    'Administrador',
+  gestor:   'Gestor',
+  inspetor: 'Inspetor',
+};
+const PERFIL_ACCESS: Record<string, string> = {
+  admin:    'Administrador · Acesso total',
+  gestor:   'Gestor · Acesso gerencial',
+  inspetor: 'Inspetor · Acesso de campo',
+};
 
 export default function PerfilScreen() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId]     = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,15 +66,8 @@ export default function PerfilScreen() {
   );
   const usuario = usuarioRows[0];
 
-  const { data: empresaRows } = useQuery<EmpresaRow>(
-    usuario?.empresa_id
-      ? `SELECT id, nome FROM empresas WHERE id = '${usuario.empresa_id}'`
-      : `SELECT id, nome FROM empresas WHERE 1=0`
-  );
-  const empresa = empresaRows[0];
-
   const { data: obrasRows } = useQuery<ObraRow>(
-    `SELECT o.id, o.nome FROM obras o WHERE o.ativo = 1 ORDER BY o.nome`
+    `SELECT o.id, o.nome, o.municipio, o.uf FROM obras o WHERE o.ativo = 1 ORDER BY o.nome`
   );
 
   const { data: totalVerifRows } = useQuery<CountRow>(
@@ -49,13 +75,11 @@ export default function PerfilScreen() {
       ? `SELECT COUNT(*) AS count FROM verificacoes WHERE inspetor_id = '${userId}'`
       : `SELECT 0 AS count`
   );
-
   const { data: conformeRows } = useQuery<CountRow>(
     userId
       ? `SELECT COUNT(*) AS count FROM verificacoes WHERE inspetor_id = '${userId}' AND status = 'conforme'`
       : `SELECT 0 AS count`
   );
-
   const { data: ncsRows } = useQuery<CountRow>(
     userId
       ? `SELECT COUNT(*) AS count FROM nao_conformidades n JOIN verificacoes v ON v.id = n.verificacao_id WHERE v.inspetor_id = '${userId}' AND n.status = 'aberta'`
@@ -70,93 +94,120 @@ export default function PerfilScreen() {
   }), [obrasRows, totalVerifRows, conformeRows, ncsRows]);
 
   async function handleLogout() {
-    try {
-      await db.disconnectAndClear();
-    } catch (e) {
-      console.error('[Perfil] PowerSync disconnect error:', e);
-    }
+    try { await db.disconnectAndClear(); } catch { /* ignore */ }
     await supabase.auth.signOut();
   }
 
-  const perfilLabel: Record<string, string> = {
-    admin: 'Administrador',
-    gestor: 'Gestor',
-    inspetor: 'Inspetor de Campo',
-  };
+  const heroRole = [
+    usuario?.cargo,
+    PERFIL_LABEL[usuario?.perfil ?? ''],
+  ].filter(Boolean).join(' · ');
+
+  const infoRows = [
+    { icon: User,     label: 'Nome completo',   value: usuario?.nome },
+    { icon: Building2,label: 'Empresa',          value: undefined as string | undefined },  // empresa not synced
+    { icon: Mail,     label: 'E-mail',            value: userEmail ?? undefined },
+    { icon: Phone,    label: 'Celular',           value: undefined as string | undefined },  // not synced
+    { icon: Key,      label: 'Perfil de acesso',  value: usuario ? (PERFIL_ACCESS[usuario.perfil] ?? usuario.perfil) : undefined },
+  ].filter(r => !!r.value);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.hero}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {usuario ? initials(usuario.nome) : 'IN'}
-          </Text>
+    <SafeAreaView style={s.safe}>
+      {/* Hero */}
+      <View style={s.hero}>
+        <View style={s.avatar}>
+          <Text style={s.avatarText}>{usuario ? initials(usuario.nome) : 'IN'}</Text>
         </View>
-        <Text style={styles.name}>{usuario?.nome ?? 'Carregando...'}</Text>
-        <Text style={styles.role}>{usuario ? (perfilLabel[usuario.perfil] ?? usuario.cargo) : ''}</Text>
+        <Text style={s.heroName}>{usuario?.nome ?? 'Carregando...'}</Text>
+        {heroRole ? <Text style={s.heroRole}>{heroRole}</Text> : null}
       </View>
 
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        {/* Info rows */}
-        <View style={styles.infoCard}>
-          {[
-            { label: 'Nome', value: usuario?.nome },
-            { label: 'Empresa', value: empresa?.nome },
-            { label: 'E-mail', value: userEmail },
-            { label: 'Cargo', value: usuario?.cargo },
-            { label: 'Perfil', value: usuario ? (perfilLabel[usuario.perfil] ?? usuario.perfil) : undefined },
-          ].map(row => (
-            row.value ? (
-              <View key={row.label} style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{row.label}</Text>
-                <Text style={styles.infoValue}>{row.value}</Text>
+      <ScrollView
+        style={s.body}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={s.bodyContent}
+      >
+        {/* Dados do usuário */}
+        <Text style={s.sectionLabel}>DADOS DO USUÁRIO</Text>
+        <View style={s.dataCard}>
+          {infoRows.map((row, idx) => {
+            const Icon = row.icon;
+            return (
+              <View
+                key={row.label}
+                style={[s.pfRow, idx === infoRows.length - 1 && s.pfRowLast]}
+              >
+                <View style={s.pfIcon}>
+                  <Icon size={16} color={Colors.textSecondary} />
+                </View>
+                <View style={s.pfInfo}>
+                  <Text style={s.pfLbl}>{row.label}</Text>
+                  <Text style={s.pfVal}>{row.value}</Text>
+                </View>
               </View>
-            ) : null
-          ))}
+            );
+          })}
         </View>
 
-        {/* Statistics */}
-        <Text style={styles.sectionTitle}>ESTATÍSTICAS</Text>
-        <View style={styles.kpiGrid}>
-          <KPICard label="Obras ativas" value={stats.obras} color={Colors.progress} />
-          <KPICard label="Verificações" value={stats.total} color={Colors.ok} />
+        {/* Divider */}
+        <View style={s.divider} />
+
+        {/* Minhas estatísticas */}
+        <Text style={s.sectionLabel}>MINHAS ESTATÍSTICAS</Text>
+        <View style={s.statsGrid}>
+          <StatCard value={stats.obras}      label="Obras ativas"  bg={Colors.progressBg} color={Colors.progress} />
+          <StatCard value={stats.total}      label="Total verif."  bg={Colors.surface2}   color={Colors.text} />
         </View>
-        <View style={styles.kpiGrid}>
-          <KPICard label="Conformes" value={stats.conformes} color={Colors.ok} />
-          <KPICard label="NCs abertas" value={stats.ncsAbertas} color={Colors.nok} />
+        <View style={[s.statsGrid, { marginTop: 9 }]}>
+          <StatCard value={stats.conformes}  label="Conformes"     bg={Colors.okBg}       color={Colors.ok} />
+          <StatCard value={stats.ncsAbertas} label="NC abertas"    bg={Colors.nokBg}      color={Colors.nok} />
         </View>
 
-        {/* Authorized projects */}
+        {/* Divider */}
+        <View style={s.divider} />
+
+        {/* Obras com acesso */}
         {obrasRows.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>OBRAS AUTORIZADAS</Text>
-            <View style={styles.obrasList}>
-              {obrasRows.map(o => (
-                <View key={o.id} style={styles.obraRow}>
-                  <Text style={styles.obraNome}>{o.nome}</Text>
+            <Text style={s.sectionLabel}>OBRAS COM ACESSO</Text>
+            {obrasRows.map(o => {
+              const location = [o.municipio, o.uf].filter(Boolean).join(', ');
+              return (
+                <View key={o.id} style={s.obraCard}>
+                  <View style={s.obraCardRow}>
+                    <Text style={s.obraNome} numberOfLines={1}>{o.nome}</Text>
+                    <View style={s.ativoBadge}>
+                      <Text style={s.ativoText}>Ativo</Text>
+                    </View>
+                  </View>
+                  {location ? <Text style={s.obraLocation}>{location}</Text> : null}
                 </View>
-              ))}
-            </View>
+              );
+            })}
+            <View style={s.divider} />
           </>
         )}
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
-          <Text style={styles.logoutText}>Sair da conta</Text>
+        {/* Logout */}
+        <TouchableOpacity style={s.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
+          <Text style={s.logoutText}>Sair do sistema</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.brand },
+
+  // Hero
   hero: {
     backgroundColor: Colors.brand,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xxl,
-    paddingBottom: Spacing.xxl + 4,
+    paddingBottom: 30,
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: 10,
   },
   avatar: {
     width: 72,
@@ -168,53 +219,88 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: Colors.brand, fontSize: FontSizes.xxl, fontWeight: '600' },
-  name: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
-  role: { color: 'rgba(255,255,255,0.8)', fontSize: FontSizes.base },
-  body: { flex: 1, backgroundColor: Colors.bg },
-  bodyContent: { padding: Spacing.lg, gap: Spacing.lg, paddingBottom: Spacing.xxl },
-  infoCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  infoLabel: { fontSize: FontSizes.base, color: Colors.textSecondary },
-  infoValue: { fontSize: FontSizes.base, color: Colors.text, fontWeight: '500', maxWidth: '60%', textAlign: 'right' },
-  sectionTitle: {
-    fontSize: FontSizes.xs,
-    fontWeight: '600',
-    color: Colors.textTertiary,
+  avatarText: { color: Colors.brand, fontSize: 22, fontWeight: '500' },
+  heroName:   { color: '#fff', fontSize: FontSizes.lg, fontWeight: '500' },
+  heroRole:   { color: 'rgba(255,255,255,0.8)', fontSize: FontSizes.sm },
+
+  // Body
+  body:        { flex: 1, backgroundColor: Colors.bg },
+  bodyContent: { padding: Spacing.lg, paddingBottom: 40 },
+
+  // Section label
+  sectionLabel: {
+    fontSize: FontSizes.tiny - 1,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginBottom: 8,
   },
-  kpiGrid: { flexDirection: 'row', gap: Spacing.sm },
-  obrasList: {
+
+  // Data card (dados do usuário)
+  dataCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     overflow: 'hidden',
+    marginBottom: 0,
   },
-  obraRow: {
-    padding: Spacing.md,
-    borderBottomWidth: 1,
+  pfRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 13,
+    paddingHorizontal: Spacing.md,
+    borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
   },
-  obraNome: { fontSize: FontSizes.base, color: Colors.text },
+  pfRowLast: { borderBottomWidth: 0 },
+  pfIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  pfInfo: { flex: 1 },
+  pfLbl:  { fontSize: FontSizes.tiny - 1, color: Colors.textSecondary },
+  pfVal:  { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.text, marginTop: 2 },
+
+  // Divider
+  divider: {
+    height: 0.5,
+    backgroundColor: Colors.border,
+    marginVertical: 13,
+  },
+
+  // Stats grid
+  statsGrid: { flexDirection: 'row', gap: 9 },
+
+  // Obra cards
+  obraCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.lg,
+    paddingVertical: 13,
+    paddingHorizontal: 15,
+    marginBottom: 9,
+  },
+  obraCardRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  obraNome:     { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text, flex: 1, marginRight: 8 },
+  obraLocation: { fontSize: FontSizes.sm, color: Colors.textSecondary, marginTop: 2 },
+  ativoBadge:   { backgroundColor: Colors.progressBg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.full },
+  ativoText:    { fontSize: FontSizes.tiny - 1, fontWeight: '500', color: Colors.progress },
+
+  // Logout
   logoutBtn: {
-    backgroundColor: Colors.nokBg,
-    borderRadius: Radius.md,
+    backgroundColor: Colors.surface2,
+    borderRadius: Radius.lg,
     padding: 13,
     alignItems: 'center',
   },
-  logoutText: { color: Colors.nok, fontSize: FontSizes.md, fontWeight: '500' },
+  logoutText: { color: Colors.nok, fontSize: FontSizes.base, fontWeight: '500' },
 });

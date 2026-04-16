@@ -63,6 +63,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
     // Atualiza info da fvs base
     const { error: fvsError } = await (supabase.from('fvs_padrao') as any).update({
       nome: fvsData.nome,
+      codigo: fvsData.codigo || null,
       categoria: fvsData.categoria,
       descricao: fvsData.descricao,
       norma_ref: fvsData.norma_ref,
@@ -127,7 +128,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
         {/* Painel Direito - Configurações */}
         <div className="w-full xl:w-[360px] flex flex-col gap-6 shrink-0 h-full overflow-y-auto pb-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-txt">Rev. {fvsData.revisao_atual}</h1>
+            <h1 className="text-xl font-bold text-txt">{fvsData.revisao_atual < 0 ? 'Rascunho' : `Rev. ${fvsData.revisao_atual}`}</h1>
             <div className="flex items-center gap-2 bg-bg-1 px-3 py-1.5 border border-brd-0 rounded-lg">
                <span className={`text-[11px] font-semibold uppercase ${fvsData.ativo ? 'text-ok' : 'text-txt-3'}`}>
                  {fvsData.ativo ? 'Ativa' : 'Inativa'}
@@ -141,8 +142,18 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
              
              <div className="space-y-4">
                <div>
+                  <label className="block text-xs font-medium text-txt-2 mb-1">Código</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)] font-mono"
+                    value={fvsData.codigo || ''}
+                    onChange={e => setFvsData({...fvsData, codigo: e.target.value || null})}
+                    placeholder="Ex: FVS 03.01"
+                  />
+               </div>
+               <div>
                   <label className="block text-xs font-medium text-txt-2 mb-1">Nome *</label>
-                  <input 
+                  <input
                     type="text"
                     className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]"
                     value={fvsData.nome}

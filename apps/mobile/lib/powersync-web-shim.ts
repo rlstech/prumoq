@@ -72,7 +72,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 
   // ── obras ativas lista simples (perfil) ───────────────
   if (s.includes('from obras o where o.ativo = 1') && s.includes('select o.id, o.nome')) {
-    const { data } = await supabase.from('obras').select('id, nome').eq('ativo', 1).order('nome');
+    const { data } = await supabase.from('obras').select('id, nome, municipio, uf').eq('ativo', 1).order('nome');
     return (data ?? []) as T[];
   }
 

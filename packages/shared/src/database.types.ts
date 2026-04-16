@@ -135,6 +135,7 @@ export interface Database {
           id:            string;
           empresa_id:    string;
           nome:          string;
+          codigo:        string | null;
           descricao:     string | null;
           categoria:     Database['public']['Enums']['categoria_fvs'];
           norma_ref:     string | null;

@@ -9,7 +9,7 @@ export default async function FvsPadraoPage() {
 
   const { data: fvsList } = await supabase
     .from('fvs_padrao')
-    .select('*, fvs_padrao_itens(count), fvs_planejadas(count)')
+    .select('*, fvs_padrao_itens_current(count), fvs_planejadas(count)')
     .order('nome');
 
   const typedFvs = (fvsList as any[]) || [];
