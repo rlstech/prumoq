@@ -108,11 +108,20 @@ jobs:
               {"name": "SUPABASE_SERVICE_ROLE_KEY", "value": $key}
             ]')
 
-          # Check if the stack already exists
-          STACK_ID=$(curl -sf \
+          # Check if the stack already exists (verbose to show HTTP errors)
+          echo "→ Fetching stacks from $PORTAINER_URL/api/stacks"
+          STACKS_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
             -H "X-API-Key: $PORTAINER_API_KEY" \
-            "$PORTAINER_URL/api/stacks" \
-            | jq -r ".[] | select(.Name==\"$STACK_NAME\") | .Id // empty")
+            "$PORTAINER_URL/api/stacks")
+          HTTP_STATUS=$(echo "$STACKS_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+          STACKS_BODY=$(echo "$STACKS_RESPONSE" | grep -v "HTTP_STATUS:")
+          echo "HTTP $HTTP_STATUS: $STACKS_BODY"
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "❌ Portainer API error (HTTP $HTTP_STATUS)" >> $GITHUB_STEP_SUMMARY
+            echo "$STACKS_BODY" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          STACK_ID=$(echo "$STACKS_BODY" | jq -r ".[] | select(.Name==\"$STACK_NAME\") | .Id // empty")
 
           if [ -z "$STACK_ID" ]; then
             echo "Stack '$STACK_NAME' not found — creating..."
