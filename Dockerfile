@@ -6,16 +6,19 @@ RUN corepack enable
 FROM base AS builder
 WORKDIR /app
 
-# Copy workspace manifests first (layer cache: reinstall only when these change)
+# Copy workspace manifests
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/shared/package.json ./packages/shared/
-COPY apps/web/package.json         ./apps/web/
+
+# Copy @prumoq/shared BEFORE install so pnpm workspace symlinks resolve correctly
+COPY packages/shared ./packages/shared
+
+# Only the package.json of the web app is needed for dependency resolution
+COPY apps/web/package.json ./apps/web/
 
 RUN pnpm install --frozen-lockfile
 
-# Copy source after install
-COPY packages/shared ./packages/shared
-COPY apps/web        ./apps/web
+# Copy app source after install (changes here don't bust the install cache)
+COPY apps/web ./apps/web
 
 # NEXT_PUBLIC_* vars are baked into the JS bundle at build time
 ARG NEXT_PUBLIC_SUPABASE_URL
@@ -33,8 +36,7 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 nextjs
 
-# next output: standalone creates a self-contained server
-# outputFileTracingRoot = monorepo root → server.js lives at apps/web/server.js
+# Next.js standalone output — server.js is at apps/web/server.js (monorepo layout)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static     ./apps/web/.next/static
 
