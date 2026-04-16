@@ -35,6 +35,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up Node & pnpm (smoke-test build outside Docker)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install deps and test Next.js build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @prumoq/web build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -43,6 +59,7 @@ jobs:
         with:
           context: .
           push: true
+          no-cache: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
@@ -51,6 +68,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          provenance: false
 
   # ── 2. Create or update Portainer stack ─────────────────────────────────
   deploy:
