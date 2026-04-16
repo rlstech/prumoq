@@ -1,3 +1,6 @@
+// All admin pages require auth and live DB access — never pre-render at build time
+export const dynamic = 'force-dynamic';
+
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
