@@ -253,15 +253,15 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
             </div>
 
             <div className="space-y-1 text-[11px]">
-              <p><span className="font-semibold text-txt">Descrição do Item</span> — título direto do item (ex: "Condições de Início", "Locação"). Salvo como título no banco.</p>
-              <p><span className="font-semibold text-txt">Método de verificação</span> — como verificar o item (ex: "Verificar o projeto de formas e escoramento"). Salvo como método.</p>
-              <p><span className="font-semibold text-txt">Tolerância (opcional)</span> — critério de aceitação (ex: "Visual", "+/- 3mm"). Salvo diretamente no campo tolerância.</p>
+              <p><span className="font-semibold text-txt">Descrição do Item</span>{' — título direto do item (ex: "Condições de Início", "Locação"). Salvo como título no banco.'}</p>
+              <p><span className="font-semibold text-txt">Método de verificação</span>{' — como verificar o item (ex: "Verificar o projeto de formas e escoramento"). Salvo como método.'}</p>
+              <p><span className="font-semibold text-txt">Tolerância (opcional)</span>{' — critério de aceitação (ex: "Visual", "+/- 3mm"). Salvo diretamente no campo tolerância.'}</p>
               <p><span className="font-semibold text-txt">Linhas com mesmo Nome + Categoria</span> são agrupadas em uma única FVS.</p>
             </div>
 
             <div className="flex items-start gap-2 bg-warn-bg border border-warn/25 rounded px-3 py-2 text-[11px] text-warn">
               <AlertTriangle size={13} className="shrink-0 mt-0.5" />
-              <span><span className="font-semibold">Atenção:</span> não use células mescladas — cada linha precisa ter seu próprio valor em todas as colunas preenchidas. No Excel, selecione as células e use "Desfazer Mesclar Células" antes de copiar.</span>
+              <span><span className="font-semibold">Atenção:</span>{' não use células mescladas — cada linha precisa ter seu próprio valor em todas as colunas preenchidas. No Excel, selecione as células e use "Desfazer Mesclar Células" antes de copiar.'}</span>
             </div>
 
             <p className="text-[11px] text-txt-3">
