@@ -184,8 +184,10 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
           
           <div className="grid grid-cols-2 gap-4">
              <div>
-               <label className="block text-xs font-medium text-txt-2 mb-1">Senha {selectedUser && '(deixe em branco para manter)'}</label>
-               <input type="password" required={!selectedUser} className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]" value={formData.senha} onChange={e => setFormData({...formData, senha: e.target.value})} />
+               <label className="block text-xs font-medium text-txt-2 mb-1">
+                 Senha {selectedUser ? '(deixe em branco para manter)' : '*'}
+               </label>
+               <input type="password" required={!selectedUser} placeholder={selectedUser ? '' : 'Mínimo 6 caracteres'} className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]" value={formData.senha} onChange={e => setFormData({...formData, senha: e.target.value})} />
              </div>
              <div>
                <label className="block text-xs font-medium text-txt-2 mb-1">Cargo</label>

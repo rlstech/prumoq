@@ -26,9 +26,13 @@ export async function createUsuario(data: any) {
       throw new Error('Sem permissão para criar usuários');
     }
 
+    if (!data.senha || data.senha.length < 6) {
+      throw new Error('Senha obrigatória e deve ter pelo menos 6 caracteres');
+    }
+
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
-      password: data.senha || 'PrumoQ123!',
+      password: data.senha,
       email_confirm: true,
       user_metadata: { nome: data.nome }
     });
