@@ -1,6 +1,7 @@
 import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, PenLine, Plus } from 'lucide-react-native';
+import { PenLine, Plus } from 'lucide-react-native';
+import { AppHeader } from '../../../../../../../../../components/AppHeader';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { PhotoGrid } from '../../../../../../../../../components/PhotoGrid';
@@ -96,22 +97,21 @@ export default function FvsHistoryScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <ChevronLeft size={22} color="#fff" />
-        </Pressable>
-        <View style={styles.headerText}>
-          <Text style={styles.title} numberOfLines={1}>{fvs?.subservico || 'FVS'}</Text>
-          <Text style={styles.subtitle}>{fvs?.ambiente_nome}{fvs?.obra_nome ? ` · ${fvs.obra_nome}` : ''}</Text>
-        </View>
-        <Pressable
-          style={styles.novaBtn}
-          onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
-        >
-          <Plus size={16} color="#fff" />
-          <Text style={styles.novaBtnText}>Nova</Text>
-        </Pressable>
-      </View>
+      <AppHeader
+        title={fvs?.subservico || 'FVS'}
+        subtitle={[fvs?.ambiente_nome, fvs?.obra_nome].filter(Boolean).join(' · ')}
+        showBack
+        onBack={() => router.back()}
+        rightElement={
+          <Pressable
+            style={styles.novaBtn}
+            onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
+          >
+            <Plus size={16} color="#fff" />
+            <Text style={styles.novaBtnText}>Nova</Text>
+          </Pressable>
+        }
+      />
 
       {/* Status panel */}
       <View style={styles.statusPanel}>
@@ -246,18 +246,6 @@ function dotColor(status: string): string {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  header: {
-    backgroundColor: Colors.brand,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  headerText: { flex: 1 },
-  title: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.sm, marginTop: 2 },
   novaBtn: {
     flexDirection: 'row',
     alignItems: 'center',

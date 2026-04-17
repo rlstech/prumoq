@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AppHeader } from '../../../../components/AppHeader';
 import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
 import { db } from '../../../../lib/powersync';
 import { supabase } from '../../../../lib/supabase';
@@ -114,13 +115,15 @@ export default function PerfilScreen() {
   return (
     <SafeAreaView style={s.safe}>
       {/* Hero */}
-      <View style={s.hero}>
-        <View style={s.avatar}>
-          <Text style={s.avatarText}>{usuario ? initials(usuario.nome) : 'IN'}</Text>
+      <AppHeader>
+        <View style={s.hero}>
+          <View style={s.avatar}>
+            <Text style={s.avatarText}>{usuario ? initials(usuario.nome) : 'IN'}</Text>
+          </View>
+          <Text style={s.heroName}>{usuario?.nome ?? 'Carregando...'}</Text>
+          {heroRole ? <Text style={s.heroRole}>{heroRole}</Text> : null}
         </View>
-        <Text style={s.heroName}>{usuario?.nome ?? 'Carregando...'}</Text>
-        {heroRole ? <Text style={s.heroRole}>{heroRole}</Text> : null}
-      </View>
+      </AppHeader>
 
       <ScrollView
         style={s.body}
@@ -198,15 +201,12 @@ export default function PerfilScreen() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.brand },
+  safe: { flex: 1, backgroundColor: Colors.bg },
 
   // Hero
   hero: {
-    backgroundColor: Colors.brand,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xxl,
-    paddingBottom: 30,
     alignItems: 'center',
+    paddingBottom: Spacing.md,
     gap: 10,
   },
   avatar: {

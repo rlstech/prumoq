@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { AlertTriangle, CheckCircle2, Clock } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { AppHeader } from '../../../../components/AppHeader';
 import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
 
 type TabKey = 'abertas' | 'resolvidas' | 'todas';
@@ -81,10 +82,10 @@ export default function NcScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Não Conformidades</Text>
-        <Text style={styles.subtitle}>{counts.abertas} aberta{counts.abertas !== 1 ? 's' : ''} · {counts.resolvidas} resolvida{counts.resolvidas !== 1 ? 's' : ''}</Text>
-      </View>
+      <AppHeader
+        title="Não Conformidades"
+        subtitle={`${counts.abertas} aberta${counts.abertas !== 1 ? 's' : ''} · ${counts.resolvidas} resolvida${counts.resolvidas !== 1 ? 's' : ''}`}
+      />
 
       {/* Tabs */}
       <View style={styles.tabRow}>
@@ -159,15 +160,6 @@ export default function NcScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  header: {
-    backgroundColor: Colors.brand,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
-    gap: 4,
-  },
-  title: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.sm },
   tabRow: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,

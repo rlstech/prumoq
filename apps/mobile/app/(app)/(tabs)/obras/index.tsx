@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { AppHeader } from '../../../../components/AppHeader';
 import { ProgressBar } from '../../../../components/ProgressBar';
 import { StatusBadge } from '../../../../components/StatusBadge';
 import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
@@ -66,11 +67,10 @@ export default function ObrasScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>Obras</Text>
-          <Text style={styles.subtitle}>{obras.length} ativa{obras.length !== 1 ? 's' : ''}</Text>
-        </View>
+      <AppHeader
+        title="Obras"
+        subtitle={`${obras.length} ativa${obras.length !== 1 ? 's' : ''}`}
+      >
         <View style={styles.searchBox}>
           <Search size={16} color={Colors.textTertiary} />
           <TextInput
@@ -82,7 +82,7 @@ export default function ObrasScreen() {
             returnKeyType="search"
           />
         </View>
-      </View>
+      </AppHeader>
 
       <FlatList
         data={filtered}
@@ -133,17 +133,7 @@ export default function ObrasScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.brand },
-  header: {
-    backgroundColor: Colors.brand,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.md,
-  },
-  headerRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
-  title: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.base },
+  safe: { flex: 1, backgroundColor: Colors.bg },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',

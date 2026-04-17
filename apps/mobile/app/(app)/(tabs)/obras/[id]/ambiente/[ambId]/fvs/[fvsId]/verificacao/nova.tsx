@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   Camera,
   ChevronDown,
-  ChevronLeft,
   Image as ImageIcon,
   PenLine,
 } from 'lucide-react-native';
@@ -24,6 +23,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { AppHeader } from '../../../../../../../../../../components/AppHeader';
 import { PhotoGrid } from '../../../../../../../../../../components/PhotoGrid';
 import { SignatureField } from '../../../../../../../../../../components/SignatureField';
 import { captureNcPhoto } from '../../../../../../../../../../hooks/useNcPhoto';
@@ -554,15 +554,12 @@ export default function NovaVerificacaoScreen() {
   return (
     <SafeAreaView style={st.safe}>
       {/* ── Header ── */}
-      <View style={st.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <ChevronLeft size={22} color="#fff" />
-        </Pressable>
-        <View style={st.headerText}>
-          <Text style={st.title}>Nova Verificação</Text>
-          <Text style={st.subtitle}>Verif. #{proximoNumero} · {fvs?.subservico ?? 'FVS'}</Text>
-        </View>
-      </View>
+      <AppHeader
+        title="Nova Verificação"
+        subtitle={`Verif. #${proximoNumero} · ${fvs?.subservico ?? 'FVS'}`}
+        showBack
+        onBack={() => router.back()}
+      />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={st.content}>
@@ -947,16 +944,6 @@ const st = StyleSheet.create({
   toastSuccess: { backgroundColor: Colors.ok },
   toastError:   { backgroundColor: Colors.nok },
   toastText:    { color: '#fff', fontSize: FontSizes.md, fontWeight: '500', textAlign: 'center' },
-  header:  {
-    backgroundColor: Colors.brand,
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md, paddingBottom: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  headerText: { flex: 1 },
-  title:      { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
-  subtitle:   { color: 'rgba(255,255,255,0.72)', fontSize: FontSizes.sm, marginTop: 2 },
   content:    { padding: Spacing.lg, gap: Spacing.lg },
   section:    { gap: Spacing.sm },
   sectionTitle: { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.textSecondary, marginBottom: 4 },

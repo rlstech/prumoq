@@ -18,12 +18,6 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'PrumoQ',
-          headerShown: true,
-          headerStyle: { backgroundColor: Colors.surface },
-          headerTitleStyle: { color: Colors.brand, fontWeight: '700', fontSize: FontSizes.lg },
-          headerTitleAlign: 'center',
-          headerShadowVisible: false,
           tabBarLabel: 'Início',
           tabBarIcon: ({ color }) => <LayoutGrid size={19} color={color} />,
         }}

@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
+import { AppHeader } from '../../../../../components/AppHeader';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
@@ -142,17 +142,12 @@ export default function ObraDetailScreen() {
   return (
     <SafeAreaView style={s.safe}>
       {/* Header */}
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={s.backBtn}>
-          <ChevronLeft size={22} color="#fff" />
-        </Pressable>
-        <View style={s.headerText}>
-          <Text style={s.headerTitle} numberOfLines={1}>{obra?.nome ?? '—'}</Text>
-          {locationText ? (
-            <Text style={s.headerSub}>{locationText}</Text>
-          ) : null}
-        </View>
-      </View>
+      <AppHeader
+        title={obra?.nome ?? '—'}
+        subtitle={locationText || undefined}
+        showBack
+        onBack={() => router.back()}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
         {/* Info panel (.oh) */}
@@ -283,20 +278,6 @@ const s = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.bg },
   scroll: { paddingBottom: 40 },
 
-  // Header
-  header: {
-    backgroundColor: Colors.brand,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  backBtn:    { padding: 2 },
-  headerText: { flex: 1 },
-  headerTitle: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
-  headerSub:   { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.sm, marginTop: 2 },
 
   // Info panel
   infoPanel: {

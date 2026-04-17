@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { CheckCircle2 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppHeader } from '../../../components/AppHeader';
 import { KPICard } from '../../../components/KPICard';
 import { OfflineBanner } from '../../../components/OfflineBanner';
 import { ProgressBar } from '../../../components/ProgressBar';
@@ -155,18 +156,20 @@ export default function DashboardScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* ── Header ── */}
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.greeting}>Olá, {userInfo?.nome?.split(' ')[0] ?? 'Inspetor'}</Text>
-            <Text style={styles.headerSub}>
-              {userInfo?.cargo ?? 'Inspetor de Campo'}
-              {userInfo?.empresa_nome ? ` · ${userInfo.empresa_nome}` : ''}
-            </Text>
+        <AppHeader>
+          <View style={styles.headerContent}>
+            <View style={styles.headerText}>
+              <Text style={styles.greeting}>Olá, {userInfo?.nome?.split(' ')[0] ?? 'Inspetor'}</Text>
+              <Text style={styles.headerSub}>
+                {userInfo?.cargo ?? 'Inspetor de Campo'}
+                {userInfo?.empresa_nome ? ` · ${userInfo.empresa_nome}` : ''}
+              </Text>
+            </View>
+            <Pressable onPress={() => router.push('/(app)/(tabs)/perfil' as never)} style={styles.avatar}>
+              <Text style={styles.avatarText}>{userInfo ? initials(userInfo.nome) : 'IN'}</Text>
+            </Pressable>
           </View>
-          <Pressable onPress={() => router.push('/(app)/(tabs)/perfil' as never)} style={styles.avatar}>
-            <Text style={styles.avatarText}>{userInfo ? initials(userInfo.nome) : 'IN'}</Text>
-          </Pressable>
-        </View>
+        </AppHeader>
 
         {/* ── KPIs ── */}
         <View style={styles.section}>
@@ -300,14 +303,11 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.bg },
-  header:  {
-    backgroundColor: Colors.brand,
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: Spacing.sm,
     gap: Spacing.md,
   },
   headerText: { flex: 1 },

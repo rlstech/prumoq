@@ -1,6 +1,7 @@
 import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AlertCircle, ArrowRight, CheckCircle2, ChevronLeft, Circle } from 'lucide-react-native';
+import { AlertCircle, ArrowRight, CheckCircle2, Circle } from 'lucide-react-native';
+import { AppHeader } from '../../../../../../../components/AppHeader';
 import { useMemo } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { ProgressBar } from '../../../../../../../components/ProgressBar';
@@ -88,15 +89,12 @@ export default function AmbienteScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <ChevronLeft size={22} color="#fff" />
-        </Pressable>
-        <View style={styles.headerText}>
-          <Text style={styles.title} numberOfLines={1}>{amb?.nome ?? '—'}</Text>
-          <Text style={styles.subtitle}>{subtitleParts.join(' · ')}</Text>
-        </View>
-      </View>
+      <AppHeader
+        title={amb?.nome ?? '—'}
+        subtitle={subtitleParts.join(' · ')}
+        showBack
+        onBack={() => router.back()}
+      />
 
       {/* Summary panel */}
       <View style={styles.summaryPanel}>
@@ -155,18 +153,6 @@ export default function AmbienteScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  header: {
-    backgroundColor: Colors.brand,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  headerText: { flex: 1 },
-  title:    { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.sm, marginTop: 2 },
 
   summaryPanel: {
     backgroundColor: Colors.surface,
