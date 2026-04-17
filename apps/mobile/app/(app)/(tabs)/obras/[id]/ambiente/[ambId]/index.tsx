@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { CheckCircle2, ChevronLeft, ChevronRight, Circle, XCircle } from 'lucide-react-native';
+import { AlertCircle, ArrowRight, CheckCircle2, ChevronLeft, Circle } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { ProgressBar } from '../../../../../../../components/ProgressBar';
@@ -17,10 +17,36 @@ interface FvsRow {
 
 function StatusIcon({ status }: { status: string }) {
   const size = 18;
-  if (status === 'conforme')     return <CheckCircle2 size={size} color={Colors.ok} />;
-  if (status === 'nao_conforme') return <XCircle size={size} color={Colors.nok} />;
-  if (status === 'em_andamento') return <ChevronRight size={size} color={Colors.warn} />;
-  return <Circle size={size} color={Colors.na} />;
+  if (status === 'conforme')
+    return (
+      <View style={[styles.iconCircle, { backgroundColor: Colors.okBg }]}>
+        <CheckCircle2 size={size} color={Colors.ok} />
+      </View>
+    );
+  if (status === 'nao_conforme')
+    return (
+      <View style={[styles.iconCircle, { backgroundColor: Colors.nokBg }]}>
+        <AlertCircle size={size} color={Colors.nok} />
+      </View>
+    );
+  if (status === 'em_andamento')
+    return (
+      <View style={[styles.iconCircle, { backgroundColor: Colors.progressBg }]}>
+        <ArrowRight size={size} color={Colors.progress} />
+      </View>
+    );
+  return (
+    <View style={[styles.iconCircle, { backgroundColor: Colors.naBg }]}>
+      <Circle size={size} color={Colors.na} />
+    </View>
+  );
+}
+
+function statusLabel(status: string): { text: string; color: string } {
+  if (status === 'conforme')     return { text: 'Concluído',    color: Colors.ok };
+  if (status === 'nao_conforme') return { text: 'NC aberta',    color: Colors.nok };
+  if (status === 'em_andamento') return { text: 'Em andamento', color: Colors.progress };
+  return                                { text: 'Pendente',     color: Colors.na };
 }
 
 export default function AmbienteScreen() {
@@ -53,6 +79,12 @@ export default function AmbienteScreen() {
     return { total, concluidas, pct };
   }, [fvsList]);
 
+  const subtitleParts = [
+    amb?.tipo === 'interno' ? 'Interno' : 'Externo',
+    amb?.localizacao || null,
+    amb?.obra_nome || null,
+  ].filter(Boolean);
+
   return (
     <SafeAreaView style={styles.safe}>
       {/* Header */}
@@ -62,49 +94,55 @@ export default function AmbienteScreen() {
         </Pressable>
         <View style={styles.headerText}>
           <Text style={styles.title} numberOfLines={1}>{amb?.nome ?? '—'}</Text>
-          <Text style={styles.subtitle}>
-            {amb?.tipo === 'interno' ? 'Ambiente interno' : 'Ambiente externo'}
-            {amb?.obra_nome ? ` · ${amb.obra_nome}` : ''}
-          </Text>
+          <Text style={styles.subtitle}>{subtitleParts.join(' · ')}</Text>
         </View>
       </View>
 
       {/* Summary panel */}
       <View style={styles.summaryPanel}>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>FVS planejadas</Text>
-          <Text style={styles.summaryCount}>{summary.concluidas}/{summary.total}</Text>
+          <View>
+            <Text style={styles.summaryLabel}>FVS planejadas</Text>
+            <Text style={styles.summaryTotal}>{summary.total} serviços</Text>
+          </View>
+          <View style={styles.summaryRight}>
+            <Text style={styles.summaryLabel}>Concluídas</Text>
+            <Text style={styles.summaryCount}>{summary.concluidas}/{summary.total}</Text>
+          </View>
         </View>
-        <ProgressBar value={summary.pct} height={6} color={Colors.ok} showLabel />
+        <ProgressBar value={summary.pct} height={6} color={Colors.brand} />
       </View>
 
       <FlatList
         data={fvsList}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [styles.fvsCard, pressed && { opacity: 0.75 }]}
-            onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${item.id}` as never)}
-          >
-            <View style={styles.fvsLeft}>
+        ListHeaderComponent={
+          <Text style={styles.sectionTitle}>SERVIÇOS PLANEJADOS</Text>
+        }
+        renderItem={({ item }) => {
+          const badge = statusLabel(item.status);
+          return (
+            <Pressable
+              style={({ pressed }) => [styles.fvsCard, pressed && { opacity: 0.75 }]}
+              onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${item.id}` as never)}
+            >
               <StatusIcon status={item.status} />
-            </View>
-            <View style={styles.fvsBody}>
-              <Text style={styles.fvsNome} numberOfLines={2}>{item.subservico || 'Serviço'}</Text>
-              {item.ultima_verif && (
+              <View style={styles.fvsBody}>
+                <Text style={styles.fvsNome} numberOfLines={2}>{item.subservico || 'Serviço'}</Text>
                 <Text style={styles.fvsDate}>
-                  Última: {new Date(item.ultima_verif).toLocaleDateString('pt-BR')}
-                  {item.total_verificacoes > 0 ? ` · ${item.total_verificacoes} verif.` : ''}
+                  {item.ultima_verif
+                    ? `Última verif: ${new Date(item.ultima_verif).toLocaleDateString('pt-BR')}`
+                    : 'Não iniciado'}
                 </Text>
-              )}
-              {!item.ultima_verif && (
-                <Text style={styles.fvsDate}>Nenhuma verificação</Text>
-              )}
-            </View>
-            <ChevronRight size={16} color={Colors.textTertiary} />
-          </Pressable>
-        )}
+              </View>
+              <View style={styles.fvsRight}>
+                <Text style={[styles.fvsStatus, { color: badge.color }]}>{badge.text}</Text>
+                <Text style={styles.fvsVerif}>{item.total_verificacoes} verif.</Text>
+              </View>
+            </Pressable>
+          );
+        }}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyText}>Nenhuma FVS planejada</Text>
@@ -127,8 +165,9 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   headerText: { flex: 1 },
-  title: { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
+  title:    { color: '#fff', fontSize: FontSizes.xl, fontWeight: '500' },
   subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: FontSizes.sm, marginTop: 2 },
+
   summaryPanel: {
     backgroundColor: Colors.surface,
     padding: Spacing.lg,
@@ -136,9 +175,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  summaryLabel: { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.textSecondary },
-  summaryCount: { fontSize: FontSizes.base, fontWeight: '600', color: Colors.ok },
+  summaryRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  summaryLabel: { fontSize: FontSizes.xs, fontWeight: '500', color: Colors.textSecondary },
+  summaryTotal: { fontSize: FontSizes.xxl, fontWeight: '700', color: Colors.text, marginTop: 2 },
+  summaryRight: { alignItems: 'flex-end' },
+  summaryCount: { fontSize: FontSizes.xxl, fontWeight: '700', color: Colors.ok, marginTop: 2 },
+
+  sectionTitle: {
+    fontSize: FontSizes.xs,
+    fontWeight: '600',
+    color: Colors.textTertiary,
+    letterSpacing: 0.5,
+    marginBottom: Spacing.sm,
+  },
+
   list: { padding: Spacing.lg, gap: Spacing.xs, paddingBottom: Spacing.xxl },
   fvsCard: {
     backgroundColor: Colors.surface,
@@ -150,10 +200,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  fvsLeft: { width: 24, alignItems: 'center' },
-  fvsBody: { flex: 1 },
-  fvsNome: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text },
-  fvsDate: { fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 },
-  empty: { paddingTop: 48, alignItems: 'center' },
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fvsBody:   { flex: 1 },
+  fvsNome:   { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text },
+  fvsDate:   { fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 },
+  fvsRight:  { alignItems: 'flex-end', gap: 2 },
+  fvsStatus: { fontSize: FontSizes.xs, fontWeight: '600' },
+  fvsVerif:  { fontSize: FontSizes.xs, color: Colors.textTertiary },
+
+  empty:     { paddingTop: 48, alignItems: 'center' },
   emptyText: { fontSize: FontSizes.base, color: Colors.textTertiary },
 });

@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react-native';
 import { useRouter } from 'expo-router';
-import { AlertTriangle, Building2, CheckCircle2, ClipboardList, Clock } from 'lucide-react-native';
+import { CheckCircle2 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { KPICard } from '../../../components/KPICard';
@@ -171,12 +171,12 @@ export default function DashboardScreen() {
         {/* ── KPIs ── */}
         <View style={styles.section}>
           <View style={styles.kpiGrid}>
-            <KPICard label="Obras ativas"     value={kpis.obrasAtivas} Icon={Building2}    color={Colors.progress}     bgColor={Colors.progressBg} />
-            <KPICard label="NCs abertas"      value={kpis.ncsAbertas}  Icon={AlertTriangle} color={Colors.nok}          bgColor={Colors.nokBg} />
+            <KPICard label="Obras ativas"       value={kpis.obrasAtivas} color={Colors.progress}     bgColor={Colors.progressBg} />
+            <KPICard label="NCs abertas"        value={kpis.ncsAbertas}  color={Colors.nok}          bgColor={Colors.nokBg} />
           </View>
           <View style={styles.kpiGrid}>
-            <KPICard label="Verif. esta semana" value={kpis.verifsWeek} Icon={ClipboardList} color={Colors.textSecondary} bgColor={Colors.surface2} />
-            <KPICard label="Vencendo hoje"    value={kpis.ncsHoje}     Icon={Clock}          color={Colors.warn}         bgColor={Colors.warnBg} />
+            <KPICard label="Verif. esta semana" value={kpis.verifsWeek}  color={Colors.textSecondary} bgColor={Colors.surface2} />
+            <KPICard label="Vencendo hoje"      value={kpis.ncsHoje}     color={Colors.warn}         bgColor={Colors.warnBg} />
           </View>
         </View>
 
@@ -207,15 +207,9 @@ export default function DashboardScreen() {
                         </View>
                       )}
                     </View>
-                    <Text style={styles.ncMeta}>{nc.obra_nome} · {nc.ambiente_nome}</Text>
-                    {nc.data_nova_verif && (
-                      <View style={styles.ncDeadline}>
-                        <Clock size={10} color={Colors.warn} />
-                        <Text style={styles.ncDeadlineText}>
-                          {new Date(nc.data_nova_verif).toLocaleDateString('pt-BR')}
-                        </Text>
-                      </View>
-                    )}
+                    <Text style={styles.ncMeta}>
+                      {nc.obra_nome}{nc.data_nova_verif ? ` · Prazo: ${new Date(nc.data_nova_verif).toLocaleDateString('pt-BR')}` : ''}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -251,7 +245,7 @@ export default function DashboardScreen() {
                       <View style={{ flex: 1 }}>
                         <ProgressBar
                           value={pctDone}
-                          height={5}
+                          height={7}
                           color={pctDone === 100 ? Colors.ok : Colors.brand}
                         />
                       </View>
@@ -346,13 +340,11 @@ const styles = StyleSheet.create({
 
   // NC cards
   ncCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.nokBg,
     borderRadius: Radius.lg,
     padding: Spacing.md,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.nok,
-    borderWidth: 0.5,
-    borderColor: 'rgba(198,40,40,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(198,40,40,0.3)',
     gap: 4,
   },
   ncCardTop:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
@@ -360,8 +352,6 @@ const styles = StyleSheet.create({
   ncBadge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.full },
   ncBadgeText:   { fontSize: FontSizes.tiny, fontWeight: '600' },
   ncMeta:        { fontSize: FontSizes.xs, color: Colors.textSecondary },
-  ncDeadline:    { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  ncDeadlineText:{ fontSize: FontSizes.xs, color: Colors.warn, fontWeight: '500' },
 
   // Obra cards
   obraCard: {
