@@ -47,6 +47,32 @@ export const db = {
 };
 
 // ─────────────────────────────────────────────────────────
+// User access cache — which obras the current user can see
+// null = admin (all obras); string[] = allowed IDs
+// ─────────────────────────────────────────────────────────
+let _obraIdsCache: { ids: string[] | null; ts: number } | null = null;
+
+async function getAllowedObraIds(): Promise<string[] | null> {
+  if (_obraIdsCache && Date.now() - _obraIdsCache.ts < 30_000) return _obraIdsCache.ids;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { _obraIdsCache = { ids: [], ts: Date.now() }; return []; }
+  const { data: u } = await supabase.from('usuarios').select('perfil').eq('id', user.id).single();
+  if ((u as any)?.perfil === 'admin') {
+    _obraIdsCache = { ids: null, ts: Date.now() };
+    return null;
+  }
+  const { data: ou } = await supabase.from('obra_usuarios').select('obra_id').eq('usuario_id', user.id);
+  const ids = (ou ?? []).map((r: any) => r.obra_id as string);
+  _obraIdsCache = { ids, ts: Date.now() };
+  return ids;
+}
+
+function filterByObraId<T>(rows: T[], field: keyof T, ids: string[] | null): T[] {
+  if (ids === null) return rows;
+  return rows.filter(r => ids.includes(r[field] as unknown as string));
+}
+
+// ─────────────────────────────────────────────────────────
 // SQL → Supabase dispatch
 // ─────────────────────────────────────────────────────────
 async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]> {
@@ -60,40 +86,65 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 
   // ── obras ativas (obras list screen) ──────────────────
   if (s.includes('progresso_percentual') && s.includes('o.municipio') && s.includes('from obras o') && s.includes('where o.ativo = 1')) {
-    const { data } = await supabase.rpc('get_obras_com_fvs');
-    return (data ?? []) as T[];
+    const [{ data }, ids] = await Promise.all([supabase.rpc('get_obras_com_fvs'), getAllowedObraIds()]);
+    return filterByObraId((data ?? []) as T[], 'id' as keyof T, ids);
   }
 
   // ── obras ativas count ─────────────────────────────────
   if (s.includes('count(*)') && s.includes('from obras') && s.includes('ativo = 1') && !s.includes('join')) {
-    const { count } = await supabase.from('obras').select('*', { count: 'exact', head: true }).eq('ativo', 1);
+    const ids = await getAllowedObraIds();
+    let q = supabase.from('obras').select('*', { count: 'exact', head: true }).eq('ativo', 1);
+    if (ids !== null && ids.length > 0) q = q.in('id', ids);
+    else if (ids !== null && ids.length === 0) return [{ count: 0 }] as T[];
+    const { count } = await q;
     return [{ count: count ?? 0 }] as T[];
   }
 
   // ── obras ativas lista simples (perfil) ───────────────
   if (s.includes('from obras o where o.ativo = 1') && s.includes('select o.id, o.nome')) {
-    const { data } = await supabase.from('obras').select('id, nome, municipio, uf').eq('ativo', 1).order('nome');
-    return (data ?? []) as T[];
+    const [{ data }, ids] = await Promise.all([
+      supabase.from('obras').select('id, nome, municipio, uf').eq('ativo', 1).order('nome'),
+      getAllowedObraIds()
+    ]);
+    return filterByObraId((data ?? []) as T[], 'id' as keyof T, ids);
   }
 
-  // ── ncs abertas count ─────────────────────────────────
-  if (s.includes("status = 'aberta'") && s.includes('count(*)') && s.includes('from nao_conformidades') && !s.includes('join')) {
-    const { count } = await supabase.from('nao_conformidades').select('*', { count: 'exact', head: true }).eq('status', 'aberta');
-    return [{ count: count ?? 0 }] as T[];
+  // ── ncs abertas count (com ou sem joins de obra) ──────
+  if (s.includes("status = 'aberta'") && s.includes('count(*)') && s.includes('from nao_conformidades') && !s.includes('date(n.data_nova_verif)')) {
+    const [{ data: ncs }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
+    const filtered = filterByObraId((ncs ?? []) as any[], 'obra_id', ids).filter((n: any) => n.status === 'aberta');
+    return [{ count: filtered.length }] as T[];
   }
 
   // ── ncs vencendo hoje count ────────────────────────────
-  if (s.includes("status = 'aberta'") && s.includes('count(*)') && s.includes('date(data_nova_verif)')) {
+  if (s.includes("status = 'aberta'") && s.includes('count(*)') && s.includes('date(') && s.includes('data_nova_verif')) {
     const today = new Date().toISOString().slice(0, 10);
-    const { count } = await supabase.from('nao_conformidades').select('*', { count: 'exact', head: true }).eq('status', 'aberta').eq('data_nova_verif', today);
-    return [{ count: count ?? 0 }] as T[];
+    const [{ data: ncs }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
+    const filtered = filterByObraId((ncs ?? []) as any[], 'obra_id', ids)
+      .filter((n: any) => n.status === 'aberta' && n.data_nova_verif?.slice(0, 10) === today);
+    return [{ count: filtered.length }] as T[];
   }
 
   // ── verificações semana count ──────────────────────────
-  if (s.includes('count(*)') && s.includes('from verificacoes') && s.includes('date(data_verif)') && !s.includes('inspetor_id')) {
+  if (s.includes('count(*)') && s.includes('from verificacoes') && s.includes('date(') && s.includes('data_verif') && !s.includes('inspetor_id')) {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const { count } = await supabase.from('verificacoes').select('*', { count: 'exact', head: true }).gte('data_verif', weekAgo.toISOString().slice(0, 10));
+    const wStr = weekAgo.toISOString().slice(0, 10);
+    const [{ data: verifs }, ids] = await Promise.all([supabase.rpc('get_verificacoes_recentes'), getAllowedObraIds()]);
+    // get_verificacoes_recentes is limited to 3; use direct query filtered by obra
+    if (ids === null) {
+      const { count } = await supabase.from('verificacoes').select('*', { count: 'exact', head: true }).gte('data_verif', wStr);
+      return [{ count: count ?? 0 }] as T[];
+    }
+    if (ids.length === 0) return [{ count: 0 }] as T[];
+    // get ambientes for allowed obras, then verificacoes
+    const { data: ambientes } = await supabase.from('ambientes').select('id').in('obra_id', ids);
+    const ambIds = (ambientes ?? []).map((a: any) => a.id as string);
+    if (!ambIds.length) return [{ count: 0 }] as T[];
+    const { data: fps } = await supabase.from('fvs_planejadas').select('id').in('ambiente_id', ambIds);
+    const fpIds = (fps ?? []).map((f: any) => f.id as string);
+    if (!fpIds.length) return [{ count: 0 }] as T[];
+    const { count } = await supabase.from('verificacoes').select('*', { count: 'exact', head: true }).in('fvs_planejada_id', fpIds).gte('data_verif', wStr);
     return [{ count: count ?? 0 }] as T[];
   }
 
@@ -117,26 +168,30 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 
   // ── NCs urgentes (dashboard) ──────────────────────────
   if (s.includes('from nao_conformidades n') && s.includes('join verificacao_itens vi') && s.includes('order by n.data_nova_verif asc') && s.includes('limit 3')) {
-    const { data } = await supabase.rpc('get_ncs_urgentes');
-    return (data ?? []) as T[];
+    const [{ data }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
+    const filtered = filterByObraId((data ?? []) as any[], 'obra_id', ids)
+      .filter((n: any) => n.status === 'aberta')
+      .sort((a: any, b: any) => (a.data_nova_verif ?? '').localeCompare(b.data_nova_verif ?? ''))
+      .slice(0, 3);
+    return filtered as T[];
   }
 
   // ── obras com progresso (dashboard) ───────────────────
   if (s.includes('progresso_percentual') && s.includes('empresa_nome') && s.includes('from obras o') && s.includes('where o.ativo = 1') && s.includes('limit 5')) {
-    const { data } = await supabase.rpc('get_obras_com_fvs');
-    return ((data ?? []) as T[]).slice(0, 5);
+    const [{ data }, ids] = await Promise.all([supabase.rpc('get_obras_com_fvs'), getAllowedObraIds()]);
+    return filterByObraId((data ?? []) as T[], 'id' as keyof T, ids).slice(0, 5);
   }
 
   // ── verificações recentes (dashboard) ─────────────────
   if (s.includes('from verificacoes v') && s.includes('join fvs_planejadas fp') && s.includes('order by v.data_verif desc') && s.includes('limit 3')) {
-    const { data } = await supabase.rpc('get_verificacoes_recentes');
-    return (data ?? []) as T[];
+    const [{ data }, ids] = await Promise.all([supabase.rpc('get_verificacoes_recentes'), getAllowedObraIds()]);
+    return filterByObraId((data ?? []) as T[], 'obra_id' as keyof T, ids).slice(0, 3);
   }
 
   // ── lista NCs com joins (tela NC) ─────────────────────
   if (s.includes('from nao_conformidades n') && s.includes('join verificacao_itens vi') && s.includes('join obras o') && s.includes("n.status in ('aberta', 'resolvida')")) {
-    const { data } = await supabase.rpc('get_ncs_full');
-    return (data ?? []) as T[];
+    const [{ data }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
+    return filterByObraId((data ?? []) as T[], 'obra_id' as keyof T, ids);
   }
 
   // ── obra detalhe ──────────────────────────────────────
