@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react-native';
 import { Building2, MapPin, Search } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   FlatList,
   Pressable,
@@ -16,6 +16,7 @@ import { ProgressBar } from '../../../../components/ProgressBar';
 import { StatusBadge } from '../../../../components/StatusBadge';
 import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
 import type { BadgeStatus } from '../../../../components/StatusBadge';
+import { supabase } from '../../../../lib/supabase';
 
 interface ObraRow {
   id: string;
@@ -50,6 +51,13 @@ const OBRAS_QUERY = `
   LEFT JOIN ambientes a ON a.obra_id = o.id
   LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
   WHERE o.ativo = 1
+    AND (
+      ? = 'admin'
+      OR EXISTS (
+        SELECT 1 FROM obra_usuarios ou
+        WHERE ou.obra_id = o.id AND ou.usuario_id = ?
+      )
+    )
   GROUP BY o.id
   ORDER BY o.nome
 `;
@@ -57,7 +65,26 @@ const OBRAS_QUERY = `
 export default function ObrasScreen() {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const { data: obras } = useQuery<ObraRow>(OBRAS_QUERY);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [perfil, setPerfil] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      setUserId(data.user.id);
+      const { data: u } = await supabase
+        .from('usuarios' as never)
+        .select('perfil')
+        .eq('id', data.user.id)
+        .single();
+      if (u) setPerfil((u as { perfil: string }).perfil);
+    });
+  }, []);
+
+  const { data: obras } = useQuery<ObraRow>(
+    userId && perfil ? OBRAS_QUERY : 'SELECT 1 WHERE 0',
+    userId && perfil ? [perfil, userId] : []
+  );
 
   const filtered = useMemo(() => {
     if (!search.trim()) return obras;

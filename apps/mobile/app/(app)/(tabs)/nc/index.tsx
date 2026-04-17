@@ -1,10 +1,11 @@
 import { useQuery } from '@powersync/react-native';
 import { useRouter } from 'expo-router';
 import { AlertTriangle, CheckCircle2, Clock } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { AppHeader } from '../../../../components/AppHeader';
 import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
+import { supabase } from '../../../../lib/supabase';
 
 type TabKey = 'abertas' | 'resolvidas' | 'todas';
 
@@ -45,8 +46,27 @@ function deadlineBadge(dateStr: string | null): { label: string; color: string }
 export default function NcScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>('abertas');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [perfil, setPerfil] = useState<string | null>(null);
 
-  const { data: ncs } = useQuery<NcRow>(`
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      setUserId(data.user.id);
+      const { data: u } = await supabase
+        .from('usuarios' as never)
+        .select('perfil')
+        .eq('id', data.user.id)
+        .single();
+      if (u) setPerfil((u as { perfil: string }).perfil);
+    });
+  }, []);
+
+  const ready = !!userId && !!perfil;
+  const accessFilter = `(? = 'admin' OR EXISTS (SELECT 1 FROM obra_usuarios ou WHERE ou.obra_id = o.id AND ou.usuario_id = ?))`;
+
+  const { data: ncs } = useQuery<NcRow>(
+    ready ? `
     SELECT n.id, n.descricao, n.status, n.data_nova_verif, n.prioridade,
            vi.titulo AS item_titulo,
            a.nome AS ambiente_nome, o.nome AS obra_nome,
@@ -60,9 +80,11 @@ export default function NcScreen() {
     JOIN ambientes a ON a.id = fp.ambiente_id
     JOIN obras o ON o.id = a.obra_id
     LEFT JOIN equipes e ON e.id = n.responsavel_id
-    WHERE n.status IN ('aberta', 'resolvida')
+    WHERE n.status IN ('aberta', 'resolvida') AND ${accessFilter}
     ORDER BY n.data_nova_verif ASC NULLS LAST
-  `);
+  ` : 'SELECT 1 WHERE 0',
+    ready ? [perfil, userId] : []
+  );
 
   const filtered = useMemo(() => {
     if (activeTab === 'abertas')   return ncs.filter(n => n.status === 'aberta');

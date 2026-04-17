@@ -64,6 +64,7 @@ interface UserInfo { nome: string; cargo: string; empresa_nome: string }
 export default function DashboardScreen() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+  const [perfil, setPerfil] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   useEffect(() => {
@@ -72,10 +73,11 @@ export default function DashboardScreen() {
       setUserId(data.user.id);
       const { data: u } = await supabase
         .from('usuarios')
-        .select('nome, cargo, empresas(nome)')
+        .select('nome, cargo, perfil, empresas(nome)')
         .eq('id', data.user.id)
         .single();
       if (u) {
+        setPerfil((u as any).perfil);
         setUserInfo({
           nome: u.nome as string,
           cargo: u.cargo as string,
@@ -85,20 +87,49 @@ export default function DashboardScreen() {
     });
   }, []);
 
+  const ready = !!userId && !!perfil;
+  const accessFilter = `(? = 'admin' OR EXISTS (SELECT 1 FROM obra_usuarios ou WHERE ou.obra_id = o.id AND ou.usuario_id = ?))`;
+  const accessParams = [perfil, userId];
+
   const { data: obrasAtivas } = useQuery<CountRow>(
-    "SELECT COUNT(*) AS count FROM obras WHERE ativo = 1"
+    ready ? `SELECT COUNT(*) AS count FROM obras o WHERE o.ativo = 1 AND ${accessFilter}` : 'SELECT 1 WHERE 0',
+    ready ? accessParams : []
   );
   const { data: ncsAbertas } = useQuery<CountRow>(
-    "SELECT COUNT(*) AS count FROM nao_conformidades WHERE status = 'aberta'"
+    ready
+      ? `SELECT COUNT(*) AS count FROM nao_conformidades n
+         JOIN verificacoes v ON v.id = n.verificacao_id
+         JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
+         JOIN ambientes a ON a.id = fp.ambiente_id
+         JOIN obras o ON o.id = a.obra_id
+         WHERE n.status = 'aberta' AND ${accessFilter}`
+      : 'SELECT 1 WHERE 0',
+    ready ? accessParams : []
   );
   const { data: verifsWeek } = useQuery<CountRow>(
-    `SELECT COUNT(*) AS count FROM verificacoes WHERE date(data_verif) >= '${weekAgo()}'`
+    ready
+      ? `SELECT COUNT(*) AS count FROM verificacoes v
+         JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
+         JOIN ambientes a ON a.id = fp.ambiente_id
+         JOIN obras o ON o.id = a.obra_id
+         WHERE date(v.data_verif) >= '${weekAgo()}' AND ${accessFilter}`
+      : 'SELECT 1 WHERE 0',
+    ready ? accessParams : []
   );
   const { data: ncsHoje } = useQuery<CountRow>(
-    `SELECT COUNT(*) AS count FROM nao_conformidades WHERE status = 'aberta' AND date(data_nova_verif) = '${today()}'`
+    ready
+      ? `SELECT COUNT(*) AS count FROM nao_conformidades n
+         JOIN verificacoes v ON v.id = n.verificacao_id
+         JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
+         JOIN ambientes a ON a.id = fp.ambiente_id
+         JOIN obras o ON o.id = a.obra_id
+         WHERE n.status = 'aberta' AND date(n.data_nova_verif) = '${today()}' AND ${accessFilter}`
+      : 'SELECT 1 WHERE 0',
+    ready ? accessParams : []
   );
 
-  const { data: ncsUrgentes } = useQuery<NcUrgentRow>(`
+  const { data: ncsUrgentes } = useQuery<NcUrgentRow>(
+    ready ? `
     SELECT n.id, vi.titulo AS item_titulo, a.nome AS ambiente_nome,
            o.nome AS obra_nome, n.data_nova_verif, n.prioridade
     FROM nao_conformidades n
@@ -107,12 +138,15 @@ export default function DashboardScreen() {
     JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
     JOIN ambientes a ON a.id = fp.ambiente_id
     JOIN obras o ON o.id = a.obra_id
-    WHERE n.status = 'aberta'
+    WHERE n.status = 'aberta' AND ${accessFilter}
     ORDER BY n.data_nova_verif ASC
     LIMIT 3
-  `);
+  ` : 'SELECT 1 WHERE 0',
+    ready ? accessParams : []
+  );
 
-  const { data: obrasProgresso } = useQuery<ObraProgressRow>(`
+  const { data: obrasProgresso } = useQuery<ObraProgressRow>(
+    ready ? `
     SELECT o.id, o.nome, o.status,
            e.nome AS empresa_nome,
            COUNT(DISTINCT a.id) AS total_ambientes,
@@ -123,12 +157,15 @@ export default function DashboardScreen() {
     LEFT JOIN empresas e ON e.id = o.empresa_id
     LEFT JOIN ambientes a ON a.obra_id = o.id
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
-    WHERE o.ativo = 1
+    WHERE o.ativo = 1 AND ${accessFilter}
     GROUP BY o.id, e.nome
     LIMIT 5
-  `);
+  ` : 'SELECT 1 WHERE 0',
+    ready ? accessParams : []
+  );
 
-  const { data: verifsRecentes } = useQuery<VerifRecentRow>(`
+  const { data: verifsRecentes } = useQuery<VerifRecentRow>(
+    ready ? `
     SELECT v.id, v.status, v.data_verif,
            a.nome AS ambiente_nome, o.nome AS obra_nome,
            fp.subservico AS fvs_nome,
@@ -139,9 +176,12 @@ export default function DashboardScreen() {
     JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
     JOIN ambientes a ON a.id = fp.ambiente_id
     JOIN obras o ON o.id = a.obra_id
+    WHERE ${accessFilter}
     ORDER BY v.data_verif DESC
     LIMIT 3
-  `);
+  ` : 'SELECT 1 WHERE 0',
+    ready ? accessParams : []
+  );
 
   const kpis = useMemo(() => ({
     obrasAtivas: obrasAtivas[0]?.count ?? 0,
