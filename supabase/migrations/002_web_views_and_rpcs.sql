@@ -103,6 +103,7 @@ $$;
 
 -- ── get_verificacoes_recentes ─────────────────────────────────
 -- Dashboard: 3 verificações mais recentes (com IDs para navegação)
+DROP FUNCTION IF EXISTS get_verificacoes_recentes();
 CREATE OR REPLACE FUNCTION get_verificacoes_recentes()
 RETURNS TABLE (
   id uuid, status text, data_verif date,
