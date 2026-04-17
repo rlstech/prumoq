@@ -27,14 +27,15 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const isLoginPage = request.nextUrl.pathname === '/login';
+  const { pathname } = request.nextUrl;
+  const isLoginPage = pathname === '/admin/login';
   const isProtected =
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/_next') &&
-    !request.nextUrl.pathname.startsWith('/favicon');
+    !pathname.startsWith('/admin/login') &&
+    !pathname.startsWith('/_next') &&
+    !pathname.startsWith('/favicon');
 
   if (!user && isProtected) {
-    const redirectResponse = NextResponse.redirect(new URL('/login', request.url));
+    const redirectResponse = NextResponse.redirect(new URL('/admin/login', request.url));
     supabaseResponse.cookies.getAll().forEach(cookie => {
       redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
     });
@@ -42,7 +43,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && isLoginPage) {
-    const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
+    const redirectResponse = NextResponse.redirect(new URL('/admin/dashboard', request.url));
     supabaseResponse.cookies.getAll().forEach(cookie => {
       redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
     });

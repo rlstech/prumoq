@@ -13,10 +13,27 @@ services:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.prumoq.rule=Host(`prumoq.railton.eu.org`)"
+        - "traefik.http.routers.prumoq.rule=Host(`prumoq.railton.eu.org`) && PathPrefix(`/admin`)"
         - "traefik.http.routers.prumoq.entrypoints=websecure"
         - "traefik.http.routers.prumoq.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.prumoq.priority=10"
         - "traefik.http.services.prumoq.loadbalancer.server.port=3000"
+
+  prumoq-pwa:
+    image: ghcr.io/rlstech/prumoq-pwa:${PWA_IMAGE_TAG:-latest}
+    networks:
+      - network_public
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.prumoq-pwa.rule=Host(`prumoq.railton.eu.org`)"
+        - "traefik.http.routers.prumoq-pwa.entrypoints=websecure"
+        - "traefik.http.routers.prumoq-pwa.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.prumoq-pwa.priority=1"
+        - "traefik.http.services.prumoq-pwa.loadbalancer.server.port=80"
 
 networks:
   network_public:

@@ -6,10 +6,11 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: rlstech/prumoq-web
+  WEB_IMAGE_NAME: rlstech/prumoq-web
+  PWA_IMAGE_NAME: rlstech/prumoq-pwa
 
 jobs:
-  # ── 1. Build Docker image and push to GHCR ──────────────────────────────
+  # ── 1. Build Docker images and push to GHCR ─────────────────────────────────
   build:
     name: Build & Push
     runs-on: ubuntu-latest
@@ -61,23 +62,41 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
+      - name: Build and push Web (admin)
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: Dockerfile
           push: true
           no-cache: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest
           build-args: |
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           provenance: false
 
-  # ── 2. Create or update Portainer stack ─────────────────────────────────
+      - name: Build and push PWA
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.pwa
+          push: true
+          no-cache: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.PWA_IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+            ${{ env.REGISTRY }}/${{ env.PWA_IMAGE_NAME }}:latest
+          build-args: |
+            EXPO_PUBLIC_SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+            EXPO_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+            EXPO_PUBLIC_POWERSYNC_URL=${{ secrets.EXPO_PUBLIC_POWERSYNC_URL }}
+            EXPO_PUBLIC_R2_PUBLIC_URL=${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL }}
+          provenance: false
+
+  # ── 2. Create or update Portainer stack ─────────────────────────────────────
   deploy:
     name: Deploy to Portainer
     runs-on: ubuntu-latest
@@ -105,6 +124,7 @@ jobs:
             --arg key "$SUPABASE_SERVICE_ROLE_KEY" \
             '[
               {"name": "IMAGE_TAG",                "value": $tag},
+              {"name": "PWA_IMAGE_TAG",            "value": $tag},
               {"name": "SUPABASE_SERVICE_ROLE_KEY", "value": $key}
             ]')
 
