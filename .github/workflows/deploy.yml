@@ -108,42 +108,57 @@ jobs:
               {"name": "SUPABASE_SERVICE_ROLE_KEY", "value": $key}
             ]')
 
-          # Check if the stack already exists (verbose to show HTTP errors)
+          # Check if the stack already exists
           echo "→ Fetching stacks from $PORTAINER_URL/api/stacks"
           STACKS_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
             -H "X-API-Key: $PORTAINER_API_KEY" \
             "$PORTAINER_URL/api/stacks")
           HTTP_STATUS=$(echo "$STACKS_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
           STACKS_BODY=$(echo "$STACKS_RESPONSE" | grep -v "HTTP_STATUS:")
-          echo "HTTP $HTTP_STATUS: $STACKS_BODY"
           if [ "$HTTP_STATUS" != "200" ]; then
             echo "❌ Portainer API error (HTTP $HTTP_STATUS)" >> $GITHUB_STEP_SUMMARY
             echo "$STACKS_BODY" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
           STACK_ID=$(echo "$STACKS_BODY" | jq -r ".[] | select(.Name==\"$STACK_NAME\") | .Id // empty")
+          SWARM_ID=$(echo "$STACKS_BODY" | jq -r ".[0].SwarmId // empty")
+          echo "→ SwarmId: $SWARM_ID"
+
+          portainer_call() {
+            local METHOD=$1 URL=$2 BODY=$3
+            RESP=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X "$METHOD" \
+              -H "X-API-Key: $PORTAINER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "$BODY" "$URL")
+            local STATUS RBODY
+            STATUS=$(echo "$RESP" | grep "HTTP_STATUS:" | cut -d: -f2)
+            RBODY=$(echo "$RESP" | grep -v "HTTP_STATUS:")
+            echo "HTTP $STATUS: $RBODY"
+            if [ "$STATUS" != "200" ] && [ "$STATUS" != "201" ]; then
+              echo "❌ Portainer error $STATUS on $METHOD $URL" >> $GITHUB_STEP_SUMMARY
+              echo "$RBODY" >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+          }
 
           if [ -z "$STACK_ID" ]; then
-            echo "Stack '$STACK_NAME' not found — creating..."
-            curl -sf -X POST \
-              -H "X-API-Key: $PORTAINER_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d "$(jq -n \
-                    --arg name    "$STACK_NAME" \
-                    --arg content "$COMPOSE_CONTENT" \
-                    --argjson env "$ENV_JSON" \
-                    '{name: $name, stackFileContent: $content, env: $env}')" \
-              "$PORTAINER_URL/api/stacks/create/standalone/string?endpointId=$PORTAINER_ENDPOINT_ID"
+            echo "Stack '$STACK_NAME' not found — creating (swarm)..."
+            portainer_call POST \
+              "$PORTAINER_URL/api/stacks/create/swarm/string?endpointId=$PORTAINER_ENDPOINT_ID" \
+              "$(jq -n \
+                  --arg name    "$STACK_NAME" \
+                  --arg swarm   "$SWARM_ID" \
+                  --arg content "$COMPOSE_CONTENT" \
+                  --argjson env "$ENV_JSON" \
+                  '{name: $name, swarmID: $swarm, stackFileContent: $content, env: $env}')"
           else
             echo "Updating stack '$STACK_NAME' (ID: $STACK_ID) → image $IMAGE_TAG"
-            curl -sf -X PUT \
-              -H "X-API-Key: $PORTAINER_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d "$(jq -n \
-                    --arg content "$COMPOSE_CONTENT" \
-                    --argjson env "$ENV_JSON" \
-                    '{stackFileContent: $content, env: $env, prune: false, pullImage: true}')" \
-              "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$PORTAINER_ENDPOINT_ID"
+            portainer_call PUT \
+              "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$PORTAINER_ENDPOINT_ID" \
+              "$(jq -n \
+                  --arg content "$COMPOSE_CONTENT" \
+                  --argjson env "$ENV_JSON" \
+                  '{stackFileContent: $content, env: $env, prune: false, pullImage: true}')"
           fi
 
           echo "✓ Deploy complete — $IMAGE_TAG"
