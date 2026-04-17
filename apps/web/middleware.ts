@@ -28,9 +28,11 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isLoginPage = pathname === '/admin/login';
+  // With basePath '/admin', Next.js strips the prefix before middleware sees it.
+  // pathname is '/login', '/dashboard', etc. — not '/admin/login'.
+  const isLoginPage = pathname === '/login';
   const isProtected =
-    !pathname.startsWith('/admin/login') &&
+    !pathname.startsWith('/login') &&
     !pathname.startsWith('/_next') &&
     !pathname.startsWith('/favicon');
 

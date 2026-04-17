@@ -15,7 +15,7 @@ services:
         - "traefik.enable=true"
         - "traefik.http.routers.prumoq.rule=Host(`prumoq.railton.eu.org`) && PathPrefix(`/admin`)"
         - "traefik.http.routers.prumoq.entrypoints=websecure"
-        - "traefik.http.routers.prumoq.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.prumoq.tls.certresolver=letsencryptresolver"
         - "traefik.http.routers.prumoq.priority=10"
         - "traefik.http.services.prumoq.loadbalancer.server.port=3000"
 
@@ -31,7 +31,7 @@ services:
         - "traefik.enable=true"
         - "traefik.http.routers.prumoq-pwa.rule=Host(`prumoq.railton.eu.org`)"
         - "traefik.http.routers.prumoq-pwa.entrypoints=websecure"
-        - "traefik.http.routers.prumoq-pwa.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.prumoq-pwa.tls.certresolver=letsencryptresolver"
         - "traefik.http.routers.prumoq-pwa.priority=1"
         - "traefik.http.services.prumoq-pwa.loadbalancer.server.port=80"
 
