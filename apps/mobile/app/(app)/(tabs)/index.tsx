@@ -54,8 +54,8 @@ interface NcUrgentRow {
 }
 interface VerifRecentRow {
   id: string; status: string; data_verif: string;
-  ambiente_nome: string; obra_nome: string;
-  fvs_nome: string; tempo_relativo: string;
+  ambiente_nome: string; obra_nome: string; fvs_nome: string;
+  fvs_planejada_id: string; ambiente_id: string; obra_id: string;
 }
 
 interface UserInfo { nome: string; cargo: string; empresa_nome: string }
@@ -130,7 +130,10 @@ export default function DashboardScreen() {
   const { data: verifsRecentes } = useQuery<VerifRecentRow>(`
     SELECT v.id, v.status, v.data_verif,
            a.nome AS ambiente_nome, o.nome AS obra_nome,
-           fp.subservico AS fvs_nome
+           fp.subservico AS fvs_nome,
+           fp.id AS fvs_planejada_id,
+           a.id  AS ambiente_id,
+           o.id  AS obra_id
     FROM verificacoes v
     JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
     JOIN ambientes a ON a.id = fp.ambiente_id
@@ -191,7 +194,11 @@ export default function DashboardScreen() {
               {ncsUrgentes.map(nc => {
                 const badge = nc.data_nova_verif ? ncBadge(nc.data_nova_verif) : null;
                 return (
-                  <View key={nc.id} style={styles.ncCard}>
+                  <Pressable
+                    key={nc.id}
+                    style={({ pressed }) => [styles.ncCard, pressed && { opacity: 0.75 }]}
+                    onPress={() => router.push('/(app)/(tabs)/nc' as never)}
+                  >
                     <View style={styles.ncCardTop}>
                       <Text style={styles.ncItem} numberOfLines={1}>{nc.item_titulo}</Text>
                       {badge && (
@@ -209,7 +216,7 @@ export default function DashboardScreen() {
                         </Text>
                       </View>
                     )}
-                  </View>
+                  </Pressable>
                 );
               })}
             </View>
@@ -266,7 +273,15 @@ export default function DashboardScreen() {
             <View style={[styles.section, styles.lastSection]}>
               <Text style={styles.sectionTitle}>ATIVIDADE RECENTE</Text>
               {verifsRecentes.map(v => (
-                <View key={v.id} style={styles.activityRow}>
+                <Pressable
+                  key={v.id}
+                  style={({ pressed }) => [styles.activityRow, pressed && { opacity: 0.75 }]}
+                  onPress={() =>
+                    router.push(
+                      `/obras/${v.obra_id}/ambiente/${v.ambiente_id}/fvs/${v.fvs_planejada_id}` as never
+                    )
+                  }
+                >
                   <View style={styles.activityLeft}>
                     <CheckCircle2 size={16} color={Colors.textTertiary} />
                   </View>
@@ -274,11 +289,11 @@ export default function DashboardScreen() {
                     <Text style={styles.activityTitle} numberOfLines={1}>{v.fvs_nome || 'Verificação'}</Text>
                     <Text style={styles.activityMeta}>
                       {v.obra_nome} · {v.ambiente_nome}
-                      {'  •  '}{(v as any).tempo_relativo ?? (v.data_verif ? tempoRelativo(v.data_verif) : '')}
+                      {'  •  '}{v.data_verif ? tempoRelativo(v.data_verif) : ''}
                     </Text>
                   </View>
                   <StatusBadge status={v.status as any} size="sm" />
-                </View>
+                </Pressable>
               ))}
             </View>
           </>

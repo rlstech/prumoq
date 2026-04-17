@@ -102,16 +102,20 @@ LANGUAGE sql SECURITY INVOKER STABLE AS $$
 $$;
 
 -- ── get_verificacoes_recentes ─────────────────────────────────
--- Dashboard: 3 verificações mais recentes
+-- Dashboard: 3 verificações mais recentes (com IDs para navegação)
 CREATE OR REPLACE FUNCTION get_verificacoes_recentes()
 RETURNS TABLE (
   id uuid, status text, data_verif date,
-  ambiente_nome text, obra_nome text, fvs_nome text
+  ambiente_nome text, obra_nome text, fvs_nome text,
+  fvs_planejada_id uuid, ambiente_id uuid, obra_id uuid
 )
 LANGUAGE sql SECURITY INVOKER STABLE AS $$
   SELECT v.id, v.status, v.data_verif,
          a.nome AS ambiente_nome, o.nome AS obra_nome,
-         fp.subservico AS fvs_nome
+         fp.subservico AS fvs_nome,
+         fp.id AS fvs_planejada_id,
+         a.id  AS ambiente_id,
+         o.id  AS obra_id
   FROM verificacoes v
   JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
   JOIN ambientes a        ON a.id = fp.ambiente_id
