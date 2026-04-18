@@ -110,7 +110,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── ncs abertas count (com ou sem joins de obra) ──────
-  if (s.includes("status = 'aberta'") && s.includes('count(*)') && s.includes('from nao_conformidades') && !s.includes('date(n.data_nova_verif)')) {
+  if (s.includes("status = 'aberta'") && s.includes('count(*)') && s.includes('from nao_conformidades') && !s.includes('date(n.data_nova_verif)') && !s.includes('from ambientes') && !s.includes('from obras o')) {
     const [{ data: ncs }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
     const filtered = filterByObraId((ncs ?? []) as any[], 'obra_id', ids).filter((n: any) => n.status === 'aberta');
     return [{ count: filtered.length }] as T[];
