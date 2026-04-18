@@ -5,15 +5,14 @@ import { Colors, Radius, Spacing } from '../lib/constants';
 const R2_PUBLIC_URL = process.env.EXPO_PUBLIC_R2_PUBLIC_URL ?? '';
 
 function resolveUri(key: string): string {
-  // On web, photos from camera/gallery are blob: URLs — use directly
-  if (key.startsWith('blob:')) return key;
+  if (key.startsWith('blob:') || key.startsWith('data:') || key.startsWith('http')) return key;
   if (key.startsWith('pending:')) return key.slice('pending:'.length);
   return `${R2_PUBLIC_URL}/${key}`;
 }
 
 function isPending(key: string): boolean {
-  // On web: blob: = not yet uploaded to R2
-  return key.startsWith('blob:');
+  // blob: or data: = not yet uploaded to R2
+  return key.startsWith('blob:') || key.startsWith('data:');
 }
 
 interface Props {

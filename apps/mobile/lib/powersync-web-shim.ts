@@ -370,8 +370,19 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
           try {
             val = await uploadBlobToR2(localPath, `photo_${Date.now()}.jpg`);
           } catch (e) {
-            console.error('[web shim] photo upload failed:', e);
-            val = localPath;
+            console.error('[web shim] photo upload failed, storing as data URL:', e);
+            // Fallback: convert blob to data URL (persists across sessions, unlike blob: URLs)
+            try {
+              const blob = await fetch(localPath).then(r => r.blob());
+              val = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+            } catch {
+              val = localPath;
+            }
           }
         }
       }
