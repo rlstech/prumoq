@@ -6,6 +6,7 @@ const R2_PUBLIC_URL = process.env.EXPO_PUBLIC_R2_PUBLIC_URL ?? '';
 
 function resolveUri(key: string): string {
   if (key.startsWith('pending:')) return key.slice('pending:'.length);
+  if (key.startsWith('data:') || key.startsWith('http')) return key;
   return `${R2_PUBLIC_URL}/${key}`;
 }
 

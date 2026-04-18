@@ -3,7 +3,15 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { PenLine, Plus } from 'lucide-react-native';
 import { AppHeader } from '../../../../../../../../../components/AppHeader';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+
+const R2_PUBLIC_URL = process.env.EXPO_PUBLIC_R2_PUBLIC_URL ?? '';
+
+function resolveSignatureUri(url: string): string {
+  if (url.startsWith('pending:')) return url.slice('pending:'.length);
+  if (url.startsWith('data:') || url.startsWith('http')) return url;
+  return `${R2_PUBLIC_URL}/${url}`;
+}
 import { PhotoGrid } from '../../../../../../../../../components/PhotoGrid';
 import { PhotoViewer } from '../../../../../../../../../components/PhotoViewer';
 import { StatusBadge } from '../../../../../../../../../components/StatusBadge';
@@ -34,6 +42,7 @@ export default function FvsHistoryScreen() {
   const router = useRouter();
   const [viewerPhotos, setViewerPhotos] = useState<string[]>([]);
   const [viewerIndex, setViewerIndex] = useState(0);
+  const [signatureViewer, setSignatureViewer] = useState<string[]>([]);
 
   const { data: fvsRows } = useQuery<FvsRow>(`
     SELECT fp.id, fp.subservico, fp.status, a.nome AS ambiente_nome, o.nome AS obra_nome
@@ -201,9 +210,18 @@ export default function FvsHistoryScreen() {
 
               {/* Signature */}
               {item.assinatura_url ? (
-                <View style={styles.signedRow}>
-                  <PenLine size={12} color={Colors.ok} />
-                  <Text style={styles.signedText}>Assinado digitalmente</Text>
+                <View style={styles.signatureSection}>
+                  <View style={styles.signedRow}>
+                    <PenLine size={12} color={Colors.ok} />
+                    <Text style={styles.signedText}>Assinado digitalmente</Text>
+                  </View>
+                  <Pressable onPress={() => setSignatureViewer([resolveSignatureUri(item.assinatura_url!)])}>
+                    <Image
+                      source={{ uri: resolveSignatureUri(item.assinatura_url) }}
+                      style={styles.signatureThumb}
+                      resizeMode="contain"
+                    />
+                  </Pressable>
                 </View>
               ) : (
                 <View style={styles.signedRow}>
@@ -232,6 +250,12 @@ export default function FvsHistoryScreen() {
         initialIndex={viewerIndex}
         visible={viewerPhotos.length > 0}
         onClose={() => setViewerPhotos([])}
+      />
+      <PhotoViewer
+        photos={signatureViewer}
+        initialIndex={0}
+        visible={signatureViewer.length > 0}
+        onClose={() => setSignatureViewer([])}
       />
     </SafeAreaView>
   );
@@ -310,9 +334,18 @@ const styles = StyleSheet.create({
   ncSolucao: { fontSize: FontSizes.xs, color: Colors.textSecondary },
   ncFooter: { flexDirection: 'row', gap: Spacing.md, flexWrap: 'wrap', marginTop: 2 },
   ncMeta: { fontSize: FontSizes.xs, color: Colors.textSecondary },
+  signatureSection: { gap: 6 },
   signedRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   signedText: { fontSize: FontSizes.xs, color: Colors.ok, fontWeight: '500' },
   unsignedText: { fontSize: FontSizes.xs, color: Colors.textTertiary },
+  signatureThumb: {
+    width: '100%',
+    height: 80,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface2,
+  },
   empty: { alignItems: 'center', gap: Spacing.lg, paddingTop: 60 },
   emptyText: { fontSize: FontSizes.md, color: Colors.textTertiary },
   emptyBtn: {
