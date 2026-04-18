@@ -1,18 +1,29 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useTransition } from 'react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
-import { Search, Download, Printer } from 'lucide-react';
+import { Download, Loader2, Printer } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import { getVerificacaoDetalhe } from './actions';
+
+const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? 'https://pub-fd4eb9827712433599dec5fe1fef3fa5.r2.dev';
+
+function resolveR2Url(key: string): string | null {
+  if (!key) return null;
+  if (key.startsWith('blob:')) return null;
+  if (key.startsWith('data:') || key.startsWith('http')) return key;
+  return `${R2_PUBLIC_URL}/${key}`;
+}
 
 export default function VerificacoesClient({ initialData }: { initialData: any[] }) {
   const [filters, setFilters] = useState({
     obra: 'Todas', ambiente: 'Todos', fvs: 'Todos', status: 'Todos', inspetor: 'Todos'
   });
   const [selectedVerif, setSelectedVerif] = useState<any>(null);
+  const [detailData, setDetailData] = useState<any>(null);
+  const [isPending, startTransition] = useTransition();
 
-  // Extract unique values for dropdowns
   const obras = useMemo(() => Array.from(new Set(initialData.map(v => v.fvs_planejadas?.ambientes?.obras?.nome).filter(Boolean))), [initialData]);
   const inspetores = useMemo(() => Array.from(new Set(initialData.map(v => v.usuarios?.nome).filter(Boolean))), [initialData]);
 
@@ -22,9 +33,51 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
     if (filters.status !== 'Todos') {
       if (filters.status === 'Conforme' && v.status !== 'conforme') return false;
       if (filters.status === 'Não conforme' && v.status !== 'nao_conforme') return false;
+      if (filters.status === 'Em andamento' && v.status !== 'em_andamento') return false;
     }
     return true;
   });
+
+  function openVerif(v: any) {
+    setSelectedVerif(v);
+    setDetailData(null);
+    startTransition(async () => {
+      const detail = await getVerificacaoDetalhe(v.id);
+      setDetailData(detail);
+    });
+  }
+
+  function closeModal() {
+    setSelectedVerif(null);
+    setDetailData(null);
+  }
+
+  // Resolve detail: use fetched detail when available, fall back to list row
+  const detail = detailData ?? selectedVerif;
+
+  // Build items enriched with NC descriptions
+  const itens = useMemo(() => {
+    if (!detailData?.verificacao_itens) return [];
+    return detailData.verificacao_itens
+      .slice()
+      .sort((a: any, b: any) => (a.ordem ?? 0) - (b.ordem ?? 0))
+      .map((item: any) => {
+        const nc = detailData.nao_conformidades?.find((n: any) => n.verificacao_item_id === item.id);
+        return { ...item, nc_descricao: nc?.descricao ?? null };
+      });
+  }, [detailData]);
+
+  const fotos = useMemo(() => {
+    if (!detailData?.verificacao_fotos) return [];
+    return detailData.verificacao_fotos
+      .slice()
+      .sort((a: any, b: any) => (a.ordem ?? 0) - (b.ordem ?? 0));
+  }, [detailData]);
+
+  // Photo count from list row (verificacao_fotos: [{count: N}])
+  function fotoCount(v: any): number {
+    return v.verificacao_fotos?.[0]?.count ?? 0;
+  }
 
   return (
     <>
@@ -43,7 +96,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
         </div>
       </div>
 
-      {/* Painel Filtros */}
+      {/* Filtros */}
       <div className="bg-bg-1 border border-brd-0 rounded-xl p-4 mb-5">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
           <div>
@@ -115,7 +168,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
             </thead>
             <tbody>
               {filtered.length ? filtered.map((v: any, idx: number) => (
-                <tr key={v.id || idx} className="border-b border-brd-0 last:border-0 hover:bg-bg-0 cursor-pointer" onClick={() => setSelectedVerif(v)}>
+                <tr key={v.id || idx} className="border-b border-brd-0 last:border-0 hover:bg-bg-0 cursor-pointer" onClick={() => openVerif(v)}>
                   <td className="py-3 px-4"><span className="font-medium text-pg text-[13px]">V-{String(v.numero_verif || idx + 1).padStart(3, '0')}</span></td>
                   <td className="py-3 px-4">
                     <div className="font-medium text-[13px] text-txt">{v.fvs_planejadas?.subservico || 'N/A'}</div>
@@ -134,12 +187,12 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                   <td className="py-3 px-4 text-[13px] text-txt">{v.usuarios?.nome || '-'}</td>
                   <td className="py-3 px-4 text-[13px] text-txt">{v.data_verif ? new Date(v.data_verif).toLocaleDateString('pt-BR') : '-'}</td>
                   <td className="py-3 px-4">
-                    {v.total_fotos > 0 ? (
-                      <span className="text-xs text-pg font-medium cursor-pointer">📷 {v.total_fotos} fotos</span>
+                    {fotoCount(v) > 0 ? (
+                      <span className="text-xs text-pg font-medium">📷 {fotoCount(v)}</span>
                     ) : <span className="text-xs text-txt-3">—</span>}
                   </td>
                   <td className="py-3 px-4">
-                    <button className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors" onClick={e => { e.stopPropagation(); setSelectedVerif(v); }}>Ver</button>
+                    <button className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors" onClick={e => { e.stopPropagation(); openVerif(v); }}>Ver</button>
                   </td>
                 </tr>
               )) : (
@@ -151,7 +204,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
       </div>
 
       {/* Modal Detalhe */}
-      <Modal isOpen={!!selectedVerif} onClose={() => setSelectedVerif(null)} title={`Verificação ${selectedVerif?.fvs_planejadas?.subservico || ''}`} size="xl">
+      <Modal isOpen={!!selectedVerif} onClose={closeModal} title={`Verificação ${selectedVerif?.fvs_planejadas?.subservico || ''}`} size="xl">
         {selectedVerif && (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Painel Esquerdo (3/5) */}
@@ -159,14 +212,16 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
               {/* Mini KPIs */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-bg-0 border border-brd-0 rounded-lg p-3 text-center">
-                  <div className="text-lg font-semibold text-txt">{selectedVerif.percentual_execucao || 0}%</div>
+                  <div className="text-lg font-semibold text-txt">{detail?.percentual_exec ?? 0}%</div>
                   <div className="text-[10px] text-txt-3 uppercase font-semibold">Execução</div>
                 </div>
-                <div className="bg-bg-0 border border-brd-0 rounded-lg p-3 text-center">
-                  <StatusBadge status={selectedVerif.resultado || 'aberta'} />
+                <div className="bg-bg-0 border border-brd-0 rounded-lg p-3 flex items-center justify-center">
+                  <StatusBadge status={detail?.status || 'em_andamento'} />
                 </div>
                 <div className="bg-bg-0 border border-brd-0 rounded-lg p-3 text-center">
-                  <div className="text-lg font-semibold text-txt">{selectedVerif.total_itens || '-'}</div>
+                  <div className="text-lg font-semibold text-txt">
+                    {isPending ? <Loader2 size={16} className="animate-spin mx-auto" /> : (detailData?.verificacao_itens?.length ?? '-')}
+                  </div>
                   <div className="text-[10px] text-txt-3 uppercase font-semibold">Itens</div>
                 </div>
               </div>
@@ -174,8 +229,10 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
               {/* Checklist Results */}
               <div className="bg-bg-1 border border-brd-0 rounded-lg">
                 <div className="px-4 py-3 border-b border-brd-0 text-xs font-bold text-txt-2 uppercase tracking-wider">Itens de verificação</div>
-                {selectedVerif.itens_resultado?.length ? selectedVerif.itens_resultado.map((item: any, idx: number) => (
-                  <div key={idx} className="flex items-start gap-3 px-4 py-3 border-b border-brd-0 last:border-0">
+                {isPending ? (
+                  <div className="px-4 py-6 flex justify-center"><Loader2 size={20} className="animate-spin text-txt-3" /></div>
+                ) : itens.length ? itens.map((item: any) => (
+                  <div key={item.id} className="flex items-start gap-3 px-4 py-3 border-b border-brd-0 last:border-0">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
                       item.resultado === 'conforme' ? 'bg-ok-bg text-ok' :
                       item.resultado === 'nao_conforme' ? 'bg-nok-bg text-nok' :
@@ -185,7 +242,8 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                     </div>
                     <div className="flex-1">
                       <h5 className="text-[13px] font-medium text-txt">{item.titulo}</h5>
-                      {item.metodo && <div className="text-[11px] text-txt-3 mt-1">Método: {item.metodo}</div>}
+                      {item.metodo_verif && <div className="text-[11px] text-txt-3 mt-1">Método: {item.metodo_verif}</div>}
+                      {item.tolerancia && <div className="text-[11px] text-txt-3">Tolerância: {item.tolerancia}</div>}
                       {item.resultado === 'nao_conforme' && item.nc_descricao && (
                         <div className="mt-2 bg-nok-bg border-l-[3px] border-nok rounded-r-md px-3 py-2">
                           <p className="text-xs text-nok leading-relaxed">{item.nc_descricao}</p>
@@ -194,25 +252,38 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                     </div>
                   </div>
                 )) : (
-                  <div className="px-4 py-6 text-center text-xs text-txt-3">Detalhes dos itens não disponíveis nesta visualização.</div>
+                  <div className="px-4 py-6 text-center text-xs text-txt-3">Nenhum item registrado nesta verificação.</div>
                 )}
               </div>
 
               {/* Observações */}
-              {selectedVerif.notas && (
+              {detail?.observacoes && (
                 <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
                   <h4 className="text-xs font-bold text-txt-2 uppercase mb-2">Observações</h4>
-                  <p className="text-sm text-txt leading-relaxed">{selectedVerif.notas}</p>
+                  <p className="text-sm text-txt leading-relaxed">{detail.observacoes}</p>
                 </div>
               )}
 
               {/* Assinatura */}
-              {selectedVerif.assinatura_digital && (
+              {detail?.assinatura_url && (
                 <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-                  <h4 className="text-xs font-bold text-txt-2 uppercase mb-2">Assinatura Digital</h4>
-                  <div className="bg-[#f9f9f9] border border-brd-0 rounded-lg p-3 flex items-center justify-center min-h-[60px]">
-                    <span className="text-xs text-ok font-medium">✓ Documento assinado digitalmente</span>
-                  </div>
+                  <h4 className="text-xs font-bold text-txt-2 uppercase mb-3">Assinatura Digital</h4>
+                  {resolveR2Url(detail.assinatura_url) ? (
+                    <img
+                      src={resolveR2Url(detail.assinatura_url)!}
+                      alt="Assinatura digital"
+                      className="max-h-24 w-full object-contain rounded border border-brd-0 bg-white p-2"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center min-h-[48px] text-xs text-ok font-medium">
+                      ✓ Documento assinado digitalmente
+                    </div>
+                  )}
+                  {detail.assinada_em && (
+                    <p className="text-[11px] text-txt-3 mt-2">
+                      Assinado em {new Date(detail.assinada_em).toLocaleString('pt-BR')}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -223,29 +294,51 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                 <h4 className="text-xs font-bold text-txt-2 uppercase">Dados da verificação</h4>
                 <div>
                   <div className="text-[11px] text-txt-3">Obra</div>
-                  <div className="text-sm font-medium text-txt">{selectedVerif.fvs_planejadas?.ambientes?.obras?.nome}</div>
+                  <div className="text-sm font-medium text-txt">{detail?.fvs_planejadas?.ambientes?.obras?.nome || '-'}</div>
                 </div>
                 <div>
                   <div className="text-[11px] text-txt-3">Ambiente</div>
-                  <div className="text-sm font-medium text-txt">{selectedVerif.fvs_planejadas?.ambientes?.nome}</div>
+                  <div className="text-sm font-medium text-txt">{detail?.fvs_planejadas?.ambientes?.nome || '-'}</div>
                 </div>
                 <div>
                   <div className="text-[11px] text-txt-3">Inspetor</div>
-                  <div className="text-sm font-medium text-txt">{selectedVerif.usuarios?.nome || 'N/A'}</div>
+                  <div className="text-sm font-medium text-txt">{detail?.usuarios?.nome || '-'}</div>
                 </div>
                 <div>
                   <div className="text-[11px] text-txt-3">Data</div>
-                  <div className="text-sm font-medium text-txt">{selectedVerif.data_verificacao ? new Date(selectedVerif.data_verificacao).toLocaleString('pt-BR') : '-'}</div>
+                  <div className="text-sm font-medium text-txt">
+                    {detail?.data_verif ? new Date(detail.data_verif).toLocaleDateString('pt-BR') : '-'}
+                  </div>
                 </div>
+                {detail?.numero_verif && (
+                  <div>
+                    <div className="text-[11px] text-txt-3">Número</div>
+                    <div className="text-sm font-medium text-txt">V-{String(detail.numero_verif).padStart(3, '0')}</div>
+                  </div>
+                )}
               </div>
 
-              {/* Fotos placeholder */}
+              {/* Fotos */}
               <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-                <h4 className="text-xs font-bold text-txt-2 uppercase mb-3">Fotos ({selectedVerif.total_fotos || 0})</h4>
-                {selectedVerif.total_fotos > 0 ? (
+                <h4 className="text-xs font-bold text-txt-2 uppercase mb-3">
+                  Fotos ({isPending ? '…' : fotos.length})
+                </h4>
+                {isPending ? (
+                  <div className="flex justify-center py-4"><Loader2 size={18} className="animate-spin text-txt-3" /></div>
+                ) : fotos.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2">
-                    {/* Photo thumbnails would come from R2 */}
-                    <div className="aspect-[4/3] bg-bg-2 rounded-lg flex items-center justify-center text-txt-3 text-xs">📷</div>
+                    {fotos.map((f: any) => {
+                      const url = resolveR2Url(f.r2_key);
+                      return url ? (
+                        <a key={f.id} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-[4/3] rounded-lg overflow-hidden border border-brd-0 hover:opacity-90 transition-opacity">
+                          <img src={url} alt="Foto da verificação" className="w-full h-full object-cover" />
+                        </a>
+                      ) : (
+                        <div key={f.id} className="aspect-[4/3] bg-bg-2 rounded-lg flex items-center justify-center text-txt-3 text-xs border border-brd-0">
+                          Foto indisponível
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-xs text-txt-3 text-center py-4">Nenhuma foto registrada.</p>
@@ -258,7 +351,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
           <button className="px-4 py-2 bg-bg-1 border border-brd-1 rounded-lg text-sm text-txt-2 hover:bg-bg-2 transition-colors flex items-center gap-1.5">
             <Printer size={14} /> Exportar PDF
           </button>
-          <button onClick={() => setSelectedVerif(null)} className="px-5 py-2 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 transition-colors">Fechar</button>
+          <button onClick={closeModal} className="px-5 py-2 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 transition-colors">Fechar</button>
         </div>
       </Modal>
     </>
