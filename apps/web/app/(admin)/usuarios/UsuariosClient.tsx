@@ -156,7 +156,7 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
                       <span className="text-xs text-txt-3">—</span>
                     )}
                   </td>
-                  <td className="py-3 px-4 text-[13px] text-txt">{user.ultimo_acesso ? new Date(user.ultimo_acesso).toLocaleDateString('pt-BR') : '-'}</td>
+                  <td className="py-3 px-4 text-[13px] text-txt">{user.ultimo_acesso ? new Date(user.ultimo_acesso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                   <td className="py-3 px-4">
                     <button onClick={() => openEditUserModal(user)} className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors">Editar</button>
                   </td>

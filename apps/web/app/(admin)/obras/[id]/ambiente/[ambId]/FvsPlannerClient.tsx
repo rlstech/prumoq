@@ -22,7 +22,7 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
   const alreadyLinkedIds = initialFvsList.map(f => f.fvs_padrao_id);
 
   return (
-    <div className="flex flex-col lg:flex-row h-full max-w-[1400px] mx-auto p-6 gap-6">
+    <div className="flex flex-col lg:flex-row h-full gap-6">
       
       {/* Left Panel: FVS Planejadas */}
       <div className="flex-1 flex flex-col bg-bg-1 border border-brd-0 rounded-xl overflow-hidden min-h-[500px]">

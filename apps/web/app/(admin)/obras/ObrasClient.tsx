@@ -100,7 +100,8 @@ export default function ObrasClient({ initialObras, empresas }: ObrasClientProps
         }
       />
 
-      <div className="max-w-[1200px] mx-auto space-y-6 mt-6 px-6 pb-12">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-txt">Obras</h2>
@@ -126,12 +127,13 @@ export default function ObrasClient({ initialObras, empresas }: ObrasClientProps
           </div>
         </div>
 
-        <DataTable 
+        <DataTable
           columns={columns}
           data={filteredObras}
           onRowClick={(item) => router.push(`/obras/${item.id}`)}
           emptyMessage="Nenhuma obra encontrada com esse nome."
         />
+        </div>
       </div>
 
       <ObraModal 

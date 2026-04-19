@@ -25,7 +25,8 @@ export default async function FvsPadraoPage() {
     <>
       <Header breadcrumbs={[{ label: 'FVS Padrão (Biblioteca)' }]} />
       
-      <div className="max-w-[1200px] mx-auto p-6 space-y-6 pb-12">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <KPICard title="Total Cadastradas" value={contagens.total} icon={<ClipboardList size={20} />} />
           <KPICard title="Ativas" value={contagens.ativas} colorVariant="ok" />
@@ -34,6 +35,7 @@ export default async function FvsPadraoPage() {
         </div>
 
         <FvsPadraoClient initialData={typedFvs} />
+        </div>
       </div>
     </>
   );

@@ -31,7 +31,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-[1200px] mx-auto space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-txt tracking-tight">Visão Geral</h1>
@@ -172,27 +172,27 @@ export default async function DashboardPage() {
               <tbody>
                 {ncsUrgentes.length ? ncsUrgentes.map((nc: any) => (
                   <tr key={nc.id} className="border-b border-brd-0 last:border-0 hover:bg-bg-0">
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-[13px] text-txt">{nc.item_titulo || nc.descricao || '-'}</div>
-                      <div className="text-xs text-txt-2 mt-0.5">{nc.servico_nome || '-'}</div>
-                    </td>
-                    <td className="py-3 px-4 text-[13px] text-txt">
-                      {nc.obra_nome}
-                      <div className="text-xs text-txt-2 mt-0.5">{nc.ambiente_nome}</div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5 text-xs">
-                        <div className={`w-2 h-2 rounded-full ${nc.prioridade === 'Alta' ? 'bg-nok' : nc.prioridade === 'Baixa' ? 'bg-pg' : 'bg-warn'}`} />
-                        {nc.prioridade || 'Média'}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-[13px] text-txt">{nc.equipe_nome || '-'}</td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex bg-nok-bg text-nok px-2 py-0.5 rounded-full text-[11px] font-medium border border-nok/20">
-                        {nc.prazo_correcao ? new Date(nc.prazo_correcao).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : 'Sem prazo'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4"><StatusBadge status="aberta" size="sm" /></td>
+<td className="py-3 px-4">
+                       <div className="font-medium text-[13px] text-txt">{nc.descricao || nc.item_titulo || '-'}</div>
+                       <div className="text-xs text-txt-2 mt-0.5">{nc.subservico || '-'}</div>
+                     </td>
+                     <td className="py-3 px-4 text-[13px] text-txt">
+                       {nc.obra_nome}
+                       <div className="text-xs text-txt-2 mt-0.5">{nc.ambiente_nome}</div>
+                     </td>
+                     <td className="py-3 px-4">
+                       <div className="flex items-center gap-1.5 text-xs">
+                         <div className={`w-2 h-2 rounded-full ${nc.prioridade === 'alta' ? 'bg-nok' : nc.prioridade === 'baixa' ? 'bg-pg' : 'bg-warn'}`} />
+                         {nc.prioridade === 'alta' ? 'Alta' : nc.prioridade === 'baixa' ? 'Baixa' : 'Média'}
+                       </div>
+                     </td>
+                     <td className="py-3 px-4 text-[13px] text-txt">{nc.equipe_nome || '-'}</td>
+                     <td className="py-3 px-4">
+                       <span className="inline-flex bg-nok-bg text-nok px-2 py-0.5 rounded-full text-[11px] font-medium border border-nok/20">
+                         {nc.data_nova_verif ? new Date(nc.data_nova_verif + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' }) : 'Sem prazo'}
+                       </span>
+                     </td>
+                     <td className="py-3 px-4"><StatusBadge status={nc.status || 'aberta'} size="sm" /></td>
                   </tr>
                 )) : (
                   <tr>

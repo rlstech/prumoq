@@ -1,14 +1,18 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import Header from '@/components/layout/Header';
 import EmpresasClient from './EmpresasClient';
 import KPICard from '@/components/ui/KPICard';
 import { Building2 } from 'lucide-react';
 
-export default async function EmpresasPage() {
-  const supabase = await createClient();
+export const dynamic = 'force-dynamic';
 
-  // Using a custom select to get 'obras(count)' correctly without breaking Supabase RPCs
-  const { data: empresasData } = await supabase
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export default async function EmpresasPage() {
+  const { data: empresasData } = await supabaseAdmin
     .from('empresas' as any)
     .select('*, obras(count)');
 
@@ -18,7 +22,8 @@ export default async function EmpresasPage() {
   return (
     <>
       <Header breadcrumbs={[{ label: 'Empresas Parceiras' }]} />
-      <div className="max-w-[1200px] mx-auto space-y-6 mt-6 px-6 pb-12">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <KPICard title="Total Cadastrado" value={empresas.length} icon={<Building2 size={20} />} />
           <KPICard title="Ativas" value={ativas} colorVariant="ok" />
@@ -26,6 +31,7 @@ export default async function EmpresasPage() {
         </div>
 
         <EmpresasClient initialData={empresas} />
+        </div>
       </div>
     </>
   );

@@ -103,7 +103,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
 
   return (
     <>
-      <div className="flex flex-col xl:flex-row h-full max-w-[1400px] mx-auto p-6 gap-6">
+      <div className="flex flex-col xl:flex-row h-full gap-6">
         
         {/* Painel Esquerdo - Checklist Editor */}
         <div className="flex-1 flex flex-col h-full bg-bg-1 border border-brd-0 rounded-xl overflow-hidden shrink-0 min-h-[600px]">

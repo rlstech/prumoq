@@ -1,6 +1,18 @@
 'use client';
 
 import { useState, useMemo, useTransition } from 'react';
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR');
+}
+
+function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
+}
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { Download, Loader2, Printer } from 'lucide-react';
@@ -185,7 +197,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                   </td>
                   <td className="py-3 px-4"><StatusBadge status={v.status || 'em_andamento'} size="sm" /></td>
                   <td className="py-3 px-4 text-[13px] text-txt">{v.usuarios?.nome || '-'}</td>
-                  <td className="py-3 px-4 text-[13px] text-txt">{v.data_verif ? new Date(v.data_verif).toLocaleDateString('pt-BR') : '-'}</td>
+                  <td className="py-3 px-4 text-[13px] text-txt">{v.data_verif ? formatDate(v.data_verif) : '-'}</td>
                   <td className="py-3 px-4">
                     {fotoCount(v) > 0 ? (
                       <span className="text-xs text-pg font-medium">📷 {fotoCount(v)}</span>
@@ -281,7 +293,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                   )}
                   {detail.assinada_em && (
                     <p className="text-[11px] text-txt-3 mt-2">
-                      Assinado em {new Date(detail.assinada_em).toLocaleString('pt-BR')}
+                      Assinado em {formatDateTime(detail.assinada_em)}
                     </p>
                   )}
                 </div>
@@ -307,7 +319,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                 <div>
                   <div className="text-[11px] text-txt-3">Data</div>
                   <div className="text-sm font-medium text-txt">
-                    {detail?.data_verif ? new Date(detail.data_verif).toLocaleDateString('pt-BR') : '-'}
+                    {detail?.data_verif ? formatDate(detail.data_verif) : '-'}
                   </div>
                 </div>
                 {detail?.numero_verif && (

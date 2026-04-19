@@ -66,11 +66,11 @@ export default function NcClient({ initialData }: { initialData: any[] }) {
     },
     {
        header: 'Prazo',
-       cell: (item) => {
-         if (!item.prazo_correcao) return <span className="text-xs text-txt-3">—</span>;
-         const date = new Date(item.prazo_correcao);
-         const isLate = date < new Date() && item.status !== 'resolvida' && item.status !== 'cancelada';
-         return (
+cell: (item) => {
+          if (!item.data_nova_verif) return <span className="text-xs text-txt-3">—</span>;
+          const date = new Date(item.data_nova_verif);
+          const isLate = date < new Date() && item.status !== 'resolvida' && item.status !== 'cancelada';
+          return (
             <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
               isLate ? 'bg-nok-bg text-nok' : 'bg-warn-bg text-warn'
             }`}>
@@ -188,8 +188,8 @@ export default function NcClient({ initialData }: { initialData: any[] }) {
                     <p className="text-sm text-txt">{selectedNc.equipes?.nome || 'Nenhuma'}</p>
                  </div>
                  <div className="bg-bg-1 p-4 rounded-lg border border-brd-0">
-                    <h4 className="text-xs font-bold text-txt-2 mb-2 uppercase">Prazo de Correção</h4>
-                    <p className="text-sm text-txt">{selectedNc.prazo_correcao ? new Date(selectedNc.prazo_correcao).toLocaleDateString('pt-BR') : 'Não definido'}</p>
+<h4 className="text-xs font-bold text-txt-2 mb-2 uppercase">Prazo de Correção</h4>
+                     <p className="text-sm text-txt">{selectedNc.data_nova_verif ? new Date(selectedNc.data_nova_verif).toLocaleDateString('pt-BR') : 'Não definido'}</p>
                  </div>
                </div>
 

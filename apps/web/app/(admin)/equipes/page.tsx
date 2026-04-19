@@ -25,8 +25,10 @@ export default async function EquipesPage() {
   return (
     <>
       <Header breadcrumbs={[{ label: 'Equipes Cadastradas' }]} />
-      <div className="max-w-6xl mx-auto space-y-6 mt-6 px-6 pb-12">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="space-y-6">
         <EquipesClient initialEquipes={equipes as any[] || []} />
+        </div>
       </div>
     </>
   );

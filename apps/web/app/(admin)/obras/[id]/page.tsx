@@ -67,7 +67,8 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
         ]}
       />
 
-      <div className="max-w-[1200px] mx-auto space-y-5 mt-6 px-6 pb-12">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="space-y-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-xl font-semibold text-txt tracking-tight">{typedObra.nome}</h1>
@@ -109,6 +110,7 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
           availableEquipes={availableEquipes}
           totalEmpresaEquipes={allEquipesList.length}
         />
+        </div>
       </div>
     </>
   );

@@ -37,7 +37,7 @@ export default async function AmbientePage(props: { params: Promise<{ id: string
           { label: typedAmb.nome }
         ]}
       />
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-6">
         <FvsPlannerClient 
           ambiente={typedAmb} 
           initialFvsList={fvsList || []} 
