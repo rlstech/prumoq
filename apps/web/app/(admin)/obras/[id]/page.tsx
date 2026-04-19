@@ -1,16 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ObraDetailClient from './ObraDetailClient';
 
 export default async function ObraDetailPage(props: { params: Promise<{ id: string }> }) {
-  // Admin client criado dentro da função — env vars só existem em runtime, não no build
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabaseAdmin = createAdminClient();
   const params = await props.params;
   const { id } = params;
   const supabase = await createClient();

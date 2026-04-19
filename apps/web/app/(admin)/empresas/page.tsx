@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 import Header from '@/components/layout/Header';
 import EmpresasClient from './EmpresasClient';
 import KPICard from '@/components/ui/KPICard';
@@ -6,12 +6,8 @@ import { Building2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export default async function EmpresasPage() {
+  const supabaseAdmin = createAdminClient();
   const { data: empresasData } = await supabaseAdmin
     .from('empresas' as any)
     .select('*, obras(count)');

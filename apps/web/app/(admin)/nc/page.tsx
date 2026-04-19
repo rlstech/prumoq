@@ -1,16 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 import Header from '@/components/layout/Header';
 import NcClient from './NcClient';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export default async function NcPage() {
+  const supabaseAdmin = createAdminClient();
   const { data: ncsData } = await supabaseAdmin
     .from('nao_conformidades' as any)
     .select(`
@@ -32,14 +27,14 @@ export default async function NcPage() {
     verificacoes: undefined,
   }));
 
-  const abertas = ncs.filter(n => n.status === 'aberta' || n.status === 'em_correcao').length;
-  const resolvidas = ncs.filter(n => n.status === 'resolvida').length;
+  const abertas = ncs.filter((n: any) => n.status === 'aberta' || n.status === 'em_correcao').length;
+  const resolvidas = ncs.filter((n: any) => n.status === 'resolvida').length;
 
   const limiteUrgencia = new Date();
   limiteUrgencia.setDate(limiteUrgencia.getDate() + 3);
-  const urgentes = ncs.filter(n => (n.status === 'aberta' || n.status === 'em_correcao') && n.data_nova_verif && new Date(n.data_nova_verif) <= limiteUrgencia).length;
+  const urgentes = ncs.filter((n: any) => (n.status === 'aberta' || n.status === 'em_correcao') && n.data_nova_verif && new Date(n.data_nova_verif) <= limiteUrgencia).length;
 
-  const resolvedNcs = ncs.filter(n => n.status === 'resolvida' && n.created_at && n.resolvida_em);
+  const resolvedNcs = ncs.filter((n: any) => n.status === 'resolvida' && n.created_at && n.resolvida_em);
   const avgDays = resolvedNcs.length > 0
     ? (resolvedNcs.reduce((acc: number, nc: any) => acc + ((new Date(nc.resolvida_em).getTime() - new Date(nc.created_at).getTime()) / (1000 * 60 * 60 * 24)), 0) / resolvedNcs.length).toFixed(1)
     : '-';

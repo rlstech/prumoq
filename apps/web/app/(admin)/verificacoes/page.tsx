@@ -1,15 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 import Header from '@/components/layout/Header';
 import VerificacoesClient from './VerificacoesClient';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export default async function VerificacoesPage() {
+  const supabaseAdmin = createAdminClient();
   const { data: verifs } = await supabaseAdmin
     .from('verificacoes' as any)
     .select('*, fvs_planejadas(subservico, ambientes(nome, obras(nome))), usuarios(nome), verificacao_fotos(count)')
