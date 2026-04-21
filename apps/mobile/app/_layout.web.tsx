@@ -5,8 +5,8 @@ import '../lib/setup-rn-web';
 import '../global.css';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
 import { InstallBanner } from '../components/InstallBanner.web';
+import { PullToRefresh } from '../components/PullToRefresh.web';
 import { supabase } from '../lib/supabase';
 
 export default function RootLayout() {
@@ -50,9 +50,9 @@ export default function RootLayout() {
   }, [ready]); // segments deliberately excluded — use segmentsRef instead
 
   return (
-    <View style={{ flex: 1, overflow: 'hidden' }}>
+    <PullToRefresh>
       <InstallBanner />
       <Slot />
-    </View>
+    </PullToRefresh>
   );
 }

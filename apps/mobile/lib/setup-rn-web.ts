@@ -13,6 +13,22 @@
  */
 import { Appearance, StyleSheet } from 'react-native';
 
+// Inject PWA manifest link and service worker — works in both dev mode and production.
+// In production, +html.tsx already has these; duplicates are harmless.
+if (typeof document !== 'undefined') {
+  if (!document.querySelector('link[rel="manifest"]')) {
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = '/manifest.json';
+    document.head.appendChild(link);
+  }
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+}
+
 // Fix 1 — set dark mode type to 'class'
 type StyleSheetWithFlags = typeof StyleSheet & {
   setFlag?: (flag: string, value: string) => void;
