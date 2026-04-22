@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PrumoQ — Ciclo de vida da FVS</title>
+<style>
+:root{
+  --br:#E84A1A;--brl:#FDF0EC;
+  --ok:#2E7D32;--okb:#E8F5E9;
+  --nok:#C62828;--nokb:#FFEBEE;
+  --pg:#1565C0;--pgb:#E3F2FD;
+  --warn:#E65100;--warnb:#FFF3E0;
+  --rev:#6A1B9A;--revb:#F3E5F5;
+  --na:#666;--nab:#F2F2F2;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#e0ddd7;padding:24px;min-height:100vh}
+
+/* ── HEADER ── */
+.page-title{font-size:11px;font-weight:700;color:#5C5B57;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px}
+.page-desc{font-size:12px;color:#9C9A93;margin-bottom:20px}
+
+/* ── STATES ROW ── */
+.states-row{display:flex;align-items:center;gap:0;margin-bottom:28px;background:#fff;border-radius:14px;padding:16px 20px;border:1px solid rgba(0,0,0,.08)}
+.state-node{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1}
+.state-dot{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;border:2px solid transparent}
+.state-dot.s1{background:var(--nab);color:var(--na);border-color:#ccc}
+.state-dot.s2{background:var(--pgb);color:var(--pg);border-color:var(--pg)}
+.state-dot.s3{background:#FFF8E1;color:#F9A825;border-color:#F9A825}
+.state-dot.s4{background:var(--okb);color:var(--ok);border-color:var(--ok)}
+.state-dot.s5{background:var(--revb);color:var(--rev);border-color:var(--rev)}
+.state-label{font-size:11px;font-weight:600;color:#1A1A18;text-align:center}
+.state-sub{font-size:10px;color:#5C5B57;text-align:center}
+.state-arrow{color:#9C9A93;font-size:20px;padding:0 2px;margin-bottom:18px}
+.state-arrow.rev{color:var(--rev)}
+
+/* ── FLOW SECTION ── */
+.section-title{font-size:12px;font-weight:700;color:#5C5B57;text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;padding-left:4px;border-left:3px solid var(--br)}
+.flow{display:flex;gap:12px;align-items:flex-start;overflow-x:auto;padding-bottom:12px;margin-bottom:28px}
+.arrow{display:flex;align-items:center;padding-top:80px;flex-shrink:0;color:#9C9A93;font-size:20px}
+.arrow.down{flex-direction:column;padding-top:0;padding-right:0;gap:2px;color:#9C9A93;font-size:14px;align-self:center}
+.col{flex-shrink:0}
+.lbl{font-size:10px;font-weight:600;color:#5C5B57;text-align:center;margin-bottom:7px;letter-spacing:.3px;text-transform:uppercase}
+.lbl.ok{color:var(--ok)}.lbl.nok{color:var(--nok)}.lbl.rev{color:var(--rev)}.lbl.warn{color:var(--warn)}
+
+/* ── PHONE ── */
+.phone{width:250px;background:#fff;border-radius:24px;overflow:hidden;border:1px solid rgba(0,0,0,.12);box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.tb{padding:9px 13px 12px}
+.tb.brand{background:var(--br)}
+.tb.ok{background:var(--ok)}
+.tb.rev{background:var(--rev)}
+.tb.warn{background:var(--warn)}
+.tb h1{color:white;font-size:14px;font-weight:500}
+.tb p{color:rgba(255,255,255,.7);font-size:10px;margin-top:1px}
+.trow{display:flex;align-items:center;gap:7px}
+.bk{background:rgba(255,255,255,.2);border:none;color:white;width:24px;height:24px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ct{padding:11px 12px}
+
+/* ── ELEMENTS ── */
+.bg{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;white-space:nowrap;display:inline-block}
+.bg.ok{background:var(--okb);color:var(--ok)}.bg.nok{background:var(--nokb);color:var(--nok)}
+.bg.pg{background:var(--pgb);color:var(--pg)}.bg.warn{background:var(--warnb);color:var(--warn)}
+.bg.na{background:var(--nab);color:var(--na)}.bg.rev{background:var(--revb);color:var(--rev)}
+.bg.gold{background:#FFF8E1;color:#F57F17}
+.st{font-size:9px;font-weight:700;color:#5C5B57;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.dv{height:.5px;background:rgba(0,0,0,.08);margin:9px 0}
+.row{display:flex;align-items:center;justify-content:space-between}
+.btn{width:100%;padding:9px;border:none;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;margin-top:6px;text-align:center}
+.btn.brand{background:var(--br);color:white}
+.btn.ok{background:var(--ok);color:white}
+.btn.warn{background:var(--warn);color:white}
+.btn.rev{background:var(--rev);color:white}
+.btn.nok{background:var(--nok);color:white}
+.btn.ghost{background:#F1EFE8;color:#1A1A18}
+
+/* progress bar */
+.pb{height:7px;background:rgba(0,0,0,.08);border-radius:4px;overflow:hidden;margin-top:4px}
+.pb .f{height:100%;border-radius:4px;transition:.3s}
+.pb .f.pg{background:var(--pg)}
+.pb .f.ok{background:var(--ok)}
+.pb .f.gold{background:#F9A825}
+
+/* timeline */
+.tl{position:relative;padding-left:22px}
+.tl::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:1.5px;background:rgba(0,0,0,.1)}
+.tli{position:relative;margin-bottom:10px}
+.tld{position:absolute;left:-22px;top:3px;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+.tld.ok{background:var(--okb);color:var(--ok);border:.5px solid var(--ok)}
+.tld.pg{background:var(--pgb);color:var(--pg);border:.5px solid var(--pg)}
+.tld.nok{background:var(--nokb);color:var(--nok);border:.5px solid var(--nok)}
+.tld.rev{background:var(--revb);color:var(--rev);border:.5px solid var(--rev)}
+.tld.gold{background:#FFF8E1;color:#F57F17;border:.5px solid #F9A825}
+.tlc{background:#F7F6F3;border-radius:7px;padding:7px 9px}
+.tldate{font-size:9px;color:#9C9A93;margin-bottom:2px}
+.tltt{font-size:11px;font-weight:500;color:#1A1A18}
+.tlsub{font-size:10px;color:#5C5B57;margin-top:2px;line-height:1.4}
+
+/* form fields */
+.fl{font-size:10px;font-weight:500;color:#5C5B57;margin-bottom:3px;display:block}
+.fc{width:100%;padding:7px 9px;border:.5px solid rgba(0,0,0,.15);border-radius:7px;font-size:11px;background:#fff;color:#1A1A18;font-family:inherit}
+.fc:focus{outline:none;border-color:var(--br)}
+select.fc{appearance:none}
+.fg{margin-bottom:9px}
+
+/* lock overlay */
+.lock-overlay{background:#F7F6F3;border:.5px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;text-align:center;margin-bottom:10px}
+.lock-overlay .ico{font-size:28px;margin-bottom:7px}
+.lock-overlay h3{font-size:13px;font-weight:600;color:#1A1A18;margin-bottom:4px}
+.lock-overlay p{font-size:11px;color:#5C5B57;line-height:1.5}
+
+/* fvs card */
+.fvs-card{border:.5px solid rgba(0,0,0,.1);border-radius:10px;padding:10px 11px;margin-bottom:8px}
+.fvs-card.concluded{border-color:var(--ok);background:var(--okb)}
+.fvs-card.reopened{border-color:var(--rev);background:var(--revb)}
+.fvs-card h4{font-size:12px;font-weight:600;color:#1A1A18}
+.fvs-card.concluded h4{color:var(--ok)}
+.fvs-card.reopened h4{color:var(--rev)}
+
+/* modal-like panels */
+.modal-panel{background:#fff;border:.5px solid rgba(0,0,0,.12);border-radius:12px;padding:13px;margin-bottom:8px}
+.modal-panel.warn{border-color:var(--warn);background:var(--warnb)}
+.modal-panel.rev{border-color:var(--rev);background:var(--revb)}
+.modal-panel.ok{border-color:var(--ok);background:var(--okb)}
+
+/* log item */
+.log-item{display:flex;gap:8px;padding:7px 0;border-bottom:.5px solid rgba(0,0,0,.07)}
+.log-item:last-child{border-bottom:none}
+.log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.log-dot.ok{background:var(--ok)}.log-dot.rev{background:var(--rev)}.log-dot.warn{background:var(--warn)}
+.log-text{font-size:10px;color:#5C5B57;flex:1;line-height:1.4}
+.log-date{font-size:9px;color:#9C9A93;white-space:nowrap;margin-top:1px}
+
+/* conclusion confirm box */
+.confirm-box{border:2px solid var(--ok);border-radius:12px;padding:12px;background:var(--okb);text-align:center}
+.confirm-box .icon{font-size:30px;margin-bottom:7px}
+.confirm-box h3{font-size:13px;font-weight:700;color:var(--ok);margin-bottom:4px}
+.confirm-box p{font-size:10px;color:#5C5B57;line-height:1.5;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<div class="page-title">PrumoQ — Ciclo de vida da FVS</div>
+<div class="page-desc">Estados, transições, conclusão manual/automática e reabertura com justificativa</div>
+
+<!-- ═══ ESTADOS ═══ -->
+<div class="states-row">
+  <div class="state-node">
+    <div class="state-dot s1">○</div>
+    <div class="state-label">Pendente</div>
+    <div class="state-sub">0 verificações</div>
+  </div>
+  <div class="state-arrow">›</div>
+  <div class="state-node">
+    <div class="state-dot s2">→</div>
+    <div class="state-label">Em andamento</div>
+    <div class="state-sub">1+ verificações</div>
+  </div>
+  <div class="state-arrow">›</div>
+  <div class="state-node">
+    <div class="state-dot s3">★</div>
+    <div class="state-label">100% atingido</div>
+    <div class="state-sub">Aguarda conclusão</div>
+  </div>
+  <div class="state-arrow">›</div>
+  <div class="state-node">
+    <div class="state-dot s4">✓</div>
+    <div class="state-label">Concluída</div>
+    <div class="state-sub">Bloqueada</div>
+  </div>
+  <div class="state-arrow rev">↺</div>
+  <div class="state-node">
+    <div class="state-dot s5">↑</div>
+    <div class="state-label">Em revisão</div>
+    <div class="state-sub">Reaberta c/ just.</div>
+  </div>
+  <div class="state-arrow rev">›</div>
+  <div class="state-node">
+    <div class="state-dot s4">✓</div>
+    <div class="state-label">Concluída</div>
+    <div class="state-sub">Nova conclusão</div>
+  </div>
+</div>
+
+<!-- ═══ FLUXO A: CONCLUSÃO NORMAL ═══ -->
+<div class="section-title">Fluxo A — Conclusão normal (100% atingido)</div>
+<div class="flow">
+
+  <!-- A1: Em andamento 70% -->
+  <div class="col">
+    <div class="lbl">A1 · Em andamento</div>
+    <div class="phone">
+      <div class="tb brand"><div class="trow"><div class="bk">‹</div><div><h1>Revestimento Argamassado</h1><p>Paredes · Apt 302</p></div></div></div>
+      <div class="ct">
+        <div style="background:#F7F6F3;border-radius:10px;padding:10px;margin-bottom:10px">
+          <div class="row">
+            <div><div style="font-size:11px;color:#5C5B57">Progresso do serviço</div><div style="font-size:22px;font-weight:700;color:var(--pg)">70%</div></div>
+            <span class="bg pg">Em andamento</span>
+          </div>
+          <div class="pb" style="margin-top:8px"><div class="f pg" style="width:70%"></div></div>
+          <div style="font-size:10px;color:#5C5B57;margin-top:5px">2 verificações realizadas</div>
+        </div>
+
+        <div class="tl">
+          <div class="tli">
+            <div class="tld pg">2</div>
+            <div class="tlc">
+              <div class="tldate">01/04/2025 · Carlos Lima</div>
+              <div class="tltt">Verificação 2 — 70%</div>
+              <div class="tlsub">Argamassa nas paredes N/S. NC aberta no item 2.</div>
+            </div>
+          </div>
+          <div class="tli">
+            <div class="tld nok">1</div>
+            <div class="tlc">
+              <div class="tldate">15/03/2025 · Carlos Lima</div>
+              <div class="tltt">Verificação 1 — 30%</div>
+              <div class="tlsub">Início do serviço. Base não curada.</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn brand">+ Nova verificação</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">›</div>
+
+  <!-- A2: 100% atingido — banner de sugestão -->
+  <div class="col">
+    <div class="lbl warn">A2 · 100% atingido</div>
+    <div class="phone">
+      <div class="tb brand"><div class="trow"><div class="bk">‹</div><div><h1>Revestimento Argamassado</h1><p>Paredes · Apt 302</p></div></div></div>
+      <div class="ct">
+
+        <!-- Banner amarelo de 100% -->
+        <div style="background:#FFF8E1;border:1.5px solid #F9A825;border-radius:11px;padding:11px;text-align:center;margin-bottom:11px">
+          <div style="font-size:22px;margin-bottom:5px">🎯</div>
+          <div style="font-size:13px;font-weight:700;color:#F57F17">Serviço a 100%!</div>
+          <div style="font-size:10px;color:#5C5B57;margin-top:3px;line-height:1.5">Todas as etapas foram executadas.<br/>Deseja concluir este serviço?</div>
+        </div>
+
+        <div style="background:#F7F6F3;border-radius:10px;padding:9px;margin-bottom:10px">
+          <div class="row">
+            <div><div style="font-size:11px;color:#5C5B57">Progresso</div><div style="font-size:22px;font-weight:700;color:#F57F17">100%</div></div>
+            <span class="bg gold">100% atingido</span>
+          </div>
+          <div class="pb" style="margin-top:6px"><div class="f gold" style="width:100%"></div></div>
+          <div style="font-size:10px;color:#5C5B57;margin-top:4px">3 verificações realizadas</div>
+        </div>
+
+        <button class="btn ok">✓ Concluir serviço agora</button>
+        <button class="btn ghost" style="margin-top:6px">Fazer mais uma verificação</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">›</div>
+
+  <!-- A3: Tela de conclusão -->
+  <div class="col">
+    <div class="lbl ok">A3 · Confirmar conclusão</div>
+    <div class="phone">
+      <div class="tb ok"><div class="trow"><div class="bk">‹</div><div><h1>Concluir Serviço</h1><p>Revestimento Argamassado · Apt 302</p></div></div></div>
+      <div class="ct">
+
+        <div class="confirm-box">
+          <div class="icon">✅</div>
+          <h3>Confirmar conclusão</h3>
+          <p>Ao concluir, novas verificações serão bloqueadas. Esta ação fica registrada no histórico com sua assinatura.</p>
+        </div>
+
+        <div class="dv"></div>
+        <div class="fg">
+          <label class="fl">Observação final (opcional)</label>
+          <textarea class="fc" rows="3" placeholder="Registro final do serviço, condições de entrega...">Serviço concluído conforme projeto. Todas as etapas inspecionadas e aprovadas.</textarea>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Resultado final do serviço</label>
+          <div style="display:flex;gap:6px">
+            <div style="flex:1;padding:8px;background:var(--okb);border:1.5px solid var(--ok);border-radius:8px;text-align:center;cursor:pointer">
+              <div style="font-size:12px;font-weight:700;color:var(--ok)">✓ Aprovado</div>
+              <div style="font-size:9px;color:var(--ok)">Sem pendências</div>
+            </div>
+            <div style="flex:1;padding:8px;background:#F7F6F3;border:.5px solid rgba(0,0,0,.1);border-radius:8px;text-align:center;cursor:pointer">
+              <div style="font-size:12px;font-weight:500;color:#5C5B57">⚠ Com ressalvas</div>
+              <div style="font-size:9px;color:#9C9A93">Pendências menores</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Assinatura digital do inspetor</label>
+          <div style="border:.5px solid rgba(0,0,0,.15);border-radius:8px;overflow:hidden">
+            <div style="height:50px;background:#fff;border-bottom:.5px solid rgba(0,0,0,.08)"></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 9px;background:#F7F6F3">
+              <span style="font-size:9px;color:#5C5B57">Assine com o dedo</span>
+              <button style="font-size:9px;color:var(--nok);border:none;background:none">Limpar</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn ok">✓ Confirmar e concluir definitivamente</button>
+        <button class="btn ghost">Cancelar — continuar verificando</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">›</div>
+
+  <!-- A4: FVS concluída — bloqueada -->
+  <div class="col">
+    <div class="lbl ok">A4 · Serviço concluído</div>
+    <div class="phone">
+      <div class="tb ok"><div class="trow"><div class="bk">‹</div><div><h1>Revestimento Argamassado</h1><p>Paredes · Apt 302 · Concluído</p></div></div></div>
+      <div class="ct">
+
+        <!-- Status concluído -->
+        <div style="background:var(--okb);border:1.5px solid var(--ok);border-radius:11px;padding:12px;text-align:center;margin-bottom:11px">
+          <div style="font-size:24px;margin-bottom:4px">✅</div>
+          <div style="font-size:14px;font-weight:700;color:var(--ok)">Serviço Concluído</div>
+          <div style="font-size:10px;color:#5C5B57;margin-top:3px">08/04/2025 · Carlos Lima</div>
+          <div style="margin-top:7px;padding-top:7px;border-top:.5px solid rgba(46,125,50,.2);font-size:10px;color:var(--ok);font-weight:600">Resultado: Aprovado ✓</div>
+        </div>
+
+        <div class="st">Resumo</div>
+        <div style="border:.5px solid rgba(0,0,0,.1);border-radius:9px;padding:9px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:.5px solid rgba(0,0,0,.07)"><span style="font-size:10px;color:#5C5B57">Verificações</span><span style="font-size:10px;font-weight:600">3 realizadas</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:.5px solid rgba(0,0,0,.07)"><span style="font-size:10px;color:#5C5B57">Duração</span><span style="font-size:10px;font-weight:600">24 dias</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:.5px solid rgba(0,0,0,.07)"><span style="font-size:10px;color:#5C5B57">NCs abertas</span><span style="font-size:10px;font-weight:600;color:var(--ok)">0 (todas resolvidas)</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0"><span style="font-size:10px;color:#5C5B57">Inspetor</span><span style="font-size:10px;font-weight:600">Carlos Lima</span></div>
+        </div>
+
+        <!-- BLOQUEIO -->
+        <div style="background:#F7F6F3;border:.5px dashed rgba(0,0,0,.2);border-radius:9px;padding:10px;text-align:center;margin-bottom:9px">
+          <div style="font-size:18px;margin-bottom:4px">🔒</div>
+          <div style="font-size:11px;font-weight:600;color:#5C5B57">Nova verificação bloqueada</div>
+          <div style="font-size:10px;color:#9C9A93;margin-top:3px;line-height:1.4">Este serviço está concluído.<br/>Para nova verificação, reabra com justificativa.</div>
+        </div>
+
+        <button class="btn rev">↑ Solicitar reabertura</button>
+        <button class="btn ghost">🖨 Exportar PDF</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ FLUXO B: CONCLUSÃO MANUAL ANTES DE 100% ═══ -->
+<div class="section-title">Fluxo B — Conclusão manual antes de 100%</div>
+<div class="flow">
+
+  <!-- B1: Em andamento com botão concluir -->
+  <div class="col">
+    <div class="lbl">B1 · Em andamento (85%)</div>
+    <div class="phone">
+      <div class="tb brand"><div class="trow"><div class="bk">‹</div><div><h1>Revestimento Cerâmico</h1><p>Piso · Apt 302</p></div></div></div>
+      <div class="ct">
+        <div style="background:#F7F6F3;border-radius:10px;padding:10px;margin-bottom:10px">
+          <div class="row">
+            <div><div style="font-size:11px;color:#5C5B57">Progresso</div><div style="font-size:22px;font-weight:700;color:var(--pg)">85%</div></div>
+            <span class="bg pg">Em andamento</span>
+          </div>
+          <div class="pb" style="margin-top:6px"><div class="f pg" style="width:85%"></div></div>
+        </div>
+
+        <button class="btn brand">+ Nova verificação</button>
+        <button class="btn ghost" style="margin-top:6px">⚑ Concluir serviço agora</button>
+
+        <div style="font-size:10px;color:#9C9A93;text-align:center;margin-top:6px;line-height:1.4">Pode concluir antes de 100%<br/>se o serviço estiver finalizado</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">›</div>
+
+  <!-- B2: Aviso de conclusão antes de 100% -->
+  <div class="col">
+    <div class="lbl warn">B2 · Alerta — abaixo de 100%</div>
+    <div class="phone">
+      <div class="tb warn"><div class="trow"><div class="bk">‹</div><div><h1>Concluir Serviço</h1><p>Revestimento Cerâmico · Apt 302</p></div></div></div>
+      <div class="ct">
+
+        <div class="modal-panel warn" style="margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--warn);margin-bottom:5px">⚠ Serviço marcado em 85%</div>
+          <div style="font-size:10px;color:#5C5B57;line-height:1.5">Você está concluindo antes de 100%. Isso fica registrado no histórico e exige justificativa obrigatória.</div>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Motivo da conclusão antes de 100% *</label>
+          <select class="fc">
+            <option value="">Selecione o motivo</option>
+            <option selected>Serviço concluído conforme projeto (% estimada)</option>
+            <option>Escopo alterado por ordem do cliente</option>
+            <option>Etapa final não é de responsabilidade desta equipe</option>
+            <option>Serviço encerrado por decisão técnica</option>
+            <option>Outro (descrever abaixo)</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Justificativa detalhada *</label>
+          <textarea class="fc" rows="3" placeholder="Descreva por que o serviço está sendo concluído com 85%...">Rejuntamento será executado por equipe especializada em fase posterior conforme cronograma revisado.</textarea>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Progresso real declarado</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0" max="100" value="85" style="flex:1"/>
+            <span style="font-size:12px;font-weight:600;color:var(--warn);min-width:34px">85%</span>
+          </div>
+        </div>
+
+        <button class="btn warn">⚑ Confirmar conclusão com ressalva</button>
+        <button class="btn ghost">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">›</div>
+
+  <!-- B3: Concluída com ressalva -->
+  <div class="col">
+    <div class="lbl warn">B3 · Concluída com ressalva</div>
+    <div class="phone">
+      <div class="tb warn"><div class="trow"><div class="bk">‹</div><div><h1>Revestimento Cerâmico</h1><p>Piso · Apt 302 · Concluído</p></div></div></div>
+      <div class="ct">
+
+        <div style="background:var(--warnb);border:1.5px solid var(--warn);border-radius:11px;padding:12px;text-align:center;margin-bottom:11px">
+          <div style="font-size:22px;margin-bottom:4px">⚑</div>
+          <div style="font-size:13px;font-weight:700;color:var(--warn)">Concluído com ressalva</div>
+          <div style="font-size:10px;color:#5C5B57;margin-top:3px">08/04/2025 · 85% executado</div>
+          <div style="margin-top:7px;padding-top:7px;border-top:.5px solid rgba(230,81,0,.2);font-size:10px;color:var(--warn)">Rejuntamento em fase posterior</div>
+        </div>
+
+        <div style="background:#F7F6F3;border:.5px dashed rgba(0,0,0,.2);border-radius:9px;padding:10px;text-align:center;margin-bottom:9px">
+          <div style="font-size:18px;margin-bottom:4px">🔒</div>
+          <div style="font-size:11px;font-weight:600;color:#5C5B57">Bloqueado — concluído com ressalva</div>
+          <div style="font-size:10px;color:#9C9A93;margin-top:3px">Para revisar, solicite reabertura</div>
+        </div>
+
+        <button class="btn rev">↑ Solicitar reabertura</button>
+        <button class="btn ghost">🖨 Exportar PDF</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ FLUXO C: REABERTURA ═══ -->
+<div class="section-title">Fluxo C — Reabertura de FVS concluída</div>
+<div class="flow">
+
+  <!-- C1: Tentativa de nova verificação -->
+  <div class="col">
+    <div class="lbl">C1 · Tentativa bloqueada</div>
+    <div class="phone">
+      <div class="tb ok"><div class="trow"><div class="bk">‹</div><div><h1>Revestimento Argamassado</h1><p>Paredes · Apt 302 · Concluído</p></div></div></div>
+      <div class="ct">
+
+        <div class="lock-overlay">
+          <div class="ico">🔒</div>
+          <h3>Serviço concluído</h3>
+          <p>Este serviço foi concluído em 08/04/2025 por Carlos Lima.<br/><br/>Novas verificações estão bloqueadas. Para registrar uma nova inspeção, solicite a reabertura com justificativa.</p>
+        </div>
+
+        <div class="st">Motivos comuns para reabertura</div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:7px;padding:7px 9px;background:#F7F6F3;border-radius:7px;cursor:pointer">
+            <span style="font-size:13px">📋</span>
+            <span style="font-size:11px;color:#1A1A18">Reclamação do cliente / vistoria</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;padding:7px 9px;background:#F7F6F3;border-radius:7px;cursor:pointer">
+            <span style="font-size:13px">🔍</span>
+            <span style="font-size:11px;color:#1A1A18">Auditoria interna de qualidade</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;padding:7px 9px;background:#F7F6F3;border-radius:7px;cursor:pointer">
+            <span style="font-size:13px">🛠</span>
+            <span style="font-size:11px;color:#1A1A18">Serviço complementar identificado</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;padding:7px 9px;background:#F7F6F3;border-radius:7px;cursor:pointer">
+            <span style="font-size:13px">✏️</span>
+            <span style="font-size:11px;color:#1A1A18">Correção de registro incorreto</span>
+          </div>
+        </div>
+
+        <button class="btn rev">↑ Solicitar reabertura</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">›</div>
+
+  <!-- C2: Formulário de reabertura -->
+  <div class="col">
+    <div class="lbl rev">C2 · Justificativa de reabertura</div>
+    <div class="phone">
+      <div class="tb rev"><div class="trow"><div class="bk">‹</div><div><h1>Reabrir Serviço</h1><p>Revestimento Argamassado · Apt 302</p></div></div></div>
+      <div class="ct">
+
+        <div class="modal-panel rev" style="margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--rev);margin-bottom:4px">↑ Solicitação de reabertura</div>
+          <div style="font-size:10px;color:#5C5B57;line-height:1.5">Esta ação será registrada no histórico com data, hora e responsável. O gestor da obra será notificado.</div>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Motivo da reabertura *</label>
+          <select class="fc">
+            <option>Reclamação de cliente / vistoria</option>
+            <option>Auditoria interna de qualidade</option>
+            <option selected>Serviço complementar identificado</option>
+            <option>Correção de registro incorreto</option>
+            <option>Determinação da engenharia</option>
+            <option>Outro</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Justificativa detalhada *</label>
+          <textarea class="fc" rows="3" placeholder="Descreva por que este serviço precisa ser reaberto...">Inspeção de entrega de obra identificou necessidade de verificação adicional das juntas de argamassa no Bloco Norte.</textarea>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Autorizado por</label>
+          <select class="fc">
+            <option selected>Eng. Roberto Matos (Responsável técnico)</option>
+            <option>Hugo Borges (Gestor)</option>
+          </select>
+        </div>
+
+        <div style="background:var(--pgb);border:.5px solid var(--pg);border-radius:8px;padding:9px;margin-bottom:9px;font-size:10px;color:var(--pg);line-height:1.5">
+          ℹ Após reabrir, o status muda para <strong>Em revisão</strong>. Uma nova verificação pode ser registrada. O histórico completo é preservado.
+        </div>
+
+        <button class="btn rev">↑ Confirmar reabertura</button>
+        <button class="btn ghost">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">›</div>
+
+  <!-- C3: Em revisão — histórico + nova verificação -->
+  <div class="col">
+    <div class="lbl rev">C3 · Em revisão</div>
+    <div class="phone">
+      <div class="tb rev"><div class="trow"><div class="bk">‹</div><div><h1>Revestimento Argamassado</h1><p>Paredes · Apt 302 · Em revisão</p></div></div></div>
+      <div class="ct">
+
+        <!-- banner de revisão -->
+        <div style="background:var(--revb);border:1.5px solid var(--rev);border-radius:10px;padding:9px;margin-bottom:10px">
+          <div class="row" style="margin-bottom:4px">
+            <span style="font-size:11px;font-weight:700;color:var(--rev)">↑ Em revisão</span>
+            <span class="bg rev">Reaberta</span>
+          </div>
+          <div style="font-size:10px;color:#5C5B57;line-height:1.4">Motivo: Serviço complementar identificado<br/>Autorizado por: Eng. Roberto Matos · 10/04/2025</div>
+        </div>
+
+        <!-- timeline com reabertura marcada -->
+        <div class="st">Histórico completo</div>
+        <div class="tl">
+          <div class="tli">
+            <div class="tld rev">↑</div>
+            <div class="tlc" style="background:var(--revb)">
+              <div class="tldate">10/04/2025 · Eng. Roberto Matos</div>
+              <div class="tltt" style="color:var(--rev)">Reabertura autorizada</div>
+              <div class="tlsub">Serviço complementar — juntas Bloco Norte.</div>
+            </div>
+          </div>
+          <div class="tli">
+            <div class="tld gold">★</div>
+            <div class="tlc" style="background:#FFF8E1">
+              <div class="tldate">08/04/2025 · Carlos Lima</div>
+              <div class="tltt" style="color:#F57F17">Conclusão original — Aprovado</div>
+              <div class="tlsub">100% · Serviço concluído e aprovado.</div>
+            </div>
+          </div>
+          <div class="tli">
+            <div class="tld ok">3</div>
+            <div class="tlc">
+              <div class="tldate">05/04/2025 · Carlos Lima</div>
+              <div class="tltt">Verificação 3 — 100%</div>
+              <div class="tlsub">Conclusão de todas as etapas.</div>
+            </div>
+          </div>
+          <div style="font-size:9px;color:#9C9A93;padding-left:2px">+ 2 verificações anteriores</div>
+        </div>
+
+        <button class="btn rev">+ Nova verificação de revisão</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">›</div>
+
+  <!-- C4: Nova conclusão após revisão -->
+  <div class="col">
+    <div class="lbl ok">C4 · Nova conclusão</div>
+    <div class="phone">
+      <div class="tb ok"><div class="trow"><div class="bk">‹</div><div><h1>Revestimento Argamassado</h1><p>Paredes · Apt 302</p></div></div></div>
+      <div class="ct">
+
+        <div style="background:var(--okb);border:1.5px solid var(--ok);border-radius:11px;padding:11px;text-align:center;margin-bottom:10px">
+          <div style="font-size:22px;margin-bottom:4px">✅</div>
+          <div style="font-size:13px;font-weight:700;color:var(--ok)">Concluído (2ª vez)</div>
+          <div style="font-size:10px;color:#5C5B57;margin-top:3px">12/04/2025 · Carlos Lima</div>
+          <div style="margin-top:6px;padding-top:6px;border-top:.5px solid rgba(46,125,50,.2);font-size:10px;color:var(--ok)">Revisão concluída · Juntas aprovadas</div>
+        </div>
+
+        <!-- Log completo de reabertura -->
+        <div class="st">Log de reabertura</div>
+        <div style="border:.5px solid rgba(0,0,0,.1);border-radius:9px;padding:9px;margin-bottom:10px">
+          <div class="log-item">
+            <div class="log-dot ok"></div>
+            <div class="log-text">2ª conclusão por Carlos Lima</div>
+            <div class="log-date">12/04</div>
+          </div>
+          <div class="log-item">
+            <div class="log-dot" style="background:var(--pg)"></div>
+            <div class="log-text">Verificação 4 registrada</div>
+            <div class="log-date">11/04</div>
+          </div>
+          <div class="log-item">
+            <div class="log-dot rev"></div>
+            <div class="log-text">Reabertura autorizada por Eng. Roberto</div>
+            <div class="log-date">10/04</div>
+          </div>
+          <div class="log-item">
+            <div class="log-dot ok"></div>
+            <div class="log-text">1ª conclusão por Carlos Lima</div>
+            <div class="log-date">08/04</div>
+          </div>
+        </div>
+
+        <div style="background:#F7F6F3;border:.5px dashed rgba(0,0,0,.15);border-radius:9px;padding:9px;text-align:center;margin-bottom:8px">
+          <div style="font-size:16px;margin-bottom:3px">🔒</div>
+          <div style="font-size:11px;font-weight:600;color:#5C5B57">Bloqueado novamente</div>
+          <div style="font-size:10px;color:#9C9A93;margin-top:2px">Nova reabertura requer autorização</div>
+        </div>
+
+        <button class="btn ghost">🖨 Exportar PDF completo</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ REGRAS DE NEGÓCIO ═══ -->
+<div style="background:#fff;border-radius:14px;padding:18px 20px;border:1px solid rgba(0,0,0,.08)">
+  <div class="page-title" style="margin-bottom:12px">Regras de negócio — resumo</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+
+    <div style="background:#F7F6F3;border-radius:10px;padding:12px;border-left:3px solid var(--pg)">
+      <div style="font-size:11px;font-weight:700;color:var(--pg);margin-bottom:7px">Conclusão</div>
+      <div style="font-size:11px;color:#5C5B57;line-height:1.6">
+        • Ao atingir 100%: sugestão de conclusão (não automática)<br/>
+        • Pode concluir antes de 100% com motivo obrigatório<br/>
+        • Exige resultado final: Aprovado ou Com ressalvas<br/>
+        • Exige assinatura digital do inspetor<br/>
+        • Bloqueia novas verificações imediatamente
+      </div>
+    </div>
+
+    <div style="background:#F7F6F3;border-radius:10px;padding:12px;border-left:3px solid var(--rev)">
+      <div style="font-size:11px;font-weight:700;color:var(--rev);margin-bottom:7px">Reabertura</div>
+      <div style="font-size:11px;color:#5C5B57;line-height:1.6">
+        • Inspetor solicita — gestor/engenheiro autoriza<br/>
+        • Motivo obrigatório (lista pré-definida + texto livre)<br/>
+        • Status muda para "Em revisão" (não desfaz histórico)<br/>
+        • Todas as verificações e conclusões anteriores preservadas<br/>
+        • Log de reabertura visível no histórico e no PDF
+      </div>
+    </div>
+
+    <div style="background:#F7F6F3;border-radius:10px;padding:12px;border-left:3px solid var(--ok)">
+      <div style="font-size:11px;font-weight:700;color:var(--ok);margin-bottom:7px">Novo desfecho pós-revisão</div>
+      <div style="font-size:11px;color:#5C5B57;line-height:1.6">
+        • Nova verificação registrada normalmente<br/>
+        • Nova conclusão exige confirmação e assinatura<br/>
+        • PDF final inclui histórico completo com reaberturas<br/>
+        • Múltiplas reaberturas são permitidas com autorização<br/>
+        • Contagem de reaberturas visível no card do ambiente
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -551,6 +551,35 @@ export default function NovaVerificacaoScreen() {
 
   const inspectorInitials = usuario?.nome ? getInitials(usuario.nome) : 'IN';
 
+  // Guard: FVS concluída bloqueia nova verificação (RN-FVS-01)
+  if (fvs && (fvs.status === 'concluida' || fvs.status === 'concluida_ressalva')) {
+    return (
+      <SafeAreaView style={st.safe}>
+        <AppHeader
+          title="Nova Verificação"
+          subtitle={fvs.subservico ?? 'FVS'}
+          showBack
+          onBack={() => router.back()}
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16 }}>
+          <Text style={{ fontSize: 40 }}>🔒</Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A18', textAlign: 'center' }}>
+            Verificação bloqueada
+          </Text>
+          <Text style={{ fontSize: 14, color: '#5C5B57', textAlign: 'center', lineHeight: 22 }}>
+            Este serviço está concluído.{'\n'}Para registrar uma nova verificação, solicite a reabertura no histórico da FVS.
+          </Text>
+          <Pressable
+            style={{ backgroundColor: '#E84A1A', borderRadius: 8, paddingHorizontal: 24, paddingVertical: 10 }}
+            onPress={() => router.back()}
+          >
+            <Text style={{ color: '#fff', fontWeight: '600' }}>← Voltar ao histórico</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={st.safe}>
       {/* ── Header ── */}

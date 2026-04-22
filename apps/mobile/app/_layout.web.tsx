@@ -32,8 +32,15 @@ export default function RootLayout() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // INITIAL_SESSION: restore existing session on page load/refresh
       if (event === 'INITIAL_SESSION') {
-        if (session) router.replace('/(app)/(tabs)');
-        else router.replace('/(auth)/login');
+        if (session) {
+          // Só redireciona para o dashboard se estiver numa rota de auth ou na raiz.
+          // Se o usuário atualizou a página em uma rota profunda (ex: /obras/.../fvs/...),
+          // permanece nela — não volta para o dashboard.
+          const onAuthOrRoot = segmentsRef.current[0] === '(auth)' || segmentsRef.current.length === 0;
+          if (onAuthOrRoot) router.replace('/(app)/(tabs)');
+        } else {
+          router.replace('/(auth)/login');
+        }
         return;
       }
       // SIGNED_IN navigation is handled by the login screen after profile check

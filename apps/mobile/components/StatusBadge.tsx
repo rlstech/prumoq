@@ -11,7 +11,9 @@ export type BadgeStatus =
   | 'cancelada'
   | 'nao_iniciada'
   | 'paralisada'
-  | 'concluida';
+  | 'concluida'
+  | 'concluida_ressalva'
+  | 'em_revisao';
 
 interface StatusConfig {
   bg: string;
@@ -29,7 +31,9 @@ const STATUS_CONFIG: Record<BadgeStatus, StatusConfig> = {
   cancelada:    { bg: Colors.naBg,       text: Colors.na,       label: 'Cancelada'     },
   nao_iniciada: { bg: Colors.naBg,       text: Colors.na,       label: 'Não iniciada'  },
   paralisada:   { bg: Colors.warnBg,     text: Colors.warn,     label: 'Paralisada'    },
-  concluida:    { bg: Colors.okBg,       text: Colors.ok,       label: 'Concluída'     },
+  concluida:            { bg: Colors.okBg,   text: Colors.ok,   label: 'Concluída'    },
+  concluida_ressalva:   { bg: Colors.warnBg, text: Colors.warn, label: 'C/ ressalva'  },
+  em_revisao:           { bg: '#F3E5F5',     text: '#6A1B9A',   label: 'Em revisão'   },
 };
 
 export function getStatusColor(status: BadgeStatus): string {

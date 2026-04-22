@@ -69,15 +69,49 @@ const fvs_padrao_itens = new Table({
 });
 
 const fvs_planejadas = new Table({
-  ambiente_id:       column.text,
-  fvs_padrao_id:     column.text,
-  revisao_associada: column.integer,
-  subservico:        column.text,
-  status:            column.text,
-  percentual_exec:   column.integer,
-  concluida_em:      column.text,
-  updated_at:        column.text,
+  ambiente_id:          column.text,
+  fvs_padrao_id:        column.text,
+  revisao_associada:    column.integer,
+  subservico:           column.text,
+  status:               column.text,
+  percentual_exec:      column.integer,
+  concluida_em:         column.text,
+  total_conclusoes:     column.integer,
+  total_reaberturas:    column.integer,
+  ultima_conclusao_em:  column.text,
+  ultima_reabertura_em: column.text,
+  updated_at:           column.text,
 });
+
+const fvs_conclusoes = new Table(
+  {
+    fvs_planejada_id: column.text,
+    inspetor_id:      column.text,
+    numero_conclusao: column.integer,
+    percentual_final: column.integer,
+    resultado:        column.text,
+    motivo_antes_100: column.text,
+    tipo_motivo:      column.text,
+    observacao_final: column.text,
+    assinatura_url:   column.text,
+    assinada_em:      column.text,
+    created_at:       column.text,
+  },
+  { indexes: { fvs_planejada: ['fvs_planejada_id'] } }
+);
+
+const fvs_reaberturas = new Table(
+  {
+    fvs_planejada_id:  column.text,
+    solicitado_por:    column.text,
+    autorizado_por:    column.text,
+    motivo_tipo:       column.text,
+    justificativa:     column.text,
+    numero_reabertura: column.integer,
+    created_at:        column.text,
+  },
+  { indexes: { fvs_planejada: ['fvs_planejada_id'] } }
+);
 
 const verificacoes = new Table(
   {
@@ -167,6 +201,8 @@ export const AppSchema = new Schema({
   fvs_padrao_revisoes,
   fvs_padrao_itens,
   fvs_planejadas,
+  fvs_conclusoes,
+  fvs_reaberturas,
   verificacoes,
   verificacao_itens,
   verificacao_fotos,
@@ -189,7 +225,9 @@ export interface AmbientesRow { id: string; obra_id: string; nome: string; tipo:
 export interface FvsPadraoRow { id: string; empresa_id: string; nome: string; descricao: string; categoria: string; norma_ref: string; revisao_atual: number; ativo: number; created_by: string; updated_at: string }
 export interface FvsPadraoRevisoesRow { id: string; fvs_padrao_id: string; numero_revisao: number; descricao_alt: string; revisado_por: string; created_at: string }
 export interface FvsPadraoItensRow { id: string; fvs_padrao_id: string; revisao: number; ordem: number; titulo: string; metodo_verif: string; tolerancia: string }
-export interface FvsPlanejdasRow { id: string; ambiente_id: string; fvs_padrao_id: string; revisao_associada: number; subservico: string; status: string; percentual_exec: number; concluida_em: string; updated_at: string }
+export interface FvsPlanejdasRow { id: string; ambiente_id: string; fvs_padrao_id: string; revisao_associada: number; subservico: string; status: string; percentual_exec: number; concluida_em: string; total_conclusoes: number; total_reaberturas: number; ultima_conclusao_em: string; ultima_reabertura_em: string; updated_at: string }
+export interface FvsConclusoesRow { id: string; fvs_planejada_id: string; inspetor_id: string; numero_conclusao: number; percentual_final: number; resultado: string; motivo_antes_100: string; tipo_motivo: string; observacao_final: string; assinatura_url: string; assinada_em: string; created_at: string }
+export interface FvsReaberturasRow { id: string; fvs_planejada_id: string; solicitado_por: string; autorizado_por: string; motivo_tipo: string; justificativa: string; numero_reabertura: number; created_at: string }
 export interface VerificacoesRow { id: string; fvs_planejada_id: string; numero_verif: number; inspetor_id: string; equipe_id: string; data_verif: string; percentual_exec: number; status: string; observacoes: string; assinatura_url: string; assinada_em: string; created_offline: number; created_at: string; updated_at: string }
 export interface VerificacaoItensRow { id: string; verificacao_id: string; fvs_padrao_item_id: string; ordem: number; titulo: string; metodo_verif: string; tolerancia: string; resultado: string }
 export interface VerificacaoFotosRow { id: string; verificacao_id: string; r2_key: string; r2_thumb_key: string; nome_arquivo: string; tamanho_bytes: number; mime_type: string; ordem: number }

@@ -12,6 +12,10 @@ function resolveSignatureUri(url: string): string {
   if (url.startsWith('data:') || url.startsWith('http')) return url;
   return `${R2_PUBLIC_URL}/${url}`;
 }
+import { FVS100PercentBanner } from '../../../../../../../../../components/FVS100PercentBanner';
+import { FVSConclusionModal } from '../../../../../../../../../components/FVSConclusionModal';
+import { FVSLockedScreen } from '../../../../../../../../../components/FVSLockedScreen';
+import { FVSReopenModal } from '../../../../../../../../../components/FVSReopenModal';
 import { PhotoGrid } from '../../../../../../../../../components/PhotoGrid';
 import { PhotoViewer } from '../../../../../../../../../components/PhotoViewer';
 import { StatusBadge } from '../../../../../../../../../components/StatusBadge';
@@ -19,6 +23,11 @@ import type { BadgeStatus } from '../../../../../../../../../components/StatusBa
 import { Colors, FontSizes, Radius, Spacing } from '../../../../../../../../../lib/constants';
 
 interface FvsRow { id: string; subservico: string; status: string; ambiente_nome: string; obra_nome: string }
+interface ConclusaoRow {
+  id: string; inspetor_nome: string; percentual_final: number;
+  resultado: string; observacao_final: string | null;
+  motivo_antes_100: string | null; created_at: string;
+}
 interface VerifRow {
   id: string; numero_verif: number; data_verif: string; status: string;
   observacoes: string; assinatura_url: string | null;
@@ -43,6 +52,9 @@ export default function FvsHistoryScreen() {
   const [viewerPhotos, setViewerPhotos] = useState<string[]>([]);
   const [viewerIndex, setViewerIndex] = useState(0);
   const [signatureViewer, setSignatureViewer] = useState<string[]>([]);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [conclusionModalOpen, setConclusionModalOpen] = useState(false);
+  const [reopenModalOpen, setReopenModalOpen] = useState(false);
 
   const { data: fvsRows } = useQuery<FvsRow>(`
     SELECT fp.id, fp.subservico, fp.status, a.nome AS ambiente_nome, o.nome AS obra_nome
@@ -84,6 +96,17 @@ export default function FvsHistoryScreen() {
     ORDER BY verificacao_id, ordem
   `, [fvsId]);
 
+  const { data: conclusoes } = useQuery<ConclusaoRow>(`
+    SELECT fc.id, fc.percentual_final, fc.resultado, fc.observacao_final,
+           fc.motivo_antes_100, fc.created_at, u.nome AS inspetor_nome
+    FROM fvs_conclusoes fc
+    JOIN usuarios u ON u.id = fc.inspetor_id
+    WHERE fc.fvs_planejada_id = ?
+    ORDER BY fc.numero_conclusao DESC
+    LIMIT 1
+  `, [fvsId]);
+  const ultimaConclusao = conclusoes[0] ?? null;
+
   const timeline = useMemo<VerifWithData[]>(() => {
     return verificacoes.map(v => ({
       ...v,
@@ -91,6 +114,10 @@ export default function FvsHistoryScreen() {
       fotos: fotos.filter(f => f.verificacao_id === v.id).map(f => f.r2_key),
     }));
   }, [verificacoes, ncs, fotos]);
+
+  const isLocked = fvs?.status === 'concluida' || fvs?.status === 'concluida_ressalva';
+  const ultimaVerif = timeline[0];
+  const showBanner = !isLocked && !bannerDismissed && Number(ultimaVerif?.percentual_exec) === 100;
 
   const summary = useMemo(() => ({
     conformes:    verificacoes.filter(v => v.status === 'conforme').length,
@@ -112,13 +139,15 @@ export default function FvsHistoryScreen() {
         showBack
         onBack={() => router.back()}
         rightElement={
-          <Pressable
-            style={styles.novaBtn}
-            onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
-          >
-            <Plus size={16} color="#fff" />
-            <Text style={styles.novaBtnText}>Nova</Text>
-          </Pressable>
+          !isLocked ? (
+            <Pressable
+              style={styles.novaBtn}
+              onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
+            >
+              <Plus size={16} color="#fff" />
+              <Text style={styles.novaBtnText}>Nova</Text>
+            </Pressable>
+          ) : undefined
         }
       />
 
@@ -137,6 +166,20 @@ export default function FvsHistoryScreen() {
         data={timeline}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          isLocked ? (
+            <FVSLockedScreen
+              status={fvs!.status as 'concluida' | 'concluida_ressalva'}
+              conclusao={ultimaConclusao}
+              onRequestReopen={() => setReopenModalOpen(true)}
+            />
+          ) : showBanner ? (
+            <FVS100PercentBanner
+              onConclude={() => setConclusionModalOpen(true)}
+              onDismiss={() => setBannerDismissed(true)}
+            />
+          ) : null
+        }
         renderItem={({ item, index }) => (
           <View style={styles.timelineItem}>
             {/* Timeline dot + line */}
@@ -233,15 +276,17 @@ export default function FvsHistoryScreen() {
           </View>
         )}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>Nenhuma verificação registrada</Text>
-            <Pressable
-              style={styles.emptyBtn}
-              onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
-            >
-              <Text style={styles.emptyBtnText}>Registrar primeira verificação</Text>
-            </Pressable>
-          </View>
+          !isLocked ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>Nenhuma verificação registrada</Text>
+              <Pressable
+                style={styles.emptyBtn}
+                onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
+              >
+                <Text style={styles.emptyBtnText}>Registrar primeira verificação</Text>
+              </Pressable>
+            </View>
+          ) : null
         }
       />
 
@@ -256,6 +301,23 @@ export default function FvsHistoryScreen() {
         initialIndex={0}
         visible={signatureViewer.length > 0}
         onClose={() => setSignatureViewer([])}
+      />
+      <FVSConclusionModal
+        visible={conclusionModalOpen}
+        fvsId={fvsId!}
+        percentualAtual={Number(ultimaVerif?.percentual_exec) ?? 0}
+        onClose={() => setConclusionModalOpen(false)}
+        onSuccess={() => {
+          setConclusionModalOpen(false);
+          setBannerDismissed(true);
+        }}
+      />
+      <FVSReopenModal
+        visible={reopenModalOpen}
+        fvsId={fvsId!}
+        obraId={id!}
+        onClose={() => setReopenModalOpen(false)}
+        onSuccess={() => setReopenModalOpen(false)}
       />
     </SafeAreaView>
   );

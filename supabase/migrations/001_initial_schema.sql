@@ -368,10 +368,14 @@ create policy "inspetor_fvs_planejadas" on fvs_planejadas
   );
 
 -- Políticas: Verificações
-create policy "inspetor_proprias_verificacoes" on verificacoes
+create policy "verificacoes_by_obra" on verificacoes
   for all using (
     inspetor_id = auth.uid()
-    or get_perfil() in ('admin', 'gestor')
+    or fvs_planejada_id in (
+      select fp.id from fvs_planejadas fp
+      join ambientes a on fp.ambiente_id = a.id
+      where a.obra_id in (select get_obras_acesso())
+    )
   );
 
 -- Políticas: NC

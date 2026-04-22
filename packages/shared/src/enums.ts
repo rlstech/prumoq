@@ -23,12 +23,40 @@ export const StatusObra = {
 export type StatusObra = (typeof StatusObra)[keyof typeof StatusObra];
 
 export const StatusFvs = {
-  pendente:    'pendente',
-  emAndamento: 'em_andamento',
-  conforme:    'conforme',
-  naoConforme: 'nao_conforme',
+  pendente:          'pendente',
+  emAndamento:       'em_andamento',
+  conforme:          'conforme',
+  naoConforme:       'nao_conforme',
+  concluida:         'concluida',
+  emRevisao:         'em_revisao',
+  concluidaRessalva: 'concluida_ressalva',
 } as const;
 export type StatusFvs = (typeof StatusFvs)[keyof typeof StatusFvs];
+
+export const MotivoReabertura = {
+  reclamacaoCliente:       'reclamacao_cliente',
+  auditoriaInterna:        'auditoria_interna',
+  servicoComplementar:     'servico_complementar',
+  correcaoRegistro:        'correcao_registro',
+  determinacaoEngenharia:  'determinacao_engenharia',
+  outro:                   'outro',
+} as const;
+export type MotivoReabertura = (typeof MotivoReabertura)[keyof typeof MotivoReabertura];
+
+export const MotivoConclusaoAntecipada = {
+  escopoConformeprojeto:   'escopo_conforme_projeto',
+  escopoAlterado:         'escopo_alterado',
+  responsabilidadeOutra:  'responsabilidade_outra',
+  decisaoTecnica:         'decisao_tecnica',
+  outro:                  'outro',
+} as const;
+export type MotivoConclusaoAntecipada = (typeof MotivoConclusaoAntecipada)[keyof typeof MotivoConclusaoAntecipada];
+
+export const ResultadoConclusao = {
+  aprovado:    'aprovado',
+  comRessalva: 'com_ressalva',
+} as const;
+export type ResultadoConclusao = (typeof ResultadoConclusao)[keyof typeof ResultadoConclusao];
 
 export const ResultadoItem = {
   conforme:    'conforme',

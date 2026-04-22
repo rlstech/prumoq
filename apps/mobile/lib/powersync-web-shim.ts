@@ -12,10 +12,29 @@ import { supabase } from './supabase';
 export const PowerSyncContext = createContext<null>(null);
 
 // ─────────────────────────────────────────────────────────
+// Reactive write notifications
+// Cada db.execute bem-sucedido incrementa _writeVersion,
+// forçando todos os useQuery ativos a re-buscar dados.
+// ─────────────────────────────────────────────────────────
+let _writeVersion = 0;
+const _writeListeners = new Set<() => void>();
+function notifyWriteListeners() {
+  _writeVersion++;
+  _writeListeners.forEach(fn => fn());
+}
+
+// ─────────────────────────────────────────────────────────
 // useQuery — maps SQL patterns to Supabase queries
 // ─────────────────────────────────────────────────────────
 export function useQuery<T>(sql: string, params?: unknown[]): { data: T[] } {
   const [data, setData] = useState<T[]>([]);
+  const [version, setVersion] = useState(0);
+
+  useEffect(() => {
+    const listener = () => setVersion(v => v + 1);
+    _writeListeners.add(listener);
+    return () => { _writeListeners.delete(listener); };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -24,7 +43,7 @@ export function useQuery<T>(sql: string, params?: unknown[]): { data: T[] } {
     });
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sql, JSON.stringify(params ?? [])]);
+  }, [sql, JSON.stringify(params ?? []), version]);
 
   return { data };
 }
@@ -43,6 +62,7 @@ export const db = {
   },
   async execute(sql: string, params: unknown[] = []): Promise<void> {
     await executeOnSupabase(sql, params);
+    notifyWriteListeners();
   },
 };
 
@@ -177,7 +197,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── obras com progresso (dashboard) ───────────────────
-  if (s.includes('progresso_percentual') && s.includes('empresa_nome') && s.includes('from obras o') && s.includes('where o.ativo = 1') && s.includes('limit 5')) {
+  if (s.includes('progresso_percentual') && s.includes('from obras o') && s.includes('where o.ativo = 1') && s.includes('limit 5')) {
     const [{ data }, ids] = await Promise.all([supabase.rpc('get_obras_com_fvs'), getAllowedObraIds()]);
     return filterByObraId((data ?? []) as T[], 'id' as keyof T, ids).slice(0, 5);
   }
@@ -230,6 +250,43 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   if (s.includes('from fvs_planejadas fp') && s.includes('where fp.ambiente_id = ?') && s.includes('count(v.id)') && params[0]) {
     const { data } = await supabase.rpc('get_fvs_ambiente', { p_ambiente_id: params[0] as string });
     return (data ?? []) as T[];
+  }
+
+  // ── gestores/admins da obra (FVSReopenModal autorizado_por) ──
+  if (s.includes('from usuarios u') && s.includes('join obra_usuarios') && s.includes('perfil in') && params[0]) {
+    const { data: ouRows } = await supabase
+      .from('obra_usuarios')
+      .select('usuario_id')
+      .eq('obra_id', params[0] as string)
+      .eq('ativo', true);
+    const userIds = (ouRows ?? []).map((r: any) => r.usuario_id as string);
+    if (!userIds.length) return [] as T[];
+    const { data } = await supabase
+      .from('usuarios')
+      .select('id, nome, perfil')
+      .in('id', userIds)
+      .in('perfil', ['gestor', 'admin']);
+    return (data ?? []) as T[];
+  }
+
+  // ── última conclusão da FVS ───────────────────────────
+  if (s.includes('from fvs_conclusoes fc') && s.includes('join usuarios u') && s.includes('where fc.fvs_planejada_id = ?') && params[0]) {
+    const { data } = await supabase
+      .from('fvs_conclusoes')
+      .select('id, percentual_final, resultado, observacao_final, motivo_antes_100, created_at, usuarios!inspetor_id(nome)')
+      .eq('fvs_planejada_id', params[0] as string)
+      .order('numero_conclusao', { ascending: false })
+      .limit(1);
+    const mapped = (data ?? []).map((r: Record<string, unknown>) => ({
+      id: r.id,
+      percentual_final: r.percentual_final,
+      resultado: r.resultado,
+      observacao_final: r.observacao_final,
+      motivo_antes_100: r.motivo_antes_100,
+      created_at: r.created_at,
+      inspetor_nome: (r.usuarios as Record<string, unknown>)?.nome ?? '',
+    }));
+    return mapped as T[];
   }
 
   // ── FVS detalhe ───────────────────────────────────────
@@ -323,6 +380,19 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 // ─────────────────────────────────────────────────────────
 async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> {
   const s = sql.trim().toLowerCase().replace(/\s+/g, ' ');
+
+  // UPDATE fvs_planejadas SET status = ?, ultima_conclusao_em/ultima_reabertura_em = ? WHERE id = ?
+  if (s.startsWith('update fvs_planejadas set status')) {
+    const field = s.includes('ultima_reabertura_em') ? 'ultima_reabertura_em' : 'ultima_conclusao_em';
+    const { error } = await supabase.rpc('set_fvs_lifecycle_status', {
+      p_fvs_id: params[2] as string,
+      p_status: params[0] as string,
+      p_field:  field,
+      p_now:    params[1] as string,
+    });
+    if (error) throw new Error(`Erro ao atualizar FVS: ${error.message}`);
+    return;
+  }
 
   // UPDATE verificacoes SET assinatura_url = ?, assinada_em = ? WHERE id = ?
   if (s.startsWith('update verificacoes set assinatura_url')) {
