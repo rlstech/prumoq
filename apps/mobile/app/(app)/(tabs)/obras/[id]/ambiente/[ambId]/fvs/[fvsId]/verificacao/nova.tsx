@@ -31,6 +31,7 @@ import { usePhotoCapture } from '../../../../../../../../../../hooks/usePhotoCap
 import { Colors, FontSizes, Radius, Spacing } from '../../../../../../../../../../lib/constants';
 import { db } from '../../../../../../../../../../lib/powersync';
 import { supabase } from '../../../../../../../../../../lib/supabase';
+import { createNc } from '../../../../../../../../../../services/nc.service';
 
 function uuid(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -495,24 +496,15 @@ export default function NovaVerificacaoScreen() {
         if (resultado === 'nao_conforme') {
           const nc = ncDetails[item.id];
           if (nc) {
-            const ncId = uuid();
-            await db.execute(`
-              INSERT INTO nao_conformidades
-                (id, verificacao_id, verificacao_item_id, descricao,
-                 solucao_proposta, responsavel_id, data_nova_verif,
-                 status, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `, [ncId, verificacaoId, itemVerifId, nc.descricao,
-                nc.solucao_proposta, nc.responsavel_id || null,
-                nc.data_nova_verif, 'aberta', now]);
-
-            if (nc.foto) {
-              await db.execute(`
-                INSERT INTO nc_fotos
-                  (id, nc_id, r2_key, nome_arquivo, mime_type, ordem)
-                VALUES (?, ?, ?, ?, ?, ?)
-              `, [uuid(), ncId, `pending:${nc.foto}`, nc.foto.split('/').pop() ?? 'nc.jpg', 'image/jpeg', 0]);
-            }
+            await createNc({
+              verificacaoId,
+              verificacaoItemId: itemVerifId,
+              descricao: nc.descricao,
+              solucao_proposta: nc.solucao_proposta,
+              responsavel_id: nc.responsavel_id || null,
+              data_nova_verif: nc.data_nova_verif,
+              foto_local_path: nc.foto,
+            });
           }
         }
       }

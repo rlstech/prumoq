@@ -161,9 +161,24 @@ const nao_conformidades = new Table({
   data_nova_verif:       column.text,
   prioridade:            column.text,
   status:                column.text,
+  numero_ocorrencia:     column.integer,
+  nc_anterior_id:        column.text,
+  verificacao_reinsp_id: column.text,
+  foto_reinspecao_url:   column.text,
   resolvida_na_verif_id: column.text,
   resolvida_em:          column.text,
   updated_at:            column.text,
+});
+
+const nc_reinspecoes = new Table({
+  nc_id:          column.text,
+  verificacao_id: column.text,
+  inspetor_id:    column.text,
+  resultado:      column.text,
+  observacao:     column.text,
+  foto_url:       column.text,
+  nova_nc_id:     column.text,
+  created_at:     column.text,
 });
 
 const nc_fotos = new Table({
@@ -208,6 +223,7 @@ export const AppSchema = new Schema({
   verificacao_fotos,
   nao_conformidades,
   nc_fotos,
+  nc_reinspecoes,
   equipes,
   usuarios,
 });
@@ -231,7 +247,8 @@ export interface FvsReaberturasRow { id: string; fvs_planejada_id: string; solic
 export interface VerificacoesRow { id: string; fvs_planejada_id: string; numero_verif: number; inspetor_id: string; equipe_id: string; data_verif: string; percentual_exec: number; status: string; observacoes: string; assinatura_url: string; assinada_em: string; created_offline: number; created_at: string; updated_at: string }
 export interface VerificacaoItensRow { id: string; verificacao_id: string; fvs_padrao_item_id: string; ordem: number; titulo: string; metodo_verif: string; tolerancia: string; resultado: string }
 export interface VerificacaoFotosRow { id: string; verificacao_id: string; r2_key: string; r2_thumb_key: string; nome_arquivo: string; tamanho_bytes: number; mime_type: string; ordem: number }
-export interface NaoConformidadesRow { id: string; verificacao_id: string; verificacao_item_id: string; descricao: string; solucao_proposta: string; responsavel_id: string; data_nova_verif: string; prioridade: string; status: string; resolvida_na_verif_id: string; resolvida_em: string; updated_at: string }
+export interface NaoConformidadesRow { id: string; verificacao_id: string; verificacao_item_id: string; descricao: string; solucao_proposta: string; responsavel_id: string; data_nova_verif: string; prioridade: string; status: string; numero_ocorrencia: number; nc_anterior_id: string | null; verificacao_reinsp_id: string | null; foto_reinspecao_url: string | null; resolvida_na_verif_id: string; resolvida_em: string; updated_at: string }
 export interface NcFotosRow { id: string; nc_id: string; r2_key: string; r2_thumb_key: string; nome_arquivo: string; mime_type: string; ordem: number }
+export interface NcReinspecoesRow { id: string; nc_id: string; verificacao_id: string; inspetor_id: string; resultado: 'aprovada' | 'reprovada'; observacao: string | null; foto_url: string | null; nova_nc_id: string | null; created_at: string }
 export interface EquipesRow { id: string; empresa_id: string; nome: string; tipo: string; responsavel: string; especialidade: string; ativo: number }
 export interface UsuariosRow { id: string; empresa_id: string; nome: string; cargo: string; perfil: string; avatar_url: string }

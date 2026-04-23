@@ -495,7 +495,10 @@ export type Database = {
           created_at: string
           data_nova_verif: string
           descricao: string
+          foto_reinspecao_url: string | null
           id: string
+          nc_anterior_id: string | null
+          numero_ocorrencia: number
           observacao_resolucao: string | null
           prioridade: string
           resolvida_em: string | null
@@ -506,12 +509,16 @@ export type Database = {
           updated_at: string
           verificacao_id: string
           verificacao_item_id: string
+          verificacao_reinsp_id: string | null
         }
         Insert: {
           created_at?: string
           data_nova_verif: string
           descricao: string
+          foto_reinspecao_url?: string | null
           id?: string
+          nc_anterior_id?: string | null
+          numero_ocorrencia?: number
           observacao_resolucao?: string | null
           prioridade?: string
           resolvida_em?: string | null
@@ -522,12 +529,16 @@ export type Database = {
           updated_at?: string
           verificacao_id: string
           verificacao_item_id: string
+          verificacao_reinsp_id?: string | null
         }
         Update: {
           created_at?: string
           data_nova_verif?: string
           descricao?: string
+          foto_reinspecao_url?: string | null
           id?: string
+          nc_anterior_id?: string | null
+          numero_ocorrencia?: number
           observacao_resolucao?: string | null
           prioridade?: string
           resolvida_em?: string | null
@@ -538,8 +549,16 @@ export type Database = {
           updated_at?: string
           verificacao_id?: string
           verificacao_item_id?: string
+          verificacao_reinsp_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "nao_conformidades_nc_origem_id_fkey"
+            columns: ["nc_anterior_id"]
+            isOneToOne: false
+            referencedRelation: "nao_conformidades"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "nao_conformidades_resolvida_na_verif_id_fkey"
             columns: ["resolvida_na_verif_id"]
@@ -566,6 +585,13 @@ export type Database = {
             columns: ["verificacao_item_id"]
             isOneToOne: false
             referencedRelation: "verificacao_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nao_conformidades_verificacao_reinsp_id_fkey"
+            columns: ["verificacao_reinsp_id"]
+            isOneToOne: false
+            referencedRelation: "verificacoes"
             referencedColumns: ["id"]
           },
         ]
@@ -614,6 +640,71 @@ export type Database = {
           },
         ]
       }
+      nc_reinspecoes: {
+        Row: {
+          created_at: string
+          foto_url: string | null
+          id: string
+          inspetor_id: string
+          nc_id: string
+          nova_nc_id: string | null
+          observacao: string | null
+          resultado: string
+          verificacao_id: string
+        }
+        Insert: {
+          created_at?: string
+          foto_url?: string | null
+          id?: string
+          inspetor_id: string
+          nc_id: string
+          nova_nc_id?: string | null
+          observacao?: string | null
+          resultado: string
+          verificacao_id: string
+        }
+        Update: {
+          created_at?: string
+          foto_url?: string | null
+          id?: string
+          inspetor_id?: string
+          nc_id?: string
+          nova_nc_id?: string | null
+          observacao?: string | null
+          resultado?: string
+          verificacao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nc_reinspecoes_inspetor_id_fkey"
+            columns: ["inspetor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nc_reinspecoes_nc_id_fkey"
+            columns: ["nc_id"]
+            isOneToOne: false
+            referencedRelation: "nao_conformidades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nc_reinspecoes_nova_nc_id_fkey"
+            columns: ["nova_nc_id"]
+            isOneToOne: false
+            referencedRelation: "nao_conformidades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nc_reinspecoes_verificacao_id_fkey"
+            columns: ["verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "verificacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obra_equipes: {
         Row: {
           created_at: string
@@ -646,6 +737,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_equipes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "v_obras_com_fvs"
             referencedColumns: ["id"]
           },
         ]
@@ -681,6 +779,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_usuarios_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "v_obras_com_fvs"
             referencedColumns: ["id"]
           },
           {
@@ -912,6 +1017,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "verificacao_itens_fvs_padrao_item_id_fkey"
+            columns: ["fvs_padrao_item_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_padrao_itens_current"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "verificacao_itens_verificacao_id_fkey"
             columns: ["verificacao_id"]
             isOneToOne: false
@@ -1095,7 +1207,9 @@ export type Database = {
       }
       get_ncs_abertas_inspetor: {
         Args: { p_inspetor_id: string }
-        Returns: { count: number }[]
+        Returns: {
+          count: number
+        }[]
       }
       get_ncs_full: {
         Args: never
@@ -1239,6 +1353,15 @@ export type Database = {
         Args: { p_fvs_planejada_id: string }
         Returns: number
       }
+      set_fvs_lifecycle_status: {
+        Args: {
+          p_field: string
+          p_fvs_id: string
+          p_now: string
+          p_status: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       categoria_fvs:
@@ -1261,7 +1384,12 @@ export type Database = {
         | "concluida"
         | "em_revisao"
         | "concluida_ressalva"
-      status_nc: "aberta" | "em_correcao" | "resolvida" | "cancelada"
+      status_nc:
+        | "aberta"
+        | "em_correcao"
+        | "resolvida"
+        | "cancelada"
+        | "encerrada_sem_resolucao"
       status_obra: "nao_iniciada" | "em_andamento" | "paralisada" | "concluida"
       tipo_ambiente: "interno" | "externo"
       tipo_equipe: "proprio" | "terceirizado"
@@ -1273,6 +1401,7 @@ export type Database = {
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
@@ -1296,13 +1425,13 @@ export type Tables<
     : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
         DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
+  ? (DefaultSchema["Tables"] &
+      DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
     : never
+  : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
@@ -1322,12 +1451,12 @@ export type TablesInsert<
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
     : never
+  : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
@@ -1347,12 +1476,12 @@ export type TablesUpdate<
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
     : never
+  : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
@@ -1368,8 +1497,8 @@ export type Enums<
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
@@ -1385,23 +1514,41 @@ export type CompositeTypes<
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
 
 export const Constants = {
   public: {
     Enums: {
       categoria_fvs: [
-        "estrutura", "vedacao", "revestimento", "instalacoes",
-        "cobertura", "acabamento", "fundacao", "terraplanagem", "outro",
+        "estrutura",
+        "vedacao",
+        "revestimento",
+        "instalacoes",
+        "cobertura",
+        "acabamento",
+        "fundacao",
+        "terraplanagem",
+        "outro",
       ],
       perfil_usuario: ["admin", "gestor", "inspetor"],
       resultado_item: ["conforme", "nao_conforme", "na"],
       status_fvs: [
-        "pendente", "em_andamento", "conforme", "nao_conforme",
-        "concluida", "em_revisao", "concluida_ressalva",
+        "pendente",
+        "em_andamento",
+        "conforme",
+        "nao_conforme",
+        "concluida",
+        "em_revisao",
+        "concluida_ressalva",
       ],
-      status_nc: ["aberta", "em_correcao", "resolvida", "cancelada"],
+      status_nc: [
+        "aberta",
+        "em_correcao",
+        "resolvida",
+        "cancelada",
+        "encerrada_sem_resolucao",
+      ],
       status_obra: ["nao_iniciada", "em_andamento", "paralisada", "concluida"],
       tipo_ambiente: ["interno", "externo"],
       tipo_equipe: ["proprio", "terceirizado"],

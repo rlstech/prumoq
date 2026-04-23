@@ -45,7 +45,7 @@ function ncBadge(dateStr: string): { label: string; color: string; bg: string } 
 
 interface CountRow { count: number }
 interface ObraProgressRow {
-  id: string; nome: string; empresa_nome: string; status: string;
+  id: string; nome: string; status: string;
   total_ambientes: number; total_fvs: number;
   fvs_concluidas: number; progresso_percentual: number;
 }
@@ -59,7 +59,7 @@ interface VerifRecentRow {
   fvs_planejada_id: string; ambiente_id: string; obra_id: string;
 }
 
-interface UserInfo { nome: string; cargo: string; empresa_nome: string }
+interface UserInfo { nome: string; cargo: string }
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -73,15 +73,14 @@ export default function DashboardScreen() {
       setUserId(data.user.id);
       const { data: u } = await supabase
         .from('usuarios')
-        .select('nome, cargo, perfil, empresas(nome)')
+        .select('nome, cargo, perfil')
         .eq('id', data.user.id)
         .single();
       if (u) {
         setPerfil((u as any).perfil);
         setUserInfo({
-          nome: u.nome as string,
-          cargo: u.cargo as string,
-          empresa_nome: (u.empresas as { nome: string } | null)?.nome ?? '',
+          nome: (u as any).nome as string,
+          cargo: (u as any).cargo as string,
         });
       }
     });
@@ -148,17 +147,15 @@ export default function DashboardScreen() {
   const { data: obrasProgresso } = useQuery<ObraProgressRow>(
     ready ? `
     SELECT o.id, o.nome, o.status,
-           e.nome AS empresa_nome,
            COUNT(DISTINCT a.id) AS total_ambientes,
            COUNT(DISTINCT f.id) AS total_fvs,
            COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
            CAST(SUM(CASE f.status WHEN 'conforme' THEN 100 WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
     FROM obras o
-    LEFT JOIN empresas e ON e.id = o.empresa_id
     LEFT JOIN ambientes a ON a.obra_id = o.id
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
     WHERE o.ativo = 1 AND ${accessFilter}
-    GROUP BY o.id, e.nome
+    GROUP BY o.id
     LIMIT 5
   ` : 'SELECT 1 WHERE 0',
     ready ? accessParams : []
@@ -202,7 +199,6 @@ export default function DashboardScreen() {
               <Text style={styles.greeting}>Olá, {userInfo?.nome?.split(' ')[0] ?? 'Inspetor'}</Text>
               <Text style={styles.headerSub}>
                 {userInfo?.cargo ?? 'Inspetor de Campo'}
-                {userInfo?.empresa_nome ? ` · ${userInfo.empresa_nome}` : ''}
               </Text>
             </View>
             <Pressable onPress={() => router.push('/(app)/(tabs)/perfil' as never)} style={styles.avatar}>
@@ -279,9 +275,9 @@ export default function DashboardScreen() {
                       <Text style={styles.obraNome} numberOfLines={1}>{o.nome}</Text>
                       {o.status && <StatusBadge status={o.status as any} size="sm" />}
                     </View>
-                    {(o.empresa_nome || (o.total_ambientes ?? 0) > 0) && (
+                    {(o.total_ambientes ?? 0) > 0 && (
                       <Text style={styles.obraMeta}>
-                        {[o.empresa_nome, (o.total_ambientes ?? 0) > 0 ? `${o.total_ambientes} amb.` : null].filter(Boolean).join(' · ')}
+                        {`${o.total_ambientes} amb.`}
                       </Text>
                     )}
                     <View style={styles.obraProgressRow}>

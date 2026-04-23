@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PrumoQ — Fluxo Re-inspeção NC</title>
+<style>
+:root{--br:#E84A1A;--brl:#FDF0EC;--ok:#2E7D32;--okb:#E8F5E9;--nok:#C62828;--nokb:#FFEBEE;--pg:#1565C0;--pgb:#E3F2FD;--warn:#E65100;--warnb:#FFF3E0;--na:#666;--nab:#F2F2F2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#e8e6e0;padding:24px;min-height:100vh}
+h1{font-size:13px;font-weight:600;color:#5C5B57;text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px}
+.flow{display:flex;gap:14px;align-items:flex-start;overflow-x:auto;padding-bottom:8px}
+.arrow{display:flex;align-items:center;padding-top:90px;flex-shrink:0;color:#9C9A93;font-size:22px;font-weight:300}
+.col{flex-shrink:0}
+.lbl{font-size:10px;font-weight:600;color:#5C5B57;text-align:center;margin-bottom:7px;letter-spacing:.3px;text-transform:uppercase}
+.phone{width:255px;background:#fff;border-radius:26px;overflow:hidden;border:1px solid rgba(0,0,0,.13);box-shadow:0 3px 16px rgba(0,0,0,.1)}
+.tb{padding:9px 13px 12px;flex-shrink:0}
+.tb.brand{background:var(--br)}
+.tb.nok-bg{background:var(--nok)}
+.tb h1{color:white;font-size:14px;font-weight:500;letter-spacing:-.2px}
+.tb p{color:rgba(255,255,255,.7);font-size:10px;margin-top:1px}
+.trow{display:flex;align-items:center;gap:7px}
+.bk{background:rgba(255,255,255,.2);border:none;color:white;width:24px;height:24px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center}
+.ct{padding:10px 11px}
+.bg{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;white-space:nowrap;display:inline-block}
+.bg.ok{background:var(--okb);color:var(--ok)}.bg.nok{background:var(--nokb);color:var(--nok)}.bg.pg{background:var(--pgb);color:var(--pg)}.bg.warn{background:var(--warnb);color:var(--warn)}.bg.na{background:var(--nab);color:var(--na)}
+.st{font-size:9px;font-weight:600;color:#5C5B57;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.dv{height:.5px;background:rgba(0,0,0,.08);margin:9px 0}
+.btn{width:100%;padding:9px;background:var(--br);color:white;border:none;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer}
+.btn.ok{background:var(--ok)}.btn.nok{background:var(--nok)}.btn.sec{background:#F1EFE8;color:#1A1A18}
+.row{display:flex;align-items:center;justify-content:space-between}
+
+/* NC card original */
+.nc-box{border:.5px solid #f09595;border-radius:10px;padding:9px;margin-bottom:7px}
+.nc-box.bg-red{background:var(--nokb)}
+.nc-box.bg-green{background:var(--okb);border-color:var(--ok)}
+.nc-box .nt{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px}
+.nc-box.bg-red .nt{color:var(--nok)}.nc-box.bg-green .nt{color:var(--ok)}
+.nc-box .nd{font-size:11px;line-height:1.45}
+.nc-box.bg-red .nd{color:var(--nok)}.nc-box.bg-green .nd{color:var(--ok)}
+.nc-box .ns{font-size:10px;color:#5C5B57;margin-top:3px;font-style:italic}
+.nc-box .np{display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:.5px solid #f09595}
+.nc-box .np span{font-size:10px;color:#5C5B57}
+.nc-box .np b{font-size:10px;font-weight:500;color:var(--warn)}
+
+/* Checklist item */
+.ci{border:.5px solid rgba(0,0,0,.08);border-radius:7px;margin-bottom:6px;overflow:hidden}
+.ci.hi{border-color:var(--nok)}
+.cih{padding:7px 9px;background:#F1EFE8;display:flex;align-items:center;gap:6px}
+.cih.nok-bg{background:var(--nokb)}
+.cinum{width:17px;height:17px;border-radius:50%;background:rgba(0,0,0,.12);font-size:9px;font-weight:500;color:#5C5B57;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cinum.nok{background:var(--nokb);color:var(--nok);border:.5px solid var(--nok)}
+.cit{font-size:10px;font-weight:500;color:#1A1A18;flex:1}
+.cim{padding:6px 9px;border-top:.5px solid rgba(0,0,0,.08);background:#fff;display:flex;gap:8px}
+.ciml{font-size:8px;font-weight:600;color:#5C5B57;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+.cimt{font-size:10px;color:#5C5B57;line-height:1.4}
+.citol{font-size:9px;font-weight:500;color:var(--pg);background:var(--pgb);padding:1px 6px;border-radius:20px;display:inline-block;margin-top:2px}
+.cia{padding:7px 9px;border-top:.5px solid rgba(0,0,0,.08);background:#F1EFE8}
+.rg{display:flex;gap:4px}
+.rb{flex:1;padding:5px 2px;border-radius:4px;border:.5px solid rgba(0,0,0,.08);background:#fff;font-size:9px;font-weight:500;text-align:center}
+.rb.ok{background:var(--okb);color:var(--ok);border-color:var(--ok)}
+.rb.nok{background:var(--nokb);color:var(--nok);border-color:var(--nok)}
+.rb.na{background:var(--nab);color:var(--na);border-color:#ccc}
+
+/* Badge re-inspecao */
+.badge-re{background:var(--pgb);border:.5px solid var(--pg);border-radius:9px;padding:8px 9px;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.badge-re h4{font-size:11px;font-weight:500;color:var(--pg)}
+.badge-re p{font-size:9px;color:#5C5B57;margin-top:1px}
+
+/* NC nova obrigatoria */
+.nc-new{background:var(--nokb);border:.5px solid var(--nok);border-radius:9px;padding:9px;margin-top:7px}
+.nc-new .nt{font-size:9px;font-weight:600;color:var(--nok);text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between}
+.nc-new .req{font-size:8px;background:var(--nok);color:white;padding:1px 6px;border-radius:20px}
+.nci{width:100%;padding:5px 8px;border:.5px solid #f09595;border-radius:5px;font-size:10px;background:white;color:#333;font-family:inherit;margin-bottom:5px}
+
+/* Resumo final */
+.res-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid rgba(0,0,0,.07)}
+.res-row:last-child{border-bottom:none}
+.res-row span:first-child{font-size:10px;color:#5C5B57}
+.res-row span:last-child{font-size:10px;font-weight:500;color:#1A1A18}
+
+.photo-thumb{width:100%;aspect-ratio:16/9;border-radius:7px;overflow:hidden;border:.5px solid var(--ok);margin-bottom:8px}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+.sig-box{border:.5px solid rgba(0,0,0,.12);border-radius:7px;overflow:hidden;margin-top:5px}
+.sig-canvas{display:block;width:100%;height:44px;background:#fff}
+.sig-tb{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:#F1EFE8;border-top:.5px solid rgba(0,0,0,.08)}
+.sig-tb span{font-size:9px;color:#5C5B57}
+</style>
+</head>
+<body>
+
+<h1>PrumoQ · Fluxo de re-inspeção de não conformidade</h1>
+
+<div class="flow">
+
+  <!-- 1: NC no dashboard -->
+  <div class="col">
+    <div class="lbl">1 · NC no painel</div>
+    <div class="phone">
+      <div class="tb brand"><h1>Não Conformidades</h1><p>4 abertas · 1 vence hoje</p></div>
+      <div class="ct">
+        <div class="st">Abertas — ação necessária</div>
+
+        <div style="background:var(--nokb);border:.5px solid #f09595;border-radius:10px;padding:10px;margin-bottom:7px">
+          <div class="row" style="margin-bottom:5px">
+            <span style="font-size:11px;font-weight:500;color:var(--nok)">Espessura Argamassa</span>
+            <span class="bg warn">Vence hoje</span>
+          </div>
+          <p style="font-size:10px;color:var(--nok)">Item 2 · Apt 302 · Paredes</p>
+          <p style="font-size:10px;color:#5C5B57;margin-top:3px">Equipe Reboco A · Aberta há 7 dias</p>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button class="btn sec" style="flex:1;padding:6px;font-size:10px">Ver NC</button>
+            <button class="btn" style="flex:1;padding:6px;font-size:10px;margin:0">Re-inspecionar →</button>
+          </div>
+        </div>
+
+        <div style="background:var(--nokb);border:.5px solid #f09595;border-radius:10px;padding:10px;opacity:.65">
+          <div class="row" style="margin-bottom:5px">
+            <span style="font-size:11px;font-weight:500;color:var(--nok)">Instalação Elétrica</span>
+            <span class="bg nok">Vence 10/04</span>
+          </div>
+          <p style="font-size:10px;color:var(--nok)">Item 1 · Apt 201 · Pontos força</p>
+          <p style="font-size:10px;color:#5C5B57;margin-top:3px">Eletro Irmãos Silva</p>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button class="btn sec" style="flex:1;padding:6px;font-size:10px">Ver NC</button>
+            <button class="btn" style="flex:1;padding:6px;font-size:10px;margin:0">Re-inspecionar →</button>
+          </div>
+        </div>
+
+        <div class="dv"></div>
+        <div class="st">Resolvidas recentemente</div>
+        <div style="border:.5px solid var(--ok);border-radius:10px;padding:8px;opacity:.7">
+          <div class="row"><span style="font-size:11px;color:#5C5B57">Prumo Alvenaria · Apt 301</span><span class="bg ok">Resolvida</span></div>
+          <p style="font-size:10px;color:#5C5B57;margin-top:3px">Resolvida em 25/03/2025</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">›</div>
+
+  <!-- 2: Detalhe da NC -->
+  <div class="col">
+    <div class="lbl">2 · Detalhe da NC</div>
+    <div class="phone">
+      <div class="tb brand">
+        <div class="trow"><div class="bk">‹</div><div><h1>Não Conformidade</h1><p>Espessura Argamassa · Apt 302</p></div></div>
+      </div>
+      <div class="ct">
+        <div style="display:flex;gap:7px;margin-bottom:10px">
+          <div style="flex:1;background:var(--nokb);border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:13px;font-weight:500;color:var(--nok)">Aberta</div>
+            <div style="font-size:9px;color:var(--nok);margin-top:2px">Status</div>
+          </div>
+          <div style="flex:1;background:var(--warnb);border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:13px;font-weight:500;color:var(--warn)">Hoje</div>
+            <div style="font-size:9px;color:var(--warn);margin-top:2px">Prazo</div>
+          </div>
+          <div style="flex:1;background:#F1EFE8;border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:13px;font-weight:500;color:#1A1A18">Alta</div>
+            <div style="font-size:9px;color:#5C5B57;margin-top:2px">Prioridade</div>
+          </div>
+        </div>
+
+        <div class="st">NC original — Verificação 2</div>
+        <div class="nc-box bg-red">
+          <div class="nt">Item 2 — Espessura da argamassa · 01/04/2025</div>
+          <div class="nd">Espessura medida entre 8–10mm em 4 pontos da parede sul. Acima do máximo de 6mm.</div>
+          <div style="display:flex;gap:5px;margin-top:6px">
+            <div style="width:36px;height:36px;border-radius:5px;overflow:hidden;border:.5px solid #f09595"><img src="https://images.unsplash.com/photo-1590479773265-7464e5d48118?w=80" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.style.background='#eee'"/></div>
+            <div style="width:36px;height:36px;border-radius:5px;overflow:hidden;border:.5px solid #f09595"><img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=80" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.style.background='#eee'"/></div>
+          </div>
+          <div class="ns">Solução: remover e reaplicar com espessura 4–6mm.</div>
+          <div class="np"><span>Equipe Reboco A</span><b>Prazo: 08/04/2025</b></div>
+        </div>
+
+        <div class="st">Histórico de re-inspeções</div>
+        <div style="font-size:10px;color:#9C9A93;text-align:center;padding:10px 0">Nenhuma re-inspeção realizada ainda</div>
+
+        <button class="btn" style="margin-top:4px">Iniciar re-inspeção agora →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">›</div>
+
+  <!-- 3: Formulário de re-inspeção -->
+  <div class="col">
+    <div class="lbl">3 · Re-inspeção do item</div>
+    <div class="phone">
+      <div class="tb brand">
+        <div class="trow"><div class="bk">‹</div><div><h1>Re-inspeção</h1><p>Verificação 3 · Apt 302 · Argamassa</p></div></div>
+      </div>
+      <div class="ct">
+
+        <div class="badge-re">
+          <span style="font-size:18px">🔄</span>
+          <div><h4>Re-inspeção de NC aberta</h4><p>Item 2 — Espessura da argamassa</p></div>
+        </div>
+
+        <div style="background:var(--brl);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:9px">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--br);color:white;font-size:10px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0">CL</div>
+          <div style="flex:1"><div style="font-size:11px;font-weight:500;color:var(--br)">Carlos Lima</div><div style="font-size:9px;color:#5C5B57">Inspetor · definido pelo login</div></div>
+          <span style="font-size:9px;color:var(--br);background:white;padding:2px 7px;border-radius:20px;border:.5px solid #f5c5b3">🔒 Logado</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px">
+          <div><label style="font-size:9px;font-weight:500;color:#5C5B57;display:block;margin-bottom:3px">Data *</label><input type="date" style="width:100%;padding:6px 8px;border:.5px solid rgba(0,0,0,.12);border-radius:7px;font-size:10px;background:#fff;color:#1A1A18" value="2025-04-08"/></div>
+          <div><label style="font-size:9px;font-weight:500;color:#5C5B57;display:block;margin-bottom:3px">Equipe</label><select style="width:100%;padding:6px 8px;border:.5px solid rgba(0,0,0,.12);border-radius:7px;font-size:10px;background:#fff;appearance:none"><option>Equipe Reboco A</option></select></div>
+        </div>
+
+        <div class="st">Item que gerou a NC — avaliar agora</div>
+        <div class="ci hi">
+          <div class="cih nok-bg">
+            <span class="cinum nok">2</span>
+            <span class="cit">Espessura da argamassa</span>
+            <span class="bg nok" style="font-size:8px;margin-left:auto">NC aberta</span>
+          </div>
+          <div class="cim">
+            <div style="flex:1"><div class="ciml">Método</div><div class="cimt">Pinos de medição a cada 1m — verificar espessura.</div></div>
+            <div style="text-align:right;flex-shrink:0"><div class="ciml">Tolerância</div><span class="citol">4 a 6 mm</span></div>
+          </div>
+          <div class="cia">
+            <div class="rg">
+              <button class="rb ok">✓ Conforme</button>
+              <button class="rb nok">✗ Não conf.</button>
+              <button class="rb">— N/A</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="st" style="margin-top:3px">Demais itens</div>
+        <div class="ci"><div class="cih"><span class="cinum">1</span><span class="cit">Preparação da base</span></div><div class="cia"><div class="rg"><button class="rb ok">✓ Conf.</button><button class="rb">✗ Não</button><button class="rb">— N/A</button></div></div></div>
+        <div class="ci"><div class="cih"><span class="cinum">3</span><span class="cit">Planeza da superfície</span></div><div class="cim"><div style="flex:1"><span class="citol">±5mm</span></div></div><div class="cia"><div class="rg"><button class="rb ok">✓ Conf.</button><button class="rb">✗ Não</button><button class="rb">— N/A</button></div></div></div>
+
+        <div class="dv"></div>
+        <div class="st">Foto da re-inspeção *</div>
+        <div style="width:100%;padding:9px;border:.5px dashed rgba(0,0,0,.2);border-radius:7px;background:#F1EFE8;font-size:10px;color:#5C5B57;text-align:center;cursor:pointer">📷 Foto obrigatória da re-inspeção</div>
+
+        <div class="dv"></div>
+        <div class="st">Assinatura digital</div>
+        <div class="sig-box">
+          <canvas class="sig-canvas"></canvas>
+          <div class="sig-tb"><span>Assine com o dedo</span><button style="font-size:9px;color:var(--nok);border:none;background:none">Limpar</button></div>
+        </div>
+        <button class="btn" style="margin-top:7px">Salvar re-inspeção</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- seta bifurcada -->
+  <div style="display:flex;flex-direction:column;gap:120px;padding-top:90px;flex-shrink:0;color:#9C9A93;font-size:18px;align-items:center">
+    <div>›</div>
+    <div style="color:var(--nok)">›</div>
+  </div>
+
+  <!-- 4A: Aprovada -->
+  <div class="col">
+    <div class="lbl" style="color:var(--ok)">4a · NC aprovada ✓</div>
+    <div class="phone">
+      <div class="tb brand">
+        <div class="trow"><div class="bk">‹</div><div><h1>Re-inspeção</h1><p>Resultado · Apt 302</p></div></div>
+      </div>
+      <div class="ct">
+
+        <div style="background:var(--okb);border:.5px solid var(--ok);border-radius:12px;padding:14px;text-align:center;margin-bottom:12px">
+          <div style="width:42px;height:42px;border-radius:50%;background:var(--ok);color:white;font-size:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 7px">✓</div>
+          <div style="font-size:14px;font-weight:500;color:var(--ok)">NC Resolvida!</div>
+          <div style="font-size:10px;color:#5C5B57;margin-top:3px">Item aprovado na re-inspeção</div>
+        </div>
+
+        <div class="st">Resumo</div>
+        <div style="border:.5px solid rgba(0,0,0,.08);border-radius:10px;padding:9px;margin-bottom:9px">
+          <div class="res-row"><span>Item</span><span>Espessura da argamassa</span></div>
+          <div class="res-row"><span>NC aberta em</span><span>01/04/2025</span></div>
+          <div class="res-row"><span>Resolvida em</span><span style="color:var(--ok)">08/04/2025</span></div>
+          <div class="res-row"><span>Tempo total</span><span>7 dias</span></div>
+          <div class="res-row" style="border:none"><span>Responsável</span><span>Equipe Reboco A</span></div>
+        </div>
+
+        <div class="st">Foto da resolução</div>
+        <div class="photo-thumb">
+          <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=300" onerror="this.parentNode.style.background='#eee'"/>
+        </div>
+
+        <div class="nc-box bg-green">
+          <div class="nt">✓ Resolvida na Verificação 3</div>
+          <div class="nd">Espessura medida 5mm — dentro da tolerância de 4–6mm. Correção realizada com sucesso.</div>
+        </div>
+
+        <div style="display:flex;gap:6px;margin-top:9px">
+          <button class="btn sec" style="flex:1;padding:8px;font-size:10px">🖨 Exportar PDF</button>
+          <button class="btn ok" style="flex:1;padding:8px;font-size:10px;margin:0">Concluir ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:60px"></div>
+
+    <!-- 4B: Reprovada -->
+    <div class="lbl" style="color:var(--nok);margin-top:0">4b · Reprovada de novo ✗</div>
+    <div class="phone">
+      <div class="tb nok-bg">
+        <div class="trow"><div class="bk">‹</div><div><h1>Re-inspeção</h1><p>Item reprovado novamente</p></div></div>
+      </div>
+      <div class="ct">
+
+        <div style="background:var(--nokb);border:.5px solid var(--nok);border-radius:12px;padding:11px;text-align:center;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--nok);color:white;font-size:15px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px">✗</div>
+          <div style="font-size:13px;font-weight:500;color:var(--nok)">Item não conforme</div>
+          <div style="font-size:10px;color:#5C5B57;margin-top:3px">2ª ocorrência · Nova NC gerada automaticamente</div>
+        </div>
+
+        <div class="st">NC anterior</div>
+        <div class="nc-box bg-red" style="opacity:.65;margin-bottom:8px">
+          <div class="nt">NC 001 — Verificação 2 · 01/04/2025</div>
+          <div class="nd">Espessura 8–10mm em 4 pontos.</div>
+          <div style="margin-top:5px"><span class="bg na" style="font-size:9px">Encerrada sem resolução</span></div>
+        </div>
+
+        <div class="st">Nova NC gerada — preencher</div>
+        <div class="nc-new">
+          <div class="nt">NC 002 — Verificação 3 <span class="req">Obrigatório</span></div>
+          <textarea class="nci" rows="2" placeholder="O que foi encontrado agora...">Após reaplicação, ainda 7–8mm em 2 pontos da parede sul.</textarea>
+          <div style="width:100%;padding:7px;border:.5px dashed var(--nok);border-radius:5px;background:white;font-size:10px;color:var(--nok);text-align:center;margin-bottom:5px;cursor:pointer">📷 Foto obrigatória *</div>
+          <textarea class="nci" rows="2" placeholder="Nova solução proposta...">Verificar traço da argamassa. Refazer os 2 pontos com supervisor.</textarea>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:3px">
+            <div><label style="font-size:8px;color:var(--nok);display:block;margin-bottom:2px">Novo prazo *</label><input type="date" class="nci" value="2025-04-15" style="margin:0"/></div>
+            <div><label style="font-size:8px;color:var(--nok);display:block;margin-bottom:2px">Prioridade</label><select class="nci" style="margin:0"><option selected>Alta</option><option>Média</option></select></div>
+          </div>
+        </div>
+
+        <button class="btn nok" style="margin-top:8px">Registrar nova NC e salvar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
