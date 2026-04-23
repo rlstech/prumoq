@@ -6,7 +6,7 @@ import {
   Image as ImageIcon,
   PenLine,
 } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -24,6 +24,9 @@ import {
   View,
 } from 'react-native';
 import { AppHeader } from '../../../../../../../../../../components/AppHeader';
+import { NCReinspectionBanner } from '../../../../../../../../../../components/NCReinspectionBanner';
+import { NCReprovadaPanel } from '../../../../../../../../../../components/NCReprovadaPanel';
+import { NCResolvedScreen } from '../../../../../../../../../../components/NCResolvedScreen';
 import { PhotoGrid } from '../../../../../../../../../../components/PhotoGrid';
 import { SignatureField } from '../../../../../../../../../../components/SignatureField';
 import { captureNcPhoto } from '../../../../../../../../../../hooks/useNcPhoto';
@@ -31,7 +34,7 @@ import { usePhotoCapture } from '../../../../../../../../../../hooks/usePhotoCap
 import { Colors, FontSizes, Radius, Spacing } from '../../../../../../../../../../lib/constants';
 import { db } from '../../../../../../../../../../lib/powersync';
 import { supabase } from '../../../../../../../../../../lib/supabase';
-import { createNc } from '../../../../../../../../../../services/nc.service';
+import { approveReinspecao, createNc, reprovarReinspecao } from '../../../../../../../../../../services/nc.service';
 
 function uuid(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -58,6 +61,27 @@ interface FvsRow { id: string; subservico: string; revisao_associada: number; st
 interface UsuarioRow { id: string; nome: string; cargo: string }
 interface CountRow { count: number }
 interface LastPercentRow { percentual_exec: number }
+interface NcAbertaRow {
+  nc_id: string;
+  fvs_padrao_item_id: string;
+  titulo: string;
+  descricao: string;
+  numero_ocorrencia: number;
+  data_nova_verif: string | null;
+  responsavel_id: string | null;
+  numero_verif: number;
+  nc_data_criacao: string;
+}
+
+type ReinspResult =
+  | { type: 'idle' }
+  | { type: 'aprovada'; itemTitle: string; abertoEm: string | null; resolvidoEm: string; responsavelNome: string | null; fotoUri: string | null }
+  | { type: 'reprovada'; ocorrencia: number; ncAnteriorId: string; ncAnteriorDescricao: string; ncAnteriorVerifNum: number; ncAnteriorDataCriacao: string; verificacaoId: string; verificacaoItemId: string };
+
+interface UltimaVerifItemRow {
+  fvs_padrao_item_id: string;
+  resultado: string;
+}
 
 interface NcDetail {
   descricao: string;
@@ -345,6 +369,47 @@ export default function NovaVerificacaoScreen() {
   `, [fvsId]);
   const proximoNumero = (countRows[0]?.count ?? 0) + 1;
 
+  const { data: ncsAbertas } = useQuery<NcAbertaRow>(`
+    SELECT nc.id as nc_id, nc.descricao, nc.numero_ocorrencia,
+           nc.data_nova_verif, nc.responsavel_id,
+           vi.fvs_padrao_item_id, vi.titulo,
+           v.numero_verif, v.data_verif as nc_data_criacao
+    FROM nao_conformidades nc
+    JOIN verificacao_itens vi ON nc.verificacao_item_id = vi.id
+    JOIN verificacoes v ON vi.verificacao_id = v.id
+    WHERE v.fvs_planejada_id = ? AND nc.status = 'aberta'
+  `, [fvsId]);
+
+  const { data: ultimaVerifItens } = useQuery<UltimaVerifItemRow>(`
+    SELECT vi.fvs_padrao_item_id, vi.resultado
+    FROM verificacao_itens vi
+    JOIN verificacoes v ON vi.verificacao_id = v.id
+    WHERE v.id = (
+      SELECT id FROM verificacoes
+      WHERE fvs_planejada_id = ?
+      ORDER BY numero_verif DESC
+      LIMIT 1
+    )
+  `, [fvsId]);
+
+  const ncAbertoByItemId = useMemo(
+    () => Object.fromEntries(ncsAbertas.map(r => [r.fvs_padrao_item_id, r])),
+    [ncsAbertas],
+  );
+
+  const hasOpenNCs = Object.keys(ncAbertoByItemId).length > 0;
+
+  const sortedItens = useMemo(() => {
+    if (!hasOpenNCs) return itens;
+    return [...itens].sort((a, b) => {
+      const aHasNc = !!ncAbertoByItemId[a.id];
+      const bHasNc = !!ncAbertoByItemId[b.id];
+      if (aHasNc && !bHasNc) return -1;
+      if (!aHasNc && bHasNc) return 1;
+      return a.ordem - b.ordem;
+    });
+  }, [itens, ncAbertoByItemId, hasOpenNCs]);
+
   // Form state
   const [dataVerif, setDataVerif] = useState<string>(new Date().toISOString().slice(0, 10));
   const [selectedEquipeId, setSelectedEquipeId] = useState<string | null>(null);
@@ -359,12 +424,31 @@ export default function NovaVerificacaoScreen() {
   const [showSignature, setShowSignature] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [reinspFoto, setReinspFoto] = useState<string | null>(null);
+  const [reinspResult, setReinspResult] = useState<ReinspResult>({ type: 'idle' });
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   // Derived values — must be declared BEFORE the useEffect calls that reference them
   const todosItensComResultado = itens.length > 0 && itens.every(i => itemResults[i.id] !== undefined);
   const algumNaoConforme = Object.values(itemResults).some(r => r === 'nao_conforme');
   const podeConcluir = todosItensComResultado && !algumNaoConforme;
+
+  // Pré-preenche resultados da última verificação no modo de re-inspeção
+  useEffect(() => {
+    if (!hasOpenNCs || !ultimaVerifItens.length) return;
+    setItemResults(prev => {
+      const next = { ...prev };
+      for (const row of ultimaVerifItens) {
+        if (next[row.fvs_padrao_item_id] !== undefined) continue;
+        const r = row.resultado as Resultado;
+        if (r === 'conforme' || r === 'na') {
+          next[row.fvs_padrao_item_id] = r;
+        }
+      }
+      return next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasOpenNCs, ultimaVerifItens]);
 
   // Pre-populate slider with last percentual_exec when FVS is em_andamento
   useEffect(() => {
@@ -428,9 +512,13 @@ export default function NovaVerificacaoScreen() {
     if (!conclusao && !concluirFvs) errs.conclusao = 'Selecione o resultado da verificação';
     if (!signaturePath && Platform.OS !== 'web') errs.assinatura = 'Assinatura digital obrigatória';
 
+    if (hasOpenNCs && !reinspFoto) {
+      errs.reinspFoto = 'Foto da re-inspeção obrigatória';
+    }
+
     for (const item of itens) {
       if (!itemResults[item.id]) errs[`item_${item.id}`] = 'Classifique este item';
-      if (itemResults[item.id] === 'nao_conforme') {
+      if (itemResults[item.id] === 'nao_conforme' && !ncAbertoByItemId[item.id]) {
         const nc = ncDetails[item.id];
         if (!nc?.descricao)        errs[`nc_desc_${item.id}`] = 'Descrição obrigatória';
         if (!nc?.foto)             errs[`nc_foto_${item.id}`] = 'Foto obrigatória';
@@ -468,6 +556,7 @@ export default function NovaVerificacaoScreen() {
 
     const verificacaoId = uuid();
     const now = new Date().toISOString();
+    let pendingResult: ReinspResult = { type: 'idle' };
 
     try {
       await db.execute(`
@@ -493,7 +582,43 @@ export default function NovaVerificacaoScreen() {
         `, [itemVerifId, verificacaoId, item.id, item.ordem,
             item.titulo, item.metodo_verif, item.tolerancia, resultado]);
 
-        if (resultado === 'nao_conforme') {
+        const ncAberta = ncAbertoByItemId[item.id];
+        if (ncAberta) {
+          const fotoUrl = reinspFoto ? `pending:${reinspFoto}` : null;
+          if (resultado === 'conforme') {
+            await approveReinspecao({ ncId: ncAberta.nc_id, verificacaoId, inspetorId: userId ?? '', fotoUrl });
+            if (pendingResult.type === 'idle') {
+              pendingResult = {
+                type: 'aprovada',
+                itemTitle: item.titulo,
+                abertoEm: ncAberta.nc_data_criacao,
+                resolvidoEm: now.slice(0, 10),
+                responsavelNome: equipes.find(e => e.id === ncAberta.responsavel_id)?.nome ?? null,
+                fotoUri: reinspFoto ?? null,
+              };
+            }
+          } else if (resultado === 'nao_conforme') {
+            const { proximaOcorrencia } = await reprovarReinspecao({
+              ncId: ncAberta.nc_id,
+              numeroOcorrenciaAtual: ncAberta.numero_ocorrencia,
+              verificacaoId,
+              inspetorId: userId ?? '',
+              fotoUrl,
+            });
+            if (pendingResult.type === 'idle') {
+              pendingResult = {
+                type: 'reprovada',
+                ocorrencia: proximaOcorrencia,
+                ncAnteriorId: ncAberta.nc_id,
+                ncAnteriorDescricao: ncAberta.descricao,
+                ncAnteriorVerifNum: ncAberta.numero_verif,
+                ncAnteriorDataCriacao: ncAberta.nc_data_criacao,
+                verificacaoId,
+                verificacaoItemId: itemVerifId,
+              };
+            }
+          }
+        } else if (resultado === 'nao_conforme') {
           const nc = ncDetails[item.id];
           if (nc) {
             await createNc({
@@ -525,7 +650,11 @@ export default function NovaVerificacaoScreen() {
         );
       }
 
-      showToast('Verificação salva com sucesso!', 'success', () => router.back());
+      if (pendingResult.type !== 'idle') {
+        setReinspResult(pendingResult);
+      } else {
+        showToast('Verificação salva com sucesso!', 'success', () => router.back());
+      }
     } catch (err) {
       console.error('[NovaVerificacao] save error:', err);
       const msg = err instanceof Error ? err.message : 'Não foi possível salvar. Tente novamente.';
@@ -576,14 +705,24 @@ export default function NovaVerificacaoScreen() {
     <SafeAreaView style={st.safe}>
       {/* ── Header ── */}
       <AppHeader
-        title="Nova Verificação"
-        subtitle={`Verif. #${proximoNumero} · ${fvs?.subservico ?? 'FVS'}`}
+        title={hasOpenNCs ? 'Re-inspeção' : 'Nova Verificação'}
+        subtitle={hasOpenNCs
+          ? `Re-inspeção #${proximoNumero} · ${fvs?.subservico ?? 'FVS'}`
+          : `Verif. #${proximoNumero} · ${fvs?.subservico ?? 'FVS'}`}
         showBack
         onBack={() => router.back()}
       />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={st.content}>
+
+          {/* ── Banner de re-inspeção ── */}
+          {hasOpenNCs && (
+            <NCReinspectionBanner
+              itemTitle={ncsAbertas[0]?.titulo ?? ''}
+              ncId={ncsAbertas[0]?.nc_id ?? ''}
+            />
+          )}
 
           {/* ── 1. Inspetor ── */}
           <View style={st.inspectorCard}>
@@ -713,74 +852,117 @@ export default function NovaVerificacaoScreen() {
           {/* ── 5. Itens de verificação ── */}
           <View style={st.section}>
             <Text style={st.sectionTitle}>Itens de verificação</Text>
-            {itens.map((item, idx) => {
+            {sortedItens.map((item, idx) => {
               const result = itemResults[item.id];
               const isNok = result === 'nao_conforme';
+              const ncAberta = ncAbertoByItemId[item.id];
+              const isNcItem = !!ncAberta;
+              const showNcHeader = hasOpenNCs && idx === 0 && isNcItem;
+              const showRestHeader = hasOpenNCs && !isNcItem && idx > 0 && !!ncAbertoByItemId[sortedItens[idx - 1]?.id];
               return (
-                <View
-                  key={item.id}
-                  style={[st.itemWrapper, isNok && st.itemWrapperNok]}
-                >
-                  {/* Layer 1: Header */}
-                  <View style={[st.itemHeader, isNok && st.itemHeaderNok]}>
-                    <View style={[st.itemNum, isNok && st.itemNumNok]}>
-                      <Text style={[st.itemNumText, isNok && st.itemNumTextNok]}>{idx + 1}</Text>
+                <View key={item.id}>
+                  {showNcHeader && (
+                    <Text style={st.reinspSectionHeader}>
+                      {ncsAbertas.length > 1 ? 'ITENS COM NC ABERTA — AVALIAR AGORA' : 'ITEM QUE GEROU A NC — AVALIAR AGORA'}
+                    </Text>
+                  )}
+                  {showRestHeader && (
+                    <Text style={[st.reinspSectionHeader, { marginTop: Spacing.md }]}>DEMAIS ITENS</Text>
+                  )}
+                  <View style={[st.itemWrapper, isNok && st.itemWrapperNok, isNcItem && !isNok && st.itemWrapperReinsp]}>
+                    {/* Layer 1: Header */}
+                    <View style={[st.itemHeader, isNok && st.itemHeaderNok, isNcItem && !isNok && st.itemHeaderReinsp]}>
+                      <View style={[st.itemNum, isNok && st.itemNumNok, isNcItem && !isNok && st.itemNumReinsp]}>
+                        <Text style={[st.itemNumText, isNok && st.itemNumTextNok, isNcItem && !isNok && st.itemNumTextReinsp]}>{idx + 1}</Text>
+                      </View>
+                      <Text style={st.itemTitulo} numberOfLines={3}>{item.titulo}</Text>
+                      {isNcItem && (
+                        <View style={st.ncAbertaBadge}>
+                          <Text style={st.ncAbertaBadgeText}>NC aberta</Text>
+                        </View>
+                      )}
                     </View>
-                    <Text style={st.itemTitulo} numberOfLines={3}>{item.titulo}</Text>
-                  </View>
 
-                  {/* Layer 2: Método + Tolerância */}
-                  {(item.metodo_verif || item.tolerancia) ? (
-                    <View style={st.itemMethod}>
-                      <View style={{ flex: 1 }}>
-                        {item.metodo_verif ? (
-                          <>
-                            <Text style={st.itemMethodLabel}>MÉTODO</Text>
-                            <Text style={st.itemMethodText}>{item.metodo_verif}</Text>
-                          </>
+                    {/* Layer 2: Método + Tolerância */}
+                    {(item.metodo_verif || item.tolerancia) ? (
+                      <View style={st.itemMethod}>
+                        <View style={{ flex: 1 }}>
+                          {item.metodo_verif ? (
+                            <>
+                              <Text style={st.itemMethodLabel}>MÉTODO</Text>
+                              <Text style={st.itemMethodText}>{item.metodo_verif}</Text>
+                            </>
+                          ) : null}
+                        </View>
+                        {item.tolerancia ? (
+                          <View style={st.toleranciaBadge}>
+                            <Text style={st.toleranciaLabel}>TOLERÂNCIA</Text>
+                            <Text style={st.toleranciaText}>{item.tolerancia}</Text>
+                          </View>
                         ) : null}
                       </View>
-                      {item.tolerancia ? (
-                        <View style={st.toleranciaBadge}>
-                          <Text style={st.toleranciaLabel}>TOLERÂNCIA</Text>
-                          <Text style={st.toleranciaText}>{item.tolerancia}</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  ) : null}
+                    ) : null}
 
-                  {/* Layer 3: Botões de resultado + NC panel */}
-                  <View style={st.itemActions}>
-                    {errors[`item_${item.id}`] && (
-                      <Text style={st.errorText}>{errors[`item_${item.id}`]}</Text>
-                    )}
-                    <View style={st.resultRow}>
-                      {(['conforme', 'nao_conforme', 'na'] as Resultado[]).map(r => (
-                        <Pressable
-                          key={r}
-                          style={[st.resultBtn, result === r && resultBtnActive(r)]}
-                          onPress={() => setItemResult(item.id, r)}
-                        >
-                          <Text style={[st.resultBtnText, result === r && resultBtnTextActive()]}>
-                            {r === 'conforme' ? '✓ Conforme' : r === 'nao_conforme' ? '✗ Não conforme' : '- N/A'}
-                          </Text>
-                        </Pressable>
-                      ))}
+                    {/* Layer 3: Botões de resultado + NC panel */}
+                    <View style={st.itemActions}>
+                      {errors[`item_${item.id}`] && (
+                        <Text style={st.errorText}>{errors[`item_${item.id}`]}</Text>
+                      )}
+                      <View style={st.resultRow}>
+                        {(['conforme', 'nao_conforme', 'na'] as Resultado[]).map(r => (
+                          <Pressable
+                            key={r}
+                            style={[st.resultBtn, result === r && resultBtnActive(r)]}
+                            onPress={() => setItemResult(item.id, r)}
+                          >
+                            <Text style={[st.resultBtnText, result === r && resultBtnTextActive()]}>
+                              {r === 'conforme' ? '✓ Conforme' : r === 'nao_conforme' ? '✗ Não conforme' : '- N/A'}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                      {isNok && !isNcItem && (
+                        <NcPanel
+                          visible
+                          detail={ncDetails[item.id] ?? { descricao: '', solucao_proposta: '', data_nova_verif: '', responsavel_id: '', foto: null }}
+                          onChange={patch => updateNc(item.id, patch)}
+                          onAddPhoto={() => addNcPhoto(item.id)}
+                          equipes={equipes}
+                        />
+                      )}
                     </View>
-                    {isNok && (
-                      <NcPanel
-                        visible
-                        detail={ncDetails[item.id] ?? { descricao: '', solucao_proposta: '', data_nova_verif: '', responsavel_id: '', foto: null }}
-                        onChange={patch => updateNc(item.id, patch)}
-                        onAddPhoto={() => addNcPhoto(item.id)}
-                        equipes={equipes}
-                      />
-                    )}
                   </View>
                 </View>
               );
             })}
           </View>
+
+          {/* ── 5b. Foto de re-inspeção ── */}
+          {hasOpenNCs && (
+            <View style={st.section}>
+              <Text style={st.sectionTitle}>Foto da re-inspeção</Text>
+              {errors.reinspFoto && <Text style={st.errorText}>{errors.reinspFoto}</Text>}
+              <Pressable
+                style={[
+                  st.reinspPhotoBtn,
+                  reinspFoto ? { borderStyle: 'solid' as const } : {},
+                  errors.reinspFoto ? { borderColor: Colors.nok } : {},
+                ]}
+                onPress={async () => {
+                  const path = await captureNcPhoto();
+                  if (path) setReinspFoto(path);
+                }}
+              >
+                {reinspFoto ? (
+                  <Image source={{ uri: reinspFoto }} style={st.reinspPhotoThumb} resizeMode="cover" />
+                ) : (
+                  <Text style={[st.reinspPhotoBtnText, errors.reinspFoto ? { color: Colors.nok } : {}]}>
+                    📷 Foto obrigatória *
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+          )}
 
           {/* ── 6. Fotos gerais ── */}
           <View style={st.section}>
@@ -920,6 +1102,31 @@ export default function NovaVerificacaoScreen() {
         />
       )}
 
+      {/* Re-inspeção aprovada */}
+      <NCResolvedScreen
+        visible={reinspResult.type === 'aprovada'}
+        itemTitle={reinspResult.type === 'aprovada' ? reinspResult.itemTitle : ''}
+        abertoEm={reinspResult.type === 'aprovada' ? reinspResult.abertoEm : null}
+        resolvidoEm={reinspResult.type === 'aprovada' ? reinspResult.resolvidoEm : ''}
+        responsavelNome={reinspResult.type === 'aprovada' ? reinspResult.responsavelNome : null}
+        fotoUri={reinspResult.type === 'aprovada' ? reinspResult.fotoUri : null}
+        onConcluir={() => router.back()}
+      />
+
+      {/* Re-inspeção reprovada */}
+      <NCReprovadaPanel
+        visible={reinspResult.type === 'reprovada'}
+        ocorrencia={reinspResult.type === 'reprovada' ? reinspResult.ocorrencia : 0}
+        ncAnteriorId={reinspResult.type === 'reprovada' ? reinspResult.ncAnteriorId : ''}
+        ncAnteriorDescricao={reinspResult.type === 'reprovada' ? reinspResult.ncAnteriorDescricao : ''}
+        ncAnteriorVerifNum={reinspResult.type === 'reprovada' ? reinspResult.ncAnteriorVerifNum : 0}
+        ncAnteriorDataCriacao={reinspResult.type === 'reprovada' ? reinspResult.ncAnteriorDataCriacao : ''}
+        verificacaoId={reinspResult.type === 'reprovada' ? reinspResult.verificacaoId : ''}
+        verificacaoItemId={reinspResult.type === 'reprovada' ? reinspResult.verificacaoItemId : ''}
+        equipes={equipes}
+        onSalvo={() => router.back()}
+      />
+
       {/* Toast feedback */}
       {toast && (
         <View style={[st.toast, toast.type === 'success' ? st.toastSuccess : st.toastError]}>
@@ -936,7 +1143,7 @@ export default function NovaVerificacaoScreen() {
         >
           {isSaving
             ? <ActivityIndicator size="small" color="#fff" />
-            : <Text style={st.saveBtnText}>Salvar verificação</Text>
+            : <Text style={st.saveBtnText}>{hasOpenNCs ? 'Salvar re-inspeção' : 'Salvar verificação'}</Text>
           }
         </Pressable>
       </View>
@@ -1158,6 +1365,28 @@ const st = StyleSheet.create({
   saveBtnText:     { color: '#fff', fontSize: FontSizes.md, fontWeight: '600' },
 
   errorText: { fontSize: FontSizes.xs, color: Colors.nok, fontWeight: '500' },
+
+  // Re-inspeção
+  reinspSectionHeader: { fontSize: 10, fontWeight: '600', color: Colors.textTertiary, letterSpacing: 0.5, marginBottom: 6, marginTop: 4 },
+  itemWrapperReinsp:   { borderColor: Colors.nok, borderWidth: 1.5 },
+  itemHeaderReinsp:    { backgroundColor: Colors.nokBg },
+  itemNumReinsp:       { backgroundColor: Colors.nokBg, borderWidth: 0.5, borderColor: Colors.nok },
+  itemNumTextReinsp:   { color: Colors.nok },
+  ncAbertaBadge:       { backgroundColor: Colors.nok, borderRadius: Radius.full, paddingHorizontal: 6, paddingVertical: 2 },
+  ncAbertaBadgeText:   { fontSize: 9, color: '#fff', fontWeight: '700' },
+  reinspPhotoBtn: {
+    height: 80,
+    borderRadius: Radius.sm,
+    borderWidth: 1.5,
+    borderColor: Colors.nok,
+    borderStyle: 'dashed',
+    backgroundColor: Colors.nokBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  reinspPhotoBtnText: { fontSize: FontSizes.sm, color: Colors.nok, fontWeight: '500' },
+  reinspPhotoThumb:   { width: '100%' as any, height: '100%' as any },
 
   // Concluir FVS
   concluirRow: {

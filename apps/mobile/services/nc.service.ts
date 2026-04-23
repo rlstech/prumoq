@@ -144,7 +144,7 @@ export async function approveReinspecao(
  *
  * Retorna proximaOcorrencia para o caller compor a nova NC.
  */
-export async function reprovadeReinspecao(
+export async function reprovarReinspecao(
   params: ReinspecaoReprovadaParams,
 ): Promise<{ proximaOcorrencia: number }> {
   const now = new Date().toISOString();

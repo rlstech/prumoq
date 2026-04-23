@@ -371,6 +371,57 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
     return [{ count: count ?? 0 }] as T[];
   }
 
+  // ── re-inspeção: itens da última verificação do FVS (pré-preenchimento) ──
+  if (s.includes('from verificacao_itens vi') && s.includes('join verificacoes v') && s.includes('numero_verif desc') && s.includes('limit 1') && params[0]) {
+    const fvsId = params[0] as string;
+    const { data: verifs } = await supabase
+      .from('verificacoes')
+      .select('id')
+      .eq('fvs_planejada_id', fvsId)
+      .order('numero_verif', { ascending: false })
+      .limit(1);
+    const latestId = (verifs ?? [])[0]?.id;
+    if (!latestId) return [];
+    const { data: items } = await supabase
+      .from('verificacao_itens')
+      .select('fvs_padrao_item_id, resultado')
+      .eq('verificacao_id', latestId);
+    return (items ?? []) as T[];
+  }
+
+  // ── nova verificação: NCs abertas do FVS (NCReinspectionBanner + re-inspeção) ──
+  if (s.includes('from nao_conformidades nc') && s.includes('join verificacao_itens vi') && s.includes("nc.status = 'aberta'") && s.includes('fvs_planejada_id = ?') && params[0]) {
+    const fvsId = params[0] as string;
+    const { data: verifs } = await supabase.from('verificacoes').select('id, numero_verif, data_verif').eq('fvs_planejada_id', fvsId);
+    const verifIds = (verifs ?? []).map((v: any) => v.id as string);
+    if (!verifIds.length) return [];
+    const verifMap = Object.fromEntries((verifs ?? []).map((v: any) => [v.id, v]));
+    const { data: vitens } = await supabase.from('verificacao_itens').select('id, fvs_padrao_item_id, titulo, verificacao_id').in('verificacao_id', verifIds);
+    const itemMap = Object.fromEntries((vitens ?? []).map((i: any) => [i.id, i]));
+    const itemIds = Object.keys(itemMap);
+    if (!itemIds.length) return [];
+    const { data: ncs } = await supabase
+      .from('nao_conformidades')
+      .select('id, verificacao_item_id, descricao, numero_ocorrencia, data_nova_verif, responsavel_id')
+      .in('verificacao_item_id', itemIds)
+      .eq('status', 'aberta');
+    return ((ncs ?? []).map((nc: any) => {
+      const vi = itemMap[nc.verificacao_item_id];
+      const v = verifMap[vi?.verificacao_id];
+      return {
+        nc_id: nc.id,
+        fvs_padrao_item_id: vi?.fvs_padrao_item_id ?? null,
+        titulo: vi?.titulo ?? '',
+        descricao: nc.descricao ?? '',
+        numero_ocorrencia: nc.numero_ocorrencia ?? 1,
+        data_nova_verif: nc.data_nova_verif ?? null,
+        responsavel_id: nc.responsavel_id ?? null,
+        numero_verif: v?.numero_verif ?? 1,
+        nc_data_criacao: v?.data_verif ?? null,
+      };
+    }) as unknown) as T[];
+  }
+
   console.warn('[powersync-web-shim] unmatched query:', sql.slice(0, 120));
   return [];
 }
