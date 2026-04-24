@@ -343,8 +343,17 @@ export default function NovaVerificacaoScreen() {
   `, [fvsId]);
   const fvs = fvsRows[0];
 
+  const { data: ambienteRows } = useQuery<{ nome: string }>(`
+    SELECT a.nome FROM ambientes a JOIN obras o ON o.id = a.obra_id WHERE a.id = ?
+  `, [ambId]);
+  const ambienteNome = ambienteRows[0]?.nome ?? '';
+
   const { data: lastPercentRows } = useQuery<LastPercentRow>(`
     SELECT percentual_exec FROM verificacoes WHERE fvs_planejada_id = ? ORDER BY created_at DESC LIMIT 1
+  `, [fvsId]);
+
+  const { data: lastEquipeRows } = useQuery<{ equipe_id: string | null }>(`
+    SELECT equipe_id FROM verificacoes WHERE fvs_planejada_id = ? ORDER BY created_at DESC LIMIT 1
   `, [fvsId]);
 
   const { data: itens } = useQuery<ItemRow>(`
@@ -432,6 +441,15 @@ export default function NovaVerificacaoScreen() {
   const todosItensComResultado = itens.length > 0 && itens.every(i => itemResults[i.id] !== undefined);
   const algumNaoConforme = Object.values(itemResults).some(r => r === 'nao_conforme');
   const podeConcluir = todosItensComResultado && !algumNaoConforme;
+
+  // Pré-preenche equipe da última verificação (editável pelo usuário)
+  useEffect(() => {
+    const equipeId = lastEquipeRows[0]?.equipe_id;
+    if (equipeId && selectedEquipeId === null) {
+      setSelectedEquipeId(equipeId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastEquipeRows]);
 
   // Pré-preenche resultados da última verificação no modo de re-inspeção
   useEffect(() => {
@@ -561,12 +579,12 @@ export default function NovaVerificacaoScreen() {
     try {
       await db.execute(`
         INSERT INTO verificacoes
-          (id, fvs_planejada_id, numero_verif, inspetor_id, data_verif,
+          (id, fvs_planejada_id, numero_verif, inspetor_id, equipe_id, data_verif,
            percentual_exec, status, observacoes, created_offline, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         verificacaoId, fvsId, proximoNumero,
-        userId ?? '', dataVerif,
+        userId ?? '', selectedEquipeId, dataVerif,
         finalPercentExec, finalConclusao,
         observacoes, 1, now,
       ]);
@@ -678,7 +696,7 @@ export default function NovaVerificacaoScreen() {
       <SafeAreaView style={st.safe}>
         <AppHeader
           title="Nova Verificação"
-          subtitle={fvs.subservico ?? 'FVS'}
+          subtitle={[ambienteNome, fvs.subservico].filter(Boolean).join(' · ')}
           showBack
           onBack={() => router.back()}
         />
@@ -707,8 +725,8 @@ export default function NovaVerificacaoScreen() {
       <AppHeader
         title={hasOpenNCs ? 'Re-inspeção' : 'Nova Verificação'}
         subtitle={hasOpenNCs
-          ? `Re-inspeção #${proximoNumero} · ${fvs?.subservico ?? 'FVS'}`
-          : `Verif. #${proximoNumero} · ${fvs?.subservico ?? 'FVS'}`}
+          ? [ambienteNome, `Re-inspeção #${proximoNumero}`, fvs?.subservico].filter(Boolean).join(' · ')
+          : [ambienteNome, `Verif. #${proximoNumero}`, fvs?.subservico].filter(Boolean).join(' · ')}
         showBack
         onBack={() => router.back()}
       />
@@ -908,19 +926,25 @@ export default function NovaVerificacaoScreen() {
                       {errors[`item_${item.id}`] && (
                         <Text style={st.errorText}>{errors[`item_${item.id}`]}</Text>
                       )}
-                      <View style={st.resultRow}>
-                        {(['conforme', 'nao_conforme', 'na'] as Resultado[]).map(r => (
-                          <Pressable
-                            key={r}
-                            style={[st.resultBtn, result === r && resultBtnActive(r)]}
-                            onPress={() => setItemResult(item.id, r)}
-                          >
-                            <Text style={[st.resultBtnText, result === r && resultBtnTextActive()]}>
-                              {r === 'conforme' ? '✓ Conforme' : r === 'nao_conforme' ? '✗ Não conforme' : '- N/A'}
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </View>
+                      {(() => {
+                        const isLocked = hasOpenNCs && !isNcItem;
+                        return (
+                          <View style={[st.resultRow, isLocked && { opacity: 0.5 }]}
+                            pointerEvents={isLocked ? 'none' : 'auto'}>
+                            {(['conforme', 'nao_conforme', 'na'] as Resultado[]).map(r => (
+                              <Pressable
+                                key={r}
+                                style={[st.resultBtn, result === r && resultBtnActive(r)]}
+                                onPress={() => setItemResult(item.id, r)}
+                              >
+                                <Text style={[st.resultBtnText, result === r && resultBtnTextActive()]}>
+                                  {r === 'conforme' ? '✓ Conforme' : r === 'nao_conforme' ? '✗ Não conforme' : '- N/A'}
+                                </Text>
+                              </Pressable>
+                            ))}
+                          </View>
+                        );
+                      })()}
                       {isNok && !isNcItem && (
                         <NcPanel
                           visible
@@ -964,24 +988,26 @@ export default function NovaVerificacaoScreen() {
             </View>
           )}
 
-          {/* ── 6. Fotos gerais ── */}
-          <View style={st.section}>
-            <Text style={st.sectionTitle}>Fotos de evidência</Text>
-            <View style={st.photoBtns}>
-              <Pressable style={st.photoActionBtn} onPress={addFromCamera}>
-                <Camera size={15} color={Colors.progress} />
-                <Text style={st.photoActionText}>Câmera</Text>
-              </Pressable>
-              <Pressable style={st.photoActionBtn} onPress={addFromGallery}>
-                <ImageIcon size={15} color={Colors.progress} />
-                <Text style={st.photoActionText}>Galeria</Text>
-              </Pressable>
-              <Text style={st.photoCount}>{generalPhotos.length}/10</Text>
+          {/* ── 6. Fotos gerais (apenas em verificação normal) ── */}
+          {!hasOpenNCs && (
+            <View style={st.section}>
+              <Text style={st.sectionTitle}>Fotos de evidência</Text>
+              <View style={st.photoBtns}>
+                <Pressable style={st.photoActionBtn} onPress={addFromCamera}>
+                  <Camera size={15} color={Colors.progress} />
+                  <Text style={st.photoActionText}>Câmera</Text>
+                </Pressable>
+                <Pressable style={st.photoActionBtn} onPress={addFromGallery}>
+                  <ImageIcon size={15} color={Colors.progress} />
+                  <Text style={st.photoActionText}>Galeria</Text>
+                </Pressable>
+                <Text style={st.photoCount}>{generalPhotos.length}/10</Text>
+              </View>
+              {generalPhotos.length > 0 && (
+                <PhotoGrid photos={generalPhotos} max={10} onRemove={removePhoto} />
+              )}
             </View>
-            {generalPhotos.length > 0 && (
-              <PhotoGrid photos={generalPhotos} max={10} onRemove={removePhoto} />
-            )}
-          </View>
+          )}
 
           {/* ── 7. Observações ── */}
           <View style={st.section}>
@@ -997,57 +1023,61 @@ export default function NovaVerificacaoScreen() {
             />
           </View>
 
-          {/* ── 8. Conclusão ── */}
-          <View style={st.section}>
-            <Text style={st.sectionTitle}>Conclusão desta verificação</Text>
-            {errors.conclusao && <Text style={st.errorText}>{errors.conclusao}</Text>}
-            <View style={st.conclusaoRow}>
-              {conclusaoOptions.map(opt => (
-                <Pressable
-                  key={opt.key}
-                  style={[
-                    st.conclusaoBtn,
-                    conclusao === opt.key && { backgroundColor: opt.bgColor, borderColor: opt.color },
-                  ]}
-                  onPress={() => setConclusao(opt.key)}
-                >
-                  <Text style={[
-                    st.conclusaoBtnText,
-                    conclusao === opt.key && { color: opt.color, fontWeight: '600' },
-                  ]}>
-                    {opt.label}
-                  </Text>
-                </Pressable>
-              ))}
+          {/* ── 8. Conclusão (apenas em verificação normal) ── */}
+          {!hasOpenNCs && (
+            <View style={st.section}>
+              <Text style={st.sectionTitle}>Conclusão desta verificação</Text>
+              {errors.conclusao && <Text style={st.errorText}>{errors.conclusao}</Text>}
+              <View style={st.conclusaoRow}>
+                {conclusaoOptions.map(opt => (
+                  <Pressable
+                    key={opt.key}
+                    style={[
+                      st.conclusaoBtn,
+                      conclusao === opt.key && { backgroundColor: opt.bgColor, borderColor: opt.color },
+                    ]}
+                    onPress={() => setConclusao(opt.key)}
+                  >
+                    <Text style={[
+                      st.conclusaoBtnText,
+                      conclusao === opt.key && { color: opt.color, fontWeight: '600' },
+                    ]}>
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
-          {/* ── 8b. Concluir FVS ── */}
-          <View style={st.section}>
-            <Pressable
-              style={[st.concluirRow, concluirFvs && st.concluirRowActive, algumNaoConforme && st.concluirRowDisabled]}
-              onPress={() => {
-                if (algumNaoConforme) return;
-                setConcluirFvs(prev => !prev);
-              }}
-            >
-              <View style={[st.checkbox, concluirFvs && st.checkboxActive, algumNaoConforme && st.checkboxDisabled]}>
-                {concluirFvs && <Text style={st.checkboxTick}>✓</Text>}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[st.concluirLabel, algumNaoConforme && st.concluirLabelDisabled]}>
-                  Concluir esta FVS
-                </Text>
-                {algumNaoConforme ? (
-                  <Text style={st.concluirHint}>Não é possível concluir com itens não conformes</Text>
-                ) : !todosItensComResultado ? (
-                  <Text style={st.concluirHint}>Classifique todos os itens para concluir</Text>
-                ) : (
-                  <Text style={st.concluirHint}>Força percentual = 100% e status Conforme</Text>
-                )}
-              </View>
-            </Pressable>
-          </View>
+          {/* ── 8b. Concluir FVS (apenas em verificação normal) ── */}
+          {!hasOpenNCs && (
+            <View style={st.section}>
+              <Pressable
+                style={[st.concluirRow, concluirFvs && st.concluirRowActive, algumNaoConforme && st.concluirRowDisabled]}
+                onPress={() => {
+                  if (algumNaoConforme) return;
+                  setConcluirFvs(prev => !prev);
+                }}
+              >
+                <View style={[st.checkbox, concluirFvs && st.checkboxActive, algumNaoConforme && st.checkboxDisabled]}>
+                  {concluirFvs && <Text style={st.checkboxTick}>✓</Text>}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[st.concluirLabel, algumNaoConforme && st.concluirLabelDisabled]}>
+                    Concluir esta FVS
+                  </Text>
+                  {algumNaoConforme ? (
+                    <Text style={st.concluirHint}>Não é possível concluir com itens não conformes</Text>
+                  ) : !todosItensComResultado ? (
+                    <Text style={st.concluirHint}>Classifique todos os itens para concluir</Text>
+                  ) : (
+                    <Text style={st.concluirHint}>Força percentual = 100% e status Conforme</Text>
+                  )}
+                </View>
+              </Pressable>
+            </View>
+          )}
 
           {/* ── 9. Assinatura digital ── */}
           <View style={st.section}>

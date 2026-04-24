@@ -348,6 +348,17 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
     return (data ?? []) as T[];
   }
 
+  // ── nova verificação: última equipe_id do FVS ──
+  if (s.includes('select equipe_id from verificacoes where fvs_planejada_id = ?') && params[0]) {
+    const { data } = await supabase
+      .from('verificacoes')
+      .select('equipe_id')
+      .eq('fvs_planejada_id', params[0] as string)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    return (data ?? []) as T[];
+  }
+
   // ── nova verificação: último percentual_exec do FVS ──
   if (s.includes('select percentual_exec from verificacoes where fvs_planejada_id = ?') && params[0]) {
     const { data } = await supabase

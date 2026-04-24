@@ -1,4 +1,6 @@
 const CACHE_NAME = 'prumoq-v1';
+const IS_DEV = self.location.hostname === 'localhost' ||
+               self.location.hostname === '127.0.0.1';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -14,9 +16,15 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Em desenvolvimento, sempre vai à rede — sem cache
+  if (IS_DEV) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   const url = new URL(event.request.url);
 
-  // Network-first for Supabase API and R2 uploads
+  // Network-first para Supabase e R2
   if (
     url.hostname.includes('supabase.co') ||
     url.hostname.includes('r2.dev') ||
@@ -26,7 +34,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for static assets
+  // Cache-first para assets estáticos (só em produção)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
