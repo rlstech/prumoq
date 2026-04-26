@@ -2,6 +2,7 @@ import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { PenLine, Plus } from 'lucide-react-native';
 import { AppHeader } from '../../../../../../../../../components/AppHeader';
+import { goBack } from '../../../../../../../../../lib/navigation';
 import { useMemo, useState } from 'react';
 import { FlatList, Image, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
@@ -137,7 +138,7 @@ export default function FvsHistoryScreen() {
         title={fvs?.subservico || 'FVS'}
         subtitle={[fvs?.ambiente_nome, fvs?.obra_nome].filter(Boolean).join(' · ')}
         showBack
-        onBack={() => router.back()}
+        onBack={() => goBack()}
         rightElement={
           !isLocked ? (
             <Pressable

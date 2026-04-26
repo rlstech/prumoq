@@ -1,6 +1,7 @@
 import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AppHeader } from '../../../../../components/AppHeader';
+import { goBack } from '../../../../../lib/navigation';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
@@ -146,7 +147,7 @@ export default function ObraDetailScreen() {
         title={obra?.nome ?? '—'}
         subtitle={locationText || undefined}
         showBack
-        onBack={() => router.back()}
+        onBack={() => goBack()}
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>

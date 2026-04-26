@@ -1,7 +1,8 @@
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
-const THRESHOLD = 80;
+const THRESHOLD = 150;
 const MAX_PULL = 120;
 
 export function PullToRefresh({ children }: { children: React.ReactNode }) {
@@ -13,12 +14,19 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     function getScrollTop(): number {
-      const scrollable = document.querySelector('[data-rnw-class]') as HTMLElement
-        ?? document.querySelector('#root > div > div') as HTMLElement;
-      return scrollable?.scrollTop ?? window.scrollY;
+      const divs = document.querySelectorAll('div');
+      for (const el of divs) {
+        if ((el as HTMLElement).scrollTop > 4) return (el as HTMLElement).scrollTop;
+      }
+      return window.scrollY;
     }
 
     function onTouchStart(e: TouchEvent) {
+      const active = document.activeElement;
+      const isFormInput = active instanceof HTMLInputElement
+        || active instanceof HTMLTextAreaElement
+        || active instanceof HTMLSelectElement;
+      if (isFormInput) return;
       if (getScrollTop() > 4) return;
       startYRef.current = e.touches[0].clientY;
       pullingRef.current = false;
@@ -48,7 +56,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
       pullYRef.current = 0;
       if (captured >= THRESHOLD / 2) {
         setRefreshing(true);
-        setTimeout(() => window.location.reload(), 400);
+        setTimeout(() => router.replace(window.location.pathname as any), 400);
       } else {
         setPullY(0);
       }

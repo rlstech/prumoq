@@ -1,5 +1,6 @@
 import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { goBack } from '../../../../../../../../../../lib/navigation';
 import {
   Camera,
   ChevronDown,
@@ -671,7 +672,7 @@ export default function NovaVerificacaoScreen() {
       if (pendingResult.type !== 'idle') {
         setReinspResult(pendingResult);
       } else {
-        showToast('Verificação salva com sucesso!', 'success', () => router.back());
+        showToast('Verificação salva com sucesso!', 'success', () => goBack());
       }
     } catch (err) {
       console.error('[NovaVerificacao] save error:', err);
@@ -698,7 +699,7 @@ export default function NovaVerificacaoScreen() {
           title="Nova Verificação"
           subtitle={[ambienteNome, fvs.subservico].filter(Boolean).join(' · ')}
           showBack
-          onBack={() => router.back()}
+          onBack={() => goBack()}
         />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16 }}>
           <Text style={{ fontSize: 40 }}>🔒</Text>
@@ -710,7 +711,7 @@ export default function NovaVerificacaoScreen() {
           </Text>
           <Pressable
             style={{ backgroundColor: '#E84A1A', borderRadius: 8, paddingHorizontal: 24, paddingVertical: 10 }}
-            onPress={() => router.back()}
+            onPress={() => goBack()}
           >
             <Text style={{ color: '#fff', fontWeight: '600' }}>← Voltar ao histórico</Text>
           </Pressable>
@@ -728,7 +729,7 @@ export default function NovaVerificacaoScreen() {
           ? [ambienteNome, `Re-inspeção #${proximoNumero}`, fvs?.subservico].filter(Boolean).join(' · ')
           : [ambienteNome, `Verif. #${proximoNumero}`, fvs?.subservico].filter(Boolean).join(' · ')}
         showBack
-        onBack={() => router.back()}
+        onBack={() => goBack()}
       />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -1140,7 +1141,7 @@ export default function NovaVerificacaoScreen() {
         resolvidoEm={reinspResult.type === 'aprovada' ? reinspResult.resolvidoEm : ''}
         responsavelNome={reinspResult.type === 'aprovada' ? reinspResult.responsavelNome : null}
         fotoUri={reinspResult.type === 'aprovada' ? reinspResult.fotoUri : null}
-        onConcluir={() => router.back()}
+        onConcluir={() => goBack()}
       />
 
       {/* Re-inspeção reprovada */}
@@ -1154,7 +1155,7 @@ export default function NovaVerificacaoScreen() {
         verificacaoId={reinspResult.type === 'reprovada' ? reinspResult.verificacaoId : ''}
         verificacaoItemId={reinspResult.type === 'reprovada' ? reinspResult.verificacaoItemId : ''}
         equipes={equipes}
-        onSalvo={() => router.back()}
+        onSalvo={() => goBack()}
       />
 
       {/* Toast feedback */}

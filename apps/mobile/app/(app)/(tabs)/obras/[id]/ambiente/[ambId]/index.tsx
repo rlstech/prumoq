@@ -2,6 +2,7 @@ import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertCircle, ArrowRight, CheckCircle2, Circle } from 'lucide-react-native';
 import { AppHeader } from '../../../../../../../components/AppHeader';
+import { goBack } from '../../../../../../../lib/navigation';
 import { useMemo } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { ProgressBar } from '../../../../../../../components/ProgressBar';
@@ -93,7 +94,7 @@ export default function AmbienteScreen() {
         title={amb?.nome ?? '—'}
         subtitle={subtitleParts.join(' · ')}
         showBack
-        onBack={() => router.back()}
+        onBack={() => goBack()}
       />
 
       {/* Summary panel */}

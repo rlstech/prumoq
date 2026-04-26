@@ -23,7 +23,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="obras/index"
+        name="obras"
         options={{
           title: 'Obras',
           tabBarIcon: ({ color }) => <Building2 size={19} color={color} />,
@@ -43,11 +43,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <User size={19} color={color} />,
         }}
       />
-      {/* Hide deep routes from tab bar */}
-      <Tabs.Screen name="obras/[id]/index" options={{ href: null }} />
-      <Tabs.Screen name="obras/[id]/ambiente/[ambId]/index" options={{ href: null }} />
-      <Tabs.Screen name="obras/[id]/ambiente/[ambId]/fvs/[fvsId]/index" options={{ href: null }} />
-      <Tabs.Screen name="obras/[id]/ambiente/[ambId]/fvs/[fvsId]/verificacao/nova" options={{ href: null }} />
     </Tabs>
   );
 }
