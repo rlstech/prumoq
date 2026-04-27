@@ -16,7 +16,9 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
   const [selectedFvsId, setSelectedFvsId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const concluidasCount = initialFvsList.filter(f => f.status === 'conforme').length;
+  const concluidasCount = initialFvsList.filter(f =>
+    f.status === 'conforme' || f.status === 'concluida' || f.status === 'concluida_ressalva'
+  ).length;
   const progress = initialFvsList.length > 0 ? Math.round((concluidasCount / initialFvsList.length) * 100) : 0;
 
   const alreadyLinkedIds = initialFvsList.map(f => f.fvs_padrao_id);
@@ -47,7 +49,7 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
                  <tr key={fvs.id} className="border-b border-brd-0 last:border-0 hover:bg-bg-2">
                    <td className="py-3 px-5">
                      <div className="flex items-center gap-3">
-                       <div className={`w-2.5 h-2.5 rounded-full ${fvs.status === 'conforme' ? 'bg-ok' : fvs.status === 'nao_conforme' ? 'bg-nok' : 'bg-[var(--br)]'}`} />
+                       <div className={`w-2.5 h-2.5 rounded-full ${(fvs.status === 'conforme' || fvs.status === 'concluida') ? 'bg-ok' : fvs.status === 'concluida_ressalva' ? 'bg-warn' : fvs.status === 'nao_conforme' ? 'bg-nok' : 'bg-[var(--br)]'}`} />
                        <div>
                          <h3 className="font-medium text-sm text-txt">{fvs.subservico}</h3>
                          <p className="text-[11px] text-txt-3">Última verif: {fvs.ultima_verif ? new Date(fvs.ultima_verif).toLocaleDateString('pt-BR') : 'Nenhuma'}</p>

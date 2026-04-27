@@ -528,7 +528,7 @@ export default function NovaVerificacaoScreen() {
   function validate(): boolean {
     const errs: Record<string, string> = {};
     if (!selectedEquipeId) errs.equipe = 'Selecione a equipe executora';
-    if (!conclusao && !concluirFvs) errs.conclusao = 'Selecione o resultado da verificação';
+    if (!hasOpenNCs && !conclusao && !concluirFvs) errs.conclusao = 'Selecione o resultado da verificação';
     if (!signaturePath && Platform.OS !== 'web') errs.assinatura = 'Assinatura digital obrigatória';
 
     if (hasOpenNCs && !reinspFoto) {

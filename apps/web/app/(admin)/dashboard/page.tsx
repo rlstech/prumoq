@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase.from('obras' as any).select('*', { count: 'exact', head: true }).neq('status', 'concluida').eq('ativo', true),
     supabase.from('ambientes' as any).select('*', { count: 'exact', head: true }).eq('ativo', true),
-    supabase.from('fvs_planejadas' as any).select('*', { count: 'exact', head: true }).eq('status', 'conforme'),
+    supabase.from('fvs_planejadas' as any).select('*', { count: 'exact', head: true }).in('status', ['conforme', 'concluida', 'concluida_ressalva']),
     supabase.from('nao_conformidades' as any).select('*', { count: 'exact', head: true }).eq('status', 'aberta'),
     (supabase.rpc as any)('get_obras_progresso_dashboard'),
     (supabase.rpc as any)('get_verificacoes_recentes'),

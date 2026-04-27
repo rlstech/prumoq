@@ -72,9 +72,18 @@ export const db = {
 // ─────────────────────────────────────────────────────────
 let _obraIdsCache: { ids: string[] | null; ts: number } | null = null;
 
+let _obraIdsFlight: Promise<string[] | null> | null = null;
+
 async function getAllowedObraIds(): Promise<string[] | null> {
   if (_obraIdsCache && Date.now() - _obraIdsCache.ts < 30_000) return _obraIdsCache.ids;
-  const { data: { user } } = await supabase.auth.getUser();
+  if (_obraIdsFlight) return _obraIdsFlight;
+  _obraIdsFlight = _fetchAllowedObraIds().finally(() => { _obraIdsFlight = null; });
+  return _obraIdsFlight;
+}
+
+async function _fetchAllowedObraIds(): Promise<string[] | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
   if (!user) { _obraIdsCache = { ids: [], ts: Date.now() }; return []; }
   const { data: u } = await supabase.from('usuarios').select('perfil').eq('id', user.id).single();
   if ((u as any)?.perfil === 'admin') {

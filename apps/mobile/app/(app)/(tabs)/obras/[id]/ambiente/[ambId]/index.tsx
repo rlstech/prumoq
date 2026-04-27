@@ -37,6 +37,18 @@ function StatusIcon({ status }: { status: string }) {
         <ArrowRight size={size} color={Colors.progress} />
       </View>
     );
+  if (status === 'concluida' || status === 'concluida_ressalva')
+    return (
+      <View style={[styles.iconCircle, { backgroundColor: Colors.okBg }]}>
+        <CheckCircle2 size={size} color={Colors.ok} />
+      </View>
+    );
+  if (status === 'em_revisao')
+    return (
+      <View style={[styles.iconCircle, { backgroundColor: '#F3E5F5' }]}>
+        <ArrowRight size={size} color="#6A1B9A" />
+      </View>
+    );
   return (
     <View style={[styles.iconCircle, { backgroundColor: Colors.naBg }]}>
       <Circle size={size} color={Colors.na} />
@@ -45,10 +57,13 @@ function StatusIcon({ status }: { status: string }) {
 }
 
 function statusLabel(status: string): { text: string; color: string } {
-  if (status === 'conforme')     return { text: 'Concluído',    color: Colors.ok };
-  if (status === 'nao_conforme') return { text: 'NC aberta',    color: Colors.nok };
-  if (status === 'em_andamento') return { text: 'Em andamento', color: Colors.progress };
-  return                                { text: 'Pendente',     color: Colors.na };
+  if (status === 'conforme')            return { text: 'Concluído',    color: Colors.ok };
+  if (status === 'concluida')           return { text: 'Concluído',    color: Colors.ok };
+  if (status === 'concluida_ressalva')  return { text: 'C/ ressalva',  color: Colors.warn };
+  if (status === 'em_revisao')          return { text: 'Em revisão',   color: '#6A1B9A' };
+  if (status === 'nao_conforme')        return { text: 'NC aberta',    color: Colors.nok };
+  if (status === 'em_andamento')        return { text: 'Em andamento', color: Colors.progress };
+  return                                       { text: 'Pendente',     color: Colors.na };
 }
 
 export default function AmbienteScreen() {
@@ -76,7 +91,9 @@ export default function AmbienteScreen() {
 
   const summary = useMemo(() => {
     const total = fvsList.length;
-    const concluidas = fvsList.filter(f => f.status === 'conforme').length;
+    const concluidas = fvsList.filter(f =>
+      f.status === 'conforme' || f.status === 'concluida' || f.status === 'concluida_ressalva'
+    ).length;
     const pct = total > 0 ? (concluidas / total) * 100 : 0;
     return { total, concluidas, pct };
   }, [fvsList]);

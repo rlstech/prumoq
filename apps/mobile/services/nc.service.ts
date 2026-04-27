@@ -62,7 +62,7 @@ export async function createNc(params: NcCreateParams): Promise<string> {
        (id, verificacao_id, verificacao_item_id, descricao, solucao_proposta,
         responsavel_id, data_nova_verif, status, numero_ocorrencia,
         nc_anterior_id, prioridade, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'aberta', ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       ncId,
       params.verificacaoId,
@@ -71,6 +71,7 @@ export async function createNc(params: NcCreateParams): Promise<string> {
       params.solucao_proposta,
       params.responsavel_id ?? null,
       params.data_nova_verif,
+      'aberta',
       numeroOcorrencia,
       params.nc_anterior_id ?? null,
       prioridade,
