@@ -480,6 +480,34 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
     return;
   }
 
+  // Generic UPDATE <table> SET col = ?, ... WHERE id = ?
+  if (s.startsWith('update ') && s.includes(' set ') && s.includes('where id = ?')) {
+    const tableMatch = s.match(/update (\w+) set/);
+    const setMatch = s.match(/set (.+) where id = \?/);
+    if (!tableMatch || !setMatch) {
+      console.warn('[web shim] could not parse UPDATE:', sql.slice(0, 80));
+      return;
+    }
+    const table = tableMatch[1];
+    const setFields = setMatch[1]
+      .split(',')
+      .map(p => p.trim().match(/^(\w+)\s*=\s*\?/)?.[1])
+      .filter((f): f is string => !!f);
+
+    const idParam = params[params.length - 1] as string;
+    const updateData: Record<string, unknown> = {};
+    for (let i = 0; i < setFields.length; i++) {
+      updateData[setFields[i]] = params[i];
+    }
+
+    const { error } = await supabase.from(table).update(updateData).eq('id', idParam);
+    if (error) {
+      console.error(`[web shim] UPDATE ${table} error:`, error.message, updateData);
+      throw new Error(`Erro ao atualizar ${table}: ${error.message}`);
+    }
+    return;
+  }
+
   // Generic INSERT INTO <table> (<cols>) VALUES (...)
   if (s.startsWith('insert into')) {
     const tableMatch = s.match(/insert into (\w+)/);

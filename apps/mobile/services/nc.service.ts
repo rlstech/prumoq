@@ -108,12 +108,13 @@ export async function approveReinspecao(
   await db.execute(
     `INSERT INTO nc_reinspecoes
        (id, nc_id, verificacao_id, inspetor_id, resultado, observacao, foto_url, created_at)
-     VALUES (?, ?, ?, ?, 'aprovada', ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       uuid(),
       params.ncId,
       params.verificacaoId,
       params.inspetorId,
+      'aprovada',
       params.observacao ?? null,
       params.fotoUrl ?? null,
       now,
@@ -122,13 +123,9 @@ export async function approveReinspecao(
 
   await db.execute(
     `UPDATE nao_conformidades SET
-       status = 'resolvida',
-       resolvida_em = ?,
-       verificacao_reinsp_id = ?,
-       foto_reinspecao_url = ?,
-       updated_at = ?
+       status = ?, resolvida_em = ?, verificacao_reinsp_id = ?, foto_reinspecao_url = ?, updated_at = ?
      WHERE id = ?`,
-    [now, params.verificacaoId, params.fotoUrl ?? null, now, params.ncId],
+    ['resolvida', now, params.verificacaoId, params.fotoUrl ?? null, now, params.ncId],
   );
 }
 
@@ -153,12 +150,13 @@ export async function reprovarReinspecao(
   await db.execute(
     `INSERT INTO nc_reinspecoes
        (id, nc_id, verificacao_id, inspetor_id, resultado, observacao, foto_url, created_at)
-     VALUES (?, ?, ?, ?, 'reprovada', ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       uuid(),
       params.ncId,
       params.verificacaoId,
       params.inspetorId,
+      'reprovada',
       params.observacao ?? null,
       params.fotoUrl ?? null,
       now,
@@ -166,11 +164,8 @@ export async function reprovarReinspecao(
   );
 
   await db.execute(
-    `UPDATE nao_conformidades SET
-       status = 'encerrada_sem_resolucao',
-       updated_at = ?
-     WHERE id = ?`,
-    [now, params.ncId],
+    `UPDATE nao_conformidades SET status = ?, updated_at = ? WHERE id = ?`,
+    ['encerrada_sem_resolucao', now, params.ncId],
   );
 
   return { proximaOcorrencia };
