@@ -14,8 +14,10 @@ export default function RootLayout() {
   useEffect(() => {
     async function init() {
       try {
-        await db.init();
-        const { data: { session } } = await supabase.auth.getSession();
+        const [, { data: { session } }] = await Promise.all([
+          db.init(),
+          supabase.auth.getSession(),
+        ]);
         if (session) {
           await db.connect(new SupabaseConnector());
         }

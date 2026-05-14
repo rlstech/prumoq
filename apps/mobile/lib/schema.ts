@@ -29,15 +29,18 @@ const obra_equipes = new Table({
   equipe_id: column.text,
 });
 
-const ambientes = new Table({
-  obra_id:     column.text,
-  nome:        column.text,
-  tipo:        column.text,
-  localizacao: column.text,
-  observacoes: column.text,
-  ativo:       column.integer,
-  updated_at:  column.text,
-});
+const ambientes = new Table(
+  {
+    obra_id:     column.text,
+    nome:        column.text,
+    tipo:        column.text,
+    localizacao: column.text,
+    observacoes: column.text,
+    ativo:       column.integer,
+    updated_at:  column.text,
+  },
+  { indexes: { obra: ['obra_id'] } }
+);
 
 const fvs_padrao = new Table({
   empresa_id:    column.text,
@@ -132,43 +135,55 @@ const verificacoes = new Table(
   { indexes: { fvs_planejada: ['fvs_planejada_id'] } }
 );
 
-const verificacao_itens = new Table({
-  verificacao_id:     column.text,
-  fvs_padrao_item_id: column.text,
-  ordem:              column.integer,
-  titulo:             column.text,
-  metodo_verif:       column.text,
-  tolerancia:         column.text,
-  resultado:          column.text,
-});
+const verificacao_itens = new Table(
+  {
+    verificacao_id:     column.text,
+    fvs_padrao_item_id: column.text,
+    ordem:              column.integer,
+    titulo:             column.text,
+    metodo_verif:       column.text,
+    tolerancia:         column.text,
+    resultado:          column.text,
+  },
+  { indexes: { verificacao: ['verificacao_id'] } }
+);
 
-const verificacao_fotos = new Table({
-  verificacao_id: column.text,
-  r2_key:         column.text,
-  r2_thumb_key:   column.text,
-  nome_arquivo:   column.text,
-  tamanho_bytes:  column.integer,
-  mime_type:      column.text,
-  ordem:          column.integer,
-});
+const verificacao_fotos = new Table(
+  {
+    verificacao_id: column.text,
+    r2_key:         column.text,
+    r2_thumb_key:   column.text,
+    nome_arquivo:   column.text,
+    tamanho_bytes:  column.integer,
+    mime_type:      column.text,
+    ordem:          column.integer,
+  },
+  { indexes: { verificacao: ['verificacao_id'] } }
+);
 
-const nao_conformidades = new Table({
-  verificacao_id:        column.text,
-  verificacao_item_id:   column.text,
-  descricao:             column.text,
-  solucao_proposta:      column.text,
-  responsavel_id:        column.text,
-  data_nova_verif:       column.text,
-  prioridade:            column.text,
-  status:                column.text,
-  numero_ocorrencia:     column.integer,
-  nc_anterior_id:        column.text,
-  verificacao_reinsp_id: column.text,
-  foto_reinspecao_url:   column.text,
-  resolvida_na_verif_id: column.text,
-  resolvida_em:          column.text,
-  updated_at:            column.text,
-});
+const nao_conformidades = new Table(
+  {
+    verificacao_id:        column.text,
+    verificacao_item_id:   column.text,
+    descricao:             column.text,
+    solucao_proposta:      column.text,
+    responsavel_id:        column.text,
+    data_nova_verif:       column.text,
+    prioridade:            column.text,
+    status:                column.text,
+    numero_ocorrencia:     column.integer,
+    nc_anterior_id:        column.text,
+    verificacao_reinsp_id: column.text,
+    foto_reinspecao_url:   column.text,
+    resolvida_na_verif_id: column.text,
+    resolvida_em:          column.text,
+    updated_at:            column.text,
+  },
+  { indexes: {
+      verificacao: ['verificacao_id'],
+      status:      ['status'],
+  }}
+);
 
 const nc_reinspecoes = new Table({
   nc_id:          column.text,

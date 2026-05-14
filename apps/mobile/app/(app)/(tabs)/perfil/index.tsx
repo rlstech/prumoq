@@ -72,19 +72,16 @@ export default function PerfilScreen() {
   );
 
   const { data: totalVerifRows } = useQuery<CountRow>(
-    userId
-      ? `SELECT COUNT(*) AS count FROM verificacoes WHERE inspetor_id = '${userId}'`
-      : `SELECT 0 AS count`
+    `SELECT COUNT(*) AS count FROM verificacoes WHERE inspetor_id = ?`,
+    [userId ?? '']
   );
   const { data: conformeRows } = useQuery<CountRow>(
-    userId
-      ? `SELECT COUNT(*) AS count FROM verificacoes WHERE inspetor_id = '${userId}' AND status = 'conforme'`
-      : `SELECT 0 AS count`
+    `SELECT COUNT(*) AS count FROM verificacoes WHERE inspetor_id = ? AND status = 'conforme'`,
+    [userId ?? '']
   );
   const { data: ncsRows } = useQuery<CountRow>(
-    userId
-      ? `SELECT COUNT(*) AS count FROM nao_conformidades n JOIN verificacoes v ON v.id = n.verificacao_id WHERE v.inspetor_id = '${userId}' AND n.status = 'aberta'`
-      : `SELECT 0 AS count`
+    `SELECT COUNT(*) AS count FROM nao_conformidades n JOIN verificacoes v ON v.id = n.verificacao_id WHERE v.inspetor_id = ? AND n.status = 'aberta'`,
+    [userId ?? '']
   );
 
   const stats = useMemo(() => ({
