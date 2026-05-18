@@ -12,8 +12,10 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # Copy @prumoq/shared BEFORE install so pnpm workspace symlinks resolve correctly
 COPY packages/shared ./packages/shared
 
-# Only the package.json of the web app is needed for dependency resolution
-COPY apps/web/package.json ./apps/web/
+# package.json de cada workspace declarado em pnpm-workspace.yaml (apps/*)
+# pnpm v10 exige que todos os workspaces existam ao rodar --frozen-lockfile
+COPY apps/web/package.json    ./apps/web/
+COPY apps/mobile/package.json ./apps/mobile/
 
 RUN pnpm install --frozen-lockfile
 
