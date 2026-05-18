@@ -83,7 +83,7 @@ export default function ObraDetailScreen() {
     SELECT
       COUNT(DISTINCT a.id) AS total_ambientes,
       COUNT(DISTINCT f.id) AS total_fvs,
-      COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
+      COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS fvs_concluidas,
       (SELECT COUNT(*) FROM nao_conformidades n
        WHERE n.status = 'aberta' AND n.verificacao_id IN (
          SELECT v.id FROM verificacoes v
@@ -91,7 +91,7 @@ export default function ObraDetailScreen() {
          JOIN ambientes a2 ON a2.id = fp.ambiente_id
          WHERE a2.obra_id = o.id
        )) AS ncs_abertas,
-      CAST(SUM(CASE WHEN f.status = 'conforme' THEN 100
+      CAST(SUM(CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN 100
                     WHEN f.status = 'em_andamento' THEN COALESCE(f.percentual_exec, 0)
                     ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
     FROM obras o
@@ -106,13 +106,13 @@ export default function ObraDetailScreen() {
   const { data: ambientes } = useQuery<AmbienteRow>(`
     SELECT a.id, a.nome, a.tipo, a.localizacao,
       COUNT(DISTINCT f.id) AS total_fvs,
-      COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
+      COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS fvs_concluidas,
       (SELECT COUNT(*) FROM nao_conformidades n
        WHERE n.status = 'aberta' AND n.verificacao_id IN (
          SELECT v.id FROM verificacoes v
          WHERE v.fvs_planejada_id IN (SELECT id FROM fvs_planejadas WHERE ambiente_id = a.id)
        )) AS ncs_abertas,
-      CAST(SUM(CASE WHEN f.status = 'conforme' THEN 100
+      CAST(SUM(CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN 100
                     WHEN f.status = 'em_andamento' THEN COALESCE(f.percentual_exec, 0)
                     ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
     FROM ambientes a
@@ -199,7 +199,7 @@ export default function ObraDetailScreen() {
         {/* Ambiente list */}
         <View style={s.ambList}>
           {filtered.map(amb => {
-            const pct      = amb.progresso_percentual ?? 0;
+            const pct      = amb.total_fvs > 0 ? (amb.fvs_concluidas / amb.total_fvs) * 100 : 0;
             const hasNc    = amb.ncs_abertas > 0;
             const isDone   = amb.total_fvs > 0 && amb.fvs_concluidas >= amb.total_fvs;
             const noFvs    = amb.total_fvs === 0;

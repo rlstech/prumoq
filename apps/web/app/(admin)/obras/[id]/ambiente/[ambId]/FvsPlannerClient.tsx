@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FileText } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
 import ChecklistEditorModal from './ChecklistEditorModal';
@@ -60,12 +61,23 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
                      <StatusBadge status={fvs.status} size="sm" />
                    </td>
                    <td className="py-3 px-5 text-right">
-                     <button 
-                       onClick={() => setSelectedFvsId(fvs.id)}
-                       className="text-xs font-semibold text-[var(--br)] hover:text-[var(--brd)]"
-                     >
-                       Ver Checklist
-                     </button>
+                     <div className="flex items-center justify-end gap-3">
+                       <a
+                         href={`/admin/relatorio/fvs/${fvs.id}`}
+                         target="_blank"
+                         rel="noreferrer"
+                         className="p-1 text-txt-3 hover:text-brand rounded transition-colors"
+                         title="Exportar PDF"
+                       >
+                         <FileText size={14} />
+                       </a>
+                       <button
+                         onClick={() => setSelectedFvsId(fvs.id)}
+                         className="text-xs font-semibold text-[var(--br)] hover:text-[var(--brd)]"
+                       >
+                         Ver Checklist
+                       </button>
+                     </div>
                    </td>
                  </tr>
                ))}

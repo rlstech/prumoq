@@ -94,7 +94,7 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       throw new Error(`Presign failed: ${presignRes.status}`);
     }
 
-    const { url, key } = (await presignRes.json()) as { url: string; key: string };
+    const { uploadUrl: url, key } = (await presignRes.json()) as { uploadUrl: string; key: string };
 
     // Read file and upload directly to R2
     const base64 = await FileSystem.readAsStringAsync(localPath, {

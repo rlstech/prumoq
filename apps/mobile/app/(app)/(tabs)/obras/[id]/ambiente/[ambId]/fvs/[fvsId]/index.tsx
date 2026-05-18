@@ -1,10 +1,10 @@
 import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { PenLine, Plus } from 'lucide-react-native';
+import { FileText, PenLine, Plus } from 'lucide-react-native';
 import { AppHeader } from '../../../../../../../../../components/AppHeader';
 import { goBack } from '../../../../../../../../../lib/navigation';
 import { useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 const R2_PUBLIC_URL = process.env.EXPO_PUBLIC_R2_PUBLIC_URL ?? '';
 
@@ -140,15 +140,25 @@ export default function FvsHistoryScreen() {
         showBack
         onBack={() => goBack()}
         rightElement={
-          !isLocked ? (
-            <Pressable
-              style={styles.novaBtn}
-              onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
-            >
-              <Plus size={16} color="#fff" />
-              <Text style={styles.novaBtnText}>Nova</Text>
-            </Pressable>
-          ) : undefined
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {Platform.OS === 'web' && (
+              <Pressable
+                style={styles.pdfBtn}
+                onPress={() => (window as Window).open(`/print/${fvsId}`, '_blank', 'noreferrer')}
+              >
+                <FileText size={14} color="#E84A1A" />
+              </Pressable>
+            )}
+            {!isLocked && (
+              <Pressable
+                style={styles.novaBtn}
+                onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
+              >
+                <Plus size={16} color="#fff" />
+                <Text style={styles.novaBtnText}>Nova</Text>
+              </Pressable>
+            )}
+          </View>
         }
       />
 
@@ -343,6 +353,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   novaBtnText: { color: '#fff', fontSize: FontSizes.base, fontWeight: '500' },
+  pdfBtn: { padding: 6, borderRadius: Radius.md, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' },
   statusPanel: {
     backgroundColor: Colors.surface,
     padding: Spacing.lg,

@@ -34,7 +34,7 @@ function deadlineBadge(dateStr: string | null): { label: string; color: string }
   if (!dateStr) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const d = new Date(dateStr);
+  const d = new Date(dateStr.length === 10 ? dateStr + 'T00:00:00' : dateStr);
   d.setHours(0, 0, 0, 0);
   const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
   if (diff < 0)  return { label: 'Vencida',       color: Colors.nok };

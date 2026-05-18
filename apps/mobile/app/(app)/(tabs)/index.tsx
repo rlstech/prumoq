@@ -28,7 +28,7 @@ function weekAgo(): string {
 }
 
 function tempoRelativo(dateStr: string): string {
-  const d = new Date(dateStr);
+  const d = new Date(dateStr.length === 10 ? dateStr + 'T00:00:00' : dateStr);
   const t = new Date();
   const diffDays = Math.round((d.setHours(0,0,0,0) - t.setHours(0,0,0,0)) / 86_400_000);
   if (diffDays === 0) return 'Hoje';
@@ -149,8 +149,8 @@ export default function DashboardScreen() {
     SELECT o.id, o.nome, o.status,
            COUNT(DISTINCT a.id) AS total_ambientes,
            COUNT(DISTINCT f.id) AS total_fvs,
-           COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
-           CAST(SUM(CASE f.status WHEN 'conforme' THEN 100 WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
+           COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS fvs_concluidas,
+           CAST(SUM(CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN 100 WHEN f.status = 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
     FROM obras o
     LEFT JOIN ambientes a ON a.obra_id = o.id
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id

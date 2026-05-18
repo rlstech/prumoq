@@ -496,6 +496,11 @@ export default function NovaVerificacaoScreen() {
   const [userId, setUserId] = useState<string | null>(null);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    if (Platform.OS === 'web') {
+      supabase.functions.invoke('r2-presign', {
+        body: { filename: '_warmup.jpg', mimeType: 'image/jpeg' },
+      }).catch(() => {});
+    }
   }, []);
 
   const selectedEquipe = equipes.find(e => e.id === selectedEquipeId) ?? null;
@@ -653,21 +658,19 @@ export default function NovaVerificacaoScreen() {
         }
       }
 
-      for (let i = 0; i < generalPhotos.length; i++) {
-        const localPath = generalPhotos[i];
-        await db.execute(`
-          INSERT INTO verificacao_fotos
-            (id, verificacao_id, r2_key, nome_arquivo, mime_type, ordem)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `, [uuid(), verificacaoId, `pending:${localPath}`, localPath.split('/').pop() ?? 'photo.jpg', 'image/jpeg', i]);
-      }
-
-      if (signaturePath) {
-        await db.execute(
+      await Promise.all([
+        ...generalPhotos.map((localPath, i) =>
+          db.execute(`
+            INSERT INTO verificacao_fotos
+              (id, verificacao_id, r2_key, nome_arquivo, mime_type, ordem)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `, [uuid(), verificacaoId, `pending:${localPath}`, localPath.split('/').pop() ?? 'photo.jpg', 'image/jpeg', i])
+        ),
+        ...(signaturePath ? [db.execute(
           `UPDATE verificacoes SET assinatura_url = ?, assinada_em = ? WHERE id = ?`,
           [`pending:${signaturePath}`, now, verificacaoId]
-        );
-      }
+        )] : []),
+      ]);
 
       if (pendingResult.type !== 'idle') {
         setReinspResult(pendingResult);

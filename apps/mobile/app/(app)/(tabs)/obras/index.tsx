@@ -38,8 +38,8 @@ const OBRAS_QUERY = `
     o.municipio,
     o.uf,
     COUNT(DISTINCT f.id) AS total_fvs,
-    COUNT(DISTINCT CASE WHEN f.status = 'conforme' THEN f.id END) AS fvs_concluidas,
-    CAST(SUM(CASE f.status WHEN 'conforme' THEN 100 WHEN 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual,
+    COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS fvs_concluidas,
+    CAST(SUM(CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN 100 WHEN f.status = 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual,
     (SELECT COUNT(*) FROM nao_conformidades n
      WHERE n.status = 'aberta' AND n.verificacao_id IN (
        SELECT v.id FROM verificacoes v

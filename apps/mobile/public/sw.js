@@ -16,11 +16,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Em desenvolvimento, sempre vai à rede — sem cache
-  if (IS_DEV) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+  // Em desenvolvimento, não intercepta nada — deixa o browser lidar normalmente
+  if (IS_DEV) return;
 
   const url = new URL(event.request.url);
 
