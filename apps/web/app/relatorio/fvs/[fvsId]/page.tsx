@@ -13,7 +13,6 @@ function resolveR2(key: string | null | undefined): string | null {
 
 export default async function FvsRelatorioPage({ params }: { params: { fvsId: string } }) {
   const { fvsId } = params;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = (await createClient()) as any;
 
   const [headerRes, verifsRes, fotosRes, ncsRes, conclusaoRes] = await Promise.all([
