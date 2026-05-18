@@ -13,35 +13,36 @@ function resolveR2(key: string | null | undefined): string | null {
 
 export default async function FvsRelatorioPage({ params }: { params: { fvsId: string } }) {
   const { fvsId } = params;
-  const supabase = await createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = (await createClient()) as any;
 
   const [headerRes, verifsRes, fotosRes, ncsRes, conclusaoRes] = await Promise.all([
-    supabase.rpc('get_fvs_header' as any, { p_fvs_id: fvsId } as any),
-    supabase.rpc('get_verificacoes_fvs' as any, { p_fvs_id: fvsId } as any),
-    supabase.rpc('get_fotos_fvs' as any, { p_fvs_id: fvsId } as any),
-    supabase.rpc('get_ncs_fvs' as any, { p_fvs_id: fvsId } as any),
-    supabase.from('fvs_conclusoes' as any)
+    sb.rpc('get_fvs_header', { p_fvs_id: fvsId }),
+    sb.rpc('get_verificacoes_fvs', { p_fvs_id: fvsId }),
+    sb.rpc('get_fotos_fvs', { p_fvs_id: fvsId }),
+    sb.rpc('get_ncs_fvs', { p_fvs_id: fvsId }),
+    sb.from('fvs_conclusoes')
       .select('numero_conclusao, percentual_final, resultado, observacao_final, assinatura_url, inspetor_id, created_at')
       .eq('fvs_planejada_id', fvsId)
       .order('numero_conclusao', { ascending: false })
       .limit(1),
   ]);
 
-  const header = (headerRes.data as any[])?.[0];
+  const header = (headerRes.data ?? [])[0];
   if (!header) return notFound();
 
-  const verificacoes: any[] = ([...(verifsRes.data as any[] ?? [])]).reverse();
+  const verificacoes: any[] = [...(verifsRes.data ?? [])].reverse();
 
-  const verifIds = verificacoes.map(v => v.id);
+  const verifIds = verificacoes.map((v: any) => v.id);
   const { data: allItems } = verifIds.length > 0
-    ? await supabase.from('verificacao_itens' as any)
+    ? await sb.from('verificacao_itens')
         .select('id, verificacao_id, ordem, titulo, metodo_verif, tolerancia, resultado')
         .in('verificacao_id', verifIds)
         .order('ordem')
-    : { data: [] as any[] };
+    : { data: [] };
 
   const fotosMap: Record<string, { id: string; r2_url: string; ordem: number }[]> = {};
-  for (const f of (fotosRes.data as any[] ?? [])) {
+  for (const f of (fotosRes.data ?? [])) {
     const url = resolveR2(f.r2_key);
     if (!url) continue;
     if (!fotosMap[f.verificacao_id]) fotosMap[f.verificacao_id] = [];
@@ -54,20 +55,20 @@ export default async function FvsRelatorioPage({ params }: { params: { fvsId: st
     itemsMap[item.verificacao_id].push(item);
   }
 
-  const verifsData = verificacoes.map(v => ({
+  const verifsData = verificacoes.map((v: any) => ({
     ...v,
     assinatura_url: resolveR2(v.assinatura_url),
     items: itemsMap[v.id] ?? [],
     fotos: fotosMap[v.id] ?? [],
   }));
 
-  const conclusao = (conclusaoRes.data as any[])?.[0] ?? null;
+  const conclusao = (conclusaoRes.data ?? [])[0] ?? null;
 
   return (
     <PrintClient
       header={header}
       verificacoes={verifsData}
-      ncs={(ncsRes.data as any[]) ?? []}
+      ncs={ncsRes.data ?? []}
       conclusao={conclusao}
       emitidoEm={new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
     />
