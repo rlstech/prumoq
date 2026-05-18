@@ -16,10 +16,10 @@ export default async function FvsRelatorioPage({ params }: { params: { fvsId: st
   const supabase = await createClient();
 
   const [headerRes, verifsRes, fotosRes, ncsRes, conclusaoRes] = await Promise.all([
-    supabase.rpc('get_fvs_header' as any, { p_fvs_id: fvsId }),
-    supabase.rpc('get_verificacoes_fvs' as any, { p_fvs_id: fvsId }),
-    supabase.rpc('get_fotos_fvs' as any, { p_fvs_id: fvsId }),
-    supabase.rpc('get_ncs_fvs' as any, { p_fvs_id: fvsId }),
+    supabase.rpc('get_fvs_header' as any, { p_fvs_id: fvsId } as any),
+    supabase.rpc('get_verificacoes_fvs' as any, { p_fvs_id: fvsId } as any),
+    supabase.rpc('get_fotos_fvs' as any, { p_fvs_id: fvsId } as any),
+    supabase.rpc('get_ncs_fvs' as any, { p_fvs_id: fvsId } as any),
     supabase.from('fvs_conclusoes' as any)
       .select('numero_conclusao, percentual_final, resultado, observacao_final, assinatura_url, inspetor_id, created_at')
       .eq('fvs_planejada_id', fvsId)
