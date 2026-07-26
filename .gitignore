@@ -19,6 +19,9 @@ apps/web/out/
 # TypeScript
 *.tsbuildinfo
 
+# Local PDF render validation
+tmp/pdfs/
+
 # Supabase local dev
 supabase/.branches/
 supabase/.temp/
@@ -29,3 +32,6 @@ Thumbs.db
 
 # Claude settings
 .claude/settings.local.json
+
+# Codex local settings
+.codex/

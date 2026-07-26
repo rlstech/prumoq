@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { AppHeader } from '../../../../components/AppHeader';
 import { ProgressBar } from '../../../../components/ProgressBar';
 import { StatusBadge } from '../../../../components/StatusBadge';
-import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
+import { Breakpoints, Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
 import type { BadgeStatus } from '../../../../components/StatusBadge';
 import { supabase } from '../../../../lib/supabase';
 
@@ -164,7 +164,9 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: Colors.surface2,
+    borderWidth: 1,
+    borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.sm,
     gap: Spacing.xs,
@@ -172,10 +174,17 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 38,
-    color: '#fff',
+    color: Colors.text,
     fontSize: FontSizes.md,
   },
-  list: { padding: Spacing.lg, gap: Spacing.sm },
+  list: {
+    width: '100%',
+    maxWidth: Breakpoints.maxContent,
+    alignSelf: 'center',
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    paddingBottom: 96,
+  },
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
@@ -183,6 +192,8 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     borderWidth: 1,
     borderColor: Colors.border,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.brandSignature,
   },
   cardPressed: { opacity: 0.75 },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },

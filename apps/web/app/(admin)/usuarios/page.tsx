@@ -11,8 +11,8 @@ export default async function UsuariosPage() {
   return (
     <>
       <Header breadcrumbs={[{ label: 'Usuários' }]} />
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-6">
+      <div className="prumo-page">
+        <div className="prumo-page-inner">
         <UsuariosClient initialUsers={usuarios as any[] || []} availableObras={obras as any[] || []} />
         </div>
       </div>

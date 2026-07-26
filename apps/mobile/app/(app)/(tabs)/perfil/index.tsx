@@ -10,9 +10,10 @@ import {
   View,
 } from 'react-native';
 import { AppHeader } from '../../../../components/AppHeader';
-import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
+import { Breakpoints, Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
 import { db } from '../../../../lib/powersync';
 import { supabase } from '../../../../lib/supabase';
+import { draftStore } from '../../../../lib/verification/draftStore';
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -92,6 +93,9 @@ export default function PerfilScreen() {
   }), [obrasRows, totalVerifRows, conformeRows, ncsRows]);
 
   async function handleLogout() {
+    if (userId) {
+      try { await draftStore.deleteForUser(userId); } catch { /* logout must continue */ }
+    }
     try { await db.disconnectAndClear(); } catch { /* ignore */ }
     await supabase.auth.signOut();
   }
@@ -201,33 +205,36 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
 
   // Hero
-  hero: {
-    alignItems: 'center',
-    paddingBottom: Spacing.md,
-    gap: 10,
-  },
+  hero: { alignItems: 'flex-start', paddingBottom: Spacing.sm, gap: 6 },
   avatar: {
-    width: 72,
-    height: 72,
+    width: 64,
+    height: 64,
     borderRadius: Radius.full,
-    backgroundColor: '#fff',
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: Colors.brandLight,
+    borderWidth: 1,
+    borderColor: Colors.brandSignature,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: Spacing.xs,
   },
-  avatarText: { color: Colors.brand, fontSize: 22, fontWeight: '500' },
-  heroName:   { color: '#fff', fontSize: FontSizes.lg, fontWeight: '500' },
-  heroRole:   { color: 'rgba(255,255,255,0.8)', fontSize: FontSizes.sm },
+  avatarText: { color: Colors.brand, fontSize: 22, fontFamily: FontFamily.bold },
+  heroName:   { color: Colors.text, fontSize: FontSizes.xl, fontFamily: FontFamily.bold },
+  heroRole:   { color: Colors.textSecondary, fontSize: FontSizes.sm, fontFamily: FontFamily.regular },
 
   // Body
   body:        { flex: 1, backgroundColor: Colors.bg },
-  bodyContent: { padding: Spacing.lg, paddingBottom: 40 },
+  bodyContent: {
+    width: '100%',
+    maxWidth: Breakpoints.maxContent,
+    alignSelf: 'center',
+    padding: Spacing.lg,
+    paddingBottom: 40,
+  },
 
   // Section label
   sectionLabel: {
     fontSize: FontSizes.tiny - 1,
-    fontWeight: '500',
+    fontFamily: FontFamily.semibold,
     color: Colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -294,10 +301,14 @@ const s = StyleSheet.create({
 
   // Logout
   logoutBtn: {
-    backgroundColor: Colors.surface2,
+    minHeight: 48,
+    backgroundColor: Colors.nokBg,
+    borderWidth: 1,
+    borderColor: Colors.nok,
     borderRadius: Radius.lg,
     padding: 13,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  logoutText: { color: Colors.nok, fontSize: FontSizes.base, fontWeight: '500' },
+  logoutText: { ...Typography.label, color: Colors.nok },
 });

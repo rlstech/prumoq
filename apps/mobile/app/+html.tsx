@@ -7,7 +7,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-        <meta name="theme-color" content="#E84A1A" />
+        <meta name="theme-color" content="#163B50" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -23,9 +23,10 @@ export default function Root({ children }: { children: React.ReactNode }) {
           }
           body {
             margin: 0;
-            background-color: #E84A1A;
+            background-color: #F4F1E8;
             position: fixed;
             width: 100%;
+            color: #142522;
           }
         `}} />
         <script dangerouslySetInnerHTML={{ __html: `

@@ -1,0 +1,32 @@
+:root {
+  --prumo-brand: #163b50;
+  --prumo-brand-deep: #0f2c3c;
+  --prumo-brand-pressed: #0c2533;
+  --prumo-accent: #d8e568;
+  --prumo-accent-soft: #f3f7d5;
+
+  --prumo-basalt: #142522;
+  --prumo-slate: #52615b;
+  --prumo-muted: #6e7a75;
+  --prumo-canvas: #f4f1e8;
+  --prumo-surface: #fffefb;
+  --prumo-fog: #e4e7e1;
+  --prumo-fog-strong: #c9d0ca;
+
+  --prumo-success: #2d7a4b;
+  --prumo-success-soft: #e8f4ec;
+  --prumo-danger: #b23a3a;
+  --prumo-danger-soft: #faeaea;
+  --prumo-warning: #986014;
+  --prumo-warning-soft: #fbf1dd;
+  --prumo-info: #2d66a8;
+  --prumo-info-soft: #e9f0f8;
+  --prumo-neutral: #52615b;
+  --prumo-neutral-soft: #eef0ec;
+
+  --prumo-radius-control: 6px;
+  --prumo-radius-card: 12px;
+  --prumo-radius-feature: 20px;
+  --prumo-shadow-card: 0 1px 2px rgba(20, 37, 34, 0.05);
+  --prumo-shadow-float: 0 18px 50px rgba(20, 37, 34, 0.16);
+}

@@ -63,7 +63,7 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
                    <td className="py-3 px-5 text-right">
                      <div className="flex items-center justify-end gap-3">
                        <a
-                         href={`/admin/relatorio/fvs/${fvs.id}`}
+                         href={`/admin/relatorio/fvs/${fvs.id}/pdf`}
                          target="_blank"
                          rel="noreferrer"
                          className="p-1 text-txt-3 hover:text-brand rounded transition-colors"

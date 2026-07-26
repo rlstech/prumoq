@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, Clock } from 'lucide-react-native';
 import { useMemo, useState, useEffect } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { AppHeader } from '../../../../components/AppHeader';
-import { Colors, FontSizes, Radius, Spacing } from '../../../../lib/constants';
+import { Breakpoints, Colors, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
 import { supabase } from '../../../../lib/supabase';
 
 type TabKey = 'abertas' | 'resolvidas' | 'todas';
@@ -184,26 +184,44 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    backgroundColor: Colors.surface2,
+    borderRadius: Radius.md,
+    padding: 4,
+    width: '92%',
+    marginTop: Spacing.lg,
+    gap: 4,
+    maxWidth: Breakpoints.maxForm,
+    alignSelf: 'center',
   },
-  tab: { flex: 1, paddingVertical: Spacing.md, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: Colors.brand },
-  tabText: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.textSecondary },
-  tabTextActive: { color: Colors.brand },
-  list: { padding: Spacing.lg, gap: Spacing.sm, paddingBottom: Spacing.xxl },
+  tab: {
+    flex: 1,
+    minHeight: 44,
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.sm,
+  },
+  tabActive: { backgroundColor: Colors.surface, ...Elevation.card },
+  tabText: { ...Typography.caption, fontFamily: FontFamily.medium, color: Colors.textSecondary },
+  tabTextActive: { color: Colors.brand, fontFamily: FontFamily.semibold },
+  list: {
+    width: '100%',
+    maxWidth: Breakpoints.maxForm,
+    alignSelf: 'center',
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    paddingBottom: Spacing.xxl,
+  },
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    padding: Spacing.md,
-    gap: Spacing.xs,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.nok,
+    padding: Spacing.lg,
+    gap: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.nok,
+    ...Elevation.card,
   },
-  cardResolved: { opacity: 0.7, borderLeftColor: Colors.ok },
+  cardResolved: { opacity: 0.78, borderColor: Colors.ok },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: Spacing.sm },
   cardHeaderLeft: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, flex: 1 },
   cardItem: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text, flex: 1 },
@@ -223,12 +241,16 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
   cardDate: { fontSize: FontSizes.xs, color: Colors.textSecondary },
   reinspBtn: {
-    backgroundColor: Colors.progressBg,
+    minHeight: 40,
+    backgroundColor: Colors.brandLight,
+    borderWidth: 1,
+    borderColor: Colors.brandSignature,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    paddingVertical: Spacing.sm,
+    justifyContent: 'center',
   },
-  reinspBtnText: { fontSize: FontSizes.sm, color: Colors.progress, fontWeight: '500' },
+  reinspBtnText: { fontSize: FontSizes.sm, color: Colors.brand, fontFamily: FontFamily.semibold },
   empty: { alignItems: 'center', gap: Spacing.md, paddingTop: 60 },
   emptyText: { fontSize: FontSizes.md, color: Colors.textTertiary },
 });

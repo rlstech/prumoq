@@ -30,38 +30,49 @@ export default async function DashboardPage() {
   const ncsUrgentes = (ncsUrgentesData as any[]) || [];
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+    <div className="prumo-page">
+      <div className="prumo-page-inner">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <h1 className="text-xl font-semibold text-txt tracking-tight">Visão Geral</h1>
-            <p className="text-[13px] text-txt-2 mt-1">Resumo operacional — {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</p>
+            <p className="prumo-kicker text-[var(--prumo-brand)]">Centro de controle</p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-[-.035em] text-txt">A operação, em eixo.</h1>
+            <p className="mt-2 text-sm text-txt-2">Resumo operacional de {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</p>
           </div>
+          <Link href="/obras" className="prumo-primary-button">Abrir portfólio <span aria-hidden="true">→</span></Link>
         </div>
 
-        {/* KPIs com border-left colorido */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[14px]">
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-[var(--br)] rounded-xl p-[18px_20px]">
-            <div className="text-[28px] font-semibold text-[var(--br)] mb-0.5">{countObras || 0}</div>
-            <div className="text-xs text-txt-2">Obras ativas</div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[1.55fr_1fr_1fr_1fr]">
+          <div className="prumo-datum relative min-h-[166px] overflow-hidden rounded-xl bg-sidebar p-6 text-white shadow-card md:col-span-2 xl:col-span-1">
+            <div className="absolute -right-12 -top-20 h-56 w-56 rounded-full border border-accent/25" />
+            <div className="absolute -right-3 -top-10 h-36 w-36 rounded-full border border-white/10" />
+            <div className="relative flex h-full flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-[.14em] text-accent">Portfólio ativo</span>
+                <Building2 size={20} className="text-accent" />
+              </div>
+              <div>
+                <div className="prumo-metric text-[46px] font-semibold leading-none">{countObras || 0}</div>
+                <div className="mt-2 text-sm text-white/55">obras acompanhadas agora</div>
+              </div>
+            </div>
           </div>
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-pg rounded-xl p-[18px_20px]">
-            <div className="text-[28px] font-semibold text-pg mb-0.5">{countAmbientes || 0}</div>
-            <div className="text-xs text-txt-2">Ambientes cadastrados</div>
+          <div className="prumo-panel flex min-h-[166px] flex-col justify-between p-5">
+            <Layers size={20} className="text-pg" />
+            <div><div className="prumo-metric text-2xl font-semibold text-txt">{countAmbientes || 0}</div><div className="mt-1 text-xs text-txt-2">Ambientes mapeados</div></div>
           </div>
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-ok rounded-xl p-[18px_20px]">
-            <div className="text-[28px] font-semibold text-ok mb-0.5">{countFvsConcluidas || 0}</div>
-            <div className="text-xs text-txt-2">FVS concluídas</div>
+          <div className="prumo-panel flex min-h-[166px] flex-col justify-between p-5">
+            <ClipboardCheck size={20} className="text-ok" />
+            <div><div className="prumo-metric text-2xl font-semibold text-txt">{countFvsConcluidas || 0}</div><div className="mt-1 text-xs text-txt-2">FVS concluídas</div></div>
           </div>
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-nok rounded-xl p-[18px_20px]">
-            <div className="text-[28px] font-semibold text-nok mb-0.5">{countNcAbertas || 0}</div>
-            <div className="text-xs text-txt-2">NC abertas</div>
+          <div className="prumo-panel flex min-h-[166px] flex-col justify-between p-5">
+            <AlertTriangle size={20} className="text-nok" />
+            <div><div className="prumo-metric text-2xl font-semibold text-txt">{countNcAbertas || 0}</div><div className="mt-1 text-xs text-txt-2">NC exigem atenção</div></div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Progresso de Obras (2/3) */}
-          <div className="lg:col-span-2 bg-bg-1 border border-brd-0 rounded-xl overflow-hidden flex flex-col">
+          <div className="prumo-panel flex flex-col overflow-hidden lg:col-span-2">
             <div className="px-5 py-4 border-b border-brd-0 flex items-center justify-between">
               <h3 className="text-[14px] font-semibold text-txt">Progresso das obras</h3>
               <Link href="/obras" className="text-xs font-medium text-txt-2 hover:text-txt transition-colors">Ver todas →</Link>
@@ -118,7 +129,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Atividade Recente (1/3) */}
-          <div className="bg-bg-1 border border-brd-0 rounded-xl flex flex-col">
+          <div className="prumo-panel flex flex-col">
             <div className="px-5 py-4 border-b border-brd-0">
               <h3 className="text-[14px] font-semibold text-txt">Atividade recente</h3>
             </div>
@@ -149,7 +160,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* NCs urgentes (full width) */}
-        <div className="bg-bg-1 border border-brd-0 rounded-xl overflow-hidden">
+        <div className="prumo-panel overflow-hidden">
           <div className="px-5 py-4 border-b border-brd-0 flex items-center justify-between">
             <h3 className="text-[14px] font-semibold text-txt flex items-center gap-2">
               <AlertTriangle size={15} className="text-nok" />

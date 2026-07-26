@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Colors, FontSizes, Radius, Spacing } from '../../../../../lib/constants';
+import { Breakpoints, Colors, FontSizes, Radius, Spacing } from '../../../../../lib/constants';
 
 type FilterKey = 'todos' | 'interno' | 'externo' | 'com_nc';
 
@@ -275,7 +275,12 @@ export default function ObraDetailScreen() {
 
 const s = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.bg },
-  scroll: { paddingBottom: 40 },
+  scroll: {
+    width: '100%',
+    maxWidth: Breakpoints.maxContent,
+    alignSelf: 'center',
+    paddingBottom: 40,
+  },
 
 
   // Info panel

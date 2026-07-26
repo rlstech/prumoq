@@ -1,10 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2732" viewBox="0 0 2048 2732">
-  <rect width="2048" height="2732" fill="#E84A1A"/>
-  <g transform="translate(1024, 1366) scale(24)" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="-8" y="-12" width="16" height="20" rx="2"/>
-    <rect x="-4" y="-14" width="8" height="4" rx="1" fill="#FFFFFF" stroke="none"/>
-    <line x1="-4" y1="-5" x2="4" y2="-5"/>
-    <polyline points="-4 -1 -2 1 2 -3" stroke-width="2"/>
-    <line x1="-4" y1="4" x2="4" y2="4"/>
+  <rect width="2048" height="2732" fill="#163B50"/>
+  <g transform="translate(664 850) scale(11.25)">
+    <circle cx="32" cy="30" r="20" fill="none" stroke="#D8E568" stroke-width="6"/>
+  <path d="M46.5 44.5 55 53" fill="none" stroke="#D8E568" stroke-width="6" stroke-linecap="round"/>
+  <path d="M32 7V35" fill="none" stroke="#FFFEFB" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M32 32 38 40 35 47 32 53 29 47 26 40Z" fill="#FFFEFB" stroke="#163B50" stroke-width="1.25" stroke-linejoin="round"/>
   </g>
+  <text x="1024" y="1765" fill="#FFFEFB" font-family="IBM Plex Sans, Arial, sans-serif" font-size="132" font-weight="700" text-anchor="middle" letter-spacing="-4">PrumoQ</text>
+  <text x="1024" y="1860" fill="#D8E568" font-family="IBM Plex Sans, Arial, sans-serif" font-size="44" font-weight="600" text-anchor="middle" letter-spacing="8">QUALIDADE EM CAMPO</text>
 </svg>

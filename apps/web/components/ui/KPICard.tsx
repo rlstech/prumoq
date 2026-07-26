@@ -28,17 +28,17 @@ export default function KPICard({ title, value, icon, subtitle, colorVariant = '
   };
 
   return (
-    <div className="bg-bg-1 border border-brd-0 rounded-xl p-5 flex flex-col">
+    <div className="prumo-panel prumo-datum flex min-h-[148px] flex-col p-5 pl-6">
       <div className="flex items-start justify-between mb-4">
         <h3 className="text-sm font-medium text-txt-2">{title}</h3>
         {icon && (
-          <div className={`p-2 rounded-lg ${iconBackgrounds[colorVariant]} ${iconColors[colorVariant]}`}>
+          <div className={`rounded-lg p-2 ${iconBackgrounds[colorVariant]} ${iconColors[colorVariant]}`}>
             {icon}
           </div>
         )}
       </div>
       <div>
-        <div className="text-3xl font-semibold text-txt tracking-tight">{value}</div>
+        <div className="prumo-metric text-2xl font-semibold tracking-tight text-txt">{value}</div>
         {subtitle && <p className="text-xs text-txt-3 mt-1">{subtitle}</p>}
       </div>
     </div>

@@ -1,88 +1,156 @@
-import { ChevronLeft, MoreHorizontal } from 'lucide-react-native';
+import { ChevronLeft } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
+import {
+  Breakpoints,
+  Colors,
+  ComponentSize,
+  FontFamily,
+  FontSizes,
+  Palette,
+  Radius,
+  Spacing,
+} from '../lib/constants';
+import { BrandMark } from './BrandMark';
+import { SyncStatusIndicator } from './SyncStatusIndicator';
+
+type AppHeaderTone = 'light' | 'brand';
 
 interface Props {
   title?: string;
   subtitle?: string;
+  tone?: AppHeaderTone;
   showBack?: boolean;
   onBack?: () => void;
   rightElement?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-export function AppHeader({ title, subtitle, showBack, onBack, rightElement, children }: Props) {
-  return (
-    <View style={styles.container}>
-      <View style={styles.topRow}>
-        {showBack ? (
-          <Pressable onPress={onBack} hitSlop={8} style={styles.backBtn}>
-            <ChevronLeft size={18} color="#fff" />
-          </Pressable>
-        ) : (
-          <View style={styles.side} />
-        )}
-        <Text style={styles.appName}>PrumoQ</Text>
-        {rightElement ?? (
-          <View style={styles.side}>
-            <MoreHorizontal size={20} color="rgba(255,255,255,0.7)" />
-          </View>
-        )}
-      </View>
+export function AppHeader({
+  title,
+  subtitle,
+  tone = 'light',
+  showBack,
+  onBack,
+  rightElement,
+  children,
+}: Props) {
+  const isBrand = tone === 'brand';
 
-      {(title || subtitle || children) && (
-        <View style={styles.content}>
-          {title ? <Text style={styles.title} numberOfLines={1}>{title}</Text> : null}
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-          {children}
+  return (
+    <View style={[styles.shell, isBrand && styles.shellBrand]}>
+      <View style={styles.container}>
+        <View style={styles.topRow}>
+          <View style={styles.brandRow}>
+            {showBack ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Voltar"
+                onPress={onBack}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.iconButton,
+                  isBrand && styles.iconButtonBrand,
+                  pressed && (isBrand ? styles.iconButtonBrandPressed : styles.iconButtonPressed),
+                ]}
+              >
+                <ChevronLeft size={22} color={isBrand ? Palette.white : Colors.text} />
+              </Pressable>
+            ) : (
+              <BrandMark size={32} variant={isBrand ? 'onBrand' : 'default'} />
+            )}
+            <Text style={[styles.appName, isBrand && styles.appNameBrand]}>PrumoQ</Text>
+          </View>
+          <View style={styles.headerActions}>
+            <SyncStatusIndicator />
+            {rightElement}
+          </View>
         </View>
-      )}
+
+        {(title || subtitle || children) ? (
+          <View style={styles.content}>
+            {title ? (
+              <Text style={[styles.title, isBrand && styles.titleBrand]} numberOfLines={2}>
+                {title}
+              </Text>
+            ) : null}
+            {subtitle ? (
+              <Text style={[styles.subtitle, isBrand && styles.subtitleBrand]} numberOfLines={2}>
+                {subtitle}
+              </Text>
+            ) : null}
+            {children}
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  shell: {
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  shellBrand: {
     backgroundColor: Colors.brand,
+    borderBottomColor: Colors.brandDark,
+  },
+  container: {
+    width: '100%',
+    maxWidth: Breakpoints.maxContent,
+    alignSelf: 'center',
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.lg,
   },
   topRow: {
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.xs,
+    gap: Spacing.md,
   },
-  side: {
-    width: 36,
+  brandRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.sm,
   },
-  backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.sm,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  iconButton: {
+    width: ComponentSize.touch,
+    height: ComponentSize.touch,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surface2,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconButtonPressed: { backgroundColor: Colors.border },
+  iconButtonBrand: { backgroundColor: 'rgba(255,255,255,0.1)' },
+  iconButtonBrandPressed: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   appName: {
-    color: '#fff',
+    color: Colors.text,
     fontSize: FontSizes.base,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontFamily: FontFamily.bold,
+    letterSpacing: -0.25,
   },
+  appNameBrand: { color: Palette.white },
   content: {
     paddingTop: Spacing.xs,
-    gap: 2,
+    gap: 4,
   },
   title: {
-    color: '#fff',
-    fontSize: FontSizes.xl,
-    fontWeight: '600',
+    color: Colors.text,
+    fontSize: FontSizes.xxl,
+    lineHeight: 32,
+    fontFamily: FontFamily.bold,
+    letterSpacing: -0.5,
   },
+  titleBrand: { color: Palette.white },
   subtitle: {
-    color: 'rgba(255,255,255,0.75)',
+    color: Colors.textSecondary,
     fontSize: FontSizes.sm,
+    lineHeight: 20,
+    fontFamily: FontFamily.regular,
   },
+  subtitleBrand: { color: Palette.white, opacity: 0.76 },
 });

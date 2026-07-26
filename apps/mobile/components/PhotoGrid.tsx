@@ -1,6 +1,6 @@
-import { X } from 'lucide-react-native';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Colors, Radius, Spacing } from '../lib/constants';
+import { Plus, X } from 'lucide-react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Colors, FontFamily, Radius, Spacing } from '../lib/constants';
 
 const R2_PUBLIC_URL = process.env.EXPO_PUBLIC_R2_PUBLIC_URL ?? '';
 
@@ -28,12 +28,12 @@ export function PhotoGrid({ photos, max, onAdd, onRemove, onPress, addLabel = 'A
     <View style={styles.grid}>
       {displayPhotos.map((key, index) => (
         <View key={key + index} style={styles.cell}>
-          <Pressable onPress={() => onPress?.(index)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Abrir foto ${index + 1}`} onPress={() => onPress?.(index)}>
             <Image source={{ uri: resolveUri(key) }} style={styles.thumb} resizeMode="cover" />
           </Pressable>
           {onRemove && (
-            <Pressable style={styles.remove} onPress={() => onRemove(index)} hitSlop={8}>
-              <X size={10} color={Colors.surface} strokeWidth={3} />
+            <Pressable accessibilityRole="button" accessibilityLabel={`Remover foto ${index + 1}`} style={styles.remove} onPress={() => onRemove(index)} hitSlop={8}>
+              <X size={13} color={Colors.surface} strokeWidth={2.6} />
             </Pressable>
           )}
           {key.startsWith('pending:') && <View style={styles.pendingDot} />}
@@ -43,8 +43,10 @@ export function PhotoGrid({ photos, max, onAdd, onRemove, onPress, addLabel = 'A
         <Pressable
           style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}
           onPress={onAdd}
+          accessibilityRole="button"
+          accessibilityLabel={addLabel}
         >
-          <Text style={styles.addPlus}>+</Text>
+          <Plus size={20} color={Colors.textSecondary} />
           <Text style={styles.addLabel}>{addLabel}</Text>
         </Pressable>
       )}
@@ -82,8 +84,8 @@ const styles = StyleSheet.create({
     right: 4,
     backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: Radius.full,
-    width: 18,
-    height: 18,
+    width: 26,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -113,14 +115,10 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
-  addPlus: {
-    fontSize: 20,
-    color: Colors.textTertiary,
-    lineHeight: 22,
-  },
   addLabel: {
-    fontSize: 9,
-    color: Colors.textTertiary,
+    fontSize: 10,
+    fontFamily: FontFamily.medium,
+    color: Colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 4,
   },

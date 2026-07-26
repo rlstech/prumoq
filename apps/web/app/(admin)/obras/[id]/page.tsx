@@ -63,8 +63,8 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
         ]}
       />
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-6">
+      <div className="prumo-page">
+        <div className="prumo-page-inner">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-xl font-semibold text-txt tracking-tight">{typedObra.nome}</h1>

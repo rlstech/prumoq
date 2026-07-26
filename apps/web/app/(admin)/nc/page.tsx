@@ -42,8 +42,8 @@ export default async function NcPage() {
   return (
     <>
       <Header breadcrumbs={[{ label: 'Não Conformidades' }]} />
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-6">
+      <div className="prumo-page">
+        <div className="prumo-page-inner">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-nok rounded-xl p-[14px_16px]">
             <div className="text-2xl font-semibold text-nok">{abertas}</div>

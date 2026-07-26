@@ -9,17 +9,24 @@
     "web": "expo start --web",
     "build:web": "expo export --platform web",
     "serve:web": "npx serve dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test \"lib/**/*.test.ts\""
   },
   "dependencies": {
+    "@babel/runtime": "7.29.2",
+    "@expo-google-fonts/ibm-plex-sans": "0.4.1",
+    "@expo/metro-runtime": "~4.0.1",
     "@powersync/common": "^1.12.0",
     "@powersync/react-native": "^1.4.0",
+    "@prumoq/design-system": "workspace:*",
     "@prumoq/shared": "workspace:*",
-    "@react-native-async-storage/async-storage": "^2.1.0",
+    "@react-native-async-storage/async-storage": "^1.23.1",
     "@supabase/supabase-js": "^2.49.0",
     "expo": "~52.0.0",
+    "expo-asset": "~11.0.5",
     "expo-camera": "~16.0.0",
     "expo-file-system": "~18.0.0",
+    "expo-font": "~13.0.3",
     "expo-image-picker": "~16.0.0",
     "expo-router": "~4.0.0",
     "expo-secure-store": "~14.0.0",
@@ -29,17 +36,22 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-native": "0.76.9",
+    "react-native-css-interop": "0.2.3",
     "react-native-signature-canvas": "^4.7.2",
-    "react-native-svg": "^15.10.0",
+    "react-native-svg": "^15.8.0",
     "react-native-web": "~0.19.13",
+    "react-native-worklets": "0.8.1",
     "react-signature-canvas": "^1.0.6",
     "zod": "^3.24.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@babel/plugin-transform-react-jsx": "7.28.6",
     "@types/react": "~18.3.0",
     "@types/react-signature-canvas": "^1.0.6",
+    "babel-preset-expo": "~12.0.12",
     "tailwindcss": "^3.4.0",
+    "tsx": "^4.20.0",
     "typescript": "^5.7.0"
   }
 }

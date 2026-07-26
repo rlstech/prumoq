@@ -1,43 +1,146 @@
+@import '@prumoq/design-system/tokens.css';
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Brand */
-  --br:   #E84A1A;
-  --brd:  #C03A10;
-  --brl:  #FDF0EC;
-  --brm:  #F5784A;
-  /* Semantic */
-  --ok:   #2E7D32;  --okb:  #E8F5E9; --okm: #4CAF50;
-  --nok:  #C62828;  --nokb: #FFEBEE;
-  --pg:   #1565C0;  --pgb:  #E3F2FD;
-  --na:   #666;     --nab:  #F2F2F2;
-  --warn: #E65100;  --warnb:#FFF3E0;
-  /* Layout */
-  --sb-w: 228px;
-  --hd:   56px;
-  /* Interface */
-  --bg0: #F7F6F3;
-  --bg1: #FFFFFF;
-  --bg2: #F1EFE8;
-  --txt: #1A1A18;
-  --txt2:#5C5B57;
-  --txt3:#9C9A93;
-  --brd0: rgba(0,0,0,.08);
-  --brd1: rgba(0,0,0,.12);
-  --r:  8px;
-  --rl: 12px;
+  /* Backwards-compatible aliases. All new values originate in tokens.css. */
+  --br: var(--prumo-brand);
+  --brd: var(--prumo-brand-deep);
+  --brl: var(--prumo-accent-soft);
+  --brm: var(--prumo-accent);
+  --ok: var(--prumo-success);
+  --okb: var(--prumo-success-soft);
+  --okm: var(--prumo-success);
+  --nok: var(--prumo-danger);
+  --nokb: var(--prumo-danger-soft);
+  --pg: var(--prumo-info);
+  --pgb: var(--prumo-info-soft);
+  --na: var(--prumo-neutral);
+  --nab: var(--prumo-neutral-soft);
+  --warn: var(--prumo-warning);
+  --warnb: var(--prumo-warning-soft);
+
+  --sb-w: 88px;
+  --hd: 72px;
+  --bg0: var(--prumo-canvas);
+  --bg1: var(--prumo-surface);
+  --bg2: var(--prumo-fog);
+  --txt: var(--prumo-basalt);
+  --txt2: var(--prumo-slate);
+  --txt3: var(--prumo-muted);
+  --brd0: rgba(20, 37, 34, 0.1);
+  --brd1: rgba(20, 37, 34, 0.18);
+  --r: var(--prumo-radius-control);
+  --rl: var(--prumo-radius-card);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  background: var(--bg0);
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 13px;
+  min-width: 320px;
+  font-family: 'IBM Plex Sans Variable', 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.47;
   color: var(--txt);
   background: var(--bg0);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  color: var(--prumo-basalt);
+  background: var(--prumo-accent);
+}
+
+:focus-visible {
+  outline: 3px solid var(--prumo-accent);
+  outline-offset: 2px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer components {
+  .prumo-page {
+    @apply flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-7;
+  }
+
+  .prumo-page-inner {
+    @apply mx-auto w-full max-w-[1440px] space-y-6;
+  }
+
+  .prumo-panel {
+    @apply rounded-lg border border-[var(--brd0)] bg-bg-1 shadow-card;
+  }
+
+  .prumo-datum {
+    @apply relative overflow-hidden;
+  }
+
+  .prumo-datum::before {
+    content: '';
+    @apply absolute inset-y-0 left-0 w-[3px] bg-accent;
+  }
+
+  .prumo-kicker {
+    @apply text-xs font-semibold uppercase tracking-[0.12em] text-txt-2;
+  }
+
+  .prumo-metric {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .prumo-primary-button {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded px-4 text-sm font-semibold text-white transition-colors;
+    background: var(--prumo-brand);
+  }
+
+  .prumo-primary-button:hover {
+    background: var(--prumo-brand-deep);
+  }
+
+  .prumo-secondary-button {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded border border-[var(--brd1)] bg-bg-1 px-4 text-sm font-semibold text-txt transition-colors hover:bg-bg-2;
+  }
+
+  .prumo-field {
+    @apply min-h-11 w-full rounded border border-[var(--brd1)] bg-bg-1 px-3 text-sm text-txt outline-none transition-colors placeholder:text-txt-3;
+  }
+
+  .prumo-field:focus {
+    border-color: var(--prumo-brand);
+    box-shadow: 0 0 0 3px rgba(216, 229, 104, 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

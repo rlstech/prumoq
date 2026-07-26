@@ -1,3 +1,4 @@
+import { Camera, XCircle } from 'lucide-react-native';
 import { Alert, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useState } from 'react';
 import { AppHeader } from './AppHeader';
@@ -93,7 +94,7 @@ export function NCReprovadaPanel({
         <ScrollView contentContainerStyle={st.content}>
           <View style={st.hero}>
             <View style={st.heroCircle}>
-              <Text style={st.heroIcon}>✕</Text>
+              <XCircle size={31} color={Colors.nok} />
             </View>
             <Text style={st.heroTitle}>Item não conforme</Text>
             <Text style={st.heroSubtitle}>
@@ -132,7 +133,10 @@ export function NCReprovadaPanel({
               {foto ? (
                 <Image source={{ uri: foto }} style={st.photoThumb} resizeMode="cover" />
               ) : (
-                <Text style={st.photoBtnText}>📷 Foto obrigatória *</Text>
+                <View style={st.photoPlaceholder}>
+                  <Camera size={20} color={Colors.nok} />
+                  <Text style={st.photoBtnText}>Adicionar foto obrigatória</Text>
+                </View>
               )}
             </Pressable>
 
@@ -190,7 +194,6 @@ const st = StyleSheet.create({
 
   hero:         { alignItems: 'center', paddingVertical: Spacing.xl },
   heroCircle:   { width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.nokBg, borderWidth: 2, borderColor: Colors.nok, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
-  heroIcon:     { fontSize: 28, color: Colors.nok, fontWeight: '700' },
   heroTitle:    { fontSize: FontSizes.xl, fontWeight: '700', color: Colors.nok },
   heroSubtitle: { fontSize: FontSizes.sm, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' },
 
@@ -210,9 +213,10 @@ const st = StyleSheet.create({
 
   input: { margin: Spacing.md, marginBottom: 0, backgroundColor: Colors.surface, borderRadius: Radius.sm, borderWidth: 0.5, borderColor: Colors.borderNormal, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, fontSize: FontSizes.base, color: Colors.text, minHeight: 48 },
 
-  photoBtn:    { margin: Spacing.md, marginBottom: 0, height: 48, borderRadius: Radius.sm, borderWidth: 0.5, borderColor: 'rgba(0,0,0,0.15)', borderStyle: 'dashed', backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  photoBtn:    { margin: Spacing.md, marginBottom: 0, minHeight: 76, borderRadius: Radius.md, borderWidth: 1, borderColor: '#F2B8B2', borderStyle: 'dashed', backgroundColor: Colors.nokBg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   photoThumb:  { width: '100%', height: '100%' },
   photoBtnText: { fontSize: FontSizes.sm, color: Colors.textSecondary },
+  photoPlaceholder: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
 
   twoCol:      { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.md },
   fieldLabel:  { fontSize: FontSizes.xs, fontWeight: '500', color: Colors.textSecondary, marginBottom: 4 },

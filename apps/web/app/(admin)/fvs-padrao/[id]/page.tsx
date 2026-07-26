@@ -30,7 +30,7 @@ export default async function FvsPadraoDetailPage(props: { params: Promise<{ id:
         ]}
       />
       
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="prumo-page">
         <FvsEditorClient 
           fvs={fvs} 
           initialItems={itemsData as any[] || []} 

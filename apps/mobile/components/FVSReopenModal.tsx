@@ -8,8 +8,8 @@ import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
 import { db } from '../lib/powersync';
 import { supabase } from '../lib/supabase';
 
-const purple   = '#6A1B9A';
-const purpleBg = '#F3E5F5';
+const purple = Colors.info;
+const purpleBg = Colors.infoBg;
 
 const MOTIVOS = [
   { key: 'reclamacao_cliente',     label: 'Reclamação de cliente / vistoria' },

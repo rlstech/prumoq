@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
+import { Colors, FontFamily, FontSizes, Radius, Spacing } from '../lib/constants';
 
 export type BadgeStatus =
   | 'conforme'
@@ -22,18 +22,18 @@ interface StatusConfig {
 }
 
 const STATUS_CONFIG: Record<BadgeStatus, StatusConfig> = {
-  conforme:     { bg: Colors.okBg,       text: Colors.ok,       label: 'Conforme'      },
-  nao_conforme: { bg: Colors.nokBg,      text: Colors.nok,      label: 'Não conforme'  },
-  em_andamento: { bg: Colors.progressBg, text: Colors.progress, label: 'Em andamento'  },
-  pendente:     { bg: Colors.naBg,       text: Colors.na,       label: 'Pendente'      },
-  aberta:       { bg: Colors.nokBg,      text: Colors.nok,      label: 'Aberta'        },
-  resolvida:    { bg: Colors.okBg,       text: Colors.ok,       label: 'Resolvida'     },
-  cancelada:    { bg: Colors.naBg,       text: Colors.na,       label: 'Cancelada'     },
-  nao_iniciada: { bg: Colors.naBg,       text: Colors.na,       label: 'Não iniciada'  },
-  paralisada:   { bg: Colors.warnBg,     text: Colors.warn,     label: 'Paralisada'    },
-  concluida:            { bg: Colors.okBg,   text: Colors.ok,   label: 'Concluída'    },
-  concluida_ressalva:   { bg: Colors.warnBg, text: Colors.warn, label: 'C/ ressalva'  },
-  em_revisao:           { bg: '#F3E5F5',     text: '#6A1B9A',   label: 'Em revisão'   },
+  conforme: { bg: Colors.okBg, text: Colors.ok, label: 'Conforme' },
+  nao_conforme: { bg: Colors.nokBg, text: Colors.nok, label: 'N' + String.fromCharCode(0xe3) + 'o conforme' },
+  em_andamento: { bg: Colors.progressBg, text: Colors.progress, label: 'Em andamento' },
+  pendente: { bg: Colors.naBg, text: Colors.na, label: 'Pendente' },
+  aberta: { bg: Colors.nokBg, text: Colors.nok, label: 'Aberta' },
+  resolvida: { bg: Colors.okBg, text: Colors.ok, label: 'Resolvida' },
+  cancelada: { bg: Colors.naBg, text: Colors.na, label: 'Cancelada' },
+  nao_iniciada: { bg: Colors.naBg, text: Colors.na, label: 'N' + String.fromCharCode(0xe3) + 'o iniciada' },
+  paralisada: { bg: Colors.warnBg, text: Colors.warn, label: 'Paralisada' },
+  concluida: { bg: Colors.okBg, text: Colors.ok, label: 'Conclu' + String.fromCharCode(0xed) + 'da' },
+  concluida_ressalva: { bg: Colors.warnBg, text: Colors.warn, label: 'C/ ressalva' },
+  em_revisao: { bg: Colors.infoBg, text: Colors.info, label: 'Em revis' + String.fromCharCode(0xe3) + 'o' },
 };
 
 export function getStatusColor(status: BadgeStatus): string {
@@ -55,9 +55,8 @@ export function StatusBadge({ status, size = 'md' }: Props) {
 
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }, isSmall && styles.badgeSm]}>
-      <Text style={[styles.label, { color: config.text }, isSmall && styles.labelSm]}>
-        {config.label}
-      </Text>
+      <View style={[styles.dot, { backgroundColor: config.text }]} />
+      <Text style={[styles.label, { color: config.text }, isSmall && styles.labelSm]}>{config.label}</Text>
     </View>
   );
 }
@@ -68,6 +67,9 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   badgeSm: {
     paddingHorizontal: 6,
@@ -75,10 +77,15 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: FontSizes.xs,
-    fontWeight: '500',
+    fontFamily: FontFamily.semibold,
     letterSpacing: 0.1,
   },
   labelSm: {
     fontSize: FontSizes.tiny,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: Radius.full,
   },
 });

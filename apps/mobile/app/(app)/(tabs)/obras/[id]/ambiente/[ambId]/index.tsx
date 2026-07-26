@@ -6,7 +6,7 @@ import { goBack } from '../../../../../../../lib/navigation';
 import { useMemo } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { ProgressBar } from '../../../../../../../components/ProgressBar';
-import { Colors, FontSizes, Radius, Spacing } from '../../../../../../../lib/constants';
+import { Breakpoints, Colors, FontSizes, Radius, Spacing } from '../../../../../../../lib/constants';
 
 interface AmbienteRow { id: string; nome: string; tipo: string; localizacao: string; obra_nome: string }
 interface FvsRow {
@@ -45,8 +45,8 @@ function StatusIcon({ status }: { status: string }) {
     );
   if (status === 'em_revisao')
     return (
-      <View style={[styles.iconCircle, { backgroundColor: '#F3E5F5' }]}>
-        <ArrowRight size={size} color="#6A1B9A" />
+      <View style={[styles.iconCircle, { backgroundColor: Colors.infoBg }]}>
+        <ArrowRight size={size} color={Colors.info} />
       </View>
     );
   return (
@@ -60,7 +60,7 @@ function statusLabel(status: string): { text: string; color: string } {
   if (status === 'conforme')            return { text: 'Concluído',    color: Colors.ok };
   if (status === 'concluida')           return { text: 'Concluído',    color: Colors.ok };
   if (status === 'concluida_ressalva')  return { text: 'C/ ressalva',  color: Colors.warn };
-  if (status === 'em_revisao')          return { text: 'Em revisão',   color: '#6A1B9A' };
+  if (status === 'em_revisao')          return { text: 'Em revisão',   color: Colors.info };
   if (status === 'nao_conforme')        return { text: 'NC aberta',    color: Colors.nok };
   if (status === 'em_andamento')        return { text: 'Em andamento', color: Colors.progress };
   return                                       { text: 'Pendente',     color: Colors.na };
@@ -193,7 +193,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
 
-  list: { padding: Spacing.lg, gap: Spacing.xs, paddingBottom: Spacing.xxl },
+  list: {
+    width: '100%',
+    maxWidth: Breakpoints.maxContent,
+    alignSelf: 'center',
+    padding: Spacing.lg,
+    gap: Spacing.sm,
+    paddingBottom: Spacing.xxl,
+  },
   fvsCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
