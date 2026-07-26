@@ -21,7 +21,7 @@ import { PhotoGrid } from '../../../../../../../../../components/PhotoGrid';
 import { PhotoViewer } from '../../../../../../../../../components/PhotoViewer';
 import { StatusBadge } from '../../../../../../../../../components/StatusBadge';
 import type { BadgeStatus } from '../../../../../../../../../components/StatusBadge';
-import { Colors, FontSizes, Radius, Spacing } from '../../../../../../../../../lib/constants';
+import { Breakpoints, Colors, FontSizes, Radius, Spacing } from '../../../../../../../../../lib/constants';
 
 interface FvsRow { id: string; subservico: string; status: string; ambiente_nome: string; obra_nome: string }
 interface ConclusaoRow {
@@ -145,8 +145,10 @@ export default function FvsHistoryScreen() {
               <Pressable
                 style={styles.pdfBtn}
                 onPress={() => (window as Window).open(`/print/${fvsId}`, '_blank', 'noreferrer')}
+                accessibilityRole="button"
+                accessibilityLabel="Visualizar PDF da FVS"
               >
-                <FileText size={14} color="#E84A1A" />
+                <FileText size={14} color={Colors.brand} />
               </Pressable>
             )}
             {!isLocked && (
@@ -366,7 +368,13 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   summaryItem: { fontSize: FontSizes.base, color: Colors.textSecondary, fontWeight: '500' },
   summaryTotal: { fontSize: FontSizes.sm, color: Colors.textTertiary },
-  list: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
+  list: {
+    width: '100%',
+    maxWidth: Breakpoints.maxContent,
+    alignSelf: 'center',
+    padding: Spacing.lg,
+    paddingBottom: Spacing.xxl,
+  },
   timelineItem: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
   dotCol: { alignItems: 'center', paddingTop: 4, width: 16 },
   dot: { width: 12, height: 12, borderRadius: 6 },

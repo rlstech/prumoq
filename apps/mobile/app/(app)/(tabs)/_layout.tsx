@@ -1,46 +1,63 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
-import { LayoutGrid, Building2, AlertTriangle, User } from 'lucide-react-native';
-import { Colors, FontSizes } from '../../../lib/constants';
+import { AlertTriangle, Building2, LayoutGrid, User } from 'lucide-react-native';
+import { StyleSheet } from 'react-native';
+import { useResponsiveLayout } from '../../../hooks/useResponsiveLayout';
+import {
+  Colors,
+  ComponentSize,
+  FontFamily,
+  FontSizes,
+  Radius,
+  Spacing,
+} from '../../../lib/constants';
 
 export default function TabsLayout() {
+  const { isTablet } = useResponsiveLayout();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.brand,
-        tabBarInactiveTintColor: Colors.textTertiary,
-        tabBarStyle: styles.tabBar,
+        tabBarPosition: isTablet ? 'left' : 'bottom',
+        tabBarActiveTintColor: Colors.brandSignature,
+        tabBarInactiveTintColor: isTablet ? Colors.textSecondary : 'rgba(255,255,255,0.58)',
+        tabBarStyle: [styles.tabBar, isTablet && styles.navigationRail],
+        tabBarItemStyle: [styles.tabItem, isTablet && styles.railItem],
         tabBarLabelStyle: styles.tabLabel,
         tabBarIconStyle: styles.tabIcon,
+        tabBarHideOnKeyboard: true,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          tabBarLabel: 'Início',
-          tabBarIcon: ({ color }) => <LayoutGrid size={19} color={color} />,
+          title: 'Início',
+          tabBarAccessibilityLabel: 'Início',
+          tabBarIcon: ({ color }) => <LayoutGrid size={21} color={color} strokeWidth={2.1} />,
         }}
       />
       <Tabs.Screen
         name="obras"
         options={{
           title: 'Obras',
-          tabBarIcon: ({ color }) => <Building2 size={19} color={color} />,
+          tabBarAccessibilityLabel: 'Obras',
+          tabBarIcon: ({ color }) => <Building2 size={21} color={color} strokeWidth={2.1} />,
         }}
       />
       <Tabs.Screen
         name="nc/index"
         options={{
           title: 'NCs',
-          tabBarIcon: ({ color }) => <AlertTriangle size={19} color={color} />,
+          tabBarAccessibilityLabel: 'Não conformidades',
+          tabBarIcon: ({ color }) => <AlertTriangle size={21} color={color} strokeWidth={2.1} />,
         }}
       />
       <Tabs.Screen
         name="perfil/index"
         options={{
           title: 'Perfil',
-          tabBarIcon: ({ color }) => <User size={19} color={color} />,
+          tabBarAccessibilityLabel: 'Perfil',
+          tabBarIcon: ({ color }) => <User size={21} color={color} strokeWidth={2.1} />,
         }}
       />
     </Tabs>
@@ -49,16 +66,41 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 72,
-    paddingBottom: 8,
-    borderTopWidth: 0.5,
-    borderTopColor: Colors.border,
-    backgroundColor: Colors.surface,
+    height: ComponentSize.tabBar,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.sm,
+    borderTopWidth: 0,
+    backgroundColor: Colors.text,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+    borderRadius: Radius.xl,
+    overflow: 'hidden',
+  },
+  navigationRail: {
+    width: ComponentSize.navigationRail,
+    height: '100%',
+    marginHorizontal: 0,
+    marginBottom: 0,
+    borderRadius: 0,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
+    borderTopWidth: 0,
+    borderRightWidth: 1,
+    borderRightColor: Colors.text,
+  },
+  tabItem: {
+    minHeight: 52,
+    borderRadius: Radius.md,
+    marginHorizontal: Spacing.xs,
+  },
+  railItem: {
+    maxHeight: 72,
+    marginHorizontal: Spacing.sm,
+    marginVertical: Spacing.xs,
   },
   tabLabel: {
+    fontFamily: FontFamily.medium,
     fontSize: FontSizes.tiny,
   },
-  tabIcon: {
-    marginTop: 2,
-  },
+  tabIcon: { marginTop: 1 },
 });

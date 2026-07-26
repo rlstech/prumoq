@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system';
-import { useRef } from 'react';
+import { ArrowLeft, Check, RotateCcw } from 'lucide-react-native';
+import { ComponentRef, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import SignatureCanvas from 'react-native-signature-canvas';
 import { Colors, Radius, Spacing } from '../lib/constants';
@@ -15,10 +16,11 @@ interface Props {
   visible: boolean;
   onSign: (path: string) => void;
   onCancel: () => void;
+  inline?: boolean;
 }
 
 export function SignatureField({ visible, onSign, onCancel }: Props) {
-  const sigRef = useRef<SignatureCanvas>(null);
+  const sigRef = useRef<ComponentRef<typeof SignatureCanvas>>(null);
 
   if (!visible) return null;
 
@@ -63,7 +65,8 @@ export function SignatureField({ visible, onSign, onCancel }: Props) {
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={onCancel} hitSlop={12}>
-          <Text style={styles.backText}>← Voltar</Text>
+          <ArrowLeft size={18} color={Colors.brand} />
+          <Text style={styles.backText}>Voltar</Text>
         </Pressable>
         <Text style={styles.title}>Assinatura Digital</Text>
         <View style={{ width: 80 }} />
@@ -95,10 +98,12 @@ export function SignatureField({ visible, onSign, onCancel }: Props) {
       {/* Our own footer buttons — always in RN layer, never hidden by WebView */}
       <View style={styles.footer}>
         <Pressable style={styles.btnClear} onPress={handleClear}>
-          <Text style={styles.btnClearText}>↺ Limpar</Text>
+          <RotateCcw size={17} color={Colors.textSecondary} />
+          <Text style={styles.btnClearText}>Limpar</Text>
         </Pressable>
         <Pressable style={styles.btnSave} onPress={handleSave}>
-          <Text style={styles.btnSaveText}>✓ Salvar Assinatura</Text>
+          <Check size={18} color="#fff" />
+          <Text style={styles.btnSaveText}>Salvar assinatura</Text>
         </Pressable>
       </View>
     </View>
@@ -121,7 +126,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
     backgroundColor: Colors.surface2,
   },
-  backBtn: { width: 80, paddingVertical: 4 },
+  backBtn: { width: 80, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 4 },
   backText: { fontSize: 14, fontWeight: '500', color: Colors.brand },
   title: { fontSize: 15, fontWeight: '600', color: Colors.text },
   hint: {
@@ -150,6 +155,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.borderNormal,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
   },
   btnClearText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
   btnSave: {
@@ -158,6 +166,9 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     alignItems: 'center',
     backgroundColor: Colors.brand,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
   },
   btnSaveText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 });

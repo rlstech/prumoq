@@ -1166,6 +1166,17 @@ export type Database = {
         }[]
       }
       get_empresa_id: { Args: never; Returns: string }
+      get_fvs_attachments: {
+        Args: { p_fvs_id: string }
+        Returns: {
+          id: string
+          kind: string
+          label: string
+          ordem: number
+          r2_key: string
+          verificacao_id: string
+        }[]
+      }
       get_fotos_fvs: {
         Args: { p_fvs_id: string }
         Returns: {
@@ -1173,6 +1184,25 @@ export type Database = {
           ordem: number
           r2_key: string
           verificacao_id: string
+        }[]
+      }
+      get_fvs_header: {
+        Args: { p_fvs_id: string }
+        Returns: {
+          ambiente_localizacao: string | null
+          ambiente_nome: string
+          ambiente_tipo: string
+          empresa_nome: string | null
+          fvs_concluida_em: string | null
+          fvs_revisao: string | null
+          fvs_status: string
+          fvs_subservico: string
+          obra_crea_cau: string | null
+          obra_endereco: string | null
+          obra_eng_responsavel: string | null
+          obra_municipio: string | null
+          obra_nome: string
+          obra_uf: string | null
         }[]
       }
       get_fvs_ambiente: {

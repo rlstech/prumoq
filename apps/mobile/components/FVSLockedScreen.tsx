@@ -1,8 +1,17 @@
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
-
-const purple   = '#6A1B9A';
-const purpleBg = '#F3E5F5';
+import {
+  BadgeCheck,
+  ClipboardCheck,
+  FilePenLine,
+  Flag,
+  LockKeyhole,
+  Printer,
+  RotateCcw,
+  Search,
+  Wrench,
+} from 'lucide-react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Button, Card } from './ui';
+import { Colors, FontFamily, Radius, Spacing, Typography } from '../lib/constants';
 
 interface Conclusao {
   created_at: string;
@@ -19,173 +28,161 @@ interface Props {
   onRequestReopen: () => void;
 }
 
-const MOTIVOS_COMUNS = [
-  { icon: '📋', label: 'Reclamação de cliente / vistoria' },
-  { icon: '🔍', label: 'Auditoria interna de qualidade' },
-  { icon: '🛠', label: 'Serviço complementar identificado' },
-  { icon: '✏️', label: 'Correção de registro incorreto' },
+const REOPEN_REASONS = [
+  { Icon: ClipboardCheck, label: 'Reclamação de cliente ou vistoria' },
+  { Icon: Search, label: 'Auditoria interna de qualidade' },
+  { Icon: Wrench, label: 'Serviço complementar identificado' },
+  { Icon: FilePenLine, label: 'Correção de registro incorreto' },
 ];
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
-    day: '2-digit', month: '2-digit', year: 'numeric',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   });
 }
 
 export function FVSLockedScreen({ status, conclusao, onRequestReopen }: Props) {
   const isConcluded = status === 'concluida';
-  const bannerBg    = isConcluded ? Colors.okBg   : Colors.warnBg;
-  const bannerBdr   = isConcluded ? Colors.ok     : Colors.warn;
-  const bannerColor = isConcluded ? Colors.ok     : Colors.warn;
-  const icon        = isConcluded ? '✅'           : '⚑';
-  const title       = isConcluded ? 'Serviço Concluído' : 'Concluído com ressalva';
+  const toneColor = isConcluded ? Colors.ok : Colors.warn;
+  const toneBackground = isConcluded ? Colors.okBg : Colors.warnBg;
+  const StatusIcon = isConcluded ? BadgeCheck : Flag;
 
   return (
     <View style={styles.container}>
-      {/* ── Banner de conclusão ── */}
-      <View style={[styles.banner, { backgroundColor: bannerBg, borderColor: bannerBdr }]}>
-        <Text style={styles.bannerIcon}>{icon}</Text>
-        <Text style={[styles.bannerTitle, { color: bannerColor }]}>{title}</Text>
-        {conclusao && (
+      <Card style={[styles.banner, { backgroundColor: toneBackground, borderColor: toneColor }]}>
+        <View style={styles.statusIcon}>
+          <StatusIcon size={27} color={toneColor} />
+        </View>
+        <Text style={[styles.bannerTitle, { color: toneColor }]}>
+          {isConcluded ? 'Serviço concluído' : 'Concluído com ressalva'}
+        </Text>
+        {conclusao ? (
           <>
             <Text style={styles.bannerMeta}>
               {formatDate(conclusao.created_at)} · {conclusao.inspetor_nome}
             </Text>
-            <View style={[styles.resultadoRow, { borderTopColor: `${bannerBdr}33` }]}>
-              <Text style={[styles.resultadoLabel, { color: bannerColor }]}>
-                Resultado:{' '}
-                <Text style={styles.resultadoValue}>
-                  {conclusao.resultado === 'aprovado' ? 'Aprovado ✓' : 'Com ressalvas ⚑'}
-                </Text>
+            <View style={[styles.resultRow, { borderTopColor: `${toneColor}33` }]}>
+              <Text style={[styles.resultText, { color: toneColor }]}>
+                {conclusao.resultado === 'aprovado' ? 'Aprovado' : 'Com ressalvas'}
               </Text>
-              <Text style={[styles.pctLabel, { color: bannerColor }]}>
+              <Text style={[styles.resultText, { color: toneColor }]}>
                 {conclusao.percentual_final}% executado
               </Text>
             </View>
             {conclusao.observacao_final ? (
-              <Text style={[styles.obsText, { color: bannerColor }]}>
-                {conclusao.observacao_final}
-              </Text>
+              <Text style={[styles.detailText, { color: toneColor }]}>{conclusao.observacao_final}</Text>
             ) : null}
             {conclusao.motivo_antes_100 ? (
-              <Text style={[styles.motivoText, { color: bannerColor }]}>
+              <Text style={[styles.detailText, { color: toneColor }]}>
                 Motivo: {conclusao.motivo_antes_100}
               </Text>
             ) : null}
           </>
-        )}
-      </View>
+        ) : null}
+      </Card>
 
-      {/* ── Overlay de bloqueio ── */}
-      <View style={styles.lockBox}>
-        <Text style={styles.lockIcon}>🔒</Text>
+      <Card tone="soft" style={styles.lockBox}>
+        <View style={styles.lockIcon}>
+          <LockKeyhole size={24} color={Colors.brand} />
+        </View>
         <Text style={styles.lockTitle}>Nova verificação bloqueada</Text>
-        <Text style={styles.lockSub}>
-          Este serviço está concluído.{'\n'}
-          Para nova verificação, reabra com justificativa.
+        <Text style={styles.lockDescription}>
+          Para registrar outra verificação, reabra o serviço com uma justificativa.
         </Text>
+      </Card>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>MOTIVOS COMUNS PARA REABERTURA</Text>
+        <Card style={styles.reasonList}>
+          {REOPEN_REASONS.map(({ Icon, label }, index) => (
+            <View
+              key={label}
+              style={[styles.reasonRow, index < REOPEN_REASONS.length - 1 && styles.reasonBorder]}
+            >
+              <View style={styles.reasonIcon}><Icon size={17} color={Colors.textSecondary} /></View>
+              <Text style={styles.reasonLabel}>{label}</Text>
+            </View>
+          ))}
+        </Card>
       </View>
 
-      {/* ── Motivos comuns ── */}
-      <Text style={styles.sectionLabel}>Motivos comuns para reabertura</Text>
-      <View style={styles.motivosList}>
-        {MOTIVOS_COMUNS.map(m => (
-          <View key={m.label} style={styles.motivoItem}>
-            <Text style={styles.motivoItemIcon}>{m.icon}</Text>
-            <Text style={styles.motivoItemLabel}>{m.label}</Text>
-          </View>
-        ))}
+      <View style={styles.actions}>
+        <Button label="Solicitar reabertura" Icon={RotateCcw} onPress={onRequestReopen} fullWidth />
+        <Button
+          label="Exportar PDF"
+          Icon={Printer}
+          variant="secondary"
+          onPress={() => Alert.alert('Em breve', 'A exportação de PDF será disponibilizada em uma próxima etapa.')}
+          fullWidth
+        />
       </View>
-
-      {/* ── Botões ── */}
-      <Pressable
-        style={[styles.btn, { backgroundColor: purple }]}
-        onPress={onRequestReopen}
-      >
-        <Text style={styles.btnText}>↑ Solicitar reabertura</Text>
-      </Pressable>
-
-      <Pressable
-        style={[styles.btn, styles.btnGhost]}
-        onPress={() => Alert.alert('Em breve', 'Exportação de PDF será implementada em etapa futura.')}
-      >
-        <Text style={styles.btnGhostText}>🖨 Exportar PDF</Text>
-      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { gap: Spacing.md },
-
-  banner: {
-    borderWidth: 1.5,
+  container: { gap: Spacing.lg },
+  banner: { alignItems: 'center', gap: 5 },
+  statusIcon: {
+    width: 52,
+    height: 52,
     borderRadius: Radius.lg,
-    padding: Spacing.md,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
+    marginBottom: Spacing.xs,
   },
-  bannerIcon:  { fontSize: 28, marginBottom: 2 },
-  bannerTitle: { fontSize: FontSizes.md, fontWeight: '700' },
-  bannerMeta:  { fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 },
-  resultadoRow: {
+  bannerTitle: { ...Typography.heading, fontFamily: FontFamily.bold },
+  bannerMeta: { ...Typography.caption, color: Colors.textSecondary },
+  resultRow: {
     width: '100%',
     marginTop: Spacing.sm,
     paddingTop: Spacing.sm,
-    borderTopWidth: 0.5,
-    gap: 2,
-    alignItems: 'center',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
   },
-  resultadoLabel: { fontSize: FontSizes.xs, fontWeight: '600' },
-  resultadoValue: { fontWeight: '400' },
-  pctLabel:       { fontSize: FontSizes.xs },
-  obsText:        { fontSize: FontSizes.xs, fontStyle: 'italic', textAlign: 'center', marginTop: 2 },
-  motivoText:     { fontSize: FontSizes.xs, textAlign: 'center', marginTop: 2 },
-
-  lockBox: {
-    backgroundColor: Colors.bg,
-    borderWidth: 0.5,
-    borderStyle: 'dashed',
-    borderColor: Colors.borderNormal,
+  resultText: { ...Typography.caption, fontFamily: FontFamily.semibold },
+  detailText: { ...Typography.caption, textAlign: 'center' },
+  lockBox: { alignItems: 'center', gap: Spacing.sm },
+  lockIcon: {
+    width: 48,
+    height: 48,
     borderRadius: Radius.lg,
-    padding: Spacing.md,
+    backgroundColor: Colors.brandLight,
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
   },
-  lockIcon:  { fontSize: 22, marginBottom: 2 },
-  lockTitle: { fontSize: FontSizes.sm, fontWeight: '600', color: Colors.textSecondary },
-  lockSub:   { fontSize: FontSizes.xs, color: Colors.textTertiary, textAlign: 'center', lineHeight: 18 },
-
+  lockTitle: { ...Typography.bodyMedium, color: Colors.text, fontFamily: FontFamily.semibold },
+  lockDescription: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'center', maxWidth: 440 },
+  section: { gap: Spacing.sm },
   sectionLabel: {
-    fontSize: FontSizes.xs,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 4,
+    ...Typography.caption,
+    color: Colors.textTertiary,
+    fontFamily: FontFamily.bold,
+    letterSpacing: 0.7,
   },
-  motivosList: { gap: Spacing.xs },
-  motivoItem: {
+  reasonList: { padding: 0, overflow: 'hidden' },
+  reasonRow: {
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    padding: Spacing.sm,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.md,
   },
-  motivoItemIcon:  { fontSize: 16 },
-  motivoItemLabel: { fontSize: FontSizes.sm, color: Colors.text },
-
-  btn: {
-    width: '100%',
-    padding: Spacing.md,
-    borderRadius: Radius.md,
+  reasonBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
+  reasonIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.surface2,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  btnText: { color: '#fff', fontWeight: '600', fontSize: FontSizes.sm },
-  btnGhost: { backgroundColor: Colors.surface2, borderWidth: 1, borderColor: Colors.border },
-  btnGhostText: { color: Colors.text, fontWeight: '500', fontSize: FontSizes.sm },
+  reasonLabel: { ...Typography.caption, color: Colors.text },
+  actions: { gap: Spacing.sm },
 });

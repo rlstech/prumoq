@@ -6,6 +6,24 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
 
+interface DynamicResult {
+  error: { message: string } | null;
+}
+
+interface DynamicFilter extends PromiseLike<DynamicResult> {
+  eq(column: string, value: unknown): DynamicFilter;
+}
+
+interface DynamicTable {
+  update(values: Record<string, unknown>): DynamicFilter;
+  insert(values: Record<string, unknown>): PromiseLike<DynamicResult>;
+}
+
+function dynamicTable(name: string): DynamicTable {
+  const from = supabase.from as unknown as (relation: string) => DynamicTable;
+  return from(name);
+}
+
 // ─────────────────────────────────────────────────────────
 // PowerSyncContext (no-op on web — screens don't read it)
 // ─────────────────────────────────────────────────────────
@@ -107,6 +125,8 @@ function filterByObraId<T>(rows: T[], field: keyof T, ids: string[] | null): T[]
 async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]> {
   const s = sql.trim().toLowerCase().replace(/\s+/g, ' ');
 
+  if (s === 'select 1 where 0') return [];
+
   // ── usuarios ──────────────────────────────────────────
   if (s.includes('from usuarios') && !s.includes('join')) {
     const { data } = await supabase.from('usuarios').select('id, nome, cargo, perfil').limit(1);
@@ -122,7 +142,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   // ── obras ativas count ─────────────────────────────────
   if (s.includes('count(*)') && s.includes('from obras') && s.includes('ativo = 1') && !s.includes('join')) {
     const ids = await getAllowedObraIds();
-    let q = supabase.from('obras').select('*', { count: 'exact', head: true }).eq('ativo', 1);
+    let q = supabase.from('obras').select('*', { count: 'exact', head: true }).eq('ativo', true);
     if (ids !== null && ids.length > 0) q = q.in('id', ids);
     else if (ids !== null && ids.length === 0) return [{ count: 0 }] as T[];
     const { count } = await q;
@@ -132,7 +152,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   // ── obras ativas lista simples (perfil) ───────────────
   if (s.includes('from obras o where o.ativo = 1') && s.includes('select o.id, o.nome')) {
     const [{ data }, ids] = await Promise.all([
-      supabase.from('obras').select('id, nome, municipio, uf').eq('ativo', 1).order('nome'),
+      supabase.from('obras').select('id, nome, municipio, uf').eq('ativo', true).order('nome'),
       getAllowedObraIds()
     ]);
     return filterByObraId((data ?? []) as T[], 'id' as keyof T, ids);
@@ -509,7 +529,7 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
       updateData[setFields[i]] = params[i];
     }
 
-    const { error } = await supabase.from(table).update(updateData).eq('id', idParam);
+    const { error } = await dynamicTable(table).update(updateData).eq('id', idParam);
     if (error) {
       console.error(`[web shim] UPDATE ${table} error:`, error.message, updateData);
       throw new Error(`Erro ao atualizar ${table}: ${error.message}`);
@@ -561,7 +581,7 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
     // Remove created_offline on web — we're always online
     delete row['created_offline'];
 
-    const { error } = await supabase.from(table).insert(row);
+    const { error } = await dynamicTable(table).insert(row);
     if (error) {
       console.error(`[web shim] INSERT ${table} error:`, error.message, row);
       throw new Error(`Erro ao salvar ${table}: ${error.message}`);

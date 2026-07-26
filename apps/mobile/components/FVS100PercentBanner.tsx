@@ -1,9 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
-
-const gold   = '#F9A825';
-const goldBg = '#FFF8E1';
-const green  = Colors.ok;
+import { CheckCircle2, ClipboardCheck } from 'lucide-react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Button, Card } from './ui';
+import { Colors, FontFamily, Radius, Spacing, Typography } from '../lib/constants';
 
 interface Props {
   onConclude: () => void;
@@ -12,43 +10,33 @@ interface Props {
 
 export function FVS100PercentBanner({ onConclude, onDismiss }: Props) {
   return (
-    <View style={st.container}>
-      <Text style={st.icon}>🎯</Text>
-      <Text style={st.title}>Serviço a 100%!</Text>
-      <Text style={st.sub}>
-        Todas as etapas foram executadas.{'\n'}Deseja concluir este serviço?
+    <Card tone="success" style={styles.container}>
+      <View style={styles.icon}>
+        <ClipboardCheck size={26} color={Colors.ok} />
+      </View>
+      <Text style={styles.title}>Serviço com 100% de execução</Text>
+      <Text style={styles.description}>
+        Todas as etapas foram executadas. Você pode concluir a FVS agora ou realizar outra verificação.
       </Text>
-      <Pressable style={[st.btn, { backgroundColor: green }]} onPress={onConclude}>
-        <Text style={st.btnText}>✓ Concluir serviço agora</Text>
-      </Pressable>
-      <Pressable style={[st.btn, st.btnGhost]} onPress={onDismiss}>
-        <Text style={st.btnGhostText}>Fazer mais uma verificação</Text>
-      </Pressable>
-    </View>
+      <View style={styles.actions}>
+        <Button label="Concluir serviço" Icon={CheckCircle2} onPress={onConclude} fullWidth />
+        <Button label="Fazer outra verificação" variant="secondary" onPress={onDismiss} fullWidth />
+      </View>
+    </Card>
   );
 }
 
-const st = StyleSheet.create({
-  container: {
-    backgroundColor: goldBg,
-    borderWidth: 1.5,
-    borderColor: gold,
+const styles = StyleSheet.create({
+  container: { alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
+  icon: {
+    width: 52,
+    height: 52,
     borderRadius: Radius.lg,
-    padding: Spacing.lg,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
+    justifyContent: 'center',
   },
-  icon:  { fontSize: 32, marginBottom: 2 },
-  title: { fontSize: FontSizes.md, fontWeight: '700', color: '#5D4037' },
-  sub:   { fontSize: FontSizes.sm, color: '#6D4C41', textAlign: 'center', lineHeight: 20 },
-  btn: {
-    width: '100%',
-    padding: Spacing.md,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-  },
-  btnText:      { color: '#fff', fontWeight: '600', fontSize: FontSizes.sm },
-  btnGhost:     { backgroundColor: Colors.surface2, borderWidth: 1, borderColor: Colors.border },
-  btnGhostText: { color: Colors.text, fontWeight: '500', fontSize: FontSizes.sm },
+  title: { ...Typography.heading, color: Colors.ok, fontFamily: FontFamily.bold, textAlign: 'center' },
+  description: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'center', maxWidth: 460 },
+  actions: { width: '100%', gap: Spacing.sm, marginTop: Spacing.sm },
 });

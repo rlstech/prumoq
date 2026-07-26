@@ -7,8 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   basePath: '/admin',
   output: 'standalone',
-  outputFileTracingRoot: path.join(__dirname, '../../'),
-  transpilePackages: ['@prumoq/shared', 'lucide-react'],
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname, '../../'),
+  },
+  transpilePackages: ['@prumoq/shared', '@prumoq/design-system', 'lucide-react'],
   modularizeImports: {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',

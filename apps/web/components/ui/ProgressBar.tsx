@@ -18,14 +18,14 @@ export default function ProgressBar({ value, variant = 'brand', showLabel = fals
 
   return (
     <div className="flex items-center gap-3 w-full">
-      <div className="flex-1 h-1.5 bg-bg-2 rounded-full overflow-hidden">
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-bg-2">
         <div 
           className={`h-full rounded-full transition-all duration-300 ease-out ${colors[variant]}`}
           style={{ width: `${boundedValue}%` }}
         />
       </div>
       {showLabel && (
-        <span className="text-xs font-semibold text-txt-2 w-8 text-right">
+        <span className="prumo-metric w-9 text-right text-xs font-semibold text-txt-2">
           {boundedValue}%
         </span>
       )}

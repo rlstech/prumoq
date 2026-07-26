@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prumoq-v1';
+const CACHE_NAME = 'prumoq-v2';
 const IS_DEV = self.location.hostname === 'localhost' ||
                self.location.hostname === '127.0.0.1';
 
@@ -18,6 +18,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Em desenvolvimento, não intercepta nada — deixa o browser lidar normalmente
   if (IS_DEV) return;
+  if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
 
@@ -31,12 +32,31 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first para assets estáticos (só em produção)
+  // Network-first para navegações: evita manter HTML apontando para um bundle
+  // antigo depois de um novo deploy. O cache continua servindo como fallback.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) =>
+              cache.put(event.request, clone)
+            );
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Cache-first apenas para assets estáticos versionados.
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
       return fetch(event.request).then((response) => {
-        if (response.ok && event.request.method === 'GET') {
+        if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }

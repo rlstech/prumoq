@@ -19,9 +19,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <QueryProvider>
       <ToastProvider>
-        <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg0)' }}>
+        <div className="flex h-screen overflow-hidden bg-bg-0">
           <Sidebar />
-          <main className="flex-1 flex flex-col overflow-hidden bg-bg-0">
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-bg-0">
             {children}
           </main>
         </div>

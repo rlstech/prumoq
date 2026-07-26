@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../lib/powersync';
 import { supabase } from '../lib/supabase';
 import { SupabaseConnector } from '../lib/supabase-connector';
+import { ThemeProvider } from '../lib/theme/ThemeProvider';
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -53,8 +54,10 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <PowerSyncContext.Provider value={db}>
-      <Slot />
-    </PowerSyncContext.Provider>
+    <ThemeProvider>
+      <PowerSyncContext.Provider value={db}>
+        <Slot />
+      </PowerSyncContext.Provider>
+    </ThemeProvider>
   );
 }

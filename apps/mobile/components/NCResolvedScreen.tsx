@@ -1,4 +1,5 @@
-import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Check, CheckCircle2, FileDown } from 'lucide-react-native';
+import { Alert, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppHeader } from './AppHeader';
 import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
 
@@ -46,7 +47,7 @@ export function NCResolvedScreen({
         <ScrollView contentContainerStyle={st.content}>
           <View style={st.hero}>
             <View style={st.heroCircle}>
-              <Text style={st.heroIcon}>✓</Text>
+              <CheckCircle2 size={31} color={Colors.ok} />
             </View>
             <Text style={st.heroTitle}>NC Resolvida!</Text>
             <Text style={st.heroSubtitle}>Item aprovado na re-inspeção</Text>
@@ -71,11 +72,17 @@ export function NCResolvedScreen({
         </ScrollView>
 
         <View style={st.footer}>
-          <Pressable style={st.btnPdf}>
-            <Text style={st.btnPdfText}>⇒ Exportar PDF</Text>
+          <Pressable
+            accessibilityRole="button"
+            style={st.btnPdf}
+            onPress={() => Alert.alert('Em breve', 'A exportação de PDF será disponibilizada em uma próxima etapa.')}
+          >
+            <FileDown size={17} color={Colors.text} />
+            <Text style={st.btnPdfText}>Exportar PDF</Text>
           </Pressable>
-          <Pressable style={st.btnConcluir} onPress={onConcluir}>
-            <Text style={st.btnConcluirText}>Concluir ✓</Text>
+          <Pressable accessibilityRole="button" style={st.btnConcluir} onPress={onConcluir}>
+            <Check size={18} color={Colors.surface} />
+            <Text style={st.btnConcluirText}>Concluir</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -90,7 +97,6 @@ const st = StyleSheet.create({
 
   hero:        { alignItems: 'center', paddingVertical: Spacing.xl },
   heroCircle:  { width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.okBg, borderWidth: 2, borderColor: Colors.ok, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
-  heroIcon:    { fontSize: 28, color: Colors.ok, fontWeight: '700' },
   heroTitle:   { fontSize: FontSizes.xl, fontWeight: '700', color: Colors.ok },
   heroSubtitle: { fontSize: FontSizes.sm, color: Colors.textSecondary, marginTop: 4 },
 
@@ -104,8 +110,8 @@ const st = StyleSheet.create({
   photo: { width: '100%', height: 200, borderRadius: Radius.md },
 
   footer:        { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.md, paddingBottom: Spacing.xl, borderTopWidth: 0.5, borderTopColor: Colors.border, backgroundColor: Colors.surface },
-  btnPdf:        { flex: 1, paddingVertical: 13, borderRadius: Radius.md, backgroundColor: Colors.surface2, alignItems: 'center', borderWidth: 0.5, borderColor: Colors.borderNormal },
+  btnPdf:        { flex: 1, minHeight: 48, paddingVertical: 13, borderRadius: Radius.md, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, borderWidth: 1, borderColor: Colors.borderNormal },
   btnPdfText:    { fontSize: FontSizes.sm, color: Colors.text },
-  btnConcluir:   { flex: 1.5, paddingVertical: 13, borderRadius: Radius.md, backgroundColor: Colors.ok, alignItems: 'center' },
+  btnConcluir:   { flex: 1.5, minHeight: 48, paddingVertical: 13, borderRadius: Radius.md, backgroundColor: Colors.ok, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
   btnConcluirText: { fontSize: FontSizes.base, color: '#fff', fontWeight: '600' },
 });

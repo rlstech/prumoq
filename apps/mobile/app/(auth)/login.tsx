@@ -1,27 +1,39 @@
-import { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
+import { ClipboardCheck, HardHat, ShieldCheck, WifiOff } from 'lucide-react-native';
+import { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { BrandMark } from '../../components/BrandMark';
+import { Button, ErrorBanner, Field } from '../../components/ui';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  Breakpoints,
+  Colors,
+  Elevation,
+  FontFamily,
+  FontSizes,
+  Radius,
+  Spacing,
+  Typography,
+} from '../../lib/constants';
 import { supabase } from '../../lib/supabase';
-import { Colors, FontSizes, Radius, Spacing } from '../../lib/constants';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail]       = useState('');
+  const { isTablet } = useResponsiveLayout();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState<string | null>(null);
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   function validateFields(): string | null {
     if (!email.trim()) return 'Informe o e-mail';
@@ -46,27 +58,21 @@ export default function LoginScreen() {
       password,
     });
 
-    console.log('[Login] signIn result:', authData?.user?.id ?? 'no user', authError?.message ?? 'no error');
-
     if (authError) {
       setError(authError.message);
       setLoading(false);
       return;
     }
 
-    // Check profile — inspetor, admin e gestor podem acessar o mobile
     if (authData.user) {
-      const { data: perfilData, error: perfilError } = await supabase
+      const { data: perfilData } = await supabase
         .from('usuarios' as never)
         .select('perfil')
         .eq('id', authData.user.id)
         .single();
 
-      console.log('[Login] perfil check:', perfilData, perfilError?.message ?? 'no error');
-
       const perfil = perfilData as { perfil: string } | null;
-      const allowedPerfis = ['inspetor', 'admin', 'gestor'];
-      if (perfil && !allowedPerfis.includes(perfil.perfil)) {
+      if (perfil && !['inspetor', 'admin', 'gestor'].includes(perfil.perfil)) {
         setError('Perfil sem acesso ao aplicativo.');
         await supabase.auth.signOut();
         setLoading(false);
@@ -74,145 +80,218 @@ export default function LoginScreen() {
       }
     }
 
-    // Navigate only after profile check passes — avoids the race condition
-    // where SIGNED_IN fires before the check completes.
-    console.log('[Login] navigating to tabs');
     setLoading(false);
     router.replace('/(app)/(tabs)');
   }
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.safe}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <StatusBar style="light" />
-      <View style={styles.header}>
-        <Text style={styles.logo}>PrumoQ</Text>
-        <Text style={styles.subtitle}>Gestão da Qualidade para Obras</Text>
-      </View>
+      <StatusBar style={isTablet ? 'light' : 'dark'} />
+      <ScrollView
+        contentContainerStyle={[styles.scroll, isTablet && styles.scrollTablet]}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={[styles.shell, isTablet && styles.shellTablet]}>
+          <View style={[styles.hero, isTablet && styles.heroTablet]}>
+            <View style={styles.brand}>
+              <BrandMark size={38} variant="onBrand" />
+              <Text style={styles.logo}>PrumoQ</Text>
+            </View>
+            <View style={styles.heroCopy}>
+              <View style={styles.heroIcon}>
+                <HardHat size={30} color={Colors.brandSignature} />
+              </View>
+              <Text style={styles.eyebrow}>QUALIDADE EM CAMPO</Text>
+              <Text style={styles.heroTitle}>Verificações claras, mesmo sem conexão.</Text>
+              <Text style={styles.heroDescription}>
+                Registre serviços, evidências e não conformidades com segurança durante toda a inspeção.
+              </Text>
+            </View>
+            <View style={styles.trustList}>
+              <TrustItem Icon={ClipboardCheck} text="Fluxo guiado de verificação" />
+              <TrustItem Icon={WifiOff} text="Trabalho offline com sincronização" />
+              <TrustItem Icon={ShieldCheck} text="Dados protegidos por obra" />
+            </View>
+          </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Entrar na conta</Text>
+          <View style={[styles.formPanel, isTablet && styles.formPanelTablet]}>
+            <View style={styles.formHeader}>
+              <Text style={styles.formEyebrow}>ACESSO DO INSPETOR</Text>
+              <Text style={styles.formTitle}>Entrar na conta</Text>
+              <Text style={styles.formDescription}>
+                Use suas credenciais do PrumoQ para continuar o trabalho de campo.
+              </Text>
+            </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>E-mail</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={(t) => { setEmail(t); setError(null); }}
-            placeholder="seu@email.com"
-            placeholderTextColor={Colors.textTertiary}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-          />
+            <View style={styles.fields}>
+              <Field
+                label="E-mail"
+                value={email}
+                onChangeText={value => { setEmail(value); setError(null); }}
+                placeholder="seu@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                returnKeyType="next"
+              />
+              <Field
+                label="Senha"
+                value={password}
+                onChangeText={value => { setPassword(value); setError(null); }}
+                placeholder="Digite sua senha"
+                secureTextEntry
+                autoComplete="password"
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+              />
+            </View>
+
+            {error ? <ErrorBanner message={error} /> : null}
+
+            <Button
+              label="Entrar no PrumoQ"
+              onPress={handleLogin}
+              loading={loading}
+              fullWidth
+              accessibilityHint="Autentica e abre o painel de campo"
+            />
+
+            <Text style={styles.support}>
+              Problemas com o acesso? Fale com o administrador da sua empresa.
+            </Text>
+          </View>
         </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Senha</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={(t) => { setPassword(t); setError(null); }}
-            placeholder="••••••••"
-            placeholderTextColor={Colors.textTertiary}
-            secureTextEntry
-            autoComplete="password"
-          />
-        </View>
-
-        {error && <Text style={styles.error}>{error}</Text>}
-
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-          activeOpacity={0.85}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.buttonText}>Entrar</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+function TrustItem({ Icon, text }: { Icon: typeof ClipboardCheck; text: string }) {
+  return (
+    <View style={styles.trustItem}>
+      <View style={styles.trustIcon}><Icon size={17} color={Colors.brandSignature} /></View>
+      <Text style={styles.trustText}>{text}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.brand,
+  safe: { flex: 1, backgroundColor: Colors.bg },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: Spacing.lg },
+  scrollTablet: { backgroundColor: Colors.text, padding: Spacing.xxxl },
+  shell: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    gap: Spacing.xl,
+  },
+  shellTablet: {
+    maxWidth: Breakpoints.maxContent,
+    minHeight: 680,
+    flexDirection: 'row',
+    gap: 0,
+    borderRadius: Radius.xl,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    ...Elevation.floating,
+  },
+  hero: {
+    borderRadius: Radius.xl,
+    backgroundColor: Colors.text,
+    padding: Spacing.xxl,
+    gap: Spacing.xxl,
+    overflow: 'hidden',
+  },
+  heroTablet: {
+    flex: 1.08,
+    borderRadius: 0,
+    padding: 48,
+    justifyContent: 'space-between',
+  },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  logo: {
+    color: Colors.surface,
+    fontFamily: FontFamily.bold,
+    fontSize: FontSizes.xxl,
+    letterSpacing: -0.6,
+  },
+  heroCopy: { gap: Spacing.sm, maxWidth: 500 },
+  heroIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: Radius.lg,
+    backgroundColor: 'rgba(216,229,104,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 28,
+    marginBottom: Spacing.sm,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
+  eyebrow: {
+    ...Typography.caption,
+    color: Colors.brandSignature,
+    fontFamily: FontFamily.bold,
+    letterSpacing: 1.2,
   },
-  logo: {
-    color: '#fff',
-    fontSize: FontSizes.title,
-    fontWeight: '600',
-    letterSpacing: -0.5,
+  heroTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: 34,
+    lineHeight: 40,
+    letterSpacing: -0.9,
+    color: Colors.surface,
   },
-  subtitle: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: FontSizes.base,
-    marginTop: 4,
+  heroDescription: {
+    ...Typography.body,
+    color: Colors.borderNormal,
+    maxWidth: 460,
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: Radius.lg,
-    padding: 24,
-    width: '100%',
-  },
-  cardTitle: {
-    fontSize: FontSizes.md,
-    fontWeight: '500',
-    color: Colors.text,
-    marginBottom: 20,
-  },
-  field: {
-    marginBottom: 14,
-  },
-  label: {
-    fontSize: FontSizes.sm,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-    marginBottom: 5,
-  },
-  input: {
-    borderWidth: 0.5,
-    borderColor: Colors.borderNormal,
+  trustList: { gap: Spacing.sm },
+  trustItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  trustIcon: {
+    width: 34,
+    height: 34,
     borderRadius: Radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: FontSizes.md,
-    color: Colors.text,
-    backgroundColor: '#fff',
-  },
-  error: {
-    fontSize: FontSizes.sm,
-    color: Colors.nok,
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: Colors.brand,
-    borderRadius: Radius.md,
-    paddingVertical: 13,
+    backgroundColor: 'rgba(216,229,104,0.10)',
     alignItems: 'center',
-    marginTop: 4,
+    justifyContent: 'center',
   },
-  buttonDisabled: {
-    opacity: 0.6,
+  trustText: { ...Typography.caption, color: Colors.border, fontFamily: FontFamily.medium },
+  formPanel: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    padding: Spacing.xxl,
+    gap: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Elevation.card,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: FontSizes.base,
-    fontWeight: '500',
+  formPanelTablet: {
+    flex: 0.92,
+    borderRadius: 0,
+    borderWidth: 0,
+    padding: 56,
+    justifyContent: 'center',
+  },
+  formHeader: { gap: 6 },
+  formEyebrow: {
+    ...Typography.caption,
+    color: Colors.brand,
+    fontFamily: FontFamily.bold,
+    letterSpacing: 1,
+  },
+  formTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: 30,
+    lineHeight: 38,
+    color: Colors.text,
+    letterSpacing: -0.7,
+  },
+  formDescription: { ...Typography.body, color: Colors.textSecondary },
+  fields: { gap: Spacing.lg },
+  support: {
+    ...Typography.caption,
+    color: Colors.textTertiary,
+    textAlign: 'center',
   },
 });

@@ -3,43 +3,53 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { BrandMark } from '@/components/ui/BrandMark';
 import { createClient } from '@/lib/supabase/client';
 import {
-  LayoutGrid,
-  Building2,
-  ClipboardList,
-  Landmark,
-  HardHat,
-  Users,
-  ScanLine,
   AlertTriangle,
   BarChart2,
+  Building2,
+  ClipboardList,
+  HardHat,
+  Landmark,
+  LayoutGrid,
   LogOut,
+  Menu,
+  ScanLine,
+  Users,
+  X,
 } from 'lucide-react';
 
 const NAV = [
-  { label: 'PRINCIPAL', items: [
-    { href: '/dashboard', icon: LayoutGrid, title: 'Dashboard' },
-  ]},
-  { label: 'CADASTROS', items: [
-    { href: '/empresas',  icon: Landmark,     title: 'Empresas' },
-    { href: '/obras',     icon: Building2,    title: 'Obras' },
-    { href: '/fvs-padrao', icon: ClipboardList, title: 'FVS Padrão' },
-    { href: '/equipes',   icon: HardHat,      title: 'Equipes' },
-    { href: '/usuarios',  icon: Users,        title: 'Usuários' },
-  ]},
-  { label: 'OPERAÇÕES', items: [
-    { href: '/verificacoes', icon: ScanLine,      title: 'Verificações' },
-    { href: '/nc',           icon: AlertTriangle,  title: 'Não Conformidades', alert: true },
-    { href: '/relatorios',   icon: BarChart2,      title: 'Relatórios' },
-  ]},
-];
+  { href: '/dashboard', icon: LayoutGrid, title: 'Visão', group: 'Principal' },
+  { href: '/obras', icon: Building2, title: 'Obras', group: 'Operação' },
+  { href: '/fvs-padrao', icon: ClipboardList, title: 'FVS', group: 'Operação' },
+  { href: '/verificacoes', icon: ScanLine, title: 'Vistorias', group: 'Operação' },
+  { href: '/nc', icon: AlertTriangle, title: 'NC', group: 'Operação', alert: true },
+  { href: '/relatorios', icon: BarChart2, title: 'Dados', group: 'Análise' },
+  { href: '/empresas', icon: Landmark, title: 'Empresas', group: 'Cadastros' },
+  { href: '/equipes', icon: HardHat, title: 'Equipes', group: 'Cadastros' },
+  { href: '/usuarios', icon: Users, title: 'Pessoas', group: 'Cadastros' },
+] as const;
+
+interface UserSummary {
+  nome: string;
+  cargo: string | null;
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'PQ';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts.at(-1)?.[0] ?? ''}`.toUpperCase();
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<{ nome: string; cargo: string } | null>(null);
+  const [user, setUser] = useState<UserSummary | null>(null);
   const [ncCount, setNcCount] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -51,103 +61,122 @@ export default function Sidebar() {
           .select('nome, cargo')
           .eq('id', authData.session.user.id)
           .single();
-        if (profile) setUser(profile as { nome: string; cargo: string });
+        if (profile) setUser(profile as UserSummary);
       }
-      // Fetch NC count for badge
-      const { count } = await supabase.from('nao_conformidades' as any).select('*', { count: 'exact', head: true }).eq('status', 'aberta');
-      setNcCount(count || 0);
+      const { count } = await supabase
+        .from('nao_conformidades' as never)
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'aberta');
+      setNcCount(count ?? 0);
     }
-    loadData();
+    void loadData();
   }, []);
 
-  const handleLogout = async () => {
+  useEffect(() => setMobileOpen(false), [pathname]);
+
+  async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push('/login');
-  };
+  }
 
-  const getInitials = (name: string) => {
-    if (!name) return 'PR';
-    const parts = name.split(' ');
-    if (parts.length === 1) return name.slice(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-
-  return (
-    <aside
-      className="flex flex-col flex-shrink-0 overflow-y-auto"
-      style={{ width: 'var(--sb-w)', background: 'var(--txt)' }}
-    >
-      {/* Logo */}
-      <div className="px-5 pt-[18px] pb-[14px]" style={{ borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-        <div className="text-white text-base font-semibold tracking-tight">PrumoQ</div>
-        <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.45)' }}>
-          Gestão de Qualidade
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 py-3 px-3">
-        {NAV.map((section) => (
-          <div key={section.label} className="mb-2">
-            <div
-              className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.8px]"
-              style={{ color: 'rgba(255,255,255,.3)' }}
+  const navigation = (
+    <>
+      <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="Navegação principal">
+        {NAV.map(item => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              title={item.title}
+              aria-current={active ? 'page' : undefined}
+              className={`group relative mb-1 flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-medium transition-colors ${
+                active
+                  ? 'bg-accent/10 text-white'
+                  : 'text-white/55 hover:bg-white/[0.06] hover:text-white'
+              }`}
             >
-              {section.label}
-            </div>
-            {section.items.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(item.href + '/');
-              const Icon = item.icon;
-              const isNC = 'alert' in item && item.alert;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-[7px] text-[13px] transition-colors mb-0.5"
-                  style={{
-                    background: active ? 'var(--br)' : 'transparent',
-                    color: active ? '#fff' : 'rgba(255,255,255,.65)',
-                  }}
-                >
-                  <Icon size={15} />
-                  <span className="flex-1">{item.title}</span>
-                  {isNC && ncCount > 0 && (
-                    <span className="bg-nok text-white text-[10px] font-semibold px-1.5 py-px rounded-full leading-none">
-                      {ncCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
+              {active ? <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-accent" /> : null}
+              <span className="relative">
+                <Icon size={20} strokeWidth={active ? 2.3 : 1.9} className={active ? 'text-accent' : ''} />
+                {'alert' in item && item.alert && ncCount > 0 ? (
+                  <span className="absolute -right-3 -top-2 min-w-4 rounded-full bg-nok px-1 text-center font-mono text-[9px] font-semibold leading-4 text-white">
+                    {Math.min(ncCount, 99)}
+                  </span>
+                ) : null}
+              </span>
+              <span className="max-w-full truncate">{item.title}</span>
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Footer / User Profile */}
-      <div className="p-3 border-t border-[rgba(255,255,255,.08)]">
-        <div className="flex items-center gap-3 px-2 py-2 rounded-[7px] cursor-pointer hover:bg-[rgba(255,255,255,.06)]">
-          <div className="w-8 h-8 rounded-full bg-[var(--brm)] text-white flex items-center justify-center text-[11px] font-semibold shrink-0">
-            {getInitials(user?.nome || '')}
+      <div className="border-t border-white/10 px-2 py-3">
+        <div className="mb-2 flex flex-col items-center gap-1.5 px-1 text-center">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent font-mono text-[11px] font-semibold text-txt">
+            {initials(user?.nome ?? '')}
           </div>
-          <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="text-xs font-medium text-[rgba(255,255,255,.85)] truncate">
-              {user?.nome || 'Carregando...'}
-            </div>
-            <div className="text-[11px] text-[rgba(255,255,255,.4)] truncate">
-              {user?.cargo || 'Administrador'}
-            </div>
-          </div>
+          <div className="w-full truncate text-[10px] font-medium text-white/65">{user?.nome ?? 'PrumoQ'}</div>
         </div>
         <button
+          type="button"
           onClick={handleLogout}
-          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-[7px] text-[13px] mt-1 transition-colors"
-          style={{ color: 'rgba(255,255,255,.4)' }}
+          className="flex min-h-10 w-full items-center justify-center gap-1 rounded-lg text-[10px] text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white"
         >
-          <LogOut size={15} />
-          <span>Sair</span>
+          <LogOut size={16} />
+          Sair
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      <aside
+        className="hidden h-screen shrink-0 flex-col bg-sidebar md:flex"
+        style={{ width: 'var(--sb-w)' }}
+      >
+        <Link href="/dashboard" className="flex h-[72px] items-center justify-center border-b border-white/10" aria-label="PrumoQ — Visão geral">
+          <BrandMark />
+        </Link>
+        {navigation}
+      </aside>
+
+      <button
+        type="button"
+        onClick={() => setMobileOpen(true)}
+        className="fixed left-3 top-3 z-40 flex h-11 w-11 items-center justify-center rounded-lg bg-sidebar text-white shadow-float md:hidden"
+        aria-label="Abrir menu"
+      >
+        <Menu size={21} />
+      </button>
+
+      {mobileOpen ? (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-[rgba(20,37,34,.58)]"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Fechar menu"
+          />
+          <aside className="relative flex h-full w-[88px] flex-col bg-sidebar shadow-float">
+            <div className="relative flex h-[72px] items-center justify-center border-b border-white/10">
+              <BrandMark />
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="absolute -right-12 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-bg-1 text-txt shadow-card"
+                aria-label="Fechar menu"
+              >
+                <X size={19} />
+              </button>
+            </div>
+            {navigation}
+          </aside>
+        </div>
+      ) : null}
+    </>
   );
 }

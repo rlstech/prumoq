@@ -18,8 +18,8 @@ export default async function EmpresasPage() {
   return (
     <>
       <Header breadcrumbs={[{ label: 'Empresas Parceiras' }]} />
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-6">
+      <div className="prumo-page">
+        <div className="prumo-page-inner">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <KPICard title="Total Cadastrado" value={empresas.length} icon={<Building2 size={20} />} />
           <KPICard title="Ativas" value={ativas} colorVariant="ok" />

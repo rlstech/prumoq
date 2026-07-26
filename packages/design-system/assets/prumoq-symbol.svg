@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>PrumoQ</title>
+  <circle cx="32" cy="30" r="20" fill="none" stroke="#D8E568" stroke-width="6"/>
+  <path d="M46.5 44.5 55 53" fill="none" stroke="#D8E568" stroke-width="6" stroke-linecap="round"/>
+  <path d="M32 7V35" fill="none" stroke="#FFFEFB" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M32 32 38 40 35 47 32 53 29 47 26 40Z" fill="#FFFEFB" stroke="#163B50" stroke-width="1.25" stroke-linejoin="round"/>
+</svg>

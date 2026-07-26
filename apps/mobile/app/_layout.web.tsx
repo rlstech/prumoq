@@ -8,12 +8,17 @@ import { useEffect, useRef, useState } from 'react';
 import { InstallBanner } from '../components/InstallBanner.web';
 import { PullToRefresh } from '../components/PullToRefresh.web';
 import { supabase } from '../lib/supabase';
+import { ThemeProvider } from '../lib/theme/ThemeProvider';
 
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const segmentsRef = useRef(segments);
   const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.lang = 'pt-BR';
+  }, []);
 
   // Keep ref current on every render so the auth listener always sees the
   // latest segments WITHOUT being a dependency (avoids re-subscribing on navigation).
@@ -36,7 +41,7 @@ export default function RootLayout() {
           // Só redireciona para o dashboard se estiver numa rota de auth ou na raiz.
           // Se o usuário atualizou a página em uma rota profunda (ex: /obras/.../fvs/...),
           // permanece nela — não volta para o dashboard.
-          const onAuthOrRoot = segmentsRef.current[0] === '(auth)' || segmentsRef.current.length === 0;
+          const onAuthOrRoot = segmentsRef.current[0] === '(auth)' || !segmentsRef.current[0];
           if (onAuthOrRoot) router.replace('/(app)/(tabs)');
         } else {
           router.replace('/(auth)/login');
@@ -57,9 +62,11 @@ export default function RootLayout() {
   }, [ready]); // segments deliberately excluded — use segmentsRef instead
 
   return (
-    <PullToRefresh>
-      <InstallBanner />
-      <Slot />
-    </PullToRefresh>
+    <ThemeProvider>
+      <PullToRefresh>
+        <InstallBanner />
+        <Slot />
+      </PullToRefresh>
+    </ThemeProvider>
   );
 }

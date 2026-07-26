@@ -15,7 +15,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     function getScrollTop(): number {
       const divs = document.querySelectorAll('div');
-      for (const el of divs) {
+      for (const el of Array.from(divs)) {
         if ((el as HTMLElement).scrollTop > 4) return (el as HTMLElement).scrollTop;
       }
       return window.scrollY;
@@ -95,7 +95,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
               width: 36,
               height: 36,
               borderRadius: 18,
-              backgroundColor: '#E84A1A',
+              backgroundColor: '#163B50',
               alignItems: 'center',
               justifyContent: 'center',
               // @ts-ignore web-only shadow

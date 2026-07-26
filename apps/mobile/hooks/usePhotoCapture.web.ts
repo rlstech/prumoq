@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 export interface UsePhotoCaptureReturn {
   photos: string[];
@@ -6,6 +6,11 @@ export interface UsePhotoCaptureReturn {
   addFromGallery: () => Promise<void>;
   removePhoto: (index: number) => void;
   setPhotos: (photos: string[]) => void;
+}
+
+interface UsePhotoCaptureOptions {
+  photos?: string[];
+  onChange?: (photos: string[]) => void;
 }
 
 function pickFile(capture?: 'environment' | 'user'): Promise<string | null> {
@@ -27,27 +32,48 @@ function pickFile(capture?: 'environment' | 'user'): Promise<string | null> {
   });
 }
 
-export function usePhotoCapture(initialPhotos: string[] = []): UsePhotoCaptureReturn {
-  const [photos, setPhotos] = useState<string[]>(initialPhotos);
+export function usePhotoCapture(
+  initialPhotos: string[] = [],
+  options: UsePhotoCaptureOptions = {},
+): UsePhotoCaptureReturn {
+  const [internalPhotos, setInternalPhotos] = useState<string[]>(initialPhotos);
+  const photos = options.photos ?? internalPhotos;
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+
+  const commitPhotos = useCallback((
+    update: string[] | ((current: string[]) => string[]),
+  ) => {
+    const next = typeof update === 'function' ? update(photosRef.current) : update;
+    photosRef.current = next;
+    if (options.onChange) options.onChange(next);
+    else setInternalPhotos(next);
+  }, [options.onChange]);
 
   const addFromCamera = useCallback(async () => {
     const url = await pickFile('environment');
-    if (url) setPhotos((prev) => [...prev, url]);
-  }, []);
+    if (url) commitPhotos(prev => [...prev, url]);
+  }, [commitPhotos]);
 
   const addFromGallery = useCallback(async () => {
     const url = await pickFile(undefined);
-    if (url) setPhotos((prev) => [...prev, url]);
-  }, []);
+    if (url) commitPhotos(prev => [...prev, url]);
+  }, [commitPhotos]);
 
   const removePhoto = useCallback((index: number) => {
-    setPhotos((prev) => {
+    commitPhotos(prev => {
       // Revoke blob URL to free memory
       const url = prev[index];
       if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
       return prev.filter((_, i) => i !== index);
     });
-  }, []);
+  }, [commitPhotos]);
 
-  return { photos, addFromCamera, addFromGallery, removePhoto, setPhotos };
+  return {
+    photos,
+    addFromCamera,
+    addFromGallery,
+    removePhoto,
+    setPhotos: photos => commitPhotos(photos),
+  };
 }

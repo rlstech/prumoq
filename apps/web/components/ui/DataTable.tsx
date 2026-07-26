@@ -30,7 +30,7 @@ export default function DataTable<T>({
 
   if (loading) {
     return (
-      <div className="w-full bg-bg-1 border border-brd-0 rounded-xl overflow-hidden">
+      <div className="prumo-panel w-full overflow-hidden">
         <div className="animate-pulse flex flex-col">
           <div className="h-10 bg-bg-2 border-b border-brd-0"></div>
           {[1, 2, 3, 4, 5].map(i => (
@@ -45,17 +45,18 @@ export default function DataTable<T>({
 
   if (data.length === 0) {
     return (
-      <div className="w-full bg-bg-1 border border-brd-0 rounded-xl flex flex-col items-center justify-center p-12">
-        <p className="text-txt-3 text-sm">{emptyMessage}</p>
+      <div className="prumo-panel flex w-full flex-col items-center justify-center p-12">
+        <div className="mb-4 h-8 w-px bg-accent" />
+        <p className="text-sm text-txt-3">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-bg-1 border border-brd-0 rounded-xl overflow-hidden overflow-x-auto">
+    <div className="prumo-panel w-full overflow-x-auto">
       <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="bg-bg-0 border-b border-brd-0">
+        <thead className="sticky top-0 z-10">
+          <tr className="border-b border-brd-0 bg-bg-0">
             {columns.map((col, idx) => (
               <th 
                 key={col.header || idx} 
@@ -73,9 +74,16 @@ export default function DataTable<T>({
               <tr 
                 key={rowKey ? rowKey(item) : rowIdx} 
                 onClick={() => rowIsClickable && onRowClick(item)}
+                onKeyDown={event => {
+                  if (rowIsClickable && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    onRowClick(item);
+                  }
+                }}
+                tabIndex={rowIsClickable ? 0 : undefined}
                 className={`
                   border-b border-brd-0 last:border-0 
-                  ${rowIsClickable ? 'cursor-pointer hover:bg-bg-2 transition-colors' : ''}
+                  ${rowIsClickable ? 'cursor-pointer hover:bg-accent-soft/50 focus:bg-accent-soft/50 focus:outline-none transition-colors' : ''}
                 `}
               >
                 {columns.map((col, colIdx) => (

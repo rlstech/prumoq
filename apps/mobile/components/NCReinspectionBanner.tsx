@@ -1,5 +1,6 @@
+import { RotateCcw } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors } from '../lib/constants';
+import { Colors, FontFamily, Radius, Spacing, Typography } from '../lib/constants';
 
 interface Props {
   itemTitle: string;
@@ -8,11 +9,13 @@ interface Props {
 
 export function NCReinspectionBanner({ itemTitle }: Props) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.icon}>🔄</Text>
+    <View style={styles.container} accessibilityRole="alert">
+      <View style={styles.icon}>
+        <RotateCcw size={20} color={Colors.info} />
+      </View>
       <View style={styles.body}>
-        <Text style={styles.title}>Re-inspeção de NC aberta</Text>
-        <Text style={styles.subtitle}>{itemTitle}</Text>
+        <Text style={styles.title}>Reinspeção de NC aberta</Text>
+        <Text style={styles.subtitle} numberOfLines={2}>{itemTitle}</Text>
       </View>
     </View>
   );
@@ -22,29 +25,22 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    gap: Spacing.md,
     backgroundColor: Colors.progressBg,
-    borderWidth: 0.5,
-    borderColor: Colors.progress,
-    borderRadius: 9,
-    paddingVertical: 8,
-    paddingHorizontal: 9,
-    marginBottom: 9,
+    borderWidth: 1,
+    borderColor: '#B9D0EA',
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
   },
   icon: {
-    fontSize: 18,
+    width: 42,
+    height: 42,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  body: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: Colors.progress,
-  },
-  subtitle: {
-    fontSize: 9,
-    color: Colors.textSecondary,
-    marginTop: 1,
-  },
+  body: { flex: 1, gap: 2 },
+  title: { ...Typography.bodyMedium, fontFamily: FontFamily.semibold, color: Colors.info },
+  subtitle: { ...Typography.caption, color: Colors.textSecondary },
 });

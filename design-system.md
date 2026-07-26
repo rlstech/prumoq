@@ -1,367 +1,167 @@
-# PrumoQ — Design System
+# PrumoQ — Design System “Prumo Mineral”
 
-## Filosofia
+## Conceito
 
-Interface limpa, industrial e funcional. Sem decoração excessiva. Cada elemento tem propósito.
-O laranja `#E84A1A` é a cor da marca — usada para ações primárias e destaques. Verde para conformidade, vermelho para não conformidade, azul para progresso.
+O PrumoQ usa uma linguagem visual inspirada em linhas de prumo, referências de
+nível, plantas técnicas e materiais minerais. A interface deve parecer precisa,
+robusta e calma — nunca decorativa ou excessivamente “industrial”.
 
----
+A assinatura visual é formada por:
 
-## Paleta de Cores
+- Azul Prumo para marca, navegação e ações primárias.
+- Cal Viva para foco, seleção e pontos de referência.
+- Superfícies claras e quentes para leitura prolongada.
+- Linha de datum de 3px para indicar contexto ou estado.
+- Cor semântica sempre acompanhada de texto e/ou ícone.
 
-### Marca
-```
---color-brand:        #E84A1A   /* laranja principal */
---color-brand-dark:   #C03A10   /* hover/pressed */
---color-brand-light:  #FDF0EC   /* backgrounds suaves */
---color-brand-mid:    #F5784A   /* avatares, ícones secundários */
-```
+Os valores canônicos ficam em `packages/design-system`. Aplicações devem
+consumir os tokens compartilhados; este documento explica como usá-los.
 
-### Semântica
-```
---color-ok:           #2E7D32   /* conforme / sucesso */
---color-ok-bg:        #E8F5E9
---color-ok-mid:       #4CAF50   /* barras de progresso concluídas */
+## Cores
 
---color-nok:          #C62828   /* não conforme / erro */
---color-nok-bg:       #FFEBEE
+### Marca e interface
 
---color-progress:     #1565C0   /* em andamento / info */
---color-progress-bg:  #E3F2FD
+| Token | Valor | Uso |
+|---|---:|---|
+| `plumb` | `#163B50` | Marca, navegação e ação primária |
+| `plumbDeep` | `#0F2C3C` | Shell escuro e hover |
+| `plumbPressed` | `#0C2533` | Estado pressionado |
+| `lime` | `#D8E568` | Foco, seleção e assinatura |
+| `limeSoft` | `#F3F7D5` | Fundo de seleção |
+| `basalt` | `#142522` | Texto principal |
+| `slate` | `#52615B` | Texto secundário |
+| `mistText` | `#6E7A75` | Texto terciário |
+| `limestone` | `#F4F1E8` | Canvas |
+| `mineralWhite` | `#FFFEFB` | Cards e formulários |
+| `fog` | `#E4E7E1` | Divisores e superfícies secundárias |
+| `fogStrong` | `#C9D0CA` | Bordas de controles |
 
---color-warn:         #E65100   /* alertas / prazo próximo */
---color-warn-bg:      #FFF3E0
+### Estados
 
---color-na:           #666666   /* N/A / inativo / pendente */
---color-na-bg:        #F2F2F2
-```
+| Estado | Principal | Fundo |
+|---|---:|---:|
+| Conforme | `#2D7A4B` | `#E8F4EC` |
+| Não conforme | `#B23A3A` | `#FAEAEA` |
+| Atenção | `#986014` | `#FBF1DD` |
+| Informação/sync | `#2D66A8` | `#E9F0F8` |
+| Neutro/pendente | `#52615B` | `#EEF0EC` |
 
-### Interface (Web Admin)
-```
---bg-0:     #F7F6F3   /* fundo da página */
---bg-1:     #FFFFFF   /* superfície de cards */
---bg-2:     #F1EFE8   /* hover, inputs, secundário */
---txt:      #1A1A18   /* texto principal */
---txt-2:    #5C5B57   /* texto secundário */
---txt-3:    #9C9A93   /* texto terciário, placeholders */
---border-0: rgba(0,0,0,0.08)   /* bordas sutis */
---border-1: rgba(0,0,0,0.12)   /* bordas normais */
-```
-
-### Interface (Mobile App)
-As mesmas variáveis de cor acima, adaptadas para React Native:
-```typescript
-export const colors = {
-  brand:         '#E84A1A',
-  brandDark:     '#C03A10',
-  brandLight:    '#FDF0EC',
-  ok:            '#2E7D32',
-  okBg:          '#E8F5E9',
-  nok:           '#C62828',
-  nokBg:         '#FFEBEE',
-  progress:      '#1565C0',
-  progressBg:    '#E3F2FD',
-  warn:          '#E65100',
-  warnBg:        '#FFF3E0',
-  na:            '#666666',
-  naBg:          '#F2F2F2',
-  bg:            '#F7F6F3',
-  surface:       '#FFFFFF',
-  surface2:      '#F1EFE8',
-  text:          '#1A1A18',
-  textSecondary: '#5C5B57',
-  textTertiary:  '#9C9A93',
-  border:        'rgba(0,0,0,0.08)',
-  borderMid:     'rgba(0,0,0,0.12)',
-}
-```
-
----
+Cal Viva recebe texto Basalto, nunca texto branco. Estados críticos não devem
+ser comunicados apenas por cor.
 
 ## Tipografia
 
-### Web Admin
-```css
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+- Interface: IBM Plex Sans.
+- Números, percentuais, revisões e códigos: IBM Plex Mono.
+- Fontes são distribuídas com os aplicativos; não dependem de download em
+  runtime.
 
-/* Escalas */
---text-xs:   11px
---text-sm:   12px
---text-base: 13px / 14px
---text-md:   15px
---text-lg:   16px / 17px
---text-xl:   18px / 19px
---text-2xl:  20px / 22px
---text-3xl:  26px / 28px
+| Papel | Tamanho/linha | Peso |
+|---|---|---|
+| Display | `40/44` web, `34/40` mobile | 700 |
+| Título de página | `28/34` | 600–700 |
+| Título de seção | `22/28` | 600 |
+| Corpo | `15/22` mobile, `15/22` web | 400 |
+| Label | `13/18` | 600 |
+| Legenda | `12/16` | 400–500 |
 
-/* Pesos */
---weight-normal: 400
---weight-medium: 500
---weight-semi:   600
+Evitar caixa alta em títulos. Overlines e labels de seção podem usar caixa alta
+com tracking entre `0.12em` e `0.16em`.
 
-/* Títulos de página */
-page-title: 20px, weight 600
-section-title: 11px, weight 600, uppercase, letter-spacing 0.5px, color txt-2
+## Espaçamento, forma e movimento
 
-/* Células de tabela */
-table-header: 11px, weight 600, uppercase, letter-spacing 0.4px
-table-cell: 13px, weight 400
-table-cell-sub: 12px, color txt-2, margin-top 2px
-```
+- Grid: `4, 8, 12, 16, 24, 32, 48`.
+- Controle: raio de `6px`.
+- Card: raio de `12px`.
+- Superfície protagonista: raio máximo de `20px`.
+- Touch target mobile: mínimo `44px`.
+- Input e ação primária mobile: `48px`.
+- Motion: `120ms`, `180ms` e `220ms`.
+- Respeitar `prefers-reduced-motion`.
 
-### Mobile App
-```typescript
-export const fonts = {
-  // títulos de tela
-  screenTitle:  { fontSize: 19, fontWeight: '500' as const },
-  // subtítulos
-  subtitle:     { fontSize: 12 },
-  // cards
-  cardTitle:    { fontSize: 14, fontWeight: '500' as const },
-  cardSubtitle: { fontSize: 12 },
-  // checklist
-  itemTitle:    { fontSize: 13, fontWeight: '500' as const },
-  itemMethod:   { fontSize: 12 },
-  // labels de formulário
-  formLabel:    { fontSize: 12, fontWeight: '500' as const },
-  // botões
-  button:       { fontSize: 14, fontWeight: '500' as const },
-  // badges
-  badge:        { fontSize: 11, fontWeight: '500' as const },
-  // seções
-  sectionLabel: { fontSize: 11, fontWeight: '600' as const },
-}
-```
+Sombras são discretas. Use espaço, contraste e borda antes de elevar uma
+superfície.
 
----
+## Marca
 
-## Espaçamento
+O símbolo combina um `Q` com uma corda vertical e um peso de prumo facetado na
+base. A gravidade organiza a forma: a corda nunca é inclinada e o peso sempre
+fica abaixo do centro óptico.
+Ele aparece no favicon, ícone do app, splash, login e navegação.
 
-```
-4px  — gap mínimo entre elementos inline
-8px  — padding interno de badges, chips
-10px — gap padrão em grids mobile
-12px — padding de cards mobile, gap em grids
-14px — padding de conteúdo mobile
-16px — padding de cards web
-20px — padding de seções web
-24px — padding de página web
-```
-
-### Bordas e Raios
-```
-border-radius-sm:  6px  (itens de checklist, inputs)
-border-radius-md:  8px  (cards menores, badges grandes, modais)
-border-radius-lg: 12px  (cards principais, sheets mobile)
-border-radius-xl: 16px  (modais web)
-border-radius-full: 9999px (badges, chips, avatares)
-
-border-width: 0.5px (mobile) / 1px (web)
-border-width-accent: 3px (destaques de ambientes por tipo)
-```
-
----
+Não desenhar novas variações do símbolo em telas. Usar os ativos canônicos em
+`packages/design-system/assets`, os componentes `BrandMark` e os derivados em
+`apps/web/app/icon.svg` e `apps/mobile/assets`.
 
 ## Componentes
 
-### Badges de Status
-Sempre com texto + fundo na mesma família de cor.
-```
-Conforme:       bg #E8F5E9, text #2E7D32, border (mobile) #2E7D32
-Não conforme:   bg #FFEBEE, text #C62828, border (mobile) #C62828
-Em andamento:   bg #E3F2FD, text #1565C0
-Pendente / N/A: bg #F2F2F2, text #666666
-Vence hoje:     bg #FFEBEE, text #C62828
-Prazo próximo:  bg #FFF3E0, text #E65100
-```
+### Linha de datum
 
-### Barras de Progresso
-```
-height: 6px (mobile) / 6px (web)
-border-radius: 3px
-background-track: --color-border / --bg-2
-fill-em-andamento: --color-brand
-fill-concluida:    --color-ok
-fill-nao-conforme: --color-nok
-```
+Linha vertical de 3px no lado esquerdo. Cal Viva representa contexto ou marca;
+cores semânticas representam estados. Evitar barras coloridas no topo e fundos
+inteiros saturados.
 
-### Avatares
-```
-admin / brand:   bg --color-brand-light,  text --color-brand,    initials
-engenheiro:      bg --color-progress-bg,  text --color-progress, initials
-proprio:         bg --color-ok-bg,        text --color-ok,       initials
-terceirizado:    bg --color-warn-bg,      text --color-warn,     initials
-inspetor:        bg --color-brand-light,  text --color-brand,    initials
+### Botões
 
-Sizes: 28px (inline), 32px (tabela), 36px (team rows), 40px (profile card), 72px (perfil hero)
-```
+- Primário: Azul Prumo, texto branco.
+- Secundário: superfície branca, borda forte, texto Basalto.
+- Destrutivo: vermelho semântico.
+- Ghost: sem fundo; hover usa Fog.
+- Apenas uma ação primária por superfície.
 
-### Itens de Checklist (Mobile)
-```
-container: border 0.5px, border-radius 8px, overflow hidden
-header: background --surface2, padding 11px 13px
-  - número: círculo 20px, bg --border, font 11px weight 500
-  - título: font 13px weight 500
-método/tolerância: background --surface, padding 9px 13px, border-top 0.5px
-  - label: font 10px weight 600, uppercase, letter-spacing 0.4px, color --textSecondary
-  - tolerância: badge azul (progressBg/progress), font 12px weight 500
-ações: background --surface2, padding 10px 13px, border-top 0.5px
-  - botões C/NC/NA: flex igual, padding 8px, border-radius 5px, font 11px weight 500
-```
+### Status
 
-### Painel de Não Conformidade (Mobile)
-```
-Quando item marcado como NC, exibe painel com:
-- background: --color-nok-bg
-- border: 0.5px solid --color-nok
-- border-radius: 8px
-- padding: 12px
-Campos obrigatórios:
-  1. Textarea: descrição da NC
-  2. Foto: botão dashed, após upload mostra thumbnail 52px
-  3. Textarea: solução proposta
-  4. Date input: nova data de verificação
-  5. Select: responsável pela correção
-```
+Badges usam ponto/ícone, texto, fundo suave e borda. NCs usam card branco com
+datum vermelho em vez de um card inteiramente vermelho.
 
-### Cartão de Ambiente (Web)
-```
-border-top accent 3px:
-  - interno: #1565C0 (azul)
-  - externo: #2E7D32 (verde)
-border: 0.5px solid --border-0
-border-radius: 12px
-hover: border-color --color-brand, box-shadow sutil
-```
+### Cards e métricas
 
-### Toggle (Web)
-```
-track: width 36px, height 20px, border-radius 10px
-  - unchecked: background #ccc
-  - checked:   background --color-ok
-thumb: width 16px, height 16px, border-radius 50%, background white
-  - transition: left 0.2s
-```
+Cards padrão têm superfície Mineral White, borda Fog e sombra mínima. Métricas
+usam IBM Plex Mono e hierarquia assimétrica; não criar grades de cartões
+idênticos quando uma informação tem prioridade maior.
 
-### Topbar Mobile
-```
-background: --color-brand
-padding: 13px 18px 17px (normal) / 12px 18px 16px (compact)
-h1: color white, font 18-19px, weight 500
-p: color rgba(255,255,255,0.72), font 12px
-back button: background rgba(255,255,255,0.2), width/height 32px, border-radius 50%
-```
+### Formulários
 
-### Bottom Nav Mobile
-```
-height: 76px (inclui safe area de 8px no bottom)
-background: surface
-border-top: 0.5px solid border
-itens: 4 botões iguais, flex-direction column, ícone 19px + label 10px
-ativo: color --color-brand, weight 500
-inativo: color --textSecondary
-```
+Labels ficam acima dos campos. Foco usa borda Azul Prumo e halo Cal Viva. Erros
+aparecem inline e também em resumos navegáveis para formulários longos.
 
-### Sidebar Web
-```
-width: 228px
-background: #1A1A18 (--txt, quase preto)
-sb-item normal:  color rgba(255,255,255,0.65), padding 9px 12px, border-radius 7px
-sb-item hover:   background rgba(255,255,255,0.06)
-sb-item active:  background --color-brand, color white
-section labels:  color rgba(255,255,255,0.3), font 10px uppercase
-badge de alerta: background --color-nok, color white, font 10px weight 600
-```
+No admin, formulários simples abrem em side sheet. Modais centrais ficam
+reservados a confirmação, visualização ampla e fluxos concentrados.
 
----
+## Layout mobile/PWA
 
-## Ícones
+- Header claro com marca, contexto e sincronização.
+- Navegação inferior escura e compacta; em tablet vira rail.
+- Canvas Calcário com conteúdo máximo de `1440px` no PWA.
+- Dashboard ordena: Hoje, ações necessárias, obras e atividade.
+- Busca e filtros principais aparecem juntos; filtros avançados usam sheet.
+- Nova Verificação usa quatro etapas: Contexto, Checklist, Evidências e Revisão.
+- Ações de avanço/salvar ficam fixas no rodapé.
 
-Usar **Lucide React** / **Lucide React Native** em todo o sistema.
+## Layout admin
 
-Ícones principais por contexto:
-```
-Dashboard:          LayoutGrid
-Obras:              Building2
-FVS Padrão:         ClipboardList
-Ambientes:          Layers
-Equipes:            HardHat
-Usuários:           User
-Verificações:       Search / ScanLine
-NC:                 AlertTriangle
-Relatórios:         BarChart2
-Config:             Settings
-Logout:             LogOut
-Foto:               Camera / Image
-Assinatura:         PenLine
-Download / PDF:     Download / FileDown
-Conforme:           CheckCircle2
-Não Conforme:       XCircle
-N/A:                MinusCircle
-Progresso:          Clock
-Interno:            Home
-Externo:            Sun
-NC Aberta:          AlertCircle
-NC Resolvida:       CheckCircle
-Voltar:             ChevronLeft
-Adicionar:          Plus
-```
+- Rail principal de `88px`; em telas pequenas vira drawer.
+- Command/header de `72px`.
+- Canvas em grid de 12 colunas, largura máxima `1440px`.
+- Dashboard usa portfólio em destaque e coluna de atenção.
+- Tabelas têm cabeçalho sticky e estados de foco para linhas interativas.
+- Detalhes usam masthead, resumo operacional e navegação local.
 
----
+## Acessibilidade
 
-## Animações e Transições
+- Contraste mínimo WCAG AA.
+- Foco visível com Cal Viva.
+- Touch target mínimo de `44px`.
+- Navegação por teclado em tabelas, dialogs e ações.
+- Ícone e texto acompanham todas as cores semânticas.
+- Não remover outline sem substituto.
+- Validar em 320, 390, 768, 1024, 1440 e 1920px.
 
-```
-Transições de cor/borda:  0.12s ease
-Toggle switch:            0.2s ease
-Barra de progresso:       0.3s ease
-Toast entrada/saída:      translateY + opacity, 0.25s
-Modal entrada:            opacity + scale, 0.2s
+## Referência de implementação
 
-Mobile - Sheet de verificação:
-  entrada: translateY(100%) → translateY(0), 0.3s ease-out
-  saída:   translateY(0) → translateY(100%), 0.25s ease-in
-```
-
----
-
-## Padrões de Layout
-
-### Web Admin — Grid de KPIs
-```css
-display: grid;
-grid-template-columns: repeat(4, 1fr);
-gap: 14px;
-margin-bottom: 24px;
-```
-
-### Web Admin — Detalhe com Sidebar
-```css
-display: grid;
-grid-template-columns: 1fr 340px;
-gap: 20px;
-```
-
-### Mobile — Grid de Ambientes
-```css
-/* React Native */
-numColumns: 2
-columnWrapperStyle: { gap: 10 }
-```
-
-### Mobile — Grid de Fotos
-```
-3 colunas, gap 6px, aspect-ratio 1:1
-```
-
----
-
-## Referências Visuais
-
-Os arquivos HTML dos protótipos são a referência definitiva de layout. Qualquer dúvida sobre espaçamento, hierarquia ou comportamento, consultar:
-
-- `references/fvs_admin_prumoq.html` — Painel web administrativo completo
-- `references/mobile-prototype.html` — App mobile com todas as telas
-
-**O design dos protótipos deve ser reproduzido fielmente.**
-Desvios só são aceitáveis quando tecnicamente necessários para React Native / Next.js.
+- Tokens: `packages/design-system/src/index.ts`
+- CSS variables: `packages/design-system/src/tokens.css`
+- Adapter mobile: `apps/mobile/lib/constants.ts`
+- Adapter Tailwind: `apps/web/tailwind.config.ts`
+- Primitivas mobile: `apps/mobile/components/ui/`
+- Primitivas web: `apps/web/components/ui/`

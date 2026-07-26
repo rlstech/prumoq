@@ -1,12 +1,12 @@
 {
   "name": "PrumoQ",
   "short_name": "PrumoQ",
-  "description": "Gestão da Qualidade para Obras",
+  "description": "Gestão da qualidade para obras",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#E84A1A",
-  "background_color": "#E84A1A",
+  "orientation": "any",
+  "theme_color": "#163B50",
+  "background_color": "#F4F1E8",
   "icons": [
     {
       "src": "/icon-192.png",

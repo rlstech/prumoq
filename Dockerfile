@@ -35,7 +35,8 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN addgroup --system --gid 1001 nodejs && \
+RUN apk add --no-cache chromium font-noto font-noto-cjk font-noto-emoji && \
+    addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 nextjs
 
 # outputFileTracingRoot points to monorepo root, so standalone mirrors monorepo structure:
@@ -47,5 +48,9 @@ USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV PUPPETEER_EXECUTABLE_PATH="/usr/bin/chromium-browser"
+ENV PUPPETEER_DISABLE_SANDBOX="true"
+ENV XDG_CONFIG_HOME="/tmp/.chromium"
+ENV XDG_CACHE_HOME="/tmp/.chromium"
 
 CMD ["node", "apps/web/server.js"]

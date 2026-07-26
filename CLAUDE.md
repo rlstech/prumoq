@@ -52,6 +52,8 @@ app/
         [id]/ambiente/[ambId]/fvs/[fvsId]/verificacao/nova.tsx  ← Nova Verificação
       nc/index.tsx
       perfil/index.tsx
+  print/[fvsId].tsx        ← Impressão/exportação de FVS (print-to-PDF do navegador)
+  print/[fvsId].web.tsx
 ```
 
 O `_layout.native.tsx` é o ponto central nativo: inicializa `db.init()`, chama `db.connect(new SupabaseConnector())` ao fazer login e `db.disconnectAndClear()` ao fazer logout.
@@ -72,24 +74,38 @@ Arquivos com split de plataforma em `apps/mobile/lib/`:
 - `supabase.ts` / `supabase.web.ts` — mesma API, cliente browser no web
 - `powersync-web-shim.ts` — substitui PowerSync no browser, mapeando SQL para Supabase REST/RPCs
 
+Hooks em `apps/mobile/hooks/` seguem a mesma convenção de split `.native`/`.web` (ex.: `usePhotoCapture`, `useNcPhoto`, `usePWAInstall`).
+
 ### Mobile — PWA / Web Shim
 
-O app mobile roda como PWA no browser. O arquivo `apps/mobile/lib/powersync-web-shim.ts` implementa a mesma interface de `db` e `usePowerSyncQuery`, mas despacha para Supabase REST diretamente. Cada tela usa o mesmo código; o shim recebe as queries SQL e as mapeia para chamadas Supabase.
+O app mobile roda como PWA no browser. O arquivo `apps/mobile/lib/powersync-web-shim.ts` (~600 linhas) implementa a mesma interface de `db` e `usePowerSyncQuery`, mas despacha para Supabase REST diretamente. Cada tela usa o mesmo código; o shim recebe as queries SQL e as mapeia para chamadas Supabase. Internamente contém:
+- Um dispatcher `fetchFromSupabase` com ~30 branches de pattern-matching de fragmentos SQL específicos de cada tela — **frágil por natureza**, precisa ser atualizado manualmente a cada nova query/tela no mobile.
+- Um cache client-side de permissão por obra (`getAllowedObraIds`, TTL 30s, dedupe de chamadas em andamento) que replica no browser o escopo de RLS por obra.
+- Helpers de upload R2 (`uploadBlobToR2`, `uploadDataUrlToR2`) que duplicam, para o caminho web, a lógica de upload que no nativo passa pela camada de sync.
 
 **Ao adicionar uma nova tela/query no mobile**, também é preciso adicionar o padrão correspondente em `powersync-web-shim.ts` para que a versão web funcione. Queries complexas com JOINs usam RPCs definidas em `supabase/migrations/002_web_views_and_rpcs.sql`.
 
 **`apps/mobile/lib/setup-rn-web.ts`** — DEVE ser o primeiro import em `_layout.web.tsx`. Corrige crash do NativeWind no web ao inicializar o dark mode antes que o MutationObserver do React Native Web seja registrado.
 
+### Mobile/Web — Print / PDF
+
+Dois pontos de impressão/exportação de FVS existem hoje, ambos dependendo de print-to-PDF do navegador (não de geração server-side):
+- Mobile: `apps/mobile/app/(app)/print/[fvsId].tsx` / `.web.tsx`
+- Web: rota pública (fora do painel admin) `apps/web/app/relatorio/fvs/[fvsId]/page.tsx` + `PrintClient.tsx`
+
+Existe também `pupp/` na raiz do repo (fora do workspace pnpm, não referenciado em `.github/workflows/deploy.yml`) contendo apenas um `package.json` com a dependência `puppeteer` e nenhum código — corresponde ao item "PDF | React PDF (client) + Puppeteer (server)" do `SPEC.md`, mas **ainda não implementado**. Não assuma que existe geração de PDF server-side funcionando.
+
 ### Web — Clientes Supabase
 
-Dois padrões distintos em `apps/web/lib/supabase/`:
+Três padrões distintos em `apps/web/lib/supabase/`:
 
 - `server.ts` — usa `@supabase/ssr` com cookies do Next.js. Use em Server Components e Server Actions.
 - `client.ts` — cliente browser padrão. Use em Client Components (`'use client'`).
+- `admin.ts` — cliente com `SUPABASE_SERVICE_ROLE_KEY`, para operações admin (`auth.admin.*`) — veja `apps/web/app/(admin)/usuarios/actions.ts` como modelo.
 
-Para operações admin (criar/editar usuários via `auth.admin.*`), use `createClient` direto com `SUPABASE_SERVICE_ROLE_KEY` — veja `apps/web/app/(admin)/usuarios/actions.ts` como modelo.
+Todos tipados com `Database` de `@prumoq/shared`.
 
-Ambos tipados com `Database` de `@prumoq/shared`.
+`middleware.ts` protege as rotas admin. Como o Next usa `basePath: '/admin'`, o middleware já recebe os paths **sem** esse prefixo — fonte comum de confusão ao adicionar novas checagens de rota.
 
 ### Web — Server Actions
 
@@ -98,8 +114,19 @@ Server Actions ficam em `actions.ts` dentro da pasta da rota (convenção do pro
 - `apps/web/app/(auth)/login/actions.ts` — login; bloqueia perfil `inspetor` (uso restrito ao mobile)
 - `apps/web/app/(admin)/equipes/actions.ts` — CRUD de equipes
 - `apps/web/app/(admin)/obras/[id]/actions.ts` — operações sobre obra específica (ambientes, associações)
+- `apps/web/app/(admin)/obras/actions.ts` — operações sobre a lista de obras (separado do anterior)
+- `apps/web/app/(admin)/empresas/actions.ts` — CRUD de empresas
+- `apps/web/app/(admin)/verificacoes/actions.ts` — operações sobre verificações
 
 Perfis `inspetor` são impedidos de acessar o painel web — o `loginAction` retorna erro e faz signOut.
+
+Não há `actions.ts` em `fvs-padrao/`, `nc/` ou `relatorios/` — essas áreas usam outros caminhos de dados (client components, etc.) em vez de Server Actions.
+
+### Web — Componentes de UI
+
+`apps/web/components/ui/` é a camada reutilizável canônica para telas admin: `DataTable`, `Modal`, `ConfirmDialog`, `KPICard`, `ProgressBar`, `StatusBadge`, `Toast`, `ToggleSwitch`. `apps/web/components/layout/` tem `Header.tsx` e `Sidebar.tsx`. Há também um `ChecklistEditor.tsx` standalone notável.
+
+`@tanstack/react-query` está configurado (`lib/query-provider.tsx`, montado em `(admin)/layout.tsx`) mas praticamente não é usado no restante do app — não assuma que é um padrão ativo de state management.
 
 ### Shared Package
 
@@ -148,6 +175,11 @@ pnpm lint                 # lint (somente apps/web — mobile não tem lint scri
 # Executar schema no Supabase:
 # Colar supabase/migrations/001_initial_schema.sql no SQL Editor do Supabase Dashboard
 # Colar supabase/migrations/002_web_views_and_rpcs.sql também
+# Existem migrations adicionais 003-020 (obra_equipes, correções de RLS, ciclo de
+# vida de FVS, reinspeção de NC, RPC get_fvs_header) — aplicar todas em ordem.
+# Várias são correções de bugs em RLS/cálculo de progresso (ex.:
+# 007_fix_nc_join_inflates_progress.sql, 010_fix_verificacoes_rls_obra_access.sql) —
+# essa área é sensível, revisar com cautela extra ao alterá-la.
 
 # Gerar tipos TypeScript após aplicar o schema:
 npx supabase gen types typescript --project-id <id> \
@@ -176,7 +208,9 @@ Copie `.env.example` e preencha:
 | `EXPO_PUBLIC_R2_PUBLIC_URL` | `apps/mobile/.env` |
 | `NEXT_PUBLIC_SUPABASE_URL` | `apps/web/.env.local` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `apps/web/.env.local` |
+| `NEXT_PUBLIC_R2_PUBLIC_URL` | `apps/web/.env.local` |
 | `SUPABASE_SERVICE_ROLE_KEY` | `apps/web/.env.local` |
+| `POWERSYNC_URL` | `apps/web/.env.local` |
 | `R2_ACCOUNT_ID` | Supabase secrets (Edge Function) |
 | `R2_ACCESS_KEY_ID` | Supabase secrets (Edge Function) |
 | `R2_SECRET_ACCESS_KEY` | Supabase secrets (Edge Function) |
@@ -272,20 +306,27 @@ Copie `.env.example` e preencha:
 - **RN-04:** FVS versioning — `revisao_associada` captura a revisão no momento da associação
 - **RN-05:** Progresso calculado automaticamente pelo trigger `update_fvs_status`
 - **RN-06:** Perfis `inspetor`, `admin` e `gestor` acessam o mobile. O painel web bloqueia perfil `inspetor`.
+- **RN-07:** Assinatura digital
+- **RN-08:** Acesso por obra — escopo de acesso por obra, implementado via RLS e, no shim web, via `getAllowedObraIds`
 - **RN-09:** App 100% funcional offline — todo write vai via PowerSync
+- **RN-10:** FVS Padrão inativa
 
 ## Design
 
-**O design dos protótipos HTML em `references/` é a referência definitiva.**
+**O sistema “Prumo Mineral” em `design-system.md` e `packages/design-system/` é
+a referência visual definitiva.** Os protótipos HTML em `references/` continuam
+válidos para conteúdo e fluxos, não para cores, tipografia ou shell.
 
 Ao implementar qualquer tela:
-1. Abra o arquivo HTML de referência correspondente (`prumoq_mobile_inspector.html` para mobile, `fvs_admin_prumoq.html` para web)
-2. Identifique os tokens de cor e espaçamento no `design-system.md`
-3. Reproduza o layout fielmente usando os tokens
+1. Consulte o fluxo no HTML de referência correspondente (`prumoq_mobile_inspector.html` para mobile, `fvs_admin_prumoq.html` para web)
+2. Use os tokens de `packages/design-system/` e os padrões de `design-system.md`
+3. Reproduza a linguagem Prumo Mineral usando os componentes canônicos
 4. Use Lucide React/React Native para ícones (não emoji)
 
 Cores principais para consulta rápida (também em `apps/mobile/lib/constants.ts` e `apps/web/tailwind.config.ts`):
-- Brand: `#E84A1A`
+- Brand / Azul Prumo: `#163B50`
+- Accent / Cal Viva: `#D8E568`
+- Canvas / Calcário: `#F4F1E8`
 - OK/Conforme: `#2E7D32`
 - NOK/Não conforme: `#C62828`
 - Progress/Em andamento: `#1565C0`

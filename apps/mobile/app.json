@@ -3,7 +3,7 @@
     "name": "PrumoQ",
     "slug": "prumoq",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "scheme": "prumoq",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#E84A1A"
+      "backgroundColor": "#163B50"
     },
     "plugins": [
       "expo-router",
@@ -28,25 +28,25 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#E84A1A"
+        "backgroundColor": "#163B50"
       },
       "package": "br.com.prumoq.app"
     },
     "ios": {
       "bundleIdentifier": "br.com.prumoq.app",
-      "supportsTablet": false
+      "supportsTablet": true
     },
     "web": {
       "output": "single",
       "bundler": "metro",
-      "favicon": "./assets/icon.png",
+      "favicon": "./assets/favicon.png",
       "name": "PrumoQ",
       "shortName": "PrumoQ",
       "description": "Gestão da Qualidade para Obras",
-      "themeColor": "#E84A1A",
-      "backgroundColor": "#E84A1A",
+      "themeColor": "#163B50",
+      "backgroundColor": "#F4F1E8",
       "display": "standalone",
-      "orientation": "portrait",
+      "orientation": "any",
       "icons": [
         { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
         { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }

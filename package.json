@@ -8,11 +8,15 @@
     "mobile:build:web": "pnpm --filter @prumoq/mobile build:web",
     "web": "pnpm --filter @prumoq/web dev",
     "build:web": "pnpm --filter @prumoq/web build",
+    "brand:assets": "node scripts/generate-brand-assets.mjs",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint"
   },
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.3"
   }
 }

@@ -21,8 +21,8 @@ export default async function EquipesPage() {
   return (
     <>
       <Header breadcrumbs={[{ label: 'Equipes Cadastradas' }]} />
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-6">
+      <div className="prumo-page">
+        <div className="prumo-page-inner">
         <EquipesClient initialEquipes={equipes as any[] || []} />
         </div>
       </div>
