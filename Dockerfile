@@ -9,7 +9,8 @@ WORKDIR /app
 # Copy workspace manifests
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Copy @prumoq/shared BEFORE install so pnpm workspace symlinks resolve correctly
+# Copy workspace packages BEFORE install so pnpm workspace symlinks resolve correctly
+COPY packages/design-system ./packages/design-system
 COPY packages/shared ./packages/shared
 
 # package.json de cada workspace declarado em pnpm-workspace.yaml (apps/*)
