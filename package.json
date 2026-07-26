@@ -2,6 +2,7 @@
   "name": "prumoq",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "mobile": "pnpm --filter @prumoq/mobile start",
     "mobile:web": "pnpm --filter @prumoq/mobile web",
