@@ -44,9 +44,19 @@ function notifyWriteListeners() {
 // ─────────────────────────────────────────────────────────
 // useQuery — maps SQL patterns to Supabase queries
 // ─────────────────────────────────────────────────────────
-export function useQuery<T>(sql: string, params?: unknown[]): { data: T[] } {
+interface WebQueryResult<T> {
+  data: T[];
+  isLoading: boolean;
+  isFetching: boolean;
+  error: Error | undefined;
+}
+
+export function useQuery<T>(sql: string, params?: unknown[]): WebQueryResult<T> {
   const [data, setData] = useState<T[]>([]);
   const [version, setVersion] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState<Error | undefined>();
 
   useEffect(() => {
     const listener = () => setVersion(v => v + 1);
@@ -56,14 +66,26 @@ export function useQuery<T>(sql: string, params?: unknown[]): { data: T[] } {
 
   useEffect(() => {
     let cancelled = false;
-    fetchFromSupabase<T>(sql, params ?? []).then(rows => {
-      if (!cancelled) setData(rows);
-    });
+    setIsFetching(true);
+    setError(undefined);
+    fetchFromSupabase<T>(sql, params ?? [])
+      .then(rows => {
+        if (!cancelled) setData(rows);
+      })
+      .catch(reason => {
+        if (!cancelled) setError(reason instanceof Error ? reason : new Error(String(reason)));
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+          setIsFetching(false);
+        }
+      });
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sql, JSON.stringify(params ?? []), version]);
 
-  return { data };
+  return { data, isLoading, isFetching, error };
 }
 
 // Alias
@@ -117,6 +139,14 @@ async function _fetchAllowedObraIds(): Promise<string[] | null> {
 function filterByObraId<T>(rows: T[], field: keyof T, ids: string[] | null): T[] {
   if (ids === null) return rows;
   return rows.filter(r => ids.includes(r[field] as unknown as string));
+}
+
+function nestedRecord(value: unknown): Record<string, unknown> {
+  if (Array.isArray(value)) {
+    const first = value[0];
+    return first && typeof first === 'object' ? first as Record<string, unknown> : {};
+  }
+  return value && typeof value === 'object' ? value as Record<string, unknown> : {};
 }
 
 // ─────────────────────────────────────────────────────────
@@ -316,6 +346,144 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
       inspetor_nome: (r.usuarios as Record<string, unknown>)?.nome ?? '',
     }));
     return mapped as T[];
+  }
+
+  // ── registro completo: cabeçalho da verificação ───────
+  if (s.includes('from verificacoes v') && s.includes('where v.id = ? and v.fvs_planejada_id = ?') && params[0] && params[1]) {
+    const { data, error } = await supabase
+      .from('verificacoes')
+      .select(`
+        id, fvs_planejada_id, numero_verif, inspetor_id, equipe_id,
+        data_verif, percentual_exec, status, observacoes, assinatura_url,
+        assinada_em, created_offline, created_at,
+        usuarios!inspetor_id(nome, cargo),
+        equipes(nome, tipo, responsavel, especialidade),
+        fvs_planejadas!inner(
+          subservico,
+          ambientes!inner(
+            nome,
+            obras!inner(nome, eng_responsavel, crea_cau)
+          )
+        )
+      `)
+      .eq('id', params[0] as string)
+      .eq('fvs_planejada_id', params[1] as string)
+      .limit(1);
+    if (error) throw new Error(`Erro ao carregar verificação: ${error.message}`);
+
+    const mapped = (data ?? []).map(row => {
+      const source = row as unknown as Record<string, unknown>;
+      const usuario = nestedRecord(source.usuarios);
+      const equipe = nestedRecord(source.equipes);
+      const fvs = nestedRecord(source.fvs_planejadas);
+      const ambiente = nestedRecord(fvs.ambientes);
+      const obra = nestedRecord(ambiente.obras);
+
+      return {
+        id: source.id,
+        fvs_planejada_id: source.fvs_planejada_id,
+        numero_verif: source.numero_verif,
+        inspetor_id: source.inspetor_id,
+        equipe_id: source.equipe_id,
+        data_verif: source.data_verif,
+        percentual_exec: source.percentual_exec,
+        status: source.status,
+        observacoes: source.observacoes,
+        assinatura_url: source.assinatura_url,
+        assinada_em: source.assinada_em,
+        created_offline: source.created_offline,
+        created_at: source.created_at,
+        inspetor_nome: usuario.nome ?? null,
+        inspetor_cargo: usuario.cargo ?? null,
+        equipe_nome: equipe.nome ?? null,
+        equipe_tipo: equipe.tipo ?? null,
+        equipe_responsavel: equipe.responsavel ?? null,
+        equipe_especialidade: equipe.especialidade ?? null,
+        subservico: fvs.subservico ?? null,
+        ambiente_nome: ambiente.nome ?? null,
+        obra_nome: obra.nome ?? null,
+        eng_responsavel: obra.eng_responsavel ?? null,
+        crea_cau: obra.crea_cau ?? null,
+      };
+    });
+    return mapped as T[];
+  }
+
+  // ── registro completo: itens do checklist ─────────────
+  if (s.includes('from verificacao_itens vi') && s.includes('where vi.verificacao_id = ?') && !s.includes('join verificacoes') && params[0]) {
+    const { data, error } = await supabase
+      .from('verificacao_itens')
+      .select('id, verificacao_id, fvs_padrao_item_id, ordem, titulo, metodo_verif, tolerancia, resultado')
+      .eq('verificacao_id', params[0] as string)
+      .order('ordem');
+    if (error) throw new Error(`Erro ao carregar itens da verificação: ${error.message}`);
+    return (data ?? []) as T[];
+  }
+
+  // ── registro completo: não conformidades ──────────────
+  if (s.includes('from nao_conformidades n') && s.includes('where n.verificacao_id = ?') && !s.includes('join verificacao_itens') && params[0]) {
+    const { data, error } = await supabase
+      .from('nao_conformidades')
+      .select(`
+        id, verificacao_id, verificacao_item_id, descricao, solucao_proposta,
+        responsavel_id, data_nova_verif, prioridade, status,
+        resolvida_na_verif_id, resolvida_em, observacao_resolucao,
+        equipes(nome)
+      `)
+      .eq('verificacao_id', params[0] as string);
+    if (error) throw new Error(`Erro ao carregar não conformidades: ${error.message}`);
+
+    const mapped = (data ?? []).map(row => {
+      const source = row as unknown as Record<string, unknown>;
+      const equipe = nestedRecord(source.equipes);
+      return {
+        id: source.id,
+        verificacao_id: source.verificacao_id,
+        verificacao_item_id: source.verificacao_item_id,
+        descricao: source.descricao,
+        solucao_proposta: source.solucao_proposta,
+        responsavel_id: source.responsavel_id,
+        data_nova_verif: source.data_nova_verif,
+        prioridade: source.prioridade,
+        status: source.status,
+        resolvida_na_verif_id: source.resolvida_na_verif_id,
+        resolvida_em: source.resolvida_em,
+        observacao_resolucao: source.observacao_resolucao,
+        responsavel_nome: equipe.nome ?? null,
+      };
+    });
+    return mapped as T[];
+  }
+
+  // ── registro completo: fotos gerais ────────────────────
+  if (s.includes('from verificacao_fotos vf') && s.includes('where vf.verificacao_id = ?') && params[0]) {
+    const { data, error } = await supabase
+      .from('verificacao_fotos')
+      .select('id, verificacao_id, r2_key, r2_thumb_key, nome_arquivo, ordem')
+      .eq('verificacao_id', params[0] as string)
+      .order('ordem');
+    if (error) throw new Error(`Erro ao carregar fotos da verificação: ${error.message}`);
+    return (data ?? []) as T[];
+  }
+
+  // ── registro completo: fotos das NCs ───────────────────
+  if (s.includes('from nc_fotos nf') && s.includes('join nao_conformidades n') && s.includes('where n.verificacao_id = ?') && params[0]) {
+    const { data: ncs, error: ncError } = await supabase
+      .from('nao_conformidades')
+      .select('id')
+      .eq('verificacao_id', params[0] as string);
+    if (ncError) throw new Error(`Erro ao localizar evidências das NCs: ${ncError.message}`);
+
+    const ncIds = (ncs ?? []).map(row => row.id);
+    if (ncIds.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('nc_fotos')
+      .select('id, nc_id, r2_key, r2_thumb_key, ordem')
+      .in('nc_id', ncIds)
+      .order('ordem');
+    if (error) throw new Error(`Erro ao carregar evidências das NCs: ${error.message}`);
+    return (data ?? []) as T[];
   }
 
   // ── FVS detalhe ───────────────────────────────────────

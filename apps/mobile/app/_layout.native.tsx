@@ -1,4 +1,3 @@
-import '../global.css';
 import { PowerSyncContext } from '@powersync/react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';

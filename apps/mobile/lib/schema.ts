@@ -177,6 +177,7 @@ const nao_conformidades = new Table(
     foto_reinspecao_url:   column.text,
     resolvida_na_verif_id: column.text,
     resolvida_em:          column.text,
+    observacao_resolucao:  column.text,
     updated_at:            column.text,
   },
   { indexes: {

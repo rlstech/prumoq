@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FileText, PenLine, Plus } from 'lucide-react-native';
+import { ChevronRight, FileText, PenLine, Plus } from 'lucide-react-native';
 import { AppHeader } from '../../../../../../../../../components/AppHeader';
 import { goBack } from '../../../../../../../../../lib/navigation';
 import { useMemo, useState } from 'react';
@@ -22,6 +22,12 @@ import { PhotoViewer } from '../../../../../../../../../components/PhotoViewer';
 import { StatusBadge } from '../../../../../../../../../components/StatusBadge';
 import type { BadgeStatus } from '../../../../../../../../../components/StatusBadge';
 import { Breakpoints, Colors, FontSizes, Radius, Spacing } from '../../../../../../../../../lib/constants';
+import {
+  formatDateOnly,
+  formatDateTime,
+  sortVerificationRecords,
+  verificationDetailPath,
+} from '../../../../../../../../../lib/verification-detail';
 
 interface FvsRow { id: string; subservico: string; status: string; ambiente_nome: string; obra_nome: string }
 interface ConclusaoRow {
@@ -73,7 +79,7 @@ export default function FvsHistoryScreen() {
     FROM verificacoes v
     LEFT JOIN usuarios u ON u.id = v.inspetor_id
     WHERE v.fvs_planejada_id = ?
-    ORDER BY v.created_at DESC
+    ORDER BY v.data_verif DESC, v.numero_verif DESC
   `, [fvsId]);
 
   const { data: ncs } = useQuery<NcRow>(`
@@ -109,7 +115,7 @@ export default function FvsHistoryScreen() {
   const ultimaConclusao = conclusoes[0] ?? null;
 
   const timeline = useMemo<VerifWithData[]>(() => {
-    return verificacoes.map(v => ({
+    return sortVerificationRecords(verificacoes).map(v => ({
       ...v,
       ncs: ncs.filter(n => n.verificacao_id === v.id),
       fotos: fotos.filter(f => f.verificacao_id === v.id).map(f => f.r2_key),
@@ -206,12 +212,11 @@ export default function FvsHistoryScreen() {
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
                   <Text style={styles.cardDate}>
-                    {new Date(item.created_at || item.data_verif).toLocaleString('pt-BR', {
-                      timeZone: 'America/Sao_Paulo',
-                      day: '2-digit', month: '2-digit', year: 'numeric',
-                      hour: '2-digit', minute: '2-digit',
-                    })}
+                    {formatDateOnly(item.data_verif)}
                   </Text>
+                  {formatDateTime(item.created_at) ? (
+                    <Text style={styles.cardCreatedAt}>Registrada em {formatDateTime(item.created_at)}</Text>
+                  ) : null}
                   <Text style={styles.cardInspector}>{item.inspetor_nome ?? 'Inspetor'}</Text>
                 </View>
                 <StatusBadge status={item.status as BadgeStatus} size="sm" />
@@ -245,7 +250,7 @@ export default function FvsHistoryScreen() {
                   <View style={styles.ncFooter}>
                     {nc.data_nova_verif && (
                       <Text style={styles.ncMeta}>
-                        Prazo: {new Date(nc.data_nova_verif).toLocaleDateString('pt-BR')}
+                        Prazo: {formatDateOnly(nc.data_nova_verif)}
                       </Text>
                     )}
                     {nc.responsavel_nome && (
@@ -285,6 +290,21 @@ export default function FvsHistoryScreen() {
                   <Text style={styles.unsignedText}>Sem assinatura</Text>
                 </View>
               )}
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Ver registro completo da verificação ${item.numero_verif}, de ${formatDateOnly(item.data_verif)}`}
+                style={({ pressed }) => [styles.detailButton, pressed && styles.detailButtonPressed]}
+                onPress={() => router.push(verificationDetailPath({
+                  obraId: id,
+                  ambienteId: ambId,
+                  fvsId,
+                  verificacaoId: item.id,
+                }) as never)}
+              >
+                <Text style={styles.detailButtonText}>Ver registro completo</Text>
+                <ChevronRight size={18} color={Colors.brand} />
+              </Pressable>
             </View>
           </View>
         )}
@@ -391,6 +411,7 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   cardHeaderLeft: { gap: 2 },
   cardDate: { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text },
+  cardCreatedAt: { fontSize: FontSizes.tiny, color: Colors.textTertiary },
   cardInspector: { fontSize: FontSizes.xs, color: Colors.textSecondary },
   cardVerifNum: { fontSize: FontSizes.sm, color: Colors.textSecondary },
   offlineBadge: {
@@ -428,6 +449,18 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     backgroundColor: Colors.surface2,
   },
+  detailButton: {
+    minHeight: 44,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    marginTop: Spacing.xs,
+    paddingTop: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  detailButtonPressed: { opacity: 0.65 },
+  detailButtonText: { fontSize: FontSizes.sm, color: Colors.brand, fontWeight: '600' },
   empty: { alignItems: 'center', gap: Spacing.lg, paddingTop: 60 },
   emptyText: { fontSize: FontSizes.md, color: Colors.textTertiary },
   emptyBtn: {

@@ -4,6 +4,7 @@ import { Colors, FontFamily, FontSizes, Radius, Spacing } from '../lib/constants
 export type BadgeStatus =
   | 'conforme'
   | 'nao_conforme'
+  | 'na'
   | 'em_andamento'
   | 'pendente'
   | 'aberta'
@@ -24,6 +25,7 @@ interface StatusConfig {
 const STATUS_CONFIG: Record<BadgeStatus, StatusConfig> = {
   conforme: { bg: Colors.okBg, text: Colors.ok, label: 'Conforme' },
   nao_conforme: { bg: Colors.nokBg, text: Colors.nok, label: 'N' + String.fromCharCode(0xe3) + 'o conforme' },
+  na: { bg: Colors.naBg, text: Colors.na, label: 'N/A' },
   em_andamento: { bg: Colors.progressBg, text: Colors.progress, label: 'Em andamento' },
   pendente: { bg: Colors.naBg, text: Colors.na, label: 'Pendente' },
   aberta: { bg: Colors.nokBg, text: Colors.nok, label: 'Aberta' },
