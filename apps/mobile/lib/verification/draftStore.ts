@@ -123,3 +123,4 @@ export const draftStore: DraftStore = {
     await Promise.all(drafts.map(draft => this.delete(draft.draftId)));
   },
 };
+

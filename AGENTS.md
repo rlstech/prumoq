@@ -11,8 +11,8 @@ Leia todos os arquivos de spec antes de começar qualquer implementação.
 
 ## Estado Atual do Projeto
 
-**Fase 1 concluída** — infraestrutura do monorepo criada.
-**Fase 2 concluída** — todas as 9 telas mobile implementadas com queries reais, offline-first, upload de fotos e assinatura digital. App também roda como PWA no browser via shim.
+**Fase 1 concluída** — infraestrutura do monorepo criada.  
+**Fase 2 concluída** — todas as 9 telas mobile implementadas com queries reais, offline-first, upload de fotos e assinatura digital. App também roda como PWA no browser via shim.  
 **Fase 3 em andamento** — painel admin Next.js com login, dashboard, obras, FVS, equipes, usuários e verificações implementados.
 
 ```

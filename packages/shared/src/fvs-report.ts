@@ -577,7 +577,7 @@ export const FVS_REPORT_CSS = `
   .compact-identity { border-bottom: 2px solid #D8E568; display: flex; justify-content: space-between; gap: 18px; margin-bottom: 8px; padding-bottom: 6px; }
   .compact-identity strong { color: #163B50; font-size: 13px; }
   .compact-identity span { color: #52615B; }
-  .matrix-sheet { break-after: page; }
+  .matrix-sheet { break-after: page; page-break-after: always; }
   .section-heading { align-items: end; display: flex; justify-content: space-between; gap: 16px; margin: 8px 0 5px; }
   .section-heading > div:first-child { display: flex; align-items: baseline; gap: 8px; }
   .section-heading strong { color: #163B50; font-size: 11px; text-transform: uppercase; }
@@ -585,7 +585,7 @@ export const FVS_REPORT_CSS = `
   .legend { align-items: center; color: #52615B; display: flex; gap: 4px; white-space: nowrap; }
   table { width: 100%; border-collapse: collapse; font-size: 7px; }
   thead { display: table-header-group; }
-  .matrix tr { break-inside: avoid; }
+  .matrix tr { break-inside: avoid; page-break-inside: avoid; }
   th { background: #E4E7E1; color: #52615B; font-size: 6.6px; letter-spacing: .2px; padding: 3px 4px; text-align: left; text-transform: uppercase; }
   td { border-top: 1px solid #E4E7E1; line-height: 1.25; padding: 3px 4px; vertical-align: top; overflow-wrap: anywhere; }
   tbody tr:nth-child(even) { background: #FAFAF8; }
@@ -606,7 +606,7 @@ export const FVS_REPORT_CSS = `
   .result-nok { background: #FAEAEA; border-color: #E9BDBD; color: #B23A3A; }
   .result-na { background: #EEF0EC; border-color: #D8DDD7; color: #52615B; }
   .result-empty { color: #9C9A93; }
-  .details { break-before: page; break-after: page; }
+  .details { break-before: page; break-after: page; page-break-before: always; page-break-after: always; }
   .verification-detail { border: 1px solid #D9DDD9; border-radius: 7px; break-inside: auto; box-decoration-break: clone; -webkit-box-decoration-break: clone; margin: 0 0 10px; overflow: visible; page-break-inside: auto; }
   .verification-detail > header { background: #163B50; color: #fff; display: flex; justify-content: space-between; gap: 12px; padding: 6px 10px; break-after: avoid-page; page-break-after: avoid; }
   .verification-detail-body { break-inside: auto; page-break-inside: auto; padding: 7px 10px 9px; }
@@ -616,7 +616,7 @@ export const FVS_REPORT_CSS = `
   .nc { break-inside: auto; margin-bottom: 7px; page-break-inside: auto; }
   .nc th { background: #FAEAEA; color: #B23A3A; }
   .nc tbody tr { break-inside: auto; page-break-inside: auto; }
-  .photo-annex-page { break-after: page; }
+  .photo-annex-page { break-after: page; page-break-after: always; }
   .attachment-heading { margin-bottom: 8px; }
   .photos { display: grid; gap: 7px; grid-template-columns: repeat(3, 1fr); }
   figure { border: 1px solid #D9DDD9; border-radius: 5px; break-inside: avoid; margin: 0; overflow: hidden; }
@@ -632,7 +632,7 @@ export const FVS_REPORT_CSS = `
   .conclusion { background: #E8F4EC; border: 1px solid #B9D9C4; border-radius: 7px; color: #2D7A4B; margin-top: 10px; padding: 7px 10px; break-inside: avoid; }
   .conclusion .grid { color: #142522; margin-top: 5px; }
   .empty { color: #6E7A75; padding: 24px 0; text-align: center; }
-  .report > :last-child { break-after: auto; }
+  .report > :last-child { break-after: auto; page-break-after: auto; }
   @media print {
     html, body, #root {
       display: block !important;

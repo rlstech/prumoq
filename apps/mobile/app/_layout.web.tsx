@@ -13,6 +13,7 @@ import { ThemeProvider } from '../lib/theme/ThemeProvider';
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
+  const isPrintRoute = segments.some((segment) => segment === 'print');
   const segmentsRef = useRef(segments);
   const [ready, setReady] = useState(false);
 
@@ -63,10 +64,14 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <PullToRefresh>
-        <InstallBanner />
+      {isPrintRoute ? (
         <Slot />
-      </PullToRefresh>
+      ) : (
+        <PullToRefresh>
+          <InstallBanner />
+          <Slot />
+        </PullToRefresh>
+      )}
     </ThemeProvider>
   );
 }

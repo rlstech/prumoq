@@ -15,3 +15,4 @@ export function useResponsiveLayout() {
     contentWidth: Math.min(width, Breakpoints.maxContent),
   };
 }
+

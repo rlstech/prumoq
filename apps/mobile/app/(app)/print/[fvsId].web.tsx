@@ -326,7 +326,17 @@ export default function FvsPrintPage() {
           html, body { background: white; }
         }
         @media screen {
-          body { background: #F4F1E8; padding: 24px 16px 64px; }
+          html, body, #root {
+            display: block !important;
+            height: auto !important;
+            min-height: 100% !important;
+            overflow: visible !important;
+          }
+          body {
+            background: #F4F1E8;
+            overflow-y: auto !important;
+            padding: 88px 16px 64px;
+          }
           .report-preview {
             background: white;
             max-width: 1123px;

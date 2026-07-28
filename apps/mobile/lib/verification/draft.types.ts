@@ -10,6 +10,7 @@ export interface NcDraftDetail {
   responsavel_id: string;
   foto: string | null;
 }
+
 export interface VerificationFormState {
   dataVerif: string;
   selectedEquipeId: string | null;
@@ -112,3 +113,4 @@ export function applyHydratedMedia(
 
   return next;
 }
+

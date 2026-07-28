@@ -268,7 +268,15 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── lista NCs com joins (tela NC) ─────────────────────
-  if (s.includes('from nao_conformidades n') && s.includes('join verificacao_itens vi') && s.includes('join obras o') && s.includes("n.status in ('aberta', 'resolvida')")) {
+  if (
+    s.includes('from nao_conformidades n')
+    && s.includes('join verificacao_itens vi')
+    && s.includes('join obras o')
+    && (
+      s.includes("n.status in ('aberta', 'resolvida')")
+      || s.includes("n.status != 'cancelada'")
+    )
+  ) {
     const [{ data }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
     return filterByObraId((data ?? []) as T[], 'obra_id' as keyof T, ids);
   }

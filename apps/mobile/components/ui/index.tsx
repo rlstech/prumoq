@@ -76,6 +76,76 @@ export function Card({
   return <View style={[styles.card, cardTone[tone], style]}>{children}</View>;
 }
 
+export type DatumTone = BadgeTone | 'accent';
+
+export function DatumCard({
+  children,
+  tone = 'accent',
+  onPress,
+  accessibilityLabel,
+  style,
+}: {
+  children: ReactNode;
+  tone?: DatumTone;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const [focused, setFocused] = useState(false);
+  const content = (
+    <>
+      <View style={[styles.datumLine, { backgroundColor: datumPalette[tone] }]} />
+      <View style={styles.datumContent}>{children}</View>
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={[styles.datumCard, style]}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={({ pressed }) => [
+        styles.datumCard,
+        style,
+        focused && styles.focusVisible,
+        pressed && styles.datumCardPressed,
+      ]}
+    >
+      {content}
+    </Pressable>
+  );
+}
+
+export function MetricBlock({
+  label,
+  value,
+  suffix,
+  tone = 'neutral',
+  style,
+}: {
+  label: string;
+  value: string | number;
+  suffix?: string;
+  tone?: BadgeTone;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[styles.metricBlock, style]}>
+      <Text style={styles.metricLabel}>{label}</Text>
+      <View style={styles.metricValueRow}>
+        <Text style={[styles.metricValue, { color: metricPalette[tone] }]}>{value}</Text>
+        {suffix ? <Text style={[styles.metricSuffix, { color: metricPalette[tone] }]}>{suffix}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 export function Button({
@@ -644,6 +714,25 @@ const cardTone: Record<string, ViewStyle> = {
   success: { backgroundColor: Colors.okBg, borderColor: Colors.ok },
 };
 
+const datumPalette: Record<DatumTone, string> = {
+  accent: Colors.brandSignature,
+  neutral: Colors.borderNormal,
+  brand: Colors.brand,
+  success: Colors.ok,
+  danger: Colors.nok,
+  warning: Colors.warn,
+  info: Colors.info,
+};
+
+const metricPalette: Record<BadgeTone, string> = {
+  neutral: Colors.text,
+  brand: Colors.brand,
+  success: Colors.ok,
+  danger: Colors.nok,
+  warning: Colors.warn,
+  info: Colors.info,
+};
+
 const buttonPalette: Record<ButtonVariant, { background: string; pressed: string; border: string; text: string }> = {
   primary: { background: Colors.brand, pressed: Colors.brandDark, border: Colors.brand, text: '#FFFFFF' },
   secondary: { background: Colors.surface, pressed: Colors.surface2, border: Colors.borderNormal, text: Colors.text },
@@ -668,6 +757,56 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: Spacing.lg,
     ...Elevation.card,
+  },
+  datumCard: {
+    minHeight: ComponentSize.touch,
+    position: 'relative',
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Elevation.card,
+  },
+  datumCardPressed: {
+    backgroundColor: Colors.surface2,
+    borderColor: Colors.borderNormal,
+  },
+  datumLine: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: 3,
+  },
+  datumContent: {
+    flex: 1,
+    padding: Spacing.lg,
+    paddingLeft: Spacing.lg + 3,
+  },
+  metricBlock: {
+    minWidth: 88,
+    gap: 3,
+  },
+  metricLabel: {
+    ...Typography.overline,
+    color: Colors.textTertiary,
+  },
+  metricValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  metricValue: {
+    fontFamily: FontFamily.monoSemibold,
+    fontSize: FontSizes.xxl,
+    lineHeight: 34,
+    letterSpacing: -0.8,
+  },
+  metricSuffix: {
+    fontFamily: FontFamily.mono,
+    fontSize: FontSizes.xs,
+    lineHeight: 18,
   },
   button: {
     minHeight: ComponentSize.button,

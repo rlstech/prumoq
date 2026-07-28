@@ -231,6 +231,18 @@ test('imprime 17 verificações em cinco matrizes mesmo sob o reset do Expo', ()
   assert.equal((html.match(/>Item 4</g) ?? []).length, 5);
   assert.match(
     html,
+    /\.matrix-sheet \{[^}]*page-break-after: always;/,
+  );
+  assert.match(
+    html,
+    /\.matrix tr \{[^}]*page-break-inside: avoid;/,
+  );
+  assert.match(
+    html,
+    /\.report > :last-child \{[^}]*page-break-after: auto;/,
+  );
+  assert.match(
+    html,
     /html, body, #root \{[^}]*height: auto !important;[^}]*overflow: visible !important;/,
   );
   assert.match(

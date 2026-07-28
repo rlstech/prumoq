@@ -149,7 +149,8 @@ export const FontFamily = {
   medium: 'IBMPlexSans_500Medium',
   semibold: 'IBMPlexSans_600SemiBold',
   bold: 'IBMPlexSans_700Bold',
-  mono: 'IBMPlexMonoFallback',
+  mono: 'IBMPlexMono_500Medium',
+  monoSemibold: 'IBMPlexMono_600SemiBold',
 } as const;
 
 export const Typography = {
