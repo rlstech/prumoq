@@ -1,25 +1,14 @@
-import { Platform } from 'react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 
 /**
- * Navega para a tela anterior de forma correta em web e nativo.
- *
- * No web (PWA) o router.back() opera no stack do React Navigation, que não
- * reflete travessias entre tabs (ex: NC → obra). window.history.back() usa o
- * histórico real do browser e sempre volta para a URL anterior correta.
+ * Volta pela pilha do Expo Router em todas as plataformas.
+ * Se a rota foi aberta diretamente e não há histórico interno, usa o destino
+ * hierárquico informado pela tela.
  */
-export function goBack() {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      router.replace('/(app)/(tabs)' as never);
-    }
+export function goBack(fallback: Href = '/(app)/(tabs)') {
+  if (router.canGoBack()) {
+    router.back();
   } else {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(app)/(tabs)' as never);
-    }
+    router.replace(fallback);
   }
 }

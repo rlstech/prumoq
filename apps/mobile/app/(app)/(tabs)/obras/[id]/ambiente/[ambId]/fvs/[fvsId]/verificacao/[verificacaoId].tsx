@@ -197,7 +197,7 @@ function SummaryMetric({
 }
 
 export default function VerificationDetailScreen() {
-  const { fvsId, verificacaoId } = useLocalSearchParams<{
+  const { id, ambId, fvsId, verificacaoId } = useLocalSearchParams<{
     id: string;
     ambId: string;
     fvsId: string;
@@ -206,6 +206,7 @@ export default function VerificationDetailScreen() {
   const { width } = useWindowDimensions();
   const isTablet = width >= Breakpoints.tablet;
   const [viewer, setViewer] = useState<ViewerState | null>(null);
+  const historyHref = `/(app)/(tabs)/obras/${id}/ambiente/${ambId}/fvs/${fvsId}` as const;
 
   const headerQuery = useQuery<VerificationRow>(`
     SELECT v.id, v.fvs_planejada_id, v.numero_verif, v.inspetor_id, v.equipe_id,
@@ -303,7 +304,7 @@ export default function VerificationDetailScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <AppHeader title="Registro da verificação" showBack onBack={() => goBack()} />
+        <AppHeader title="Registro da verificação" showBack onBack={() => goBack(historyHref)} />
         <View style={styles.centerState}>
           <ActivityIndicator color={Colors.brand} size="large" />
           <Text style={styles.stateTitle}>Carregando registro</Text>
@@ -316,10 +317,10 @@ export default function VerificationDetailScreen() {
   if (queryError) {
     return (
       <SafeAreaView style={styles.safe}>
-        <AppHeader title="Registro da verificação" showBack onBack={() => goBack()} />
+        <AppHeader title="Registro da verificação" showBack onBack={() => goBack(historyHref)} />
         <View style={styles.stateContent}>
           <ErrorBanner message={`Não foi possível carregar o registro. ${queryError.message}`} />
-          <Button label="Voltar ao histórico" variant="secondary" onPress={() => goBack()} />
+          <Button label="Voltar ao histórico" variant="secondary" onPress={() => goBack(historyHref)} />
         </View>
       </SafeAreaView>
     );
@@ -328,7 +329,7 @@ export default function VerificationDetailScreen() {
   if (!verification) {
     return (
       <SafeAreaView style={styles.safe}>
-        <AppHeader title="Registro da verificação" showBack onBack={() => goBack()} />
+        <AppHeader title="Registro da verificação" showBack onBack={() => goBack(historyHref)} />
         <View style={styles.centerState}>
           <View style={styles.stateIcon}>
             <ShieldAlert size={28} color={Colors.warn} />
@@ -337,7 +338,7 @@ export default function VerificationDetailScreen() {
           <Text style={styles.stateText}>
             A verificação não existe neste FVS ou não está disponível para o seu acesso.
           </Text>
-          <Button label="Voltar ao histórico" variant="secondary" onPress={() => goBack()} />
+          <Button label="Voltar ao histórico" variant="secondary" onPress={() => goBack(historyHref)} />
         </View>
       </SafeAreaView>
     );
@@ -355,7 +356,7 @@ export default function VerificationDetailScreen() {
           .filter(Boolean)
           .join(' · ')}
         showBack
-        onBack={() => goBack()}
+        onBack={() => goBack(historyHref)}
       />
 
       <ScrollView

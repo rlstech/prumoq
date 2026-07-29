@@ -741,7 +741,7 @@ export default function NovaVerificacaoScreen() {
         showToast(
           shouldConclude ? 'Verificação salva e FVS concluída!' : 'Verificação salva com sucesso!',
           'success',
-          () => goBack(),
+          () => goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}/fvs/${fvsId}`),
         );
       }
     } catch (err) {
@@ -798,7 +798,7 @@ export default function NovaVerificacaoScreen() {
           title="Nova Verificação"
           subtitle={[ambienteNome, fvs.subservico].filter(Boolean).join(' · ')}
           showBack
-          onBack={() => goBack()}
+          onBack={() => goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}/fvs/${fvsId}`)}
         />
         <View style={st.lockedScreen}>
           <View style={st.lockedIcon}>
@@ -810,7 +810,11 @@ export default function NovaVerificacaoScreen() {
           <Text style={st.lockedDescription}>
             Este serviço está concluído.{'\n'}Para registrar uma nova verificação, solicite a reabertura no histórico da FVS.
           </Text>
-          <Button label="Voltar ao histórico" Icon={ArrowLeft} onPress={() => goBack()} />
+          <Button
+            label="Voltar ao histórico"
+            Icon={ArrowLeft}
+            onPress={() => goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}/fvs/${fvsId}`)}
+          />
         </View>
       </SafeAreaView>
     );
@@ -826,7 +830,7 @@ export default function NovaVerificacaoScreen() {
           fvs?.subservico,
         ].filter(Boolean).join(' · ')}
         showBack
-        onBack={() => goBack()}
+        onBack={() => goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}/fvs/${fvsId}`)}
       />
 
       <Stepper steps={flowSteps} current={currentStep} />
@@ -1430,7 +1434,7 @@ export default function NovaVerificacaoScreen() {
         resolvidoEm={reinspResult.type === 'aprovada' ? reinspResult.resolvidoEm : ''}
         responsavelNome={reinspResult.type === 'aprovada' ? reinspResult.responsavelNome : null}
         fotoUri={reinspResult.type === 'aprovada' ? reinspResult.fotoUri : null}
-        onConcluir={() => goBack()}
+        onConcluir={() => goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}/fvs/${fvsId}`)}
       />
 
       {/* Re-inspeção reprovada */}
@@ -1444,7 +1448,7 @@ export default function NovaVerificacaoScreen() {
         verificacaoId={reinspResult.type === 'reprovada' ? reinspResult.verificacaoId : ''}
         verificacaoItemId={reinspResult.type === 'reprovada' ? reinspResult.verificacaoItemId : ''}
         equipes={equipes}
-        onSalvo={() => goBack()}
+        onSalvo={() => goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}/fvs/${fvsId}`)}
       />
 
       {/* Toast feedback */}

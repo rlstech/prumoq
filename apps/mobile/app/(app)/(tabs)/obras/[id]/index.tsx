@@ -155,7 +155,7 @@ export default function ObraDetailScreen() {
         title={obra?.nome ?? 'Obra'}
         subtitle={location}
         showBack
-        onBack={goBack}
+        onBack={() => goBack('/(app)/(tabs)/obras')}
       />
 
       <FlatList

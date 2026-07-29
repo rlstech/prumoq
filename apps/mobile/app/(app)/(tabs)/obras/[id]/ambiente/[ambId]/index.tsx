@@ -220,7 +220,7 @@ export default function AmbienteScreen() {
         title={ambiente?.nome ?? 'Ambiente'}
         subtitle={subtitle}
         showBack
-        onBack={goBack}
+        onBack={() => goBack(`/(app)/(tabs)/obras/${id}`)}
       />
 
       <View style={[styles.workspace, isTablet && styles.workspaceTablet]}>

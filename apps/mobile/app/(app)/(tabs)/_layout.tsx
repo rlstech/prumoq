@@ -16,6 +16,7 @@ export default function TabsLayout() {
 
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarPosition: isTablet ? 'left' : 'bottom',
@@ -41,6 +42,7 @@ export default function TabsLayout() {
         options={{
           title: 'Obras',
           tabBarAccessibilityLabel: 'Obras',
+          popToTopOnBlur: true,
           tabBarIcon: ({ color }) => <Building2 size={21} color={color} strokeWidth={2.1} />,
         }}
       />

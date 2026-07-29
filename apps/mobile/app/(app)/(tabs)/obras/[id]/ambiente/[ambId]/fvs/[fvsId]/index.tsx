@@ -19,7 +19,15 @@ import { PhotoGrid } from '../../../../../../../../../components/PhotoGrid';
 import { PhotoViewer } from '../../../../../../../../../components/PhotoViewer';
 import { StatusBadge } from '../../../../../../../../../components/StatusBadge';
 import type { BadgeStatus } from '../../../../../../../../../components/StatusBadge';
-import { Breakpoints, Colors, FontSizes, Radius, Spacing } from '../../../../../../../../../lib/constants';
+import {
+  Breakpoints,
+  Colors,
+  ComponentSize,
+  FontSizes,
+  Palette,
+  Radius,
+  Spacing,
+} from '../../../../../../../../../lib/constants';
 import {
   formatDateOnly,
   formatDateTime,
@@ -140,7 +148,7 @@ export default function FvsHistoryScreen() {
         title={fvs?.subservico || 'FVS'}
         subtitle={[fvs?.ambiente_nome, fvs?.obra_nome].filter(Boolean).join(' · ')}
         showBack
-        onBack={() => goBack()}
+        onBack={() => goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}`)}
         rightElement={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             {Platform.OS === 'web' && (
@@ -155,10 +163,12 @@ export default function FvsHistoryScreen() {
             )}
             {!isLocked && (
               <Pressable
-                style={styles.novaBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Nova verificação"
+                style={({ pressed }) => [styles.novaBtn, pressed && styles.novaBtnPressed]}
                 onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
               >
-                <Plus size={16} color="#fff" />
+                <Plus size={16} color={Palette.white} />
                 <Text style={styles.novaBtnText}>Nova</Text>
               </Pressable>
             )}
@@ -349,13 +359,15 @@ const styles = StyleSheet.create({
   novaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    minHeight: ComponentSize.touch,
+    backgroundColor: Colors.action,
     borderRadius: Radius.md,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 6,
+    paddingHorizontal: Spacing.md,
     gap: 4,
   },
-  novaBtnText: { color: '#fff', fontSize: FontSizes.base, fontWeight: '500' },
+  novaBtnPressed: { backgroundColor: Colors.actionPressed },
+  novaBtnText: { color: Palette.white, fontSize: FontSizes.base, fontWeight: '500' },
   pdfBtn: { padding: 6, borderRadius: Radius.md, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' },
   statusPanel: {
     backgroundColor: Colors.surface,
