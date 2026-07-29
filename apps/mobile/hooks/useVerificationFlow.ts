@@ -132,8 +132,6 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
   const validationInput = useCallback((value = latestRef.current.state): VerificationValidationInput => ({
     selectedEquipeId: value.selectedEquipeId,
     isReinspection,
-    conclusion: value.conclusao,
-    concludeFvs: value.concluirFvs,
     signaturePath: value.signaturePath,
     reinspectionPhoto: value.reinspFoto,
     itemIds: [...itemIds],

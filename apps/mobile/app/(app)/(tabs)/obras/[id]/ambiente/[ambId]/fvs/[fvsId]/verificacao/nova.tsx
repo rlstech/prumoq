@@ -4,7 +4,6 @@ import { goBack } from '../../../../../../../../../../lib/navigation';
 import {
   AlertCircle,
   ArrowLeft,
-  ArrowRight,
   Camera,
   Check,
   CheckCircle2,
@@ -24,7 +23,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Modal,
-  PanResponder,
   Platform,
   Pressable,
   SafeAreaView,
@@ -68,11 +66,14 @@ import { supabase } from '../../../../../../../../../../lib/supabase';
 import {
   makeDraftId,
   NcDraftDetail,
-  VerificationConclusion,
   VerificationMode,
   VerificationResult,
   VerificationStep,
 } from '../../../../../../../../../../lib/verification/draft.types';
+import {
+  canConcludeFvs,
+  verificationStatusFromResults,
+} from '../../../../../../../../../../lib/verification/controller';
 import { approveReinspecao, createNc, reprovarReinspecao } from '../../../../../../../../../../services/nc.service';
 
 function uuid(): string {
@@ -92,14 +93,12 @@ function getInitials(name: string): string {
 }
 
 type Resultado = VerificationResult;
-type Conclusao = VerificationConclusion;
 
 interface ItemRow { id: string; ordem: number; titulo: string; metodo_verif: string; tolerancia: string }
 interface EquipeRow { id: string; nome: string; tipo: string }
 interface FvsRow { id: string; subservico: string; revisao_associada: number; status: string }
 interface UsuarioRow { id: string; nome: string; cargo: string }
 interface CountRow { count: number }
-interface LastPercentRow { percentual_exec: number }
 interface NcAbertaRow {
   nc_id: string;
   fvs_padrao_item_id: string;
@@ -125,48 +124,6 @@ interface UltimaVerifItemRow {
 type NcDetail = NcDraftDetail;
 
 type ChecklistFilter = 'pending' | 'all' | 'nc';
-
-// ── Custom Slider (sem dependência externa) ──────────────────────────────────
-function CustomSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const trackWidth = useRef(0);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: evt => {
-        const x = evt.nativeEvent.locationX;
-        const pct = Math.max(0, Math.min(100, (x / trackWidth.current) * 100));
-        onChange(Math.round(pct / 5) * 5);
-      },
-      onPanResponderMove: evt => {
-        const x = evt.nativeEvent.locationX;
-        const pct = Math.max(0, Math.min(100, (x / trackWidth.current) * 100));
-        onChange(Math.round(pct / 5) * 5);
-      },
-    })
-  ).current;
-
-  return (
-    <View style={sliderSt.row}>
-      <View
-        style={sliderSt.track}
-        onLayout={e => { trackWidth.current = e.nativeEvent.layout.width; }}
-        {...panResponder.panHandlers}
-      >
-        <View style={[sliderSt.fill, { width: `${value}%` as `${number}%` }]} />
-      </View>
-      <Text style={sliderSt.value}>{value}%</Text>
-    </View>
-  );
-}
-
-const sliderSt = StyleSheet.create({
-  row:   { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  track: { flex: 1, height: 6, backgroundColor: Colors.border, borderRadius: 3, overflow: 'hidden' },
-  fill:  { height: '100%', backgroundColor: Colors.brand },
-  value: { width: 44, textAlign: 'right', fontSize: FontSizes.base, color: Colors.brand, fontWeight: '500' },
-});
 
 // ── NC Panel ─────────────────────────────────────────────────────────────────
 function NcPanel({
@@ -387,10 +344,6 @@ export default function NovaVerificacaoScreen() {
   `, [ambId]);
   const ambienteNome = ambienteRows[0]?.nome ?? '';
 
-  const { data: lastPercentRows } = useQuery<LastPercentRow>(`
-    SELECT percentual_exec FROM verificacoes WHERE fvs_planejada_id = ? ORDER BY created_at DESC LIMIT 1
-  `, [fvsId]);
-
   const { data: lastEquipeRows } = useQuery<{ equipe_id: string | null }>(`
     SELECT equipe_id FROM verificacoes WHERE fvs_planejada_id = ? ORDER BY created_at DESC LIMIT 1
   `, [fvsId]);
@@ -417,6 +370,10 @@ export default function NovaVerificacaoScreen() {
   `, [fvsId]);
   const proximoNumero = (countRows[0]?.count ?? 0) + 1;
 
+  const { data: conclusionCountRows } = useQuery<CountRow>(`
+    SELECT COUNT(*) AS count FROM fvs_conclusoes WHERE fvs_planejada_id = ?
+  `, [fvsId]);
+
   const { data: ncsAbertas } = useQuery<NcAbertaRow>(`
     SELECT nc.id as nc_id, nc.descricao, nc.numero_ocorrencia,
            nc.data_nova_verif, nc.responsavel_id,
@@ -425,7 +382,7 @@ export default function NovaVerificacaoScreen() {
     FROM nao_conformidades nc
     JOIN verificacao_itens vi ON nc.verificacao_item_id = vi.id
     JOIN verificacoes v ON vi.verificacao_id = v.id
-    WHERE v.fvs_planejada_id = ? AND nc.status = 'aberta'
+    WHERE v.fvs_planejada_id = ? AND nc.status IN ('aberta','em_correcao')
   `, [fvsId]);
 
   const { data: ultimaVerifItens } = useQuery<UltimaVerifItemRow>(`
@@ -518,12 +475,9 @@ export default function NovaVerificacaoScreen() {
     state: {
       dataVerif,
       selectedEquipeId,
-      percentExec,
       itemResults,
       ncDetails,
       observacoes,
-      conclusao,
-      concluirFvs,
       signaturePath,
       reinspFoto,
       generalPhotos,
@@ -558,9 +512,24 @@ export default function NovaVerificacaoScreen() {
   });
 
   const selectedEquipe = equipes.find(e => e.id === selectedEquipeId) ?? null;
-  const todosItensComResultado = itens.length > 0 && itens.every(i => itemResults[i.id] !== undefined);
   const algumNaoConforme = Object.values(itemResults).some(r => r === 'nao_conforme');
-  const podeConcluir = todosItensComResultado && !algumNaoConforme;
+  const canConcludeCurrentFvs = canConcludeFvs(
+    {
+      dataVerif,
+      selectedEquipeId,
+      itemResults,
+      ncDetails,
+      observacoes,
+      signaturePath,
+      reinspFoto,
+      generalPhotos,
+    },
+    itemIds,
+    {
+      isReinspection: hasOpenNCs,
+      hasUnresolvedNc: hasOpenNCs,
+    },
+  );
 
   // Pré-preenche equipe da última verificação (editável pelo usuário).
   useEffect(() => {
@@ -585,21 +554,6 @@ export default function NovaVerificacaoScreen() {
       return { ...previous, itemResults: nextResults };
     });
   }, [hasOpenNCs, ultimaVerifItens, updateState]);
-
-  // Pre-populate slider with last percentual_exec when FVS is em_andamento.
-  useEffect(() => {
-    const lastPercent = lastPercentRows[0]?.percentual_exec;
-    if (fvs?.status === 'em_andamento' && lastPercent != null && percentExec === 0) {
-      updateState({ percentExec: lastPercent });
-    }
-  }, [fvs?.status, lastPercentRows, percentExec, updateState]);
-
-  // Auto-uncheck "Concluir FVS" if any item becomes nao_conforme.
-  useEffect(() => {
-    if (algumNaoConforme && concluirFvs) {
-      updateState({ concluirFvs: false });
-    }
-  }, [algumNaoConforme, concluirFvs, updateState]);
 
   async function addNcPhoto(itemId: string) {
     const path = await captureNcPhoto();
@@ -639,18 +593,18 @@ export default function NovaVerificacaoScreen() {
     }
   }
 
-  async function handleSave() {
-    // Validate concluirFvs intent before running full validation
-    if (concluirFvs && !todosItensComResultado) {
-      Alert.alert('Itens incompletos', 'Classifique todos os itens antes de concluir a FVS.');
+  async function handleSave(shouldConclude = false) {
+    if (!validate()) return;
+    if (shouldConclude && !canConcludeCurrentFvs) {
+      Alert.alert(
+        'Conclusão indisponível',
+        'A FVS só pode ser concluída em uma verificação posterior, conforme e sem NC aberta.',
+      );
       return;
     }
-
-    if (!validate()) return;
     setIsSaving(true);
 
-    const finalPercentExec = concluirFvs ? 100 : percentExec;
-    const finalConclusao: Conclusao = concluirFvs ? 'conforme' : (conclusao ?? 'em_andamento');
+    const verificationStatus = verificationStatusFromResults(itemIds, itemResults);
 
     const verificacaoId = uuid();
     const now = new Date().toISOString();
@@ -660,13 +614,12 @@ export default function NovaVerificacaoScreen() {
       await db.execute(`
         INSERT INTO verificacoes
           (id, fvs_planejada_id, numero_verif, inspetor_id, equipe_id, data_verif,
-           percentual_exec, status, observacoes, created_offline, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           status, observacoes, created_offline, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         verificacaoId, fvsId, proximoNumero,
         userId ?? '', selectedEquipeId, dataVerif,
-        finalPercentExec, finalConclusao,
-        observacoes, 1, now,
+        verificationStatus, observacoes, 1, now,
       ]);
 
       for (const item of itens) {
@@ -746,6 +699,38 @@ export default function NovaVerificacaoScreen() {
         )] : []),
       ]);
 
+      if (Platform.OS !== 'web' && !shouldConclude && fvs?.status !== 'em_revisao') {
+        await db.execute(
+          `UPDATE fvs_planejadas
+           SET status = ?, concluida_em = ?
+           WHERE id = ?`,
+          ['em_andamento', null, fvsId],
+        );
+      }
+
+      if (shouldConclude) {
+        const conclusionNumber = (conclusionCountRows[0]?.count ?? 0) + 1;
+        await db.execute(
+          `INSERT INTO fvs_conclusoes
+            (id, fvs_planejada_id, verificacao_id, inspetor_id, numero_conclusao,
+             percentual_final, resultado, observacao_final, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            uuid(), fvsId, verificacaoId, userId ?? '', conclusionNumber,
+            100, 'aprovado', observacoes || null, now,
+          ],
+        );
+
+        if (Platform.OS !== 'web') {
+          await db.execute(
+            `UPDATE fvs_planejadas
+             SET status = ?, concluida_em = ?, ultima_conclusao_em = ?
+             WHERE id = ?`,
+            ['concluida', now, now, fvsId],
+          );
+        }
+      }
+
       if (draftContext) {
         try { await discardDraft(); } catch { /* saved record takes precedence */ }
       }
@@ -753,7 +738,11 @@ export default function NovaVerificacaoScreen() {
       if (pendingResult.type !== 'idle') {
         setReinspResult(pendingResult);
       } else {
-        showToast('Verificação salva com sucesso!', 'success', () => goBack());
+        showToast(
+          shouldConclude ? 'Verificação salva e FVS concluída!' : 'Verificação salva com sucesso!',
+          'success',
+          () => goBack(),
+        );
       }
     } catch (err) {
       console.error('[NovaVerificacao] save error:', err);
@@ -764,11 +753,20 @@ export default function NovaVerificacaoScreen() {
     }
   }
 
-  const conclusaoOptions: { key: Conclusao; label: string; color: string; bgColor: string }[] = [
-    { key: 'conforme', label: 'Conforme', color: Colors.ok, bgColor: Colors.okBg },
-    { key: 'nao_conforme', label: 'Não conforme', color: Colors.nok, bgColor: Colors.nokBg },
-    { key: 'em_andamento', label: 'Em andamento', color: Colors.progress, bgColor: Colors.progressBg },
-  ];
+  function handleConclude() {
+    if (!validate()) return;
+    Alert.alert(
+      'Concluir esta FVS?',
+      'A FVS será bloqueada. Para registrar outra verificação depois, será necessário reabri-la com justificativa.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Salvar e concluir',
+          onPress: () => { void handleSave(true); },
+        },
+      ],
+    );
+  }
 
   const inspectorInitials = usuario?.nome ? getInitials(usuario.nome) : 'IN';
   const answeredCount = itens.filter(item => itemResults[item.id]).length;
@@ -793,7 +791,7 @@ export default function NovaVerificacaoScreen() {
   }[draftStatus];
 
   // Guard: FVS concluída bloqueia nova verificação (RN-FVS-01)
-  if (fvs && (fvs.status === 'concluida' || fvs.status === 'concluida_ressalva')) {
+  if (fvs && (fvs.status === 'conforme' || fvs.status === 'concluida' || fvs.status === 'concluida_ressalva')) {
     return (
       <SafeAreaView style={st.safe}>
         <AppHeader
@@ -988,14 +986,6 @@ export default function NovaVerificacaoScreen() {
                       ) : null}
                     </View>
 
-                    <View style={st.section}>
-                      <View style={st.labelRow}>
-                        <Text style={st.sectionTitle}>Percentual de execução</Text>
-                        <Text style={st.percentValue}>{percentExec}%</Text>
-                      </View>
-                      <CustomSlider value={percentExec} onChange={value => updateState({ percentExec: value })} />
-                      <Text style={st.fieldHint}>Arraste em intervalos de 5% conforme o avanço observado.</Text>
-                    </View>
                   </Card>
                 </>
               ) : null}
@@ -1219,80 +1209,30 @@ export default function NovaVerificacaoScreen() {
                       />
                     </View>
 
-                    {!hasOpenNCs ? (
-                      <>
-                        <View style={st.sectionDivider} />
-                        <View style={st.section}>
-                          <Text style={st.sectionTitle}>Conclusão desta verificação *</Text>
-                          {errors.conclusao ? <Text style={st.errorText}>{errors.conclusao}</Text> : null}
-                          <View style={st.conclusaoRow}>
-                            {conclusaoOptions.map(option => (
-                              <Pressable
-                                accessibilityRole="radio"
-                                accessibilityState={{ checked: conclusao === option.key }}
-                                key={option.key}
-                                style={[
-                                  st.conclusaoBtn,
-                                  conclusao === option.key && {
-                                    backgroundColor: option.bgColor,
-                                    borderColor: option.color,
-                                  },
-                                ]}
-                                onPress={() => updateState({ conclusao: option.key })}
-                              >
-                                {option.key === 'conforme'
-                                  ? <Check size={17} color={conclusao === option.key ? option.color : Colors.textSecondary} />
-                                  : option.key === 'nao_conforme'
-                                    ? <X size={17} color={conclusao === option.key ? option.color : Colors.textSecondary} />
-                                    : <ArrowRight size={17} color={conclusao === option.key ? option.color : Colors.textSecondary} />
-                                }
-                                <Text style={[
-                                  st.conclusaoBtnText,
-                                  conclusao === option.key && { color: option.color, fontFamily: FontFamily.semibold },
-                                ]}>
-                                  {option.label}
-                                </Text>
-                              </Pressable>
-                            ))}
-                          </View>
+                    <View style={st.sectionDivider} />
+                    <View style={st.section}>
+                      <Text style={st.sectionTitle}>Resultado desta verificação</Text>
+                      <View style={[
+                        st.resultSummary,
+                        algumNaoConforme ? st.resultSummaryDanger : st.resultSummarySuccess,
+                      ]}>
+                        {algumNaoConforme
+                          ? <X size={20} color={Colors.nok} />
+                          : <CheckCircle2 size={20} color={Colors.ok} />
+                        }
+                        <View style={st.flex}>
+                          <Text style={[
+                            st.resultSummaryTitle,
+                            { color: algumNaoConforme ? Colors.nok : Colors.ok },
+                          ]}>
+                            {algumNaoConforme ? 'Não conforme' : 'Conforme'}
+                          </Text>
+                          <Text style={st.resultSummaryText}>
+                            Resultado calculado automaticamente a partir dos itens do checklist.
+                          </Text>
                         </View>
-
-                        <Pressable
-                          accessibilityRole="checkbox"
-                          accessibilityState={{ checked: concluirFvs, disabled: algumNaoConforme }}
-                          style={[
-                            st.concluirRow,
-                            concluirFvs && st.concluirRowActive,
-                            algumNaoConforme && st.concluirRowDisabled,
-                          ]}
-                          onPress={() => {
-                            if (!algumNaoConforme) {
-                              updateState(previous => ({
-                                ...previous,
-                                concluirFvs: !previous.concluirFvs,
-                              }));
-                            }
-                          }}
-                        >
-                          <View style={[st.checkbox, concluirFvs && st.checkboxActive, algumNaoConforme && st.checkboxDisabled]}>
-                            {concluirFvs ? <Check size={15} color={Colors.surface} /> : null}
-                          </View>
-                          <View style={st.flex}>
-                            <Text style={[st.concluirLabel, algumNaoConforme && st.concluirLabelDisabled]}>
-                              Concluir esta FVS
-                            </Text>
-                            <Text style={st.concluirHint}>
-                              {algumNaoConforme
-                                ? 'Indisponível enquanto houver item não conforme.'
-                                : !todosItensComResultado
-                                  ? 'Classifique todos os itens para habilitar a conclusão.'
-                                  : 'Define o avanço como 100% e finaliza o serviço.'
-                              }
-                            </Text>
-                          </View>
-                        </Pressable>
-                      </>
-                    ) : null}
+                      </View>
+                    </View>
                   </Card>
                 </>
               ) : null}
@@ -1316,7 +1256,10 @@ export default function NovaVerificacaoScreen() {
                     <ReviewRow label="Serviço" value={fvs?.subservico ?? '—'} />
                     <ReviewRow label="Ambiente" value={ambienteNome || '—'} />
                     <ReviewRow label="Equipe" value={selectedEquipe?.nome ?? 'Não selecionada'} />
-                    <ReviewRow label="Execução" value={`${concluirFvs ? 100 : percentExec}%`} />
+                    <ReviewRow
+                      label="Resultado"
+                      value={algumNaoConforme ? 'Não conforme' : 'Conforme'}
+                    />
                     <ReviewRow
                       label="Evidências"
                       value={`${generalPhotos.length + (reinspFoto ? 1 : 0)} foto${generalPhotos.length + (reinspFoto ? 1 : 0) === 1 ? '' : 's'}`}
@@ -1397,6 +1340,26 @@ export default function NovaVerificacaoScreen() {
                       )}
                     </View>
                   </Card>
+
+                  {canConcludeCurrentFvs ? (
+                    <Card tone="accent" style={st.conclusionChoice}>
+                      <View style={st.conclusionChoiceCopy}>
+                        <Text style={st.conclusionChoiceTitle}>O acompanhamento termina aqui?</Text>
+                        <Text style={st.conclusionChoiceText}>
+                          Salve normalmente para continuar verificando este serviço em outros dias.
+                          Conclua somente quando não houver mais inspeções previstas.
+                        </Text>
+                      </View>
+                      <Button
+                        label="Salvar e concluir FVS"
+                        Icon={LockKeyhole}
+                        variant="secondary"
+                        onPress={handleConclude}
+                        disabled={isSaving || !!toast || !!draftCandidate}
+                        fullWidth
+                      />
+                    </Card>
+                  ) : null}
                 </>
               ) : null}
             </View>
@@ -1416,7 +1379,7 @@ export default function NovaVerificacaoScreen() {
                   </View>
                   <View style={st.summaryDivider} />
                   <SummaryItem label="Equipe" value={selectedEquipe?.nome ?? 'Pendente'} />
-                  <SummaryItem label="Execução" value={`${percentExec}%`} />
+                  <SummaryItem label="Resultado" value={algumNaoConforme ? 'Não conforme' : 'Conforme'} />
                   <SummaryItem label="NCs" value={`${ncCount}`} />
                   <View style={st.summaryDivider} />
                   <Text style={[st.draftStatus, draftStatus === 'error' && st.draftStatusError]}>
@@ -1432,10 +1395,14 @@ export default function NovaVerificacaoScreen() {
       <BottomActionBar
         primaryLabel={
           currentStep === 'review'
-            ? (hasOpenNCs ? 'Salvar reinspeção' : 'Salvar verificação')
+            ? (hasOpenNCs ? 'Salvar reinspeção' : 'Salvar e continuar acompanhando')
             : 'Continuar'
         }
-        onPrimary={currentStep === 'review' ? handleSave : handleNextStep}
+        onPrimary={
+          currentStep === 'review'
+            ? () => { void handleSave(false); }
+            : handleNextStep
+        }
         primaryLoading={currentStep === 'review' && isSaving}
         primaryDisabled={!!toast || !!draftCandidate}
         secondaryLabel={currentStep !== 'context' ? 'Voltar' : undefined}
@@ -1587,7 +1554,6 @@ const st = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.md,
   },
-  percentValue: { ...Typography.label, color: Colors.brand },
   progressSummary: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   progressSummaryBar: {
     flex: 1,
@@ -1865,24 +1831,22 @@ const st = StyleSheet.create({
   photoActionText: { fontSize: FontSizes.base, color: Colors.progress, fontWeight: '500' },
   photoCount: { ...Typography.label, color: Colors.textSecondary, marginLeft: 'auto' },
 
-  // Conclusão
-  conclusaoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  conclusaoBtn: {
-    flex: 1,
-    minWidth: 150,
-    minHeight: 48,
+  resultSummary: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    padding: Spacing.md,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: Colors.surface,
   },
-  conclusaoBtnText: { ...Typography.caption, fontFamily: FontFamily.medium, color: Colors.textSecondary, textAlign: 'center' },
+  resultSummarySuccess: { backgroundColor: Colors.okBg, borderColor: Colors.ok },
+  resultSummaryDanger: { backgroundColor: Colors.nokBg, borderColor: Colors.nok },
+  resultSummaryTitle: { ...Typography.label, fontFamily: FontFamily.semibold },
+  resultSummaryText: { ...Typography.caption, color: Colors.textSecondary, marginTop: 2 },
+  conclusionChoice: { gap: Spacing.md },
+  conclusionChoiceCopy: { gap: 4 },
+  conclusionChoiceTitle: { ...Typography.bodyMedium, color: Colors.text, fontFamily: FontFamily.semibold },
+  conclusionChoiceText: { ...Typography.caption, color: Colors.textSecondary },
 
   // Assinatura
   signatureResponsavel: { ...Typography.caption, color: Colors.textSecondary, marginBottom: 2 },
@@ -1942,28 +1906,4 @@ const st = StyleSheet.create({
   reinspPhotoBtnText: { ...Typography.label, color: Colors.brand },
   reinspPhotoThumb: { width: '100%', height: '100%' },
 
-  // Concluir FVS
-  concluirRow: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.borderNormal,
-    padding: Spacing.md,
-  },
-  concluirRowActive: { borderColor: Colors.ok, backgroundColor: Colors.okBg },
-  concluirRowDisabled: { opacity: 0.5 },
-  checkbox: {
-    width: 22, height: 22, borderRadius: 5,
-    borderWidth: 1.5, borderColor: Colors.borderNormal,
-    backgroundColor: Colors.surface,
-    alignItems: 'center', justifyContent: 'center',
-    marginTop: 1,
-    flexShrink: 0,
-  },
-  checkboxActive: { backgroundColor: Colors.ok, borderColor: Colors.ok },
-  checkboxDisabled: { borderColor: Colors.na, backgroundColor: Colors.surface2 },
-  checkboxTick: { color: Colors.surface, fontSize: FontSizes.base, fontFamily: FontFamily.bold },
-  concluirLabel: { ...Typography.bodyMedium, fontFamily: FontFamily.semibold, color: Colors.text },
-  concluirLabelDisabled: { color: Colors.textTertiary },
-  concluirHint: { ...Typography.caption, color: Colors.textSecondary, marginTop: 2 },
 });

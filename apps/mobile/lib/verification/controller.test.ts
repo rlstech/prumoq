@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  canConcludeFvs,
   createVerificationDraft,
   emptyVerificationFormState,
   hasMeaningfulVerificationProgress,
@@ -11,6 +12,7 @@ import {
   previousVerificationStep,
   setVerificationItemResult,
   stepForVerificationError,
+  verificationStatusFromResults,
   VERIFICATION_STEPS,
 } from './controller';
 
@@ -59,9 +61,27 @@ test('detecta progresso, serializa mídia e verifica compatibilidade de revisão
   assert.deepEqual(mediaSourcesFromVerificationState(withSignature).map(media => media.kind), ['general', 'signature']);
 });
 
-test('conclusão exige todos os itens conforme', () => {
-  const state = { ...emptyVerificationFormState(), concluirFvs: true, itemResults: { a: 'conforme' as const } };
+test('conclusão exige todos os itens sem não conformidade', () => {
+  const state = { ...emptyVerificationFormState(), itemResults: { a: 'conforme' as const } };
   assert.equal(isVerificationComplete(state, ['a']), true);
+  assert.equal(isVerificationComplete(state, []), false);
   assert.equal(isVerificationComplete(state, ['a', 'b']), false);
   assert.equal(isVerificationComplete({ ...state, itemResults: { a: 'nao_conforme' } }, ['a']), false);
+  assert.equal(
+    canConcludeFvs(state, ['a'], { isReinspection: false, hasUnresolvedNc: false }),
+    true,
+  );
+  assert.equal(
+    canConcludeFvs(state, ['a'], { isReinspection: true, hasUnresolvedNc: false }),
+    false,
+  );
+  assert.equal(
+    canConcludeFvs(state, ['a'], { isReinspection: false, hasUnresolvedNc: true }),
+    false,
+  );
+});
+
+test('deriva o resultado da verificação a partir do checklist', () => {
+  assert.equal(verificationStatusFromResults(['a', 'b'], { a: 'conforme', b: 'na' }), 'conforme');
+  assert.equal(verificationStatusFromResults(['a', 'b'], { a: 'conforme', b: 'nao_conforme' }), 'nao_conforme');
 });

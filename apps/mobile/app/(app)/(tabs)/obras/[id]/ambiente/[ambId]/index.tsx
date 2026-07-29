@@ -43,6 +43,11 @@ import {
   Spacing,
   Typography,
 } from '../../../../../../../lib/constants';
+import {
+  COMPLETED_FVS_STATUSES,
+  IN_PROGRESS_FVS_STATUSES,
+  summarizeFvsProgress,
+} from '../../../../../../../lib/fvs-progress';
 import { goBack } from '../../../../../../../lib/navigation';
 
 interface AmbienteRow {
@@ -59,6 +64,7 @@ interface FvsRow {
   status: string;
   ultima_verif: string | null;
   total_verificacoes: number;
+  ncs_abertas: number;
 }
 
 type ServiceFilter = 'todos' | 'atencao' | 'em_curso' | 'concluidos';
@@ -87,9 +93,6 @@ const STATUS: Record<string, ServiceStatus> = {
   pendente: { label: 'Pendente', tone: 'neutral', datum: 'neutral', Icon: Circle },
 };
 
-const COMPLETED_STATUSES = new Set(['conforme', 'concluida', 'concluida_ressalva']);
-const IN_PROGRESS_STATUSES = new Set(['em_andamento', 'em_revisao']);
-
 function getStatus(status: string): ServiceStatus {
   return STATUS[status] ?? STATUS.pendente;
 }
@@ -117,7 +120,12 @@ export default function AmbienteScreen() {
   const { data: fvsList } = useQuery<FvsRow>(`
     SELECT fp.id, fp.subservico, fp.status,
       COUNT(v.id) AS total_verificacoes,
-      MAX(v.data_verif) AS ultima_verif
+      MAX(v.data_verif) AS ultima_verif,
+      (SELECT COUNT(*)
+       FROM nao_conformidades nc
+       JOIN verificacoes vn ON vn.id = nc.verificacao_id
+       WHERE vn.fvs_planejada_id = fp.id
+         AND nc.status IN ('aberta', 'em_correcao')) AS ncs_abertas
     FROM fvs_planejadas fp
     LEFT JOIN verificacoes v ON v.fvs_planejada_id = fp.id
     WHERE fp.ambiente_id = ?
@@ -126,18 +134,22 @@ export default function AmbienteScreen() {
   `, [ambId]);
 
   const summary = useMemo(() => {
-    const total = fvsList.length;
-    const completed = fvsList.filter(item => COMPLETED_STATUSES.has(item.status)).length;
-    const attention = fvsList.filter(item => item.status === 'nao_conforme').length;
-    const inProgress = fvsList.filter(item => IN_PROGRESS_STATUSES.has(item.status)).length;
-    const progress = total > 0 ? (completed / total) * 100 : 0;
-    return { total, completed, attention, inProgress, progress };
+    const progressSummary = summarizeFvsProgress(fvsList);
+    const attention = fvsList.filter(item => item.ncs_abertas > 0).length;
+    const inProgress = fvsList.filter(item => IN_PROGRESS_FVS_STATUSES.has(item.status)).length;
+    return {
+      total: progressSummary.total,
+      completed: progressSummary.completed,
+      attention,
+      inProgress,
+      progress: progressSummary.percentage,
+    };
   }, [fvsList]);
 
   const filtered = useMemo(() => {
-    if (filter === 'atencao') return fvsList.filter(item => item.status === 'nao_conforme');
-    if (filter === 'em_curso') return fvsList.filter(item => IN_PROGRESS_STATUSES.has(item.status));
-    if (filter === 'concluidos') return fvsList.filter(item => COMPLETED_STATUSES.has(item.status));
+    if (filter === 'atencao') return fvsList.filter(item => item.ncs_abertas > 0);
+    if (filter === 'em_curso') return fvsList.filter(item => IN_PROGRESS_FVS_STATUSES.has(item.status));
+    if (filter === 'concluidos') return fvsList.filter(item => COMPLETED_FVS_STATUSES.has(item.status));
     return fvsList;
   }, [filter, fvsList]);
 
@@ -247,10 +259,11 @@ export default function AmbienteScreen() {
           }
           renderItem={({ item }) => {
             const status = getStatus(item.status);
+            const hasOpenNc = item.ncs_abertas > 0;
             return (
               <DatumCard
-                tone={status.datum}
-                accessibilityLabel={`Abrir serviço ${item.subservico || 'sem nome'}, ${status.label}`}
+                tone={hasOpenNc ? 'danger' : status.datum}
+                accessibilityLabel={`Abrir serviço ${item.subservico || 'sem nome'}, ${status.label}${hasOpenNc ? ', com NC aberta' : ''}`}
                 onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${item.id}` as never)}
               >
                 <View style={styles.serviceTop}>
@@ -264,6 +277,14 @@ export default function AmbienteScreen() {
                       Icon={status.Icon}
                       size="sm"
                     />
+                    {hasOpenNc ? (
+                      <Badge
+                        label={item.ncs_abertas === 1 ? '1 NC aberta' : `${item.ncs_abertas} NC abertas`}
+                        tone="danger"
+                        Icon={AlertTriangle}
+                        size="sm"
+                      />
+                    ) : null}
                   </View>
                   <ChevronRight size={20} color={Colors.textTertiary} />
                 </View>

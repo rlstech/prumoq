@@ -81,7 +81,7 @@ export default function PerfilScreen() {
     [userId ?? '']
   );
   const { data: ncsRows } = useQuery<CountRow>(
-    `SELECT COUNT(*) AS count FROM nao_conformidades n JOIN verificacoes v ON v.id = n.verificacao_id WHERE v.inspetor_id = ? AND n.status = 'aberta'`,
+    `SELECT COUNT(*) AS count FROM nao_conformidades n JOIN verificacoes v ON v.id = n.verificacao_id WHERE v.inspetor_id = ? AND n.status IN ('aberta','em_correcao')`,
     [userId ?? '']
   );
 

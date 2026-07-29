@@ -396,9 +396,9 @@ Grid 5 colunas + botão Filtrar:
 - Inspetor (select)
 
 ### Tabela de Resultados
-Colunas: Nº Verif. | Serviço / FVS | Obra / Ambiente | % Exec. | Resultado | Inspetor | Data | Fotos | Ação (Ver)
+Colunas: Nº Verif. | Serviço / FVS | Obra / Ambiente | Resultado | Inspetor | Data | Fotos | Ação (Ver)
 
-- **% Exec.:** barra de progresso inline
+- **Resultado:** badge Conforme ou Não conforme
 - **Fotos:** badge "📷 N fotos" clicável → abre modal de detalhe direto na aba de fotos
 - **Clique na linha** → abre modal de detalhe da verificação
 
@@ -406,7 +406,7 @@ Colunas: Nº Verif. | Serviço / FVS | Obra / Ambiente | % Exec. | Resultado | I
 Layout dois painéis:
 
 **Painel Esquerdo:**
-- Mini-KPIs: % execução | Conformes | Não conformes | N/A
+- Mini-KPIs: resultado da verificação | quantidade de itens
 - "Resultado dos itens": lista compacta com ícone (✓/✗/—) + título + método
   - Se NC: sub-card vermelho com descrição + solução + prazo + status
 - "Observações gerais"

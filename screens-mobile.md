@@ -208,7 +208,7 @@ Entrada por verificação (mais recente primeiro):
 - Ponto colorido na linha lateral (ok/nok/pg)
 - Card com fundo `--surface2`:
   - Data + hora + nome do inspetor
-  - Título "Verificação N — X% execução" + badge status
+  - Título "Verificação N" + badge do resultado derivado
   - Texto de observações gerais
   - **Se há NC:** card vermelho interno com:
     - Título do item + descrição
@@ -238,12 +238,7 @@ Não editável. Preenchido automaticamente.
 - Select de equipe executora (lista de equipes da obra)
 - Card verde/laranja confirmando a equipe selecionada com tipo (Próprio/Terceirizado)
 
-### Seção 4: Percentual de execução
-- Slider de 0 a 100, step 5
-- Valor exibido à direita: "85%"
-- Barra de progresso visual abaixo
-
-### Seção 5: Itens de Verificação
+### Seção 4: Itens de Verificação
 Para cada item do checklist (da FVS Padrão, revisão atual):
 
 ```
@@ -271,21 +266,23 @@ Para cada item do checklist (da FVS Padrão, revisão atual):
 - Campo: "Responsável pela correção" (Select de equipes)
 - Badge "Obrigatório" no header do painel
 
-### Seção 6: Fotos de Evidência (geral)
+### Seção 5: Fotos de Evidência (geral)
 - Botões: [📷 Câmera] [🖼 Galeria]
 - Grid 3 colunas de miniaturas com botão X para remover
 - Contador: "X de 10 fotos"
 - Toque na miniatura: viewer fullscreen
 
-### Seção 7: Observações Gerais
+### Seção 6: Observações Gerais
 - Textarea livre
 - Placeholder: "Ocorrências, condições do ambiente..."
 
-### Seção 8: Conclusão
-- 3 botões: [✓ Conforme] [✗ Não conforme] [→ Em andamento]
-- Seleção visual (destaca o botão escolhido na cor correspondente)
+### Seção 7: Resultado
+- Resultado somente leitura, calculado automaticamente pelos itens:
+  - qualquer item Não conforme → verificação Não conforme
+  - todos os itens Conforme ou N/A → verificação Conforme
+- A FVS permanece Em andamento após salvar uma verificação, mesmo quando conforme
 
-### Seção 9: Assinatura Digital
+### Seção 8: Assinatura Digital
 - Label: "Responsável: [nome do inspetor]"
 - Canvas de assinatura (react-native-signature-canvas)
   - Fundo branco, traço #1a1a1a, strokeWidth 2
@@ -293,13 +290,15 @@ Para cada item do checklist (da FVS Padrão, revisão atual):
 - Após confirmar: mostra preview + "✓ Assinatura registrada"
 - Botão "Refazer" permite limpar
 
-### Botão Salvar
-- "Salvar Verificação" — fixo no final, bg --color-brand
+### Ações de salvamento
+- "Salvar e continuar acompanhando" — salva a verificação e mantém a FVS em andamento
+- "Salvar e concluir FVS" — disponível somente em verificação normal conforme,
+  sem NC não resolvida; exige confirmação e bloqueia novas verificações
+- Reinspeções sempre salvam e mantêm a FVS em andamento, mesmo ao resolver a última NC
 - **Validações antes de salvar:**
   - Pelo menos uma equipe selecionada
   - Todos os itens NC com todos os campos obrigatórios preenchidos
   - Todos os itens NC com pelo menos 1 foto
-  - Conclusão selecionada
   - Assinatura confirmada
 - Se inválido: scroll até o primeiro campo faltando + highlight vermelho
 - Loading state durante save

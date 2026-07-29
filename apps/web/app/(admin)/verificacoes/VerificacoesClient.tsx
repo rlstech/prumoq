@@ -14,7 +14,6 @@ function formatDateTime(dateStr: string): string {
   });
 }
 import StatusBadge from '@/components/ui/StatusBadge';
-import ProgressBar from '@/components/ui/ProgressBar';
 import { Download, Loader2, Printer } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { getVerificacaoDetalhe } from './actions';
@@ -170,7 +169,6 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                 <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Nº</th>
                 <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Serviço / FVS</th>
                 <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Obra / Ambiente</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">% Exec.</th>
                 <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Resultado</th>
                 <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Inspetor</th>
                 <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Data</th>
@@ -189,12 +187,6 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                     <div className="text-[13px] text-txt">{v.fvs_planejadas?.ambientes?.obras?.nome}</div>
                     <div className="text-xs text-txt-2">{v.fvs_planejadas?.ambientes?.nome}</div>
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-[60px]"><ProgressBar value={v.percentual_exec || 0} variant={v.percentual_exec >= 100 ? 'ok' : 'brand'} /></div>
-                      <span className="text-xs text-txt-3">{v.percentual_exec || 0}%</span>
-                    </div>
-                  </td>
                   <td className="py-3 px-4"><StatusBadge status={v.status || 'em_andamento'} size="sm" /></td>
                   <td className="py-3 px-4 text-[13px] text-txt">{v.usuarios?.nome || '-'}</td>
                   <td className="py-3 px-4 text-[13px] text-txt">{v.data_verif ? formatDate(v.data_verif) : '-'}</td>
@@ -208,7 +200,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={9} className="py-8 text-center text-sm text-txt-3">Nenhuma verificação encontrada.</td></tr>
+                <tr><td colSpan={8} className="py-8 text-center text-sm text-txt-3">Nenhuma verificação encontrada.</td></tr>
               )}
             </tbody>
           </table>
@@ -222,11 +214,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
             {/* Painel Esquerdo (3/5) */}
             <div className="lg:col-span-3 flex flex-col gap-5">
               {/* Mini KPIs */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-bg-0 border border-brd-0 rounded-lg p-3 text-center">
-                  <div className="text-lg font-semibold text-txt">{detail?.percentual_exec ?? 0}%</div>
-                  <div className="text-[10px] text-txt-3 uppercase font-semibold">Execução</div>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div className="bg-bg-0 border border-brd-0 rounded-lg p-3 flex items-center justify-center">
                   <StatusBadge status={detail?.status || 'em_andamento'} />
                 </div>

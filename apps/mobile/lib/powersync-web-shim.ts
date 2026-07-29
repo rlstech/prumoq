@@ -189,18 +189,19 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── ncs abertas count (com ou sem joins de obra) ──────
-  if (s.includes("status = 'aberta'") && s.includes('count(*)') && s.includes('from nao_conformidades') && !s.includes('date(n.data_nova_verif)') && !s.includes('from ambientes') && !s.includes('from obras o')) {
+  if ((s.includes("status = 'aberta'") || s.includes("status in ('aberta','em_correcao')")) && s.includes('count(*)') && s.includes('from nao_conformidades') && !s.includes('date(n.data_nova_verif)') && !s.includes('from ambientes') && !s.includes('from obras o')) {
     const [{ data: ncs }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
-    const filtered = filterByObraId((ncs ?? []) as any[], 'obra_id', ids).filter((n: any) => n.status === 'aberta');
+    const filtered = filterByObraId((ncs ?? []) as any[], 'obra_id', ids)
+      .filter((n: any) => n.status === 'aberta' || n.status === 'em_correcao');
     return [{ count: filtered.length }] as T[];
   }
 
   // ── ncs vencendo hoje count ────────────────────────────
-  if (s.includes("status = 'aberta'") && s.includes('count(*)') && s.includes('date(') && s.includes('data_nova_verif')) {
+  if ((s.includes("status = 'aberta'") || s.includes("status in ('aberta','em_correcao')")) && s.includes('count(*)') && s.includes('date(') && s.includes('data_nova_verif')) {
     const today = new Date().toISOString().slice(0, 10);
     const [{ data: ncs }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
     const filtered = filterByObraId((ncs ?? []) as any[], 'obra_id', ids)
-      .filter((n: any) => n.status === 'aberta' && n.data_nova_verif?.slice(0, 10) === today);
+      .filter((n: any) => (n.status === 'aberta' || n.status === 'em_correcao') && n.data_nova_verif?.slice(0, 10) === today);
     return [{ count: filtered.length }] as T[];
   }
 
@@ -564,17 +565,6 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
     return (data ?? []) as T[];
   }
 
-  // ── nova verificação: último percentual_exec do FVS ──
-  if (s.includes('select percentual_exec from verificacoes where fvs_planejada_id = ?') && params[0]) {
-    const { data } = await supabase
-      .from('verificacoes')
-      .select('percentual_exec')
-      .eq('fvs_planejada_id', params[0] as string)
-      .order('created_at', { ascending: false })
-      .limit(1);
-    return (data ?? []) as T[];
-  }
-
   // ── nova verificação: status do FVS ──────────────────
   if (s.includes('select id, subservico, revisao_associada, status from fvs_planejadas where id = ?') && params[0]) {
     const { data } = await supabase.from('fvs_planejadas').select('id, subservico, revisao_associada, status').eq('id', params[0] as string);
@@ -584,6 +574,14 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   // ── nova verificação: count verificacoes fvs ─────────
   if (s.includes('count(*)') && s.includes('from verificacoes') && s.includes('where fvs_planejada_id = ?') && params[0]) {
     const { count } = await supabase.from('verificacoes').select('*', { count: 'exact', head: true }).eq('fvs_planejada_id', params[0] as string);
+    return [{ count: count ?? 0 }] as T[];
+  }
+
+  if (s.includes('count(*)') && s.includes('from fvs_conclusoes') && s.includes('where fvs_planejada_id = ?') && params[0]) {
+    const { count } = await supabase
+      .from('fvs_conclusoes')
+      .select('*', { count: 'exact', head: true })
+      .eq('fvs_planejada_id', params[0] as string);
     return [{ count: count ?? 0 }] as T[];
   }
 
@@ -606,7 +604,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── nova verificação: NCs abertas do FVS (NCReinspectionBanner + re-inspeção) ──
-  if (s.includes('from nao_conformidades nc') && s.includes('join verificacao_itens vi') && s.includes("nc.status = 'aberta'") && s.includes('fvs_planejada_id = ?') && params[0]) {
+  if (s.includes('from nao_conformidades nc') && s.includes('join verificacao_itens vi') && (s.includes("nc.status = 'aberta'") || s.includes("nc.status in ('aberta','em_correcao')")) && s.includes('fvs_planejada_id = ?') && params[0]) {
     const fvsId = params[0] as string;
     const { data: verifs } = await supabase.from('verificacoes').select('id, numero_verif, data_verif').eq('fvs_planejada_id', fvsId);
     const verifIds = (verifs ?? []).map((v: any) => v.id as string);
@@ -620,7 +618,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
       .from('nao_conformidades')
       .select('id, verificacao_item_id, descricao, numero_ocorrencia, data_nova_verif, responsavel_id')
       .in('verificacao_item_id', itemIds)
-      .eq('status', 'aberta');
+      .in('status', ['aberta', 'em_correcao']);
     return ((ncs ?? []).map((nc: any) => {
       const vi = itemMap[nc.verificacao_item_id];
       const v = verifMap[vi?.verificacao_id];
@@ -647,19 +645,6 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 // ─────────────────────────────────────────────────────────
 async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> {
   const s = sql.trim().toLowerCase().replace(/\s+/g, ' ');
-
-  // UPDATE fvs_planejadas SET status = ?, ultima_conclusao_em/ultima_reabertura_em = ? WHERE id = ?
-  if (s.startsWith('update fvs_planejadas set status')) {
-    const field = s.includes('ultima_reabertura_em') ? 'ultima_reabertura_em' : 'ultima_conclusao_em';
-    const { error } = await supabase.rpc('set_fvs_lifecycle_status', {
-      p_fvs_id: params[2] as string,
-      p_status: params[0] as string,
-      p_field:  field,
-      p_now:    params[1] as string,
-    });
-    if (error) throw new Error(`Erro ao atualizar FVS: ${error.message}`);
-    return;
-  }
 
   // UPDATE verificacoes SET assinatura_url = ?, assinada_em = ? WHERE id = ?
   if (s.startsWith('update verificacoes set assinatura_url')) {

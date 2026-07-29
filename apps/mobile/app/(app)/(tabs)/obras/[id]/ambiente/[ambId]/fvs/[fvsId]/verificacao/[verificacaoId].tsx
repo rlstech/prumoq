@@ -34,7 +34,6 @@ import {
 import { AppHeader } from '../../../../../../../../../../components/AppHeader';
 import { PhotoGrid } from '../../../../../../../../../../components/PhotoGrid';
 import { PhotoViewer } from '../../../../../../../../../../components/PhotoViewer';
-import { ProgressBar } from '../../../../../../../../../../components/ProgressBar';
 import {
   BadgeStatus,
   StatusBadge,
@@ -72,7 +71,6 @@ interface VerificationRow {
   inspetor_id: string;
   equipe_id: string | null;
   data_verif: string;
-  percentual_exec: number;
   status: string;
   observacoes: string | null;
   assinatura_url: string | null;
@@ -211,7 +209,7 @@ export default function VerificationDetailScreen() {
 
   const headerQuery = useQuery<VerificationRow>(`
     SELECT v.id, v.fvs_planejada_id, v.numero_verif, v.inspetor_id, v.equipe_id,
-           v.data_verif, v.percentual_exec, v.status, v.observacoes,
+           v.data_verif, v.status, v.observacoes,
            v.assinatura_url, v.assinada_em, v.created_offline, v.created_at,
            u.nome AS inspetor_nome, u.cargo AS inspetor_cargo,
            e.nome AS equipe_nome, e.tipo AS equipe_tipo,
@@ -393,12 +391,6 @@ export default function VerificationDetailScreen() {
             </View>
             <StatusBadge status={verification.status as BadgeStatus} />
           </View>
-
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressLabel}>Execução informada</Text>
-            <Text style={styles.progressValue}>{Number(verification.percentual_exec)}%</Text>
-          </View>
-          <ProgressBar value={Number(verification.percentual_exec)} height={8} />
 
           <View style={styles.metrics}>
             <SummaryMetric
@@ -803,21 +795,6 @@ const styles = StyleSheet.create({
   heroMeta: {
     ...Typography.caption,
     color: Colors.textTertiary,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: -Spacing.md,
-  },
-  progressLabel: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-  },
-  progressValue: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSizes.lg,
-    color: Colors.brand,
   },
   metrics: {
     flexDirection: 'row',

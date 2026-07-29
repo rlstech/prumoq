@@ -12,7 +12,6 @@ function formState(): VerificationFormState {
   return {
     dataVerif: '2026-07-23',
     selectedEquipeId: 'team-1',
-    percentExec: 50,
     itemResults: { item1: 'nao_conforme' },
     ncDetails: {
       item1: {
@@ -24,8 +23,6 @@ function formState(): VerificationFormState {
       },
     },
     observacoes: 'Área sinalizada.',
-    conclusao: 'nao_conforme',
-    concluirFvs: false,
     signaturePath: 'data:image/png;base64,signature',
     reinspFoto: 'blob:reinspection',
     generalPhotos: ['blob:general'],
@@ -36,8 +33,6 @@ function validationInput(): VerificationValidationInput {
   return {
     selectedEquipeId: 'team-1',
     isReinspection: false,
-    conclusion: 'conforme',
-    concludeFvs: false,
     signaturePath: 'signature.png',
     reinspectionPhoto: null,
     itemIds: ['item1'],
@@ -99,10 +94,6 @@ test('valida as quatro etapas de forma independente', () => {
     'Classifique este item',
   );
   assert.equal(
-    collectVerificationErrors({ ...input, conclusion: null }, 'evidence').conclusao,
-    'Selecione o resultado da verificação',
-  );
-  assert.equal(
     collectVerificationErrors({ ...input, signaturePath: null }, 'review').assinatura,
     'Assinatura digital obrigatória',
   );
@@ -134,9 +125,7 @@ test('reinspeção exige evidência fotográfica', () => {
   const errors = collectVerificationErrors({
     ...validationInput(),
     isReinspection: true,
-    conclusion: null,
     reinspectionPhoto: null,
   }, 'evidence');
   assert.equal(errors.reinspFoto, 'Foto da re-inspeção obrigatória');
-  assert.equal(errors.conclusao, undefined);
 });

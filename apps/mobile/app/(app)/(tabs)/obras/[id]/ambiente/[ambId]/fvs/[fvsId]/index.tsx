@@ -13,8 +13,6 @@ function resolveSignatureUri(url: string): string {
   if (url.startsWith('data:') || url.startsWith('http')) return url;
   return `${R2_PUBLIC_URL}/${url}`;
 }
-import { FVS100PercentBanner } from '../../../../../../../../../components/FVS100PercentBanner';
-import { FVSConclusionModal } from '../../../../../../../../../components/FVSConclusionModal';
 import { FVSLockedScreen } from '../../../../../../../../../components/FVSLockedScreen';
 import { FVSReopenModal } from '../../../../../../../../../components/FVSReopenModal';
 import { PhotoGrid } from '../../../../../../../../../components/PhotoGrid';
@@ -31,14 +29,14 @@ import {
 
 interface FvsRow { id: string; subservico: string; status: string; ambiente_nome: string; obra_nome: string }
 interface ConclusaoRow {
-  id: string; inspetor_nome: string; percentual_final: number;
+  id: string; inspetor_nome: string;
   resultado: string; observacao_final: string | null;
   motivo_antes_100: string | null; created_at: string;
 }
 interface VerifRow {
   id: string; numero_verif: number; data_verif: string; status: string;
   observacoes: string; assinatura_url: string | null;
-  inspetor_nome: string; percentual_exec: number; created_offline: number | boolean;
+  inspetor_nome: string; created_offline: number | boolean;
   created_at: string;
 }
 interface NcRow {
@@ -59,8 +57,6 @@ export default function FvsHistoryScreen() {
   const [viewerPhotos, setViewerPhotos] = useState<string[]>([]);
   const [viewerIndex, setViewerIndex] = useState(0);
   const [signatureViewer, setSignatureViewer] = useState<string[]>([]);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [conclusionModalOpen, setConclusionModalOpen] = useState(false);
   const [reopenModalOpen, setReopenModalOpen] = useState(false);
 
   const { data: fvsRows } = useQuery<FvsRow>(`
@@ -74,7 +70,7 @@ export default function FvsHistoryScreen() {
 
   const { data: verificacoes } = useQuery<VerifRow>(`
     SELECT v.id, v.numero_verif, v.data_verif, v.status, v.observacoes,
-           v.assinatura_url, v.percentual_exec, v.created_offline,
+           v.assinatura_url, v.created_offline,
            v.created_at, u.nome AS inspetor_nome
     FROM verificacoes v
     LEFT JOIN usuarios u ON u.id = v.inspetor_id
@@ -104,7 +100,7 @@ export default function FvsHistoryScreen() {
   `, [fvsId]);
 
   const { data: conclusoes } = useQuery<ConclusaoRow>(`
-    SELECT fc.id, fc.percentual_final, fc.resultado, fc.observacao_final,
+    SELECT fc.id, fc.resultado, fc.observacao_final,
            fc.motivo_antes_100, fc.created_at, u.nome AS inspetor_nome
     FROM fvs_conclusoes fc
     JOIN usuarios u ON u.id = fc.inspetor_id
@@ -122,9 +118,9 @@ export default function FvsHistoryScreen() {
     }));
   }, [verificacoes, ncs, fotos]);
 
-  const isLocked = fvs?.status === 'concluida' || fvs?.status === 'concluida_ressalva';
-  const ultimaVerif = timeline[0];
-  const showBanner = !isLocked && !bannerDismissed && Number(ultimaVerif?.percentual_exec) === 100;
+  const isLocked = fvs?.status === 'conforme'
+    || fvs?.status === 'concluida'
+    || fvs?.status === 'concluida_ressalva';
 
   const summary = useMemo(() => ({
     conformes:    verificacoes.filter(v => v.status === 'conforme').length,
@@ -188,14 +184,9 @@ export default function FvsHistoryScreen() {
         ListHeaderComponent={
           isLocked ? (
             <FVSLockedScreen
-              status={fvs!.status as 'concluida' | 'concluida_ressalva'}
+              status={fvs!.status as 'conforme' | 'concluida' | 'concluida_ressalva'}
               conclusao={ultimaConclusao}
               onRequestReopen={() => setReopenModalOpen(true)}
-            />
-          ) : showBanner ? (
-            <FVS100PercentBanner
-              onConclude={() => setConclusionModalOpen(true)}
-              onDismiss={() => setBannerDismissed(true)}
             />
           ) : null
         }
@@ -223,7 +214,7 @@ export default function FvsHistoryScreen() {
               </View>
 
               <Text style={styles.cardVerifNum}>
-                Verificação #{item.numero_verif} — {item.percentual_exec}% de execução
+                Verificação #{item.numero_verif}
               </Text>
 
               {(item.created_offline === 1 || item.created_offline === true) && (
@@ -334,16 +325,6 @@ export default function FvsHistoryScreen() {
         initialIndex={0}
         visible={signatureViewer.length > 0}
         onClose={() => setSignatureViewer([])}
-      />
-      <FVSConclusionModal
-        visible={conclusionModalOpen}
-        fvsId={fvsId!}
-        percentualAtual={Number(ultimaVerif?.percentual_exec) ?? 0}
-        onClose={() => setConclusionModalOpen(false)}
-        onSuccess={() => {
-          setConclusionModalOpen(false);
-          setBannerDismissed(true);
-        }}
       />
       <FVSReopenModal
         visible={reopenModalOpen}

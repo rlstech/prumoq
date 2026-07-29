@@ -160,7 +160,7 @@ export default function DashboardScreen() {
          JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
          JOIN ambientes a ON a.id = fp.ambiente_id
          JOIN obras o ON o.id = a.obra_id
-         WHERE n.status = 'aberta' AND ${accessFilter}`
+         WHERE n.status IN ('aberta','em_correcao') AND ${accessFilter}`
       : 'SELECT 1 WHERE 0',
     ready ? accessParams : [],
   );
@@ -181,7 +181,7 @@ export default function DashboardScreen() {
          JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
          JOIN ambientes a ON a.id = fp.ambiente_id
          JOIN obras o ON o.id = a.obra_id
-         WHERE n.status = 'aberta' AND date(n.data_nova_verif) = '${today()}' AND ${accessFilter}`
+         WHERE n.status IN ('aberta','em_correcao') AND date(n.data_nova_verif) = '${today()}' AND ${accessFilter}`
       : 'SELECT 1 WHERE 0',
     ready ? accessParams : [],
   );
@@ -195,7 +195,7 @@ export default function DashboardScreen() {
     JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
     JOIN ambientes a ON a.id = fp.ambiente_id
     JOIN obras o ON o.id = a.obra_id
-    WHERE n.status = 'aberta' AND ${accessFilter}
+    WHERE n.status IN ('aberta','em_correcao') AND ${accessFilter}
     ORDER BY n.data_nova_verif ASC
     LIMIT 3
   ` : 'SELECT 1 WHERE 0',
@@ -207,9 +207,9 @@ export default function DashboardScreen() {
            COUNT(DISTINCT a.id) AS total_ambientes,
            COUNT(DISTINCT f.id) AS total_fvs,
            COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS fvs_concluidas,
-           CAST(SUM(CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN 100 WHEN f.status = 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
+           COALESCE(CAST(COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS REAL) * 100 / NULLIF(COUNT(DISTINCT f.id), 0), 0) AS progresso_percentual
     FROM obras o
-    LEFT JOIN ambientes a ON a.obra_id = o.id
+    LEFT JOIN ambientes a ON a.obra_id = o.id AND a.ativo = 1
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
     WHERE o.ativo = 1 AND ${accessFilter}
     GROUP BY o.id
@@ -377,7 +377,7 @@ export default function DashboardScreen() {
             <SectionTitle
               eyebrow="CAMPO"
               title="Obras recentes"
-              description="Acesse rapidamente os serviços em execução."
+              description="Acesse rapidamente os serviços em acompanhamento."
               action={(
                 <Pressable onPress={() => router.push('/(app)/(tabs)/obras' as never)}>
                   <Text style={styles.sectionLink}>Todas as obras</Text>

@@ -7,7 +7,6 @@ interface ProductivityRow {
   equipe: string;
   verificacoes: number;
   conformes: number;
-  percentualMedio: number;
   obras: number;
 }
 
@@ -15,7 +14,6 @@ interface VerificationSource {
   id: string;
   data_verif: string;
   status: string;
-  percentual_exec: number;
   equipe_id: string | null;
   fvs_planejada_id: string;
 }
@@ -44,7 +42,7 @@ export async function GET(request: Request) {
 
   let verificationQuery = supabase
     .from('verificacoes')
-    .select('id, data_verif, status, percentual_exec, equipe_id, fvs_planejada_id')
+    .select('id, data_verif, status, equipe_id, fvs_planejada_id')
     .not('equipe_id', 'is', null);
   if (from) verificationQuery = verificationQuery.gte('data_verif', from);
   if (to) verificationQuery = verificationQuery.lte('data_verif', to);
@@ -115,7 +113,7 @@ export async function GET(request: Request) {
   );
   const totals = new Map<
     string,
-    { verificacoes: number; conformes: number; percentual: number; obras: Set<string> }
+    { verificacoes: number; conformes: number; obras: Set<string> }
   >();
 
   for (const verification of verificationRows) {
@@ -125,11 +123,9 @@ export async function GET(request: Request) {
     const total = totals.get(verification.equipe_id) ?? {
       verificacoes: 0,
       conformes: 0,
-      percentual: 0,
       obras: new Set<string>(),
     };
     total.verificacoes += 1;
-    total.percentual += verification.percentual_exec;
     if (
       ['conforme', 'concluida', 'concluida_ressalva'].includes(
         verification.status,
@@ -146,7 +142,6 @@ export async function GET(request: Request) {
       equipe: equipeNames.get(equipeId) ?? 'Equipe não identificada',
       verificacoes: total.verificacoes,
       conformes: total.conformes,
-      percentualMedio: Math.round(total.percentual / total.verificacoes),
       obras: total.obras.size,
     }))
     .sort((a, b) => a.equipe.localeCompare(b.equipe, 'pt-BR'));
@@ -158,7 +153,6 @@ export async function GET(request: Request) {
       { header: 'Equipe', value: (row) => row.equipe },
       { header: 'Verificações', value: (row) => row.verificacoes },
       { header: 'Conformes', value: (row) => row.conformes },
-      { header: 'Execução média (%)', value: (row) => row.percentualMedio },
       { header: 'Obras atendidas', value: (row) => row.obras },
     ],
     rows,
