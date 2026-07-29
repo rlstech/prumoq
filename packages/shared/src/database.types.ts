@@ -180,6 +180,7 @@ export type Database = {
           percentual_final: number
           resultado: string
           tipo_motivo: string | null
+          verificacao_id: string | null
         }
         Insert: {
           assinada_em?: string | null
@@ -194,6 +195,7 @@ export type Database = {
           percentual_final: number
           resultado: string
           tipo_motivo?: string | null
+          verificacao_id?: string | null
         }
         Update: {
           assinada_em?: string | null
@@ -208,6 +210,7 @@ export type Database = {
           percentual_final?: number
           resultado?: string
           tipo_motivo?: string | null
+          verificacao_id?: string | null
         }
         Relationships: [
           {
@@ -222,6 +225,13 @@ export type Database = {
             columns: ["inspetor_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_conclusoes_verificacao_id_fkey"
+            columns: ["verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "verificacoes"
             referencedColumns: ["id"]
           },
         ]
@@ -1209,6 +1219,7 @@ export type Database = {
         Args: { p_ambiente_id: string }
         Returns: {
           id: string
+          ncs_abertas: number
           status: string
           subservico: string
           total_verificacoes: number

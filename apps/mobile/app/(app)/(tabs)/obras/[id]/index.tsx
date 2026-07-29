@@ -96,17 +96,17 @@ export default function ObraDetailScreen() {
       COUNT(DISTINCT f.id) AS total_fvs,
       COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS fvs_concluidas,
       (SELECT COUNT(*) FROM nao_conformidades n
-       WHERE n.status = 'aberta' AND n.verificacao_id IN (
+       WHERE n.status IN ('aberta','em_correcao') AND n.verificacao_id IN (
          SELECT v.id FROM verificacoes v
          JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
          JOIN ambientes a2 ON a2.id = fp.ambiente_id
          WHERE a2.obra_id = o.id
+           AND a2.ativo = 1
        )) AS ncs_abertas,
-      CAST(SUM(CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN 100
-                    WHEN f.status = 'em_andamento' THEN COALESCE(f.percentual_exec, 0)
-                    ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
+      COALESCE(CAST(COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS REAL) * 100
+        / NULLIF(COUNT(DISTINCT f.id), 0), 0) AS progresso_percentual
     FROM obras o
-    LEFT JOIN ambientes a ON a.obra_id = o.id
+    LEFT JOIN ambientes a ON a.obra_id = o.id AND a.ativo = 1
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
     WHERE o.id = ?
   `, [id]);
@@ -124,13 +124,12 @@ export default function ObraDetailScreen() {
       COUNT(DISTINCT f.id) AS total_fvs,
       COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS fvs_concluidas,
       (SELECT COUNT(*) FROM nao_conformidades n
-       WHERE n.status = 'aberta' AND n.verificacao_id IN (
+       WHERE n.status IN ('aberta','em_correcao') AND n.verificacao_id IN (
          SELECT v.id FROM verificacoes v
          WHERE v.fvs_planejada_id IN (SELECT id FROM fvs_planejadas WHERE ambiente_id = a.id)
        )) AS ncs_abertas,
-      CAST(SUM(CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN 100
-                    WHEN f.status = 'em_andamento' THEN COALESCE(f.percentual_exec, 0)
-                    ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual
+      COALESCE(CAST(COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS REAL) * 100
+        / NULLIF(COUNT(DISTINCT f.id), 0), 0) AS progresso_percentual
     FROM ambientes a
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
     WHERE a.obra_id = ? AND a.ativo = 1

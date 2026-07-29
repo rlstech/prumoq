@@ -2,7 +2,7 @@ import { useQuery } from '@powersync/react-native';
 import { useEffect, useState } from 'react';
 import {
   Alert, Modal, Pressable, ScrollView,
-  StyleSheet, Text, TextInput, View,
+  Platform, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
 import { db } from '../lib/powersync';
@@ -85,10 +85,14 @@ export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: P
         `INSERT INTO fvs_reaberturas (id, fvs_planejada_id, solicitado_por, autorizado_por, motivo_tipo, justificativa, numero_reabertura, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [uuid(), fvsId, user!.id, autorizadoPor, motivo, justificativa, numero, now],
       );
-      await db.execute(
-        `UPDATE fvs_planejadas SET status = ?, ultima_reabertura_em = ? WHERE id = ?`,
-        ['em_revisao', now, fvsId],
-      );
+      if (Platform.OS !== 'web') {
+        await db.execute(
+          `UPDATE fvs_planejadas
+           SET status = ?, concluida_em = ?, ultima_reabertura_em = ?
+           WHERE id = ?`,
+          ['em_revisao', null, now, fvsId],
+        );
+      }
 
       onSuccess();
     } catch (e: any) {

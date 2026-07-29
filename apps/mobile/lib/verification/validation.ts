@@ -1,6 +1,5 @@
 import {
   NcDraftDetail,
-  VerificationConclusion,
   VerificationResult,
   VerificationStep,
 } from './draft.types';
@@ -8,8 +7,6 @@ import {
 export interface VerificationValidationInput {
   selectedEquipeId: string | null;
   isReinspection: boolean;
-  conclusion: VerificationConclusion | null;
-  concludeFvs: boolean;
   signaturePath: string | null;
   reinspectionPhoto: string | null;
   itemIds: string[];
@@ -43,9 +40,6 @@ export function collectVerificationErrors(
   }
 
   if (!step || step === 'evidence') {
-    if (!input.isReinspection && !input.conclusion && !input.concludeFvs) {
-      errors.conclusao = 'Selecione o resultado da verificação';
-    }
     if (input.isReinspection && !input.reinspectionPhoto) {
       errors.reinspFoto = 'Foto da re-inspeção obrigatória';
     }

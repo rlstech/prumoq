@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText } from 'lucide-react';
+import { AlertTriangle, FileText } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
 import ChecklistEditorModal from './ChecklistEditorModal';
@@ -50,7 +50,7 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
                  <tr key={fvs.id} className="border-b border-brd-0 last:border-0 hover:bg-bg-2">
                    <td className="py-3 px-5">
                      <div className="flex items-center gap-3">
-                       <div className={`w-2.5 h-2.5 rounded-full ${(fvs.status === 'conforme' || fvs.status === 'concluida') ? 'bg-ok' : fvs.status === 'concluida_ressalva' ? 'bg-warn' : fvs.status === 'nao_conforme' ? 'bg-nok' : 'bg-[var(--br)]'}`} />
+                       <div className={`w-2.5 h-2.5 rounded-full ${fvs.ncs_abertas > 0 ? 'bg-nok' : (fvs.status === 'conforme' || fvs.status === 'concluida') ? 'bg-ok' : fvs.status === 'concluida_ressalva' ? 'bg-warn' : 'bg-[var(--br)]'}`} />
                        <div>
                          <h3 className="font-medium text-sm text-txt">{fvs.subservico}</h3>
                          <p className="text-[11px] text-txt-3">Última verif: {fvs.ultima_verif ? new Date(fvs.ultima_verif).toLocaleDateString('pt-BR') : 'Nenhuma'}</p>
@@ -58,7 +58,15 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
                      </div>
                    </td>
                    <td className="py-3 px-5">
-                     <StatusBadge status={fvs.status} size="sm" />
+                     <div className="flex items-center gap-2">
+                       <StatusBadge status={fvs.status} size="sm" />
+                       {fvs.ncs_abertas > 0 ? (
+                         <span className="inline-flex items-center gap-1 rounded-full border border-nok/20 bg-nok-bg px-2 py-1 text-[11px] font-medium text-nok">
+                           <AlertTriangle size={12} />
+                           {fvs.ncs_abertas} NC {fvs.ncs_abertas === 1 ? 'aberta' : 'abertas'}
+                         </span>
+                       ) : null}
+                     </div>
                    </td>
                    <td className="py-3 px-5 text-right">
                      <div className="flex items-center justify-end gap-3">

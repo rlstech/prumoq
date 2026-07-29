@@ -107,9 +107,14 @@ Ao salvar uma nova revisão de FVS Padrão:
 
 ### RN-05: Progresso automático
 O progresso de cada nível é calculado automaticamente:
-- **Ambiente:** `verificacoes_concluidas / fvs_planejadas * 100`
-- **Obra:** média ponderada dos ambientes
-- Uma FVS é "concluída" quando a última verificação tem status = 'conforme'
+- **Ambiente:** `fvs_concluidas / fvs_planejadas * 100`
+- **Obra:** `fvs_concluidas / total_fvs_da_obra * 100`, considerando ambientes ativos
+- Verificações em andamento não geram progresso parcial
+- Uma FVS só é concluída por ação explícita do inspetor, após uma verificação
+  conforme e sem NC aberta ou em correção
+- O resultado da verificação é derivado do checklist: qualquer item não conforme
+  torna a verificação não conforme; caso contrário, ela é conforme
+- O status cadastral da obra não é alterado automaticamente pelo progresso das FVS
 
 ### RN-06: Foto de verificação
 - Formatos aceitos: JPEG, PNG, HEIC

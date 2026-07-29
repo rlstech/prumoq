@@ -1,7 +1,6 @@
 export type VerificationStep = 'context' | 'checklist' | 'evidence' | 'review';
 export type VerificationMode = 'verification' | 'reinspection';
 export type VerificationResult = 'conforme' | 'nao_conforme' | 'na';
-export type VerificationConclusion = 'conforme' | 'nao_conforme' | 'em_andamento';
 
 export interface NcDraftDetail {
   descricao: string;
@@ -14,12 +13,9 @@ export interface NcDraftDetail {
 export interface VerificationFormState {
   dataVerif: string;
   selectedEquipeId: string | null;
-  percentExec: number;
   itemResults: Record<string, VerificationResult>;
   ncDetails: Record<string, NcDraftDetail>;
   observacoes: string;
-  conclusao: VerificationConclusion | null;
-  concluirFvs: boolean;
   signaturePath: string | null;
   reinspFoto: string | null;
   generalPhotos: string[];
@@ -44,7 +40,7 @@ export interface DraftMediaSource {
 }
 
 export interface VerificationDraftV1 {
-  schemaVersion: 1;
+  schemaVersion: 2;
   draftId: string;
   userId: string;
   obraId: string;
@@ -69,7 +65,7 @@ export interface DraftStore {
   deleteForUser(userId: string): Promise<void>;
 }
 
-export const DRAFT_SCHEMA_VERSION = 1 as const;
+export const DRAFT_SCHEMA_VERSION = 2 as const;
 
 export function makeDraftId(userId: string, fvsId: string, mode: VerificationMode): string {
   return `${userId}:${fvsId}:${mode}`;
@@ -113,4 +109,3 @@ export function applyHydratedMedia(
 
   return next;
 }
-

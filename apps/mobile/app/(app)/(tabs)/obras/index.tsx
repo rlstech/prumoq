@@ -58,16 +58,17 @@ const OBRAS_QUERY = `
     o.uf,
     COUNT(DISTINCT f.id) AS total_fvs,
     COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS fvs_concluidas,
-    CAST(SUM(CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN 100 WHEN f.status = 'em_andamento' THEN COALESCE(f.percentual_exec, 0) ELSE 0 END) AS REAL) / NULLIF(COUNT(DISTINCT f.id), 0) AS progresso_percentual,
+    COALESCE(CAST(COUNT(DISTINCT CASE WHEN f.status IN ('conforme','concluida','concluida_ressalva') THEN f.id END) AS REAL) * 100 / NULLIF(COUNT(DISTINCT f.id), 0), 0) AS progresso_percentual,
     (SELECT COUNT(*) FROM nao_conformidades n
-     WHERE n.status = 'aberta' AND n.verificacao_id IN (
+     WHERE n.status IN ('aberta','em_correcao') AND n.verificacao_id IN (
        SELECT v.id FROM verificacoes v
        JOIN fvs_planejadas fp ON fp.id = v.fvs_planejada_id
        JOIN ambientes a2 ON a2.id = fp.ambiente_id
        WHERE a2.obra_id = o.id
+         AND a2.ativo = 1
      )) AS ncs_abertas
   FROM obras o
-  LEFT JOIN ambientes a ON a.obra_id = o.id
+  LEFT JOIN ambientes a ON a.obra_id = o.id AND a.ativo = 1
   LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
   WHERE o.ativo = 1
     AND (
@@ -127,13 +128,8 @@ export default function ObrasScreen() {
     const totalFvs = obras.reduce((total, obra) => total + (obra.total_fvs ?? 0), 0);
     const completedFvs = obras.reduce((total, obra) => total + (obra.fvs_concluidas ?? 0), 0);
     const openNc = obras.reduce((total, obra) => total + (obra.ncs_abertas ?? 0), 0);
-    const weightedProgress = totalFvs > 0
-      ? obras.reduce(
-          (total, obra) => total + (obra.progresso_percentual ?? 0) * (obra.total_fvs ?? 0),
-          0
-        ) / totalFvs
-      : 0;
-    return { totalFvs, completedFvs, openNc, progress: weightedProgress };
+    const progress = totalFvs > 0 ? (completedFvs / totalFvs) * 100 : 0;
+    return { totalFvs, completedFvs, openNc, progress };
   }, [obras]);
 
   return (

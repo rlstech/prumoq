@@ -52,12 +52,9 @@ export function emptyVerificationFormState(today = new Date().toISOString().slic
   return {
     dataVerif: today,
     selectedEquipeId: null,
-    percentExec: 0,
     itemResults: {},
     ncDetails: {},
     observacoes: '',
-    conclusao: null,
-    concluirFvs: false,
     signaturePath: null,
     reinspFoto: null,
     generalPhotos: [],
@@ -122,12 +119,9 @@ export function hasMeaningfulVerificationProgress(
 ): boolean {
   return currentStep !== 'context'
     || !!state.selectedEquipeId
-    || state.percentExec > 0
     || Object.keys(state.itemResults).length > 0
     || Object.keys(state.ncDetails).length > 0
     || !!state.observacoes.trim()
-    || !!state.conclusao
-    || state.concluirFvs
     || !!state.signaturePath
     || !!state.reinspFoto
     || state.generalPhotos.length > 0;
@@ -191,9 +185,32 @@ export function isVerificationComplete(
   state: VerificationFormState,
   itemIds: readonly string[],
 ): boolean {
-  const allAnswered = itemIds.every(itemId => !!state.itemResults[itemId]);
+  const allAnswered = itemIds.length > 0
+    && itemIds.every(itemId => !!state.itemResults[itemId]);
   const noNc = itemIds.every(itemId => state.itemResults[itemId] !== 'nao_conforme');
-  return allAnswered && noNc && (state.concluirFvs || state.conclusao === 'conforme');
+  return allAnswered && noNc;
+}
+
+export function canConcludeFvs(
+  state: VerificationFormState,
+  itemIds: readonly string[],
+  options: {
+    isReinspection: boolean;
+    hasUnresolvedNc: boolean;
+  },
+): boolean {
+  return !options.isReinspection
+    && !options.hasUnresolvedNc
+    && isVerificationComplete(state, itemIds);
+}
+
+export function verificationStatusFromResults(
+  itemIds: readonly string[],
+  itemResults: Record<string, VerificationResult>,
+): 'conforme' | 'nao_conforme' {
+  return itemIds.some(itemId => itemResults[itemId] === 'nao_conforme')
+    ? 'nao_conforme'
+    : 'conforme';
 }
 
 export function draftContextFrom(

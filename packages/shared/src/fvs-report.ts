@@ -311,7 +311,6 @@ function matrixTable(
           <strong>V. ${verification.numero_verif}</strong>
           <span>${escapeHtml(localDate(verification.data_verif))}</span>
           <span>${escapeHtml(statusLabel(verification.status))}</span>
-          <span>${verification.percentual_exec}%</span>
         </th>`,
     )
     .join('');
@@ -391,7 +390,7 @@ function verificationDetails(
     <section class="verification-detail">
       <header>
         <strong>Verificação #${verification.numero_verif} - ${escapeHtml(localDate(verification.data_verif))}</strong>
-        <span>${escapeHtml(verification.inspetor_nome || '—')} · ${escapeHtml(statusLabel(verification.status))} · ${verification.percentual_exec}%</span>
+        <span>${escapeHtml(verification.inspetor_nome || '—')} · ${escapeHtml(statusLabel(verification.status))}</span>
       </header>
       <div class="verification-detail-body">
         ${
@@ -536,7 +535,7 @@ export function renderFvsReportBody(
           .join('')}
         ${
           report.conclusao
-            ? `<section class="conclusion"><strong>Conclusão da FVS</strong><div class="grid">${info('Resultado', report.conclusao.resultado === 'aprovado' ? 'Aprovado' : 'Com ressalva')}${info('Percentual final', `${report.conclusao.percentual_final}%`)}${report.conclusao.observacao_final ? info('Observação', report.conclusao.observacao_final) : ''}</div></section>`
+            ? `<section class="conclusion"><strong>Conclusão da FVS</strong><div class="grid">${info('Resultado', report.conclusao.resultado === 'aprovado' ? 'Aprovado' : 'Com ressalva')}${report.conclusao.observacao_final ? info('Observação', report.conclusao.observacao_final) : ''}</div></section>`
             : ''
         }
       </section>`

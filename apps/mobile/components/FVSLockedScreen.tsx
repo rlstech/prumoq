@@ -16,14 +16,13 @@ import { Colors, FontFamily, Radius, Spacing, Typography } from '../lib/constant
 interface Conclusao {
   created_at: string;
   inspetor_nome: string;
-  percentual_final: number;
   resultado: string;
   observacao_final: string | null;
   motivo_antes_100: string | null;
 }
 
 interface Props {
-  status: 'concluida' | 'concluida_ressalva';
+  status: 'conforme' | 'concluida' | 'concluida_ressalva';
   conclusao: Conclusao | null;
   onRequestReopen: () => void;
 }
@@ -45,7 +44,7 @@ function formatDate(iso: string): string {
 }
 
 export function FVSLockedScreen({ status, conclusao, onRequestReopen }: Props) {
-  const isConcluded = status === 'concluida';
+  const isConcluded = status === 'conforme' || status === 'concluida';
   const toneColor = isConcluded ? Colors.ok : Colors.warn;
   const toneBackground = isConcluded ? Colors.okBg : Colors.warnBg;
   const StatusIcon = isConcluded ? BadgeCheck : Flag;
@@ -67,9 +66,6 @@ export function FVSLockedScreen({ status, conclusao, onRequestReopen }: Props) {
             <View style={[styles.resultRow, { borderTopColor: `${toneColor}33` }]}>
               <Text style={[styles.resultText, { color: toneColor }]}>
                 {conclusao.resultado === 'aprovado' ? 'Aprovado' : 'Com ressalvas'}
-              </Text>
-              <Text style={[styles.resultText, { color: toneColor }]}>
-                {conclusao.percentual_final}% executado
               </Text>
             </View>
             {conclusao.observacao_final ? (

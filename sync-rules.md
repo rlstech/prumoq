@@ -145,13 +145,34 @@ const fvs_planejadas = new Table({
   updated_at:        column.text,
 });
 
+const fvs_conclusoes = new Table({
+  fvs_planejada_id: column.text,
+  verificacao_id:   column.text,
+  inspetor_id:      column.text,
+  numero_conclusao: column.integer,
+  percentual_final: column.integer, // legado, mantido para auditoria
+  resultado:        column.text,
+  observacao_final: column.text,
+  created_at:       column.text,
+}, { indexes: { fvs_planejada: ['fvs_planejada_id'] } });
+
+const fvs_reaberturas = new Table({
+  fvs_planejada_id:  column.text,
+  solicitado_por:    column.text,
+  autorizado_por:    column.text,
+  motivo_tipo:       column.text,
+  justificativa:     column.text,
+  numero_reabertura: column.integer,
+  created_at:        column.text,
+}, { indexes: { fvs_planejada: ['fvs_planejada_id'] } });
+
 const verificacoes = new Table({
   fvs_planejada_id: column.text,
   numero_verif:     column.integer,
   inspetor_id:      column.text,
   equipe_id:        column.text,
   data_verif:       column.text,
-  percentual_exec:  column.integer,
+  percentual_exec:  column.integer, // legado; não participa de novos cálculos
   status:           column.text,
   observacoes:      column.text,
   assinatura_url:   column.text,
@@ -225,6 +246,8 @@ export const AppSchema = new Schema({
   fvs_padrao,
   fvs_padrao_itens,
   fvs_planejadas,
+  fvs_conclusoes,
+  fvs_reaberturas,
   verificacoes,
   verificacao_itens,
   verificacao_fotos,
@@ -354,6 +377,29 @@ bucket_definitions:
             SELECT nc.id FROM nao_conformidades nc
             JOIN verificacoes v ON nc.verificacao_id = v.id
             JOIN fvs_planejadas fp ON v.fvs_planejada_id = fp.id
+            JOIN ambientes a ON fp.ambiente_id = a.id
+            JOIN obra_usuarios ou ON a.obra_id = ou.obra_id
+            WHERE ou.usuario_id = :usuario_id AND ou.ativo = true
+          )
+
+  # Conclusões e reaberturas das FVS acessíveis
+  ciclo_de_vida_das_fvs:
+    parameters:
+      - name: usuario_id
+        value: token_parameters.user_id
+    data:
+      - table: fvs_conclusoes
+        where: >
+          fvs_planejada_id IN (
+            SELECT fp.id FROM fvs_planejadas fp
+            JOIN ambientes a ON fp.ambiente_id = a.id
+            JOIN obra_usuarios ou ON a.obra_id = ou.obra_id
+            WHERE ou.usuario_id = :usuario_id AND ou.ativo = true
+          )
+      - table: fvs_reaberturas
+        where: >
+          fvs_planejada_id IN (
+            SELECT fp.id FROM fvs_planejadas fp
             JOIN ambientes a ON fp.ambiente_id = a.id
             JOIN obra_usuarios ou ON a.obra_id = ou.obra_id
             WHERE ou.usuario_id = :usuario_id AND ou.ativo = true

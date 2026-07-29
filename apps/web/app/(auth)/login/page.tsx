@@ -48,7 +48,7 @@ export default function LoginPage() {
             Decisões de obra com evidência, contexto e precisão.
           </h1>
           <p className="mt-6 max-w-[520px] text-lg leading-7 text-white/65">
-            Planeje FVS, acompanhe execução e elimine não conformidades em uma operação conectada ao campo.
+            Planeje FVS, acompanhe verificações e trate não conformidades em uma operação conectada ao campo.
           </p>
         </div>
 

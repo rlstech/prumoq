@@ -124,6 +124,13 @@ test('renderiza todas as verificações, grupos e fotos sem cortes lógicos', ()
   assert.match(html, /@page \{ size: A4 landscape/);
 });
 
+test('não apresenta percentuais manuais legados no relatório', () => {
+  const html = renderFvsReportsHtml([report([verification(1)])]);
+
+  assert.doesNotMatch(html, />10%<\/span>/);
+  assert.doesNotMatch(html, /Execução informada/);
+});
+
 test('remove somente anexos fotográficos quando a opção é desativada', () => {
   const current = verification(1);
   current.fotos = [
