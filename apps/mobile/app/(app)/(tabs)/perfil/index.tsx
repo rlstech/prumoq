@@ -1,4 +1,5 @@
 import { useQuery } from '@powersync/react-native';
+import { useRouter } from 'expo-router';
 import { Building2, Key, Mail, Phone, User } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -53,20 +54,30 @@ const PERFIL_ACCESS: Record<string, string> = {
 };
 
 export default function PerfilScreen() {
+  const router = useRouter();
   const [userId, setUserId]     = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id ?? null);
-      setUserEmail(data.user?.email ?? null);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user.id ?? null);
+      setUserEmail(session?.user.email ?? null);
+      setAuthResolved(true);
     });
   }, []);
 
-  const { data: usuarioRows } = useQuery<UsuarioRow>(
-    `SELECT id, nome, cargo, perfil, empresa_id FROM usuarios LIMIT 1`
+  const {
+    data: usuarioRows,
+    error: usuarioError,
+  } = useQuery<UsuarioRow>(
+    userId
+      ? `SELECT id, nome, cargo, perfil, empresa_id FROM usuarios WHERE id = ? LIMIT 1`
+      : `SELECT 1 WHERE 0`,
+    userId ? [userId] : [],
   );
   const usuario = usuarioRows[0];
+  const profileUnavailable = authResolved && (!userId || !!usuarioError);
 
   const { data: obrasRows } = useQuery<ObraRow>(
     `SELECT o.id, o.nome, o.municipio, o.uf FROM obras o WHERE o.ativo = 1 ORDER BY o.nome`
@@ -121,7 +132,9 @@ export default function PerfilScreen() {
           <View style={s.avatar}>
             <Text style={s.avatarText}>{usuario ? initials(usuario.nome) : 'IN'}</Text>
           </View>
-          <Text style={s.heroName}>{usuario?.nome ?? 'Carregando...'}</Text>
+          <Text style={s.heroName}>
+            {profileUnavailable ? 'Perfil indisponível' : (usuario?.nome ?? 'Carregando...')}
+          </Text>
           {heroRole ? <Text style={s.heroRole}>{heroRole}</Text> : null}
         </View>
       </AppHeader>
@@ -131,6 +144,14 @@ export default function PerfilScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={s.bodyContent}
       >
+        {profileUnavailable ? (
+          <View style={s.errorCard}>
+            <Text style={s.errorText}>
+              Não foi possível carregar os dados do usuário autenticado. Entre novamente no sistema.
+            </Text>
+          </View>
+        ) : null}
+
         {/* Dados do usuário */}
         <Text style={s.sectionLabel}>DADOS DO USUÁRIO</Text>
         <View style={s.dataCard}>
@@ -192,6 +213,16 @@ export default function PerfilScreen() {
           </>
         )}
 
+        <TouchableOpacity
+          style={s.passwordBtn}
+          onPress={() => router.push('/(app)/alterar-senha')}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+        >
+          <Key size={18} color={Colors.brand} />
+          <Text style={s.passwordText}>Alterar senha</Text>
+        </TouchableOpacity>
+
         {/* Logout */}
         <TouchableOpacity style={s.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
           <Text style={s.logoutText}>Sair do sistema</Text>
@@ -229,6 +260,20 @@ const s = StyleSheet.create({
     alignSelf: 'center',
     padding: Spacing.lg,
     paddingBottom: 40,
+  },
+  errorCard: {
+    backgroundColor: Colors.nokBg,
+    borderWidth: 1,
+    borderColor: Colors.nok,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  errorText: {
+    color: Colors.nok,
+    fontSize: FontSizes.sm,
+    fontFamily: FontFamily.medium,
+    lineHeight: 20,
   },
 
   // Section label
@@ -299,7 +344,21 @@ const s = StyleSheet.create({
   ativoBadge:   { backgroundColor: Colors.progressBg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.full },
   ativoText:    { fontSize: FontSizes.tiny - 1, fontWeight: '500', color: Colors.progress },
 
-  // Logout
+  // Account actions
+  passwordBtn: {
+    minHeight: 48,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.borderNormal,
+    borderRadius: Radius.lg,
+    padding: 13,
+    marginBottom: Spacing.sm,
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  passwordText: { ...Typography.label, color: Colors.brand },
   logoutBtn: {
     minHeight: 48,
     backgroundColor: Colors.nokBg,

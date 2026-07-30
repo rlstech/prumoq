@@ -1,18 +1,20 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { ClipboardCheck, HardHat, ShieldCheck, WifiOff } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { BrandMark } from '../../components/BrandMark';
-import { Button, ErrorBanner, Field } from '../../components/ui';
+import { Button, ErrorBanner, Field, Toast } from '../../components/ui';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import { consumePasswordChanged } from '../../lib/auth/passwords';
 import {
   Breakpoints,
   Colors,
@@ -33,7 +35,12 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [passwordChanged, setPasswordChanged] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    void consumePasswordChanged().then(setPasswordChanged);
+  }, []);
 
   function validateFields(): string | null {
     if (!email.trim()) return 'Informe o e-mail';
@@ -150,6 +157,13 @@ export default function LoginScreen() {
             </View>
 
             {error ? <ErrorBanner message={error} /> : null}
+            {passwordChanged ? (
+              <Toast
+                message="Senha alterada. Entre novamente com sua nova senha."
+                tone="success"
+                onDismiss={() => setPasswordChanged(false)}
+              />
+            ) : null}
 
             <Button
               label="Entrar no PrumoQ"
@@ -159,8 +173,16 @@ export default function LoginScreen() {
               accessibilityHint="Autentica e abre o painel de campo"
             />
 
+            <TouchableOpacity
+              accessibilityRole="link"
+              onPress={() => router.push('/(auth)/recuperar-senha')}
+              style={styles.recoveryLink}
+            >
+              <Text style={styles.recoveryLinkText}>Esqueci minha senha</Text>
+            </TouchableOpacity>
+
             <Text style={styles.support}>
-              Problemas com o acesso? Fale com o administrador da sua empresa.
+              Outros problemas com o acesso? Fale com o administrador da sua empresa.
             </Text>
           </View>
         </View>
@@ -289,6 +311,16 @@ const styles = StyleSheet.create({
   },
   formDescription: { ...Typography.body, color: Colors.textSecondary },
   fields: { gap: Spacing.lg },
+  recoveryLink: {
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recoveryLinkText: {
+    color: Colors.brand,
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.sm,
+  },
   support: {
     ...Typography.caption,
     color: Colors.textTertiary,

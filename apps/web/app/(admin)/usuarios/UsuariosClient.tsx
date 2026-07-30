@@ -1,16 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Plus, ShieldCheck, HardHat, Save } from 'lucide-react';
+import { Search, Plus, ShieldCheck, HardHat, KeyRound, Save } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
-import { createUsuario, updateUsuario } from './actions';
+import { createUsuario, sendPasswordRecovery, updateUsuario } from './actions';
 
 export default function UsuariosClient({ initialUsers, availableObras }: { initialUsers: any[], availableObras: any[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [recoveryUser, setRecoveryUser] = useState<any>(null);
+  const [isSendingRecovery, setIsSendingRecovery] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -83,6 +86,19 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
     }
     
     setIsLoading(false);
+  };
+
+  const handleSendRecovery = async () => {
+    if (!recoveryUser) return;
+    setIsSendingRecovery(true);
+    const result = await sendPasswordRecovery(recoveryUser.id);
+    if (result.success) {
+      toast('E-mail de recuperação enviado com sucesso!', 'success');
+      setRecoveryUser(null);
+    } else {
+      toast(`Erro: ${result.error}`, 'error');
+    }
+    setIsSendingRecovery(false);
   };
 
   return (
@@ -158,7 +174,17 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
                   </td>
                   <td className="py-3 px-4 text-[13px] text-txt">{user.ultimo_acesso ? new Date(user.ultimo_acesso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                   <td className="py-3 px-4">
-                    <button onClick={() => openEditUserModal(user)} className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors">Editar</button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRecoveryUser(user)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors whitespace-nowrap"
+                      >
+                        <KeyRound size={12} />
+                        Recuperar senha
+                      </button>
+                      <button onClick={() => openEditUserModal(user)} className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors">Editar</button>
+                    </div>
                   </td>
                 </tr>
               )) : (
@@ -183,13 +209,13 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-             <div>
+             {!selectedUser ? <div>
                <label className="block text-xs font-medium text-txt-2 mb-1">
-                 Senha {selectedUser ? '(deixe em branco para manter)' : '*'}
+                 Senha *
                </label>
-               <input type="password" required={!selectedUser} placeholder={selectedUser ? '' : 'Mínimo 6 caracteres'} className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]" value={formData.senha} onChange={e => setFormData({...formData, senha: e.target.value})} />
-             </div>
-             <div>
+               <input type="password" required minLength={8} placeholder="Mínimo 8 caracteres" className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]" value={formData.senha} onChange={e => setFormData({...formData, senha: e.target.value})} />
+             </div> : null}
+             <div className={selectedUser ? 'col-span-2' : undefined}>
                <label className="block text-xs font-medium text-txt-2 mb-1">Cargo</label>
                <input type="text" className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]" placeholder="Ex: Mestre de Obras" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})} />
              </div>
@@ -255,6 +281,17 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!recoveryUser}
+        onClose={() => setRecoveryUser(null)}
+        onConfirm={handleSendRecovery}
+        title="Enviar recuperação de senha"
+        message={`Enviar um link de recuperação para ${recoveryUser?.nome ?? 'este usuário'}? A senha atual não será exibida nem alterada pelo administrador.`}
+        confirmText="Enviar e-mail"
+        variant="info"
+        isLoading={isSendingRecovery}
+      />
     </>
   );
 }

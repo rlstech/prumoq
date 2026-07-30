@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, ShieldCheck, Wifi } from 'lucide-react';
 import { BrandMark } from '@/components/ui/BrandMark';
@@ -8,8 +8,16 @@ import { loginAction } from './actions';
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
+  const [passwordChanged, setPasswordChanged] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const pwaOrigin = process.env.NEXT_PUBLIC_PWA_URL?.replace(/\/+$/, '')
+    ?? (process.env.NODE_ENV === 'development' ? 'http://localhost:8081' : '');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setPasswordChanged(params.get('senha') === 'alterada');
+  }, []);
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -95,7 +103,15 @@ export default function LoginPage() {
             </label>
 
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-txt">Senha</span>
+              <span className="flex items-center justify-between gap-3 text-sm font-semibold text-txt">
+                Senha
+                <a
+                  href={`${pwaOrigin}/recuperar-senha`}
+                  className="font-medium text-[var(--prumo-brand)] hover:underline"
+                >
+                  Esqueci minha senha
+                </a>
+              </span>
               <input
                 type="password"
                 name="password"
@@ -109,6 +125,13 @@ export default function LoginPage() {
             {error ? (
               <div role="alert" className="rounded-lg border border-nok/20 bg-nok-bg px-4 py-3 text-sm font-medium text-nok">
                 {error}
+              </div>
+            ) : null}
+
+            {passwordChanged ? (
+              <div role="status" className="flex items-start gap-2 rounded-lg border border-ok/20 bg-ok-bg px-4 py-3 text-sm font-medium text-ok">
+                <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
+                Senha alterada. Entre novamente com sua nova senha.
               </div>
             ) : null}
 

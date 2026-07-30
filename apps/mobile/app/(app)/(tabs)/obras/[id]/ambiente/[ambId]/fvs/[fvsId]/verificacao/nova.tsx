@@ -329,9 +329,19 @@ export default function NovaVerificacaoScreen() {
   const { id, ambId, fvsId } = useLocalSearchParams<{ id: string; ambId: string; fvsId: string }>();
   const scrollRef = useRef<ScrollView>(null);
   const { isTablet } = useResponsiveLayout();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
 
   // Queries
-  const { data: usuarioRows } = useQuery<UsuarioRow>(`SELECT id, nome, cargo FROM usuarios LIMIT 1`);
+  const {
+    data: usuarioRows,
+    error: usuarioError,
+  } = useQuery<UsuarioRow>(
+    userId
+      ? `SELECT id, nome, cargo FROM usuarios WHERE id = ? LIMIT 1`
+      : `SELECT 1 WHERE 0`,
+    userId ? [userId] : [],
+  );
   const usuario = usuarioRows[0];
 
   const { data: fvsRows } = useQuery<FvsRow>(`
@@ -423,7 +433,6 @@ export default function NovaVerificacaoScreen() {
   const [reinspResult, setReinspResult] = useState<ReinspResult>({ type: 'idle' });
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [checklistFilter, setChecklistFilter] = useState<ChecklistFilter>('pending');
-  const [userId, setUserId] = useState<string | null>(null);
 
   function showToast(msg: string, type: 'success' | 'error', onDone?: () => void) {
     setToast({ msg, type });
@@ -434,7 +443,10 @@ export default function NovaVerificacaoScreen() {
   }
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user.id ?? null);
+      setAuthResolved(true);
+    });
     if (Platform.OS === 'web') {
       supabase.functions.invoke('r2-presign', {
         body: { filename: '_warmup.jpg', mimeType: 'image/jpeg' },
@@ -442,6 +454,8 @@ export default function NovaVerificacaoScreen() {
     }
   }, []);
 
+  const identityReady = !!userId && usuario?.id === userId && !usuarioError;
+  const identityUnavailable = authResolved && (!userId || !!usuarioError);
   const mode: VerificationMode = hasOpenNCs ? 'reinspection' : 'verification';
   const itemIds = useMemo(() => itens.map(item => item.id), [itens]);
   const openNcItemIds = useMemo(() => Object.keys(ncAbertoByItemId), [ncAbertoByItemId]);
@@ -594,6 +608,15 @@ export default function NovaVerificacaoScreen() {
   }
 
   async function handleSave(shouldConclude = false) {
+    if (!userId || !usuario || usuario.id !== userId || usuarioError) {
+      Alert.alert(
+        'Identidade indisponível',
+        'Não foi possível confirmar o usuário autenticado. Entre novamente no sistema antes de salvar a verificação.',
+      );
+      return;
+    }
+    const inspectorId = userId;
+
     if (!validate()) return;
     if (shouldConclude && !canConcludeCurrentFvs) {
       Alert.alert(
@@ -618,7 +641,7 @@ export default function NovaVerificacaoScreen() {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         verificacaoId, fvsId, proximoNumero,
-        userId ?? '', selectedEquipeId, dataVerif,
+        inspectorId, selectedEquipeId, dataVerif,
         verificationStatus, observacoes, 1, now,
       ]);
 
@@ -637,7 +660,7 @@ export default function NovaVerificacaoScreen() {
         if (ncAberta) {
           const fotoUrl = reinspFoto ? `pending:${reinspFoto}` : null;
           if (resultado === 'conforme') {
-            await approveReinspecao({ ncId: ncAberta.nc_id, verificacaoId, inspetorId: userId ?? '', fotoUrl });
+            await approveReinspecao({ ncId: ncAberta.nc_id, verificacaoId, inspetorId: inspectorId, fotoUrl });
             if (pendingResult.type === 'idle') {
               pendingResult = {
                 type: 'aprovada',
@@ -653,7 +676,7 @@ export default function NovaVerificacaoScreen() {
               ncId: ncAberta.nc_id,
               numeroOcorrenciaAtual: ncAberta.numero_ocorrencia,
               verificacaoId,
-              inspetorId: userId ?? '',
+              inspetorId: inspectorId,
               fotoUrl,
             });
             if (pendingResult.type === 'idle') {
@@ -716,7 +739,7 @@ export default function NovaVerificacaoScreen() {
              percentual_final, resultado, observacao_final, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            uuid(), fvsId, verificacaoId, userId ?? '', conclusionNumber,
+            uuid(), fvsId, verificacaoId, inspectorId, conclusionNumber,
             100, 'aprovado', observacoes || null, now,
           ],
         );
@@ -842,6 +865,10 @@ export default function NovaVerificacaoScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={st.flowContent}
         >
+          {identityUnavailable ? (
+            <ErrorBanner message="Não foi possível confirmar o usuário autenticado. Entre novamente no sistema antes de salvar." />
+          ) : null}
+
           {draftCandidate ? (
             <Card tone={draftConflict ? 'danger' : 'accent'} style={st.draftBanner}>
               <View style={st.draftBannerHeader}>
@@ -1359,7 +1386,7 @@ export default function NovaVerificacaoScreen() {
                         Icon={LockKeyhole}
                         variant="secondary"
                         onPress={handleConclude}
-                        disabled={isSaving || !!toast || !!draftCandidate}
+                        disabled={isSaving || !!toast || !!draftCandidate || !identityReady}
                         fullWidth
                       />
                     </Card>
@@ -1408,7 +1435,11 @@ export default function NovaVerificacaoScreen() {
             : handleNextStep
         }
         primaryLoading={currentStep === 'review' && isSaving}
-        primaryDisabled={!!toast || !!draftCandidate}
+        primaryDisabled={
+          !!toast
+          || !!draftCandidate
+          || (currentStep === 'review' && !identityReady)
+        }
         secondaryLabel={currentStep !== 'context' ? 'Voltar' : undefined}
         onSecondary={currentStep !== 'context' ? handlePreviousStep : undefined}
         helper={!isTablet ? draftHelper : undefined}

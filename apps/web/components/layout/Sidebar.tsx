@@ -11,6 +11,7 @@ import {
   Building2,
   ClipboardList,
   HardHat,
+  KeyRound,
   Landmark,
   LayoutGrid,
   LogOut,
@@ -114,12 +115,20 @@ export default function Sidebar() {
       </nav>
 
       <div className="border-t border-white/10 px-2 py-3">
-        <div className="mb-2 flex flex-col items-center gap-1.5 px-1 text-center">
+        <Link
+          href="/conta"
+          className="mb-2 flex flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-center text-white/65 transition-colors hover:bg-white/[0.06] hover:text-white"
+          aria-label="Abrir minha conta"
+        >
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent font-mono text-[11px] font-semibold text-txt">
             {initials(user?.nome ?? '')}
           </div>
           <div className="w-full truncate text-[10px] font-medium text-white/65">{user?.nome ?? 'PrumoQ'}</div>
-        </div>
+          <span className="flex items-center gap-1 text-[9px]">
+            <KeyRound size={12} />
+            Conta
+          </span>
+        </Link>
         <button
           type="button"
           onClick={handleLogout}

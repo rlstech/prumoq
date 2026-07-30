@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerSupabase } from '@/lib/supabase/server';
+import { getConfiguredPwaOrigin, minimumPasswordSchema } from '@/lib/auth/passwords';
 import { revalidatePath } from 'next/cache';
 
 const supabaseAdmin = createClient(
@@ -26,8 +27,9 @@ export async function createUsuario(data: any) {
       throw new Error('Sem permissão para criar usuários');
     }
 
-    if (!data.senha || data.senha.length < 6) {
-      throw new Error('Senha obrigatória e deve ter pelo menos 6 caracteres');
+    const passwordValidation = minimumPasswordSchema.safeParse(data.senha);
+    if (!passwordValidation.success) {
+      throw new Error(passwordValidation.error.issues[0]?.message ?? 'Senha inválida');
     }
 
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -66,6 +68,56 @@ export async function createUsuario(data: any) {
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
+  }
+}
+
+export async function sendPasswordRecovery(usuarioId: string) {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Não autenticado');
+
+    const { data: actor, error: actorError } = await supabaseAdmin
+      .from('usuarios')
+      .select('empresa_id, perfil')
+      .eq('id', user.id)
+      .single();
+    if (actorError || !actor) throw new Error('Não foi possível validar suas permissões');
+    if (actor.perfil !== 'admin' && actor.perfil !== 'gestor') {
+      throw new Error('Sem permissão para recuperar senhas de usuários');
+    }
+
+    const { data: target, error: targetError } = await supabaseAdmin
+      .from('usuarios')
+      .select('empresa_id, ativo')
+      .eq('id', usuarioId)
+      .single();
+    if (targetError || !target || !target.ativo) {
+      throw new Error('Usuário ativo não encontrado');
+    }
+    if (!actor.empresa_id || target.empresa_id !== actor.empresa_id) {
+      throw new Error('Usuário fora do escopo da sua empresa');
+    }
+
+    const { data: authUser, error: authUserError } =
+      await supabaseAdmin.auth.admin.getUserById(usuarioId);
+    const targetEmail = authUser.user?.email;
+    if (authUserError || !targetEmail) {
+      throw new Error('E-mail de autenticação não encontrado');
+    }
+
+    const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
+      targetEmail,
+      { redirectTo: `${getConfiguredPwaOrigin()}/redefinir-senha` },
+    );
+    if (resetError) throw resetError;
+
+    return { success: true };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Não foi possível enviar a recuperação',
+    };
   }
 }
 

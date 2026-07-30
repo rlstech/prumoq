@@ -159,8 +159,24 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 
   // ── usuarios ──────────────────────────────────────────
   if (s.includes('from usuarios') && !s.includes('join')) {
-    const { data } = await supabase.from('usuarios').select('id, nome, cargo, perfil').limit(1);
-    return (data ?? []) as T[];
+    const userId = params[0];
+    if (!s.includes('where id = ?') || typeof userId !== 'string' || !userId) {
+      throw new Error('Consulta de usuário sem o ID autenticado.');
+    }
+
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('id, nome, cargo, perfil, empresa_id')
+      .eq('id', userId)
+      .limit(1);
+
+    if (error) {
+      throw new Error(`Erro ao carregar usuário autenticado: ${error.message}`);
+    }
+    if (!data?.length) {
+      throw new Error('Perfil do usuário autenticado não encontrado.');
+    }
+    return data as T[];
   }
 
   // ── obras ativas (obras list screen) ──────────────────
@@ -516,12 +532,6 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   // ── fotos do FVS ──────────────────────────────────────
   if (s.includes('from verificacao_fotos') && s.includes('verificacao_id in') && s.includes('fvs_planejada_id = ?') && params[0]) {
     const { data } = await supabase.rpc('get_fotos_fvs', { p_fvs_id: params[0] as string });
-    return (data ?? []) as T[];
-  }
-
-  // ── nova verificação: usuario ──────────────────────────
-  if (s.includes('select id, nome, cargo from usuarios limit 1')) {
-    const { data } = await supabase.from('usuarios').select('id, nome, cargo').limit(1);
     return (data ?? []) as T[];
   }
 
