@@ -169,7 +169,7 @@ export default function ObraDetailScreen() {
         ListHeaderComponent={
           <View style={styles.headerContent}>
             <View style={[styles.overviewGrid, isTablet && styles.overviewGridTablet]}>
-              <View style={styles.hero}>
+              <View style={[styles.hero, isTablet && styles.heroTablet]}>
                 <Text style={styles.heroEyebrow}>PRANCHA OPERACIONAL</Text>
                 <View style={styles.heroValueRow}>
                   <Text style={styles.heroValue}>{Math.round(totalProgress)}</Text>
@@ -190,15 +190,21 @@ export default function ObraDetailScreen() {
                 </View>
                 <View style={styles.heroMeta}>
                   <View style={styles.heroMetaItem}>
-                    <MapPin size={15} color={Colors.brandSignature} />
-                    <Text style={styles.heroMetaText} numberOfLines={1}>{location}</Text>
+                    <MapPin size={15} color={Colors.brandSignature} style={styles.heroMetaIcon} />
+                    <View style={styles.heroMetaField}>
+                      <Text style={styles.heroMetaLabel}>LOCALIDADE</Text>
+                      <Text style={styles.heroMetaText} numberOfLines={1}>{location}</Text>
+                    </View>
                   </View>
                   {obra?.eng_responsavel ? (
                     <View style={styles.heroMetaItem}>
-                      <UserRound size={15} color={Colors.brandSignature} />
-                      <Text style={styles.heroMetaText} numberOfLines={1}>
-                        {obra.eng_responsavel}
-                      </Text>
+                      <UserRound size={15} color={Colors.brandSignature} style={styles.heroMetaIcon} />
+                      <View style={styles.heroMetaField}>
+                        <Text style={styles.heroMetaLabel}>ENGENHEIRO RESPONSÁVEL</Text>
+                        <Text style={styles.heroMetaText} numberOfLines={1}>
+                          {obra.eng_responsavel}
+                        </Text>
+                      </View>
                     </View>
                   ) : null}
                 </View>
@@ -206,7 +212,7 @@ export default function ObraDetailScreen() {
 
               <DatumCard
                 tone={kpi.ncs_abertas > 0 ? 'danger' : 'accent'}
-                style={styles.operationCard}
+                style={[styles.operationCard, isTablet && styles.operationCardTablet]}
               >
                 <Text style={styles.operationEyebrow}>CONTROLE DE QUALIDADE</Text>
                 <View style={styles.metricsRow}>
@@ -365,13 +371,12 @@ const styles = StyleSheet.create({
   overviewGrid: { gap: Spacing.md },
   overviewGridTablet: { flexDirection: 'row', alignItems: 'stretch' },
   hero: {
-    flex: 0.9,
-    minWidth: 280,
     borderRadius: Radius.xl,
     backgroundColor: Colors.brand,
     padding: Spacing.xxl,
     gap: Spacing.xs,
   },
+  heroTablet: { flex: 0.9, minWidth: 280 },
   heroEyebrow: { ...Typography.overline, color: Colors.brandSignature },
   heroValueRow: { flexDirection: 'row', alignItems: 'baseline' },
   heroValue: {
@@ -406,9 +411,13 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.16)',
     gap: Spacing.sm,
   },
-  heroMetaItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  heroMetaText: { ...Typography.caption, color: Colors.surface, flex: 1 },
-  operationCard: { flex: 1.35, minWidth: 0 },
+  heroMetaItem: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
+  heroMetaIcon: { marginTop: 1 },
+  heroMetaField: { flex: 1, gap: 1 },
+  heroMetaLabel: { ...Typography.overline, color: Colors.brandSignature },
+  heroMetaText: { ...Typography.caption, color: Colors.surface },
+  operationCard: { minWidth: 0 },
+  operationCardTablet: { flex: 1.35 },
   operationEyebrow: { ...Typography.overline, color: Colors.textTertiary },
   metricsRow: {
     marginTop: Spacing.lg,
