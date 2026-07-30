@@ -21,6 +21,21 @@ export interface VerificationItemSummary {
   naoAplicaveis: number;
 }
 
+export interface VerificationEvidenceSummary {
+  openNonConformities: number;
+  resolvedNonConformities: number;
+  photoCount: number;
+}
+
+export interface VerificationNonConformityLike {
+  verificacao_id: string;
+  status: string;
+}
+
+export interface VerificationPhotoLike {
+  verificacao_id: string;
+}
+
 export function summarizeVerificationItems(items: VerificationItemLike[]): VerificationItemSummary {
   return items.reduce<VerificationItemSummary>((summary, item) => {
     summary.total += 1;
@@ -46,6 +61,26 @@ export function sortVerificationRecords<T extends VerificationRecordLike>(record
 
     return (b.created_at ?? '').localeCompare(a.created_at ?? '');
   });
+}
+
+export function summarizeVerificationEvidence(
+  verificationId: string,
+  nonConformities: VerificationNonConformityLike[],
+  photos: VerificationPhotoLike[],
+): VerificationEvidenceSummary {
+  const verificationNonConformities = nonConformities.filter(
+    nonConformity => nonConformity.verificacao_id === verificationId,
+  );
+
+  return {
+    openNonConformities: verificationNonConformities.filter(
+      nonConformity => nonConformity.status === 'aberta' || nonConformity.status === 'em_correcao',
+    ).length,
+    resolvedNonConformities: verificationNonConformities.filter(
+      nonConformity => nonConformity.status === 'resolvida',
+    ).length,
+    photoCount: photos.filter(photo => photo.verificacao_id === verificationId).length,
+  };
 }
 
 export function sortVerificationItems<T extends OrderedVerificationItemLike>(items: T[]): T[] {

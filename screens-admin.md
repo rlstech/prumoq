@@ -444,7 +444,25 @@ Colunas: Descrição | Serviço / Ambiente | Obra | Prioridade | Responsável | 
   - ≤ 3 dias: badge laranja com data
   - Resolvida: data simples
 - **Status:** badge (Aberta/Em correção/Resolvida)
-- **Ação:** botão "Ver" → modal de detalhe da verificação
+- **Ação:** botão "Ver detalhes" → rota dedicada `/nc/[id]`
+
+### Detalhe da Não Conformidade
+
+**Rota:** `/nc/[id]`
+
+- Página somente leitura protegida por autenticação e RLS
+- Cabeçalho com item, serviço, obra, ambiente, status, prioridade, prazo e responsável
+- Coluna principal:
+  - descrição e solução proposta
+  - galeria de evidências
+  - linha do tempo de abertura, reinspeções e resolução
+  - ocorrências anterior/seguinte
+- Coluna lateral:
+  - contexto da verificação de origem
+  - método e tolerância do item
+  - equipe responsável e programação
+  - dados de auditoria
+- Cada reinspeção mostra inspetor, número da verificação, resultado, observação, foto e NC gerada, quando houver
 
 ---
 

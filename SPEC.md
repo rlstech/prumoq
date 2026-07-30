@@ -114,7 +114,11 @@ O progresso de cada nível é calculado automaticamente:
   conforme e sem NC aberta ou em correção
 - O resultado da verificação é derivado do checklist: qualquer item não conforme
   torna a verificação não conforme; caso contrário, ela é conforme
-- O status cadastral da obra não é alterado automaticamente pelo progresso das FVS
+- O status da obra acompanha automaticamente as FVS dos ambientes ativos:
+  - com pelo menos uma FVS e todas concluídas, a obra passa para **Concluída**
+  - ao adicionar ou reabrir uma FVS pendente em uma obra concluída, ela volta para **Em andamento**
+  - obras **Paralisadas** não são alteradas automaticamente
+  - obras sem FVS mantêm o status cadastral atual
 
 ### RN-06: Foto de verificação
 - Formatos aceitos: JPEG, PNG, HEIC

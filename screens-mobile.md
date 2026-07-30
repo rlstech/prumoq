@@ -29,7 +29,8 @@
   │   │                   └── [fvsId]/
   │   │                       ├── index.tsx     → Histórico FVS
   │   │                       └── verificacao/
-  │   │                           └── nova.tsx  → Nova verificação
+  │   │                           ├── [verificacaoId].tsx → Registro completo
+  │   │                           └── nova.tsx             → Nova verificação
   │   ├── nc/
   │   │   └── index.tsx      → NC abertas
   │   └── perfil/
@@ -146,23 +147,23 @@ WHERE ou.usuario_id = [current_user_id] AND ou.ativo = true
 ### Header
 - Botão voltar + nome da obra + empresa
 
-### Painel de Progresso
-- Card laranja claro com: nome da obra, endereço
-- 3 barras de progresso: FVS totais, Conformes, NC abertas
-- Grid 4 KPIs: Ambientes, FVS planejadas, Concluídas, NC abertas
+### Resumo compacto
+- Uma única superfície branca com percentual e barra de progresso da obra
+- Linha de apoio: FVS concluídas/total, ambientes e NC abertas
+- Engenheiro responsável aparece como contexto secundário quando informado
+- Nome e local da obra permanecem somente no header
 
 ### Filtros
 - Chips horizontais: Todos | Internos | Externos | Com NC
 - Filtragem local (sem nova query)
 
-### Grid de Ambientes (2 colunas)
-Cada card:
-- Linha colorida no topo: azul (interno) | verde (externo)
-- Nome do ambiente
-- Tipo + localização
-- Badge de progresso (X/Y FVS)
-- Barra de progresso
-- Se tem NC aberta: badge vermelho "NC"
+### Lista editorial de Ambientes
+- Registros dentro de uma única superfície, separados por linhas sutis
+- No mobile: nome, tipo/localização, FVS concluídas/total, barra e situação
+- No tablet/PWA: colunas Ambiente, Localização, Progresso e Situação
+- Datum vertical identifica NC, conclusão, andamento ou ausência de serviços
+- NC usa ícone + texto; tipo do ambiente não usa badge
+- Chevron comunica navegação para os serviços
 
 ---
 
@@ -173,16 +174,18 @@ Cada card:
 ### Header
 - Voltar + nome do ambiente + tipo + obra
 
-### Painel Resumo
-- "FVS planejadas" + "Concluídas X/Y"
-- Barra de progresso geral do ambiente
+### Resumo compacto
+- Percentual e barra de progresso geral do ambiente
+- Linha de apoio: concluídas/total, em curso e serviços com atenção
+- Tipo, localização e obra permanecem somente no header
 
-### Lista de Serviços
-Cada item (FlatList):
-- Ícone circular de status (✓ ok | ! nok | → pg | ○ pendente)
-- Nome do serviço + subserviço
-- Data da última verificação (ou "Não iniciado")
-- Badge de status + número de verificações
+### Lista editorial de Serviços
+- Registros dentro de uma única superfície, separados por linhas sutis
+- Ícone semântico compacto + datum vertical de estado
+- Nome do serviço e data da última verificação (ou "Não iniciado")
+- Quantidade de verificações e status em texto, sem badges empilhados
+- NC aberta aparece como alerta separado e prioritário
+- No tablet/PWA: colunas Serviço, Última verificação, Verificações e Situação
 - Clique → Histórico FVS
 
 ---
@@ -203,20 +206,25 @@ Cada item (FlatList):
 - Exibido à direita do título "Histórico"
 - Badge azul com "+ Nova verificação"
 
-### Timeline
-Entrada por verificação (mais recente primeiro):
-- Ponto colorido na linha lateral (ok/nok/pg)
-- Card com fundo `--surface2`:
-  - Data + hora + nome do inspetor
-  - Título "Verificação N" + badge do resultado derivado
-  - Texto de observações gerais
-  - **Se há NC:** card vermelho interno com:
-    - Título do item + descrição
-    - Solução proposta
-    - Se resolvida: badge verde "Resolvida na Verificação N"
-    - Se aberta: prazo + responsável
-  - Miniaturas de fotos (máx 4 exibidas)
-  - Badge "✓ Assinado digitalmente" ou "Sem assinatura"
+### Lista de verificações
+Registros compactos, mais recente primeiro:
+- Card inteiro clicável com linha de datum na cor do resultado
+- Número da verificação em IBM Plex Mono + badge do resultado derivado
+- Data da inspeção + nome do inspetor
+- Indicadores compactos de NC aberta/resolvida, fotos, assinatura e origem offline
+- Chevron comunica navegação; toque abre o registro completo
+- Observações, checklist, detalhes das NCs, fotos e assinatura ficam somente na
+  tela dedicada de registro
+
+### Registro completo
+**Arquivo:** `app/(app)/(tabs)/obras/[id]/ambiente/[ambId]/fvs/[fvsId]/verificacao/[verificacaoId].tsx`
+
+- Tela somente leitura acessada pela lista do histórico
+- Identificação da obra, ambiente, inspetor, equipe e responsável técnico
+- Resumo do checklist e resultado preservado de cada item
+- NCs com descrição, solução, prazo, resolução e fotos
+- Fotos gerais, observações e assinatura digital
+- Voltar retorna ao mesmo histórico da FVS
 
 ---
 
@@ -314,7 +322,7 @@ Para cada item do checklist (da FVS Padrão, revisão atual):
 
 ---
 
-## Tela 8: NC Abertas
+## Tela 8: Não Conformidades
 
 **Arquivo:** `app/(app)/(tabs)/nc/index.tsx`
 
@@ -322,19 +330,33 @@ Para cada item do checklist (da FVS Padrão, revisão atual):
 - "Não Conformidades"
 - Subtítulo: "[n] abertas · [m] resolvidas"
 
-### Filtros
-- Chips: Abertas | Resolvidas | Todas
+### Conteúdo
+- Resumo compacto: ocorrências em acompanhamento, vencidas e previstas para hoje
+- Abas sempre visíveis: Abertas | Resolvidas | Todas
+- Busca por item, descrição, obra, ambiente ou responsável
+- Filtros avançados de prazo e prioridade em `ModalSheet`
+- Lista editorial agrupada por urgência, com linhas densas:
+  - item em NC
+  - obra + ambiente
+  - descrição em uma linha
+  - prazo/status, prioridade e responsável
+- Toque em qualquer registro abre o detalhe; a listagem não expõe ações operacionais
 
-### Seção "Abertas — ação necessária"
-Cards vermelhos por NC:
-- Nome do serviço + item em NC
-- Obra + ambiente
-- Prazo (badge: "Vence hoje" em vermelho, "X dias" em laranja, data normal)
-- Responsável pela correção
-- Botão "Re-inspecionar" → navega para Nova Verificação da FVS correspondente
+### Detalhe da NC
 
-### Seção "Resolvidas recentemente"
-Mesmos cards, opacidade reduzida, badge verde
+**Arquivo:** `app/(app)/(tabs)/nc/[ncId].tsx`
+
+- Resumo de status, prioridade e prazo
+- Problema, solução proposta, responsável e programação
+- Contexto completo: obra, ambiente, serviço, item, método, tolerância, verificação, inspetor e equipe
+- Galeria de evidências da abertura
+- Linha do tempo com abertura, reinspeções aprovadas/reprovadas e resolução
+- Evidências e observações de cada reinspeção
+- Encerramento e foto final, quando existentes
+- Navegação entre ocorrências anterior/seguinte
+- Metadados de auditoria
+- Somente leitura
+- Ação "Reinspecionar" disponível apenas para NC aberta/em correção e somente nesta tela
 
 ---
 
@@ -388,7 +410,7 @@ Wrapper de react-native-signature-canvas com toolbar PrumoQ.
 Banner condicional de status offline/sincronizando.
 
 ### `VerificationTimeline`
-Renderiza a timeline de verificações com NC inline.
+Renderiza a lista compacta de verificações e navega para o registro completo.
 
 ---
 

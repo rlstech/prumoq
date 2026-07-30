@@ -5,12 +5,10 @@ import {
   CheckCircle2,
   ChevronRight,
   Layers3,
-  MapPin,
   UserRound,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
-  FlatList,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -20,14 +18,12 @@ import {
 } from 'react-native';
 import { AppHeader } from '../../../../../components/AppHeader';
 import {
-  Badge,
   Chip,
-  DatumCard,
-  EmptyState,
-  MetricBlock,
-  Progress,
-  SectionTitle,
   type DatumTone,
+  EmptyState,
+  ListSurface,
+  OperationalRow,
+  Progress,
 } from '../../../../../components/ui';
 import {
   Breakpoints,
@@ -81,7 +77,6 @@ export default function ObraDetailScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isTablet = width >= Breakpoints.tablet;
-  const columns = isTablet ? 2 : 1;
   const [filter, setFilter] = useState<FilterKey>('todos');
 
   const { data: obraRows } = useQuery<ObraRow>(
@@ -144,7 +139,7 @@ export default function ObraDetailScreen() {
     return ambientes;
   }, [ambientes, filter]);
 
-  const totalProgress = kpi.progresso_percentual ?? 0;
+  const progress = kpi.progresso_percentual ?? 0;
   const location = obra?.municipio
     ? `${obra.municipio}${obra.uf ? `, ${obra.uf}` : ''}`
     : 'Local não informado';
@@ -158,330 +153,285 @@ export default function ObraDetailScreen() {
         onBack={() => goBack('/(app)/(tabs)/obras')}
       />
 
-      <FlatList
-        key={columns}
-        data={filtered}
-        numColumns={columns}
-        keyExtractor={item => item.id}
+      <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.list}
-        columnWrapperStyle={columns > 1 ? styles.columns : undefined}
-        ListHeaderComponent={
-          <View style={styles.headerContent}>
-            <View style={[styles.overviewGrid, isTablet && styles.overviewGridTablet]}>
-              <View style={[styles.hero, isTablet && styles.heroTablet]}>
-                <Text style={styles.heroEyebrow}>PRANCHA OPERACIONAL</Text>
-                <View style={styles.heroValueRow}>
-                  <Text style={styles.heroValue}>{Math.round(totalProgress)}</Text>
-                  <Text style={styles.heroSuffix}>%</Text>
-                </View>
-                <Text style={styles.heroCaption}>avanço ponderado da obra</Text>
-                <View
-                  accessibilityRole="progressbar"
-                  accessibilityValue={{ min: 0, max: 100, now: Math.round(totalProgress) }}
-                  style={styles.heroProgressTrack}
-                >
-                  <View
-                    style={[
-                      styles.heroProgressFill,
-                      { width: `${Math.min(Math.max(totalProgress, 0), 100)}%` as `${number}%` },
-                    ]}
-                  />
-                </View>
-                <View style={styles.heroMeta}>
-                  <View style={styles.heroMetaItem}>
-                    <MapPin size={15} color={Colors.brandSignature} style={styles.heroMetaIcon} />
-                    <View style={styles.heroMetaField}>
-                      <Text style={styles.heroMetaLabel}>LOCALIDADE</Text>
-                      <Text style={styles.heroMetaText} numberOfLines={1}>{location}</Text>
-                    </View>
-                  </View>
-                  {obra?.eng_responsavel ? (
-                    <View style={styles.heroMetaItem}>
-                      <UserRound size={15} color={Colors.brandSignature} style={styles.heroMetaIcon} />
-                      <View style={styles.heroMetaField}>
-                        <Text style={styles.heroMetaLabel}>ENGENHEIRO RESPONSÁVEL</Text>
-                        <Text style={styles.heroMetaText} numberOfLines={1}>
-                          {obra.eng_responsavel}
-                        </Text>
-                      </View>
-                    </View>
-                  ) : null}
-                </View>
-              </View>
-
-              <DatumCard
-                tone={kpi.ncs_abertas > 0 ? 'danger' : 'accent'}
-                style={[styles.operationCard, isTablet && styles.operationCardTablet]}
-              >
-                <Text style={styles.operationEyebrow}>CONTROLE DE QUALIDADE</Text>
-                <View style={styles.metricsRow}>
-                  <MetricBlock label="AMBIENTES" value={kpi.total_ambientes} />
-                  <View style={styles.metricDivider} />
-                  <MetricBlock label="FVS PLANEJADAS" value={kpi.total_fvs} />
-                  <View style={styles.metricDivider} />
-                  <MetricBlock
-                    label="CONCLUÍDAS"
-                    value={kpi.fvs_concluidas}
-                    tone="success"
-                  />
-                </View>
-                <View style={[
-                  styles.ncSummary,
-                  kpi.ncs_abertas > 0 ? styles.ncSummaryDanger : styles.ncSummaryOk,
-                ]}>
-                  {kpi.ncs_abertas > 0 ? (
-                    <AlertTriangle size={18} color={Colors.nok} />
-                  ) : (
-                    <CheckCircle2 size={18} color={Colors.ok} />
-                  )}
-                  <View style={styles.ncSummaryText}>
-                    <Text style={[
-                      styles.ncSummaryTitle,
-                      { color: kpi.ncs_abertas > 0 ? Colors.nok : Colors.ok },
-                    ]}>
-                      {kpi.ncs_abertas > 0
-                        ? `${kpi.ncs_abertas} NC ${kpi.ncs_abertas === 1 ? 'aberta' : 'abertas'}`
-                        : 'Nenhuma NC aberta'}
-                    </Text>
-                    <Text style={styles.ncSummaryCaption}>
-                      {kpi.ncs_abertas > 0
-                        ? 'Priorize os ambientes sinalizados abaixo.'
-                        : 'A obra está sem pendências de conformidade.'}
-                    </Text>
-                  </View>
-                </View>
-              </DatumCard>
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.summary}>
+          <View style={styles.summaryHeading}>
+            <Text style={styles.summaryTitle}>Progresso da obra</Text>
+            <View style={styles.summaryValue}>
+              <Text style={styles.summaryPercent}>{Math.round(progress)}</Text>
+              <Text style={styles.summarySuffix}>%</Text>
             </View>
-
-            <View style={styles.sectionHeading}>
-              <SectionTitle
-                eyebrow="PLANO DE INSPEÇÃO"
-                title="Ambientes"
-                description={`${filtered.length} de ${ambientes.length} ambientes exibidos`}
-              />
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filters}
-            >
-              {FILTERS.map(option => (
-                <Chip
-                  key={option.key}
-                  label={option.label}
-                  selected={filter === option.key}
-                  onPress={() => setFilter(option.key)}
-                  Icon={option.key === 'com_nc' ? AlertTriangle : undefined}
-                />
-              ))}
-            </ScrollView>
           </View>
-        }
-        renderItem={({ item }) => {
-          const progress = item.progresso_percentual ?? 0;
-          const hasNc = item.ncs_abertas > 0;
-          const noFvs = item.total_fvs === 0;
-          const isComplete = !noFvs && item.fvs_concluidas >= item.total_fvs;
-          const tone: DatumTone = hasNc ? 'danger' : isComplete ? 'success' : noFvs ? 'neutral' : 'info';
-          const progressTone = hasNc ? 'danger' : isComplete ? 'success' : noFvs ? 'neutral' : 'info';
-          const stateLabel = hasNc
-            ? `${item.ncs_abertas} NC ${item.ncs_abertas === 1 ? 'aberta' : 'abertas'}`
-            : isComplete
-              ? 'Concluído'
-              : noFvs
-                ? 'Sem FVS'
-                : 'Em curso';
 
-          return (
-            <DatumCard
-              tone={tone}
-              style={styles.ambienteCard}
-              accessibilityLabel={`Abrir ambiente ${item.nome}`}
-              onPress={() => router.push(`/obras/${id}/ambiente/${item.id}` as never)}
-            >
-              <View style={styles.ambienteTop}>
-                <View style={styles.ambienteIdentity}>
-                  <Text style={styles.ambienteName} numberOfLines={2}>{item.nome}</Text>
-                  <View style={styles.ambienteMeta}>
-                    <Badge
-                      label={item.tipo === 'interno' ? 'Interno' : 'Externo'}
-                      tone={item.tipo === 'interno' ? 'info' : 'success'}
-                      size="sm"
-                    />
-                    {item.localizacao ? (
-                      <Text style={styles.ambienteLocation} numberOfLines={1}>
-                        {item.localizacao}
-                      </Text>
-                    ) : null}
-                  </View>
-                </View>
-                <View style={styles.ambienteProgressValue}>
-                  <Text style={styles.ambientePercent}>{Math.round(progress)}</Text>
-                  <Text style={styles.ambientePercentSuffix}>%</Text>
-                </View>
-              </View>
-
-              <Progress value={progress} tone={progressTone} height={6} />
-
-              <View style={styles.ambienteFooter}>
-                <View style={styles.ambienteState}>
-                  {hasNc ? <AlertTriangle size={14} color={Colors.nok} /> : null}
-                  <Text style={[
-                    styles.ambienteStateText,
-                    { color: hasNc ? Colors.nok : isComplete ? Colors.ok : Colors.textSecondary },
-                  ]}>
-                    {stateLabel}
-                  </Text>
-                </View>
-                <View style={styles.ambienteCount}>
-                  <Text style={styles.ambienteCountValue}>{item.fvs_concluidas}</Text>
-                  <Text style={styles.ambienteCountText}> / {item.total_fvs} FVS</Text>
-                  <ChevronRight size={18} color={Colors.textTertiary} />
-                </View>
-              </View>
-            </DatumCard>
-          );
-        }}
-        ListEmptyComponent={
-          <EmptyState
-            Icon={Layers3}
-            title="Nenhum ambiente neste filtro"
-            description="Selecione outro filtro para visualizar os ambientes da obra."
+          <Progress
+            value={progress}
+            tone={kpi.ncs_abertas > 0 ? 'danger' : progress === 100 ? 'success' : 'brand'}
+            height={5}
           />
-        }
-      />
+
+          <View style={styles.summaryMeta}>
+            <Text style={styles.summaryMetaText}>
+              <Text style={styles.summaryMetaValue}>{kpi.fvs_concluidas}/{kpi.total_fvs}</Text>
+              {' FVS concluídas'}
+            </Text>
+            <View style={styles.metaDot} />
+            <Text style={styles.summaryMetaText}>
+              {kpi.total_ambientes} {kpi.total_ambientes === 1 ? 'ambiente' : 'ambientes'}
+            </Text>
+            <View style={styles.metaDot} />
+            <Text style={[
+              styles.summaryMetaText,
+              kpi.ncs_abertas > 0 && styles.summaryMetaDanger,
+            ]}>
+              {kpi.ncs_abertas} NC {kpi.ncs_abertas === 1 ? 'aberta' : 'abertas'}
+            </Text>
+          </View>
+
+          {obra?.eng_responsavel ? (
+            <View style={styles.engineer}>
+              <UserRound size={14} color={Colors.textTertiary} />
+              <Text style={styles.engineerText} numberOfLines={1}>
+                {obra.eng_responsavel}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.listHeading}>
+          <Text style={styles.listTitle}>Ambientes</Text>
+          <Text style={styles.listCount}>
+            {filtered.length}{filter === 'todos' ? '' : ` de ${ambientes.length}`}
+          </Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filters}
+        >
+          {FILTERS.map(option => (
+            <Chip
+              key={option.key}
+              label={option.label}
+              selected={filter === option.key}
+              onPress={() => setFilter(option.key)}
+              Icon={option.key === 'com_nc' ? AlertTriangle : undefined}
+            />
+          ))}
+        </ScrollView>
+
+        {filtered.length > 0 ? (
+          <ListSurface>
+            {filtered.map((item, index) => {
+              const itemProgress = item.progresso_percentual ?? 0;
+              const hasNc = item.ncs_abertas > 0;
+              const noFvs = item.total_fvs === 0;
+              const isComplete = !noFvs && item.fvs_concluidas >= item.total_fvs;
+              const tone: DatumTone = hasNc
+                ? 'danger'
+                : isComplete
+                  ? 'success'
+                  : noFvs
+                    ? 'neutral'
+                    : 'info';
+              const stateLabel = hasNc
+                ? `${item.ncs_abertas} NC ${item.ncs_abertas === 1 ? 'aberta' : 'abertas'}`
+                : isComplete
+                  ? 'Concluído'
+                  : noFvs
+                    ? 'Sem serviços planejados'
+                    : 'Em curso';
+              const stateColor = hasNc
+                ? Colors.nok
+                : isComplete
+                  ? Colors.ok
+                  : noFvs
+                    ? Colors.textTertiary
+                    : Colors.info;
+
+              return (
+                <OperationalRow
+                  key={item.id}
+                  tone={tone}
+                  last={index === filtered.length - 1}
+                  accessibilityLabel={`Abrir ambiente ${item.nome}, ${stateLabel}`}
+                  onPress={() => router.push(`/obras/${id}/ambiente/${item.id}` as never)}
+                  trailing={<ChevronRight size={19} color={Colors.textTertiary} />}
+                >
+                  <View style={[styles.rowContent, isTablet && styles.rowContentTablet]}>
+                    <View style={styles.identity}>
+                      <Text style={styles.environmentName} numberOfLines={2}>
+                        {item.nome}
+                      </Text>
+                      <Text style={styles.environmentMeta} numberOfLines={1}>
+                        {item.tipo === 'interno' ? 'Interno' : 'Externo'}
+                        {item.localizacao ? ` · ${item.localizacao}` : ''}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.progressColumn, isTablet && styles.progressColumnTablet]}>
+                      <View style={styles.progressHeading}>
+                        <Text style={styles.fvsCount}>
+                          {item.fvs_concluidas}/{item.total_fvs}
+                        </Text>
+                        <Text style={styles.fvsLabel}> FVS</Text>
+                        <Text style={styles.progressLabel}>{Math.round(itemProgress)}%</Text>
+                      </View>
+                      <Progress
+                        value={itemProgress}
+                        tone={hasNc ? 'danger' : isComplete ? 'success' : noFvs ? 'neutral' : 'info'}
+                        height={4}
+                      />
+                    </View>
+
+                    <View style={[styles.state, isTablet && styles.stateTablet]}>
+                      {hasNc ? (
+                        <AlertTriangle size={14} color={Colors.nok} />
+                      ) : isComplete ? (
+                        <CheckCircle2 size={14} color={Colors.ok} />
+                      ) : null}
+                      <Text style={[styles.stateText, { color: stateColor }]} numberOfLines={1}>
+                        {stateLabel}
+                      </Text>
+                    </View>
+                  </View>
+                </OperationalRow>
+              );
+            })}
+          </ListSurface>
+        ) : (
+          <View style={styles.emptySurface}>
+            <EmptyState
+              Icon={Layers3}
+              title="Nenhum ambiente neste filtro"
+              description="Selecione outro filtro para visualizar os ambientes da obra."
+            />
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  list: {
+  content: {
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
     padding: Spacing.lg,
-    gap: Spacing.md,
     paddingBottom: 104,
-  },
-  columns: { gap: Spacing.md },
-  headerContent: { gap: Spacing.xxl, marginBottom: Spacing.xs },
-  overviewGrid: { gap: Spacing.md },
-  overviewGridTablet: { flexDirection: 'row', alignItems: 'stretch' },
-  hero: {
-    borderRadius: Radius.xl,
-    backgroundColor: Colors.brand,
-    padding: Spacing.xxl,
-    gap: Spacing.xs,
-  },
-  heroTablet: { flex: 0.9, minWidth: 280 },
-  heroEyebrow: { ...Typography.overline, color: Colors.brandSignature },
-  heroValueRow: { flexDirection: 'row', alignItems: 'baseline' },
-  heroValue: {
-    color: Colors.surface,
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: 48,
-    lineHeight: 54,
-    letterSpacing: -1.8,
-  },
-  heroSuffix: {
-    color: Colors.brandSignature,
-    fontFamily: FontFamily.mono,
-    fontSize: FontSizes.lg,
-  },
-  heroCaption: { ...Typography.caption, color: Colors.surface, opacity: 0.72 },
-  heroProgressTrack: {
-    height: 8,
-    marginTop: Spacing.xs,
-    overflow: 'hidden',
-    borderRadius: Radius.full,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-  },
-  heroProgressFill: {
-    height: '100%',
-    borderRadius: Radius.full,
-    backgroundColor: Colors.brandSignature,
-  },
-  heroMeta: {
-    marginTop: Spacing.md,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.16)',
-    gap: Spacing.sm,
-  },
-  heroMetaItem: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
-  heroMetaIcon: { marginTop: 1 },
-  heroMetaField: { flex: 1, gap: 1 },
-  heroMetaLabel: { ...Typography.overline, color: Colors.brandSignature },
-  heroMetaText: { ...Typography.caption, color: Colors.surface },
-  operationCard: { minWidth: 0 },
-  operationCardTablet: { flex: 1.35 },
-  operationEyebrow: { ...Typography.overline, color: Colors.textTertiary },
-  metricsRow: {
-    marginTop: Spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: Spacing.lg,
   },
-  metricDivider: { width: 1, height: 48, backgroundColor: Colors.border },
-  ncSummary: {
-    marginTop: Spacing.lg,
-    borderRadius: Radius.md,
+  summary: {
+    borderRadius: Radius.lg,
     borderWidth: 1,
-    padding: Spacing.md,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    padding: Spacing.lg,
+    gap: Spacing.md,
   },
-  ncSummaryDanger: { backgroundColor: Colors.nokBg, borderColor: Colors.nok },
-  ncSummaryOk: { backgroundColor: Colors.okBg, borderColor: Colors.ok },
-  ncSummaryText: { flex: 1, gap: 2 },
-  ncSummaryTitle: { ...Typography.label },
-  ncSummaryCaption: { ...Typography.caption, color: Colors.textSecondary },
-  sectionHeading: { paddingTop: Spacing.sm },
-  filters: { gap: Spacing.sm, paddingBottom: Spacing.xs },
-  ambienteCard: { flex: 1 },
-  ambienteTop: {
+  summaryHeading: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
     gap: Spacing.md,
   },
-  ambienteIdentity: { flex: 1, gap: Spacing.sm },
-  ambienteName: { ...Typography.heading, color: Colors.text },
-  ambienteMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  ambienteLocation: { ...Typography.caption, color: Colors.textSecondary, flex: 1 },
-  ambienteProgressValue: { flexDirection: 'row', alignItems: 'baseline' },
-  ambientePercent: {
+  summaryTitle: { ...Typography.label, color: Colors.text },
+  summaryValue: { flexDirection: 'row', alignItems: 'baseline' },
+  summaryPercent: {
     fontFamily: FontFamily.monoSemibold,
     fontSize: FontSizes.xxl,
-    lineHeight: 34,
+    lineHeight: 30,
     color: Colors.brand,
   },
-  ambientePercentSuffix: {
+  summarySuffix: {
     fontFamily: FontFamily.mono,
-    fontSize: FontSizes.tiny,
+    fontSize: FontSizes.xs,
     color: Colors.brand,
   },
-  ambienteFooter: {
-    marginTop: Spacing.lg,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
+  summaryMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  summaryMetaText: { ...Typography.caption, color: Colors.textSecondary },
+  summaryMetaValue: { fontFamily: FontFamily.monoSemibold, color: Colors.text },
+  summaryMetaDanger: { color: Colors.nok, fontFamily: FontFamily.medium },
+  metaDot: {
+    width: 3,
+    height: 3,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.borderNormal,
+  },
+  engineer: {
+    paddingTop: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 6,
+  },
+  engineerText: { ...Typography.caption, color: Colors.textSecondary, flex: 1 },
+  listHeading: {
+    marginTop: Spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'baseline',
     gap: Spacing.sm,
   },
-  ambienteState: { flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1 },
-  ambienteStateText: { ...Typography.caption, fontFamily: FontFamily.medium },
-  ambienteCount: { flexDirection: 'row', alignItems: 'center' },
-  ambienteCountValue: {
+  listTitle: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.xl,
+    lineHeight: 28,
+    color: Colors.text,
+  },
+  listCount: {
+    fontFamily: FontFamily.mono,
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+  },
+  filters: { gap: Spacing.sm, paddingRight: Spacing.lg },
+  rowContent: { gap: Spacing.md },
+  rowContentTablet: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xxl,
+  },
+  identity: { flex: 1, minWidth: 0, gap: 3 },
+  environmentName: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.md,
+    lineHeight: 22,
+    color: Colors.text,
+  },
+  environmentMeta: { ...Typography.caption, color: Colors.textSecondary },
+  progressColumn: { gap: 6 },
+  progressColumnTablet: { width: 230 },
+  progressHeading: { flexDirection: 'row', alignItems: 'baseline' },
+  fvsCount: {
     fontFamily: FontFamily.monoSemibold,
     fontSize: FontSizes.sm,
     color: Colors.text,
   },
-  ambienteCountText: { ...Typography.caption, color: Colors.textSecondary },
+  fvsLabel: { ...Typography.caption, color: Colors.textSecondary },
+  progressLabel: {
+    marginLeft: 'auto',
+    fontFamily: FontFamily.mono,
+    fontSize: FontSizes.tiny,
+    color: Colors.textTertiary,
+  },
+  state: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  stateTablet: { width: 160 },
+  stateText: { ...Typography.caption, fontFamily: FontFamily.medium, flexShrink: 1 },
+  emptySurface: {
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
 });

@@ -381,6 +381,16 @@ bucket_definitions:
             JOIN obra_usuarios ou ON a.obra_id = ou.obra_id
             WHERE ou.usuario_id = :usuario_id AND ou.ativo = true
           )
+      - table: nc_reinspecoes
+        where: >
+          nc_id IN (
+            SELECT nc.id FROM nao_conformidades nc
+            JOIN verificacoes v ON nc.verificacao_id = v.id
+            JOIN fvs_planejadas fp ON v.fvs_planejada_id = fp.id
+            JOIN ambientes a ON fp.ambiente_id = a.id
+            JOIN obra_usuarios ou ON a.obra_id = ou.obra_id
+            WHERE ou.usuario_id = :usuario_id AND ou.ativo = true
+          )
 
   # Conclusões e reaberturas das FVS acessíveis
   ciclo_de_vida_das_fvs:

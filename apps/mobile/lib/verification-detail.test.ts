@@ -7,6 +7,7 @@ import {
   resolveStoredMediaUri,
   sortVerificationItems,
   sortVerificationRecords,
+  summarizeVerificationEvidence,
   summarizeVerificationItems,
   verificationDetailPath,
 } from './verification-detail';
@@ -107,4 +108,29 @@ test('registro legado sem itens produz resumo vazio', () => {
     naoConformes: 0,
     naoAplicaveis: 0,
   });
+});
+
+test('resume os indicadores compactos de cada verificação', () => {
+  assert.deepEqual(
+    summarizeVerificationEvidence(
+      'verificacao-1',
+      [
+        { verificacao_id: 'verificacao-1', status: 'aberta' },
+        { verificacao_id: 'verificacao-1', status: 'em_correcao' },
+        { verificacao_id: 'verificacao-1', status: 'resolvida' },
+        { verificacao_id: 'verificacao-1', status: 'cancelada' },
+        { verificacao_id: 'verificacao-2', status: 'aberta' },
+      ],
+      [
+        { verificacao_id: 'verificacao-1' },
+        { verificacao_id: 'verificacao-1' },
+        { verificacao_id: 'verificacao-2' },
+      ],
+    ),
+    {
+      openNonConformities: 2,
+      resolvedNonConformities: 1,
+      photoCount: 2,
+    },
+  );
 });

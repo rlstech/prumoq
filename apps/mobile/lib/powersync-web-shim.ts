@@ -284,6 +284,177 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
     return filterByObraId((data ?? []) as T[], 'obra_id' as keyof T, ids).slice(0, 3);
   }
 
+  // ── detalhe completo da NC ────────────────────────────
+  if (
+    s.includes('from nao_conformidades n')
+    && s.includes('vi.metodo_verif as item_metodo')
+    && s.includes('where n.id = ?')
+    && params[0]
+  ) {
+    const ncId = params[0] as string;
+    const { data: nc, error: ncError } = await supabase
+      .from('nao_conformidades')
+      .select('*')
+      .eq('id', ncId)
+      .maybeSingle();
+    if (ncError) throw new Error(`Erro ao carregar a não conformidade: ${ncError.message}`);
+    if (!nc) return [];
+
+    const [{ data: item, error: itemError }, { data: verification, error: verificationError }] = await Promise.all([
+      supabase
+        .from('verificacao_itens')
+        .select('id, titulo, metodo_verif, tolerancia, resultado')
+        .eq('id', nc.verificacao_item_id)
+        .maybeSingle(),
+      supabase
+        .from('verificacoes')
+        .select('id, fvs_planejada_id, numero_verif, data_verif, inspetor_id, equipe_id')
+        .eq('id', nc.verificacao_id)
+        .maybeSingle(),
+    ]);
+    if (itemError) throw new Error(`Erro ao carregar o item da NC: ${itemError.message}`);
+    if (verificationError) throw new Error(`Erro ao carregar a verificação da NC: ${verificationError.message}`);
+    if (!item || !verification) return [];
+
+    const { data: plannedFvs, error: fvsError } = await supabase
+      .from('fvs_planejadas')
+      .select('id, ambiente_id, subservico')
+      .eq('id', verification.fvs_planejada_id)
+      .maybeSingle();
+    if (fvsError) throw new Error(`Erro ao carregar o serviço da NC: ${fvsError.message}`);
+    if (!plannedFvs) return [];
+
+    const { data: environment, error: environmentError } = await supabase
+      .from('ambientes')
+      .select('id, obra_id, nome')
+      .eq('id', plannedFvs.ambiente_id)
+      .maybeSingle();
+    if (environmentError) throw new Error(`Erro ao carregar o ambiente da NC: ${environmentError.message}`);
+    if (!environment) return [];
+
+    const [{ data: work, error: workError }, allowedWorkIds] = await Promise.all([
+      supabase
+        .from('obras')
+        .select('id, nome')
+        .eq('id', environment.obra_id)
+        .maybeSingle(),
+      getAllowedObraIds(),
+    ]);
+    if (workError) throw new Error(`Erro ao carregar a obra da NC: ${workError.message}`);
+    if (!work || (allowedWorkIds !== null && !allowedWorkIds.includes(work.id))) return [];
+
+    const userPromise = verification.inspetor_id
+      ? supabase
+        .from('usuarios')
+        .select('nome, cargo')
+        .eq('id', verification.inspetor_id)
+        .maybeSingle()
+      : Promise.resolve({ data: null, error: null });
+    const executionTeamPromise = verification.equipe_id
+      ? supabase
+        .from('equipes')
+        .select('nome')
+        .eq('id', verification.equipe_id)
+        .maybeSingle()
+      : Promise.resolve({ data: null, error: null });
+    const responsibleTeamPromise = nc.responsavel_id
+      ? supabase
+        .from('equipes')
+        .select('nome')
+        .eq('id', nc.responsavel_id)
+        .maybeSingle()
+      : Promise.resolve({ data: null, error: null });
+    const [
+      { data: inspector, error: inspectorError },
+      { data: executionTeam, error: executionTeamError },
+      { data: responsibleTeam, error: responsibleTeamError },
+    ] = await Promise.all([userPromise, executionTeamPromise, responsibleTeamPromise]);
+    if (inspectorError) throw new Error(`Erro ao carregar o inspetor da NC: ${inspectorError.message}`);
+    if (executionTeamError) throw new Error(`Erro ao carregar a equipe da verificação: ${executionTeamError.message}`);
+    if (responsibleTeamError) throw new Error(`Erro ao carregar o responsável da NC: ${responsibleTeamError.message}`);
+
+    return [{
+      ...nc,
+      item_titulo: item.titulo,
+      item_metodo: item.metodo_verif,
+      item_tolerancia: item.tolerancia,
+      item_resultado: item.resultado,
+      numero_verif: verification.numero_verif,
+      data_verif: verification.data_verif,
+      inspetor_nome: inspector?.nome ?? null,
+      inspetor_cargo: inspector?.cargo ?? null,
+      equipe_nome: executionTeam?.nome ?? null,
+      responsavel_nome: responsibleTeam?.nome ?? null,
+      fvs_planejada_id: plannedFvs.id,
+      subservico: plannedFvs.subservico,
+      ambiente_id: environment.id,
+      ambiente_nome: environment.nome,
+      obra_id: work.id,
+      obra_nome: work.nome,
+    }] as T[];
+  }
+
+  // ── evidências de uma NC ──────────────────────────────
+  if (
+    s.includes('from nc_fotos nf')
+    && s.includes('where nf.nc_id = ?')
+    && !s.includes('join nao_conformidades')
+    && params[0]
+  ) {
+    const { data, error } = await supabase
+      .from('nc_fotos')
+      .select('id, nc_id, r2_key, r2_thumb_key, nome_arquivo, ordem')
+      .eq('nc_id', params[0] as string)
+      .order('ordem');
+    if (error) throw new Error(`Erro ao carregar as evidências da NC: ${error.message}`);
+    return (data ?? []) as T[];
+  }
+
+  // ── histórico de reinspeções de uma NC ────────────────
+  if (s.includes('from nc_reinspecoes nr') && s.includes('where nr.nc_id = ?') && params[0]) {
+    const { data: reinspectionRows, error } = await supabase
+      .from('nc_reinspecoes')
+      .select('id, nc_id, verificacao_id, inspetor_id, resultado, observacao, foto_url, nova_nc_id, created_at')
+      .eq('nc_id', params[0] as string)
+      .order('created_at');
+    if (error) throw new Error(`Erro ao carregar as reinspeções da NC: ${error.message}`);
+    if (!reinspectionRows?.length) return [];
+
+    const inspectorIds = [...new Set(reinspectionRows.map(row => row.inspetor_id))];
+    const verificationIds = [...new Set(reinspectionRows.map(row => row.verificacao_id))];
+    const [{ data: inspectors }, { data: verifications }] = await Promise.all([
+      supabase.from('usuarios').select('id, nome').in('id', inspectorIds),
+      supabase.from('verificacoes').select('id, numero_verif').in('id', verificationIds),
+    ]);
+    const inspectorsById = new Map((inspectors ?? []).map(row => [row.id, row.nome]));
+    const verificationsById = new Map((verifications ?? []).map(row => [row.id, row.numero_verif]));
+
+    return reinspectionRows.map(row => ({
+      ...row,
+      inspetor_nome: inspectorsById.get(row.inspetor_id) ?? null,
+      numero_verif: verificationsById.get(row.verificacao_id) ?? null,
+    })) as T[];
+  }
+
+  // ── encadeamento de ocorrências da NC ─────────────────
+  if (
+    s.includes('from nao_conformidades n')
+    && s.includes('select n.id, n.numero_ocorrencia, n.status, n.descricao')
+    && !s.includes('join')
+    && params[0]
+  ) {
+    const baseQuery = supabase
+      .from('nao_conformidades')
+      .select('id, numero_ocorrencia, status, descricao');
+    const { data, error } = s.includes('where n.nc_anterior_id = ?')
+      ? await baseQuery
+        .eq('nc_anterior_id', params[0] as string)
+        .order('numero_ocorrencia')
+      : await baseQuery.eq('id', params[0] as string);
+    if (error) throw new Error(`Erro ao carregar as ocorrências relacionadas: ${error.message}`);
+    return (data ?? []) as T[];
+  }
+
   // ── lista NCs com joins (tela NC) ─────────────────────
   if (
     s.includes('from nao_conformidades n')

@@ -55,6 +55,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="nc/[ncId]"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="perfil/index"
         options={{
           title: 'Perfil',

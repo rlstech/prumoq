@@ -5,20 +5,14 @@ import {
   CalendarClock,
   CalendarX,
   CheckCircle2,
-  CircleDot,
+  ChevronRight,
   Clock3,
-  HardHat,
-  History,
-  MapPin,
-  RotateCcw,
   Search,
   SlidersHorizontal,
-  UserRound,
   X,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  FlatList,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -32,20 +26,17 @@ import {
   Badge,
   type BadgeTone,
   Button,
-  Chip,
-  DatumCard,
-  type DatumTone,
   EmptyState,
   ErrorBanner,
-  MetricBlock,
-  SectionTitle,
+  ListSurface,
+  ModalSheet,
+  OperationalRow,
   SegmentedControl,
   Skeleton,
+  type DatumTone,
 } from '../../../../components/ui';
-import { useResponsiveLayout } from '../../../../hooks/useResponsiveLayout';
 import {
   filterAndSortNcs,
-  formatNcDate,
   getNcTiming,
   groupNcs,
   isActionableNc,
@@ -109,33 +100,38 @@ const TAB_OPTIONS = [
   { value: 'todas' as const, label: 'Todas' },
 ];
 
-const URGENCY_OPTIONS: { value: NcUrgency; label: string; Icon?: typeof Clock3 }[] = [
-  { value: 'all', label: 'Todos os prazos' },
-  { value: 'overdue', label: 'Vencidas', Icon: AlertTriangle },
-  { value: 'today', label: 'Hoje', Icon: Clock3 },
-  { value: 'soon', label: 'Próx. 3 dias', Icon: CalendarClock },
-  { value: 'scheduled', label: 'Programadas', Icon: CalendarClock },
-  { value: 'unscheduled', label: 'Sem prazo', Icon: CalendarX },
+const URGENCY_OPTIONS: {
+  value: NcUrgency;
+  label: string;
+  description: string;
+  Icon: typeof Clock3;
+}[] = [
+  { value: 'all', label: 'Todos os prazos', description: 'Sem restrição de prazo', Icon: CalendarClock },
+  { value: 'overdue', label: 'Vencidas', description: 'Prazo de correção ultrapassado', Icon: AlertTriangle },
+  { value: 'today', label: 'Vencem hoje', description: 'Ação necessária hoje', Icon: Clock3 },
+  { value: 'soon', label: 'Próximos 3 dias', description: 'Prazos mais próximos', Icon: CalendarClock },
+  { value: 'scheduled', label: 'Programadas', description: 'Prazo após os próximos 3 dias', Icon: CalendarClock },
+  { value: 'unscheduled', label: 'Sem prazo', description: 'Ainda precisam de programação', Icon: CalendarX },
 ];
 
 const PRIORITY_OPTIONS: { value: NcPriority; label: string }[] = [
-  { value: 'all', label: 'Toda prioridade' },
+  { value: 'all', label: 'Todas' },
   { value: 'alta', label: 'Alta' },
   { value: 'media', label: 'Média' },
   { value: 'baixa', label: 'Baixa' },
 ];
 
 const PRIORITY_META: Record<string, { label: string; tone: BadgeTone }> = {
-  alta: { label: 'Prioridade alta', tone: 'danger' },
-  media: { label: 'Prioridade média', tone: 'warning' },
-  baixa: { label: 'Prioridade baixa', tone: 'neutral' },
+  alta: { label: 'Alta', tone: 'danger' },
+  media: { label: 'Média', tone: 'warning' },
+  baixa: { label: 'Baixa', tone: 'neutral' },
 };
 
-const STATUS_META: Record<string, { label: string; tone: BadgeTone; Icon: typeof CircleDot }> = {
-  aberta: { label: 'Aberta', tone: 'danger', Icon: AlertTriangle },
-  em_correcao: { label: 'Em correção', tone: 'info', Icon: Clock3 },
-  resolvida: { label: 'Resolvida', tone: 'success', Icon: CheckCircle2 },
-  encerrada_sem_resolucao: { label: 'Encerrada sem resolução', tone: 'neutral', Icon: History },
+const STATUS_META: Record<string, { label: string; tone: BadgeTone }> = {
+  aberta: { label: 'Aberta', tone: 'danger' },
+  em_correcao: { label: 'Em correção', tone: 'info' },
+  resolvida: { label: 'Resolvida', tone: 'success' },
+  encerrada_sem_resolucao: { label: 'Encerrada', tone: 'neutral' },
 };
 
 function datumToneFor(item: NcRow): DatumTone {
@@ -148,6 +144,9 @@ function datumToneFor(item: NcRow): DatumTone {
 }
 
 function deadlineTone(item: NcRow): BadgeTone {
+  if (!isActionableNc(item.status)) {
+    return item.status === 'resolvida' ? 'success' : 'neutral';
+  }
   const bucket = getNcTiming(item.data_nova_verif).bucket;
   if (bucket === 'overdue' || bucket === 'today') return 'danger';
   if (bucket === 'soon') return 'warning';
@@ -156,11 +155,13 @@ function deadlineTone(item: NcRow): BadgeTone {
 
 export default function NcScreen() {
   const router = useRouter();
-  const { isTablet } = useResponsiveLayout();
   const [activeTab, setActiveTab] = useState<NcTab>('abertas');
   const [search, setSearch] = useState('');
   const [urgency, setUrgency] = useState<NcUrgency>('all');
   const [priority, setPriority] = useState<NcPriority>('all');
+  const [draftUrgency, setDraftUrgency] = useState<NcUrgency>('all');
+  const [draftPriority, setDraftPriority] = useState<NcPriority>('all');
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [perfil, setPerfil] = useState<string | null>(null);
 
@@ -194,25 +195,37 @@ export default function NcScreen() {
   );
   const filtered = useMemo(() => filterAndSortNcs(ncs, filters), [ncs, filters]);
   const groups = useMemo(() => groupNcs(filtered), [filtered]);
-  const hasRefinements = Boolean(search.trim() || urgency !== 'all' || priority !== 'all');
+  const activeFilterCount = Number(urgency !== 'all') + Number(priority !== 'all');
+  const hasRefinements = Boolean(search.trim() || activeFilterCount);
 
-  function clearFilters() {
+  function openFilters() {
+    setDraftUrgency(urgency);
+    setDraftPriority(priority);
+    setFiltersVisible(true);
+  }
+
+  function applyFilters() {
+    setUrgency(activeTab === 'resolvidas' ? 'all' : draftUrgency);
+    setPriority(draftPriority);
+    setFiltersVisible(false);
+  }
+
+  function clearAdvancedFilters() {
+    setDraftUrgency('all');
+    setDraftPriority('all');
+  }
+
+  function clearAllFilters() {
     setSearch('');
     setUrgency('all');
     setPriority('all');
+    setDraftUrgency('all');
+    setDraftPriority('all');
   }
 
   function changeTab(tab: NcTab) {
     setActiveTab(tab);
     if (tab === 'resolvidas') setUrgency('all');
-  }
-
-  function goReinspect(nc: NcRow) {
-    router.push(
-      (
-        `/obras/${nc.obra_id}/ambiente/${nc.ambiente_id}/fvs/${nc.fvs_planejada_id}/verificacao/nova`
-      ) as never,
-    );
   }
 
   const emptyTitle = hasRefinements
@@ -223,381 +236,382 @@ export default function NcScreen() {
         ? 'Nenhuma NC resolvida'
         : 'Nenhuma NC encontrada';
 
-  const emptyDescription = hasRefinements
-    ? 'Ajuste a busca, o prazo ou a prioridade para ampliar os resultados.'
-    : activeTab === 'abertas'
-      ? 'As próximas correções e reinspeções aparecerão aqui.'
-      : 'Os registros aparecerão assim que houver movimentação nas inspeções.';
-
   return (
     <SafeAreaView style={styles.safe}>
       <AppHeader
         title="Não Conformidades"
-        subtitle="Priorize correções e reinspeções em campo"
+        subtitle={`${summary.actionable} abertas · ${summary.resolved} resolvidas`}
       />
 
-      <FlatList
-        data={groups}
-        keyExtractor={group => group.key}
+      <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <View style={styles.headerContent}>
-            <View style={styles.overview}>
-              <View style={styles.overviewLead}>
-                <Text style={styles.overviewEyebrow}>AÇÃO REQUERIDA</Text>
-                <View style={styles.overviewValueRow}>
-                  <Text style={styles.overviewValue}>{summary.actionable}</Text>
-                  <Text style={styles.overviewUnit}>
-                    {summary.actionable === 1 ? 'NC aberta' : 'NCs abertas'}
-                  </Text>
-                </View>
-                <Text style={styles.overviewCaption}>
-                  Ordenadas pelo prazo mais crítico
-                </Text>
-              </View>
-              <View style={styles.overviewMetrics}>
-                <MetricBlock
-                  label="VENCIDAS"
-                  value={summary.overdue}
-                  tone={summary.overdue > 0 ? 'danger' : 'neutral'}
-                  style={styles.overviewMetric}
-                />
-                <View style={styles.metricDivider} />
-                <MetricBlock
-                  label="HOJE"
-                  value={summary.today}
-                  tone={summary.today > 0 ? 'warning' : 'neutral'}
-                  style={styles.overviewMetric}
-                />
-                <View style={styles.metricDivider} />
-                <MetricBlock
-                  label="RESOLVIDAS"
-                  value={summary.resolved}
-                  tone="success"
-                  style={styles.overviewMetric}
-                />
-              </View>
-            </View>
-
-            <View style={styles.controls}>
-              <SegmentedControl
-                value={activeTab}
-                options={TAB_OPTIONS}
-                onChange={changeTab}
-                accessibilityLabel="Filtrar por situação da não conformidade"
-              />
-
-              <View style={styles.searchBox}>
-                <Search size={18} color={Colors.textTertiary} />
-                <TextInput
-                  accessibilityLabel="Buscar não conformidades"
-                  style={styles.searchInput}
-                  placeholder="Buscar item, obra, ambiente ou responsável"
-                  placeholderTextColor={Colors.textTertiary}
-                  value={search}
-                  onChangeText={setSearch}
-                  returnKeyType="search"
-                />
-                {search ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Limpar busca"
-                    onPress={() => setSearch('')}
-                    style={styles.clearSearch}
-                  >
-                    <X size={17} color={Colors.textSecondary} />
-                  </Pressable>
-                ) : null}
-              </View>
-
-              {activeTab !== 'resolvidas' ? (
-                <View style={styles.filterBlock}>
-                  <View style={styles.filterLabelRow}>
-                    <SlidersHorizontal size={15} color={Colors.textTertiary} />
-                    <Text style={styles.filterLabel}>PRAZO</Text>
-                  </View>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.chipRow}
-                  >
-                    {URGENCY_OPTIONS.map(option => (
-                      <Chip
-                        key={option.value}
-                        label={option.label}
-                        Icon={option.Icon}
-                        selected={urgency === option.value}
-                        onPress={() => setUrgency(option.value)}
-                      />
-                    ))}
-                  </ScrollView>
-                </View>
-              ) : null}
-
-              <View style={styles.filterBlock}>
-                <Text style={styles.filterLabel}>PRIORIDADE</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.chipRow}
-                >
-                  {PRIORITY_OPTIONS.map(option => (
-                    <Chip
-                      key={option.value}
-                      label={option.label}
-                      selected={priority === option.value}
-                      onPress={() => setPriority(option.value)}
-                    />
-                  ))}
-                </ScrollView>
-              </View>
-            </View>
-
-            {error ? (
-              <ErrorBanner message="Não foi possível carregar as não conformidades." />
-            ) : null}
-
-            <SectionTitle
-              eyebrow="CENTRAL DE AÇÃO"
-              title={`${filtered.length} ${filtered.length === 1 ? 'registro' : 'registros'}`}
-              description={
-                activeTab === 'abertas'
-                  ? 'Prazos críticos aparecem primeiro.'
-                  : activeTab === 'resolvidas'
-                    ? 'Itens aprovados em reinspeção.'
-                    : 'Visão completa do ciclo das não conformidades.'
-              }
-              action={hasRefinements ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Limpar todos os filtros"
-                  onPress={clearFilters}
-                  style={styles.clearFilters}
-                >
-                  <X size={15} color={Colors.brand} />
-                  <Text style={styles.clearFiltersText}>Limpar filtros</Text>
-                </Pressable>
-              ) : undefined}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.summary}>
+          <View style={styles.summaryPrimary}>
+            <Text style={styles.summaryEyebrow}>AÇÃO NECESSÁRIA</Text>
+            <Text style={styles.summaryValue}>{summary.actionable}</Text>
+            <Text style={styles.summaryLabel}>
+              {summary.actionable === 1 ? 'ocorrência em acompanhamento' : 'ocorrências em acompanhamento'}
+            </Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryFacts}>
+            <SummaryFact
+              value={summary.overdue}
+              label="vencidas"
+              tone={summary.overdue > 0 ? Colors.nok : Colors.text}
+            />
+            <SummaryFact
+              value={summary.today}
+              label="para hoje"
+              tone={summary.today > 0 ? Colors.warn : Colors.text}
             />
           </View>
-        }
-        renderItem={({ item: group }) => (
-          <NcGroupBlock
-            group={group}
-            twoColumns={isTablet}
-            onReinspect={goReinspect}
+        </View>
+
+        <View style={styles.controls}>
+          <SegmentedControl
+            value={activeTab}
+            options={TAB_OPTIONS}
+            onChange={changeTab}
+            accessibilityLabel="Filtrar por situação da não conformidade"
+          />
+
+          <View style={styles.searchRow}>
+            <View style={styles.searchBox}>
+              <Search size={18} color={Colors.textTertiary} />
+              <TextInput
+                accessibilityLabel="Buscar não conformidades"
+                style={styles.searchInput}
+                placeholder="Buscar item, obra ou ambiente"
+                placeholderTextColor={Colors.textTertiary}
+                value={search}
+                onChangeText={setSearch}
+                returnKeyType="search"
+              />
+              {search ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Limpar busca"
+                  onPress={() => setSearch('')}
+                  style={styles.clearSearch}
+                >
+                  <X size={17} color={Colors.textSecondary} />
+                </Pressable>
+              ) : null}
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Filtros avançados${activeFilterCount ? `, ${activeFilterCount} ativos` : ''}`}
+              onPress={openFilters}
+              style={({ pressed }) => [
+                styles.filterButton,
+                activeFilterCount > 0 && styles.filterButtonActive,
+                pressed && styles.filterButtonPressed,
+              ]}
+            >
+              <SlidersHorizontal
+                size={18}
+                color={activeFilterCount > 0 ? Colors.surface : Colors.brand}
+              />
+              {activeFilterCount > 0 ? (
+                <Text style={styles.filterCount}>{activeFilterCount}</Text>
+              ) : null}
+            </Pressable>
+          </View>
+        </View>
+
+        {error ? (
+          <ErrorBanner message="Não foi possível carregar as não conformidades." />
+        ) : null}
+
+        <View style={styles.listHeading}>
+          <Text style={styles.listTitle}>Registros</Text>
+          <Text style={styles.listCount}>{String(filtered.length).padStart(2, '0')}</Text>
+          {hasRefinements ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Limpar todos os filtros"
+              onPress={clearAllFilters}
+              style={styles.clearFilters}
+            >
+              <Text style={styles.clearFiltersText}>Limpar filtros</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
+        {!ready || isLoading ? (
+          <View style={styles.loading}>
+            <Skeleton style={styles.skeletonGroup} />
+            <Skeleton style={styles.skeletonRows} />
+            <Skeleton style={styles.skeletonRows} />
+          </View>
+        ) : groups.length ? (
+          groups.map(group => (
+            <NcGroupBlock
+              key={group.key}
+              group={group}
+              onOpen={ncId => router.push(`/nc/${ncId}` as never)}
+            />
+          ))
+        ) : (
+          <EmptyState
+            Icon={hasRefinements ? Search : CheckCircle2}
+            title={emptyTitle}
+            description={
+              hasRefinements
+                ? 'Ajuste a busca, o prazo ou a prioridade para ampliar os resultados.'
+                : 'Os registros aparecerão aqui quando houver movimentação nas inspeções.'
+            }
+            actionLabel={hasRefinements ? 'Limpar filtros' : undefined}
+            onAction={hasRefinements ? clearAllFilters : undefined}
           />
         )}
-        ListEmptyComponent={
-          !ready || isLoading ? (
-            <View style={styles.loading}>
-              <Skeleton style={styles.skeletonTitle} />
-              <Skeleton style={styles.skeletonCard} />
-              <Skeleton style={styles.skeletonCard} />
-            </View>
-          ) : (
-            <EmptyState
-              Icon={hasRefinements ? Search : CheckCircle2}
-              title={emptyTitle}
-              description={emptyDescription}
-              actionLabel={hasRefinements ? 'Limpar filtros' : undefined}
-              onAction={hasRefinements ? clearFilters : undefined}
+      </ScrollView>
+
+      <ModalSheet
+        visible={filtersVisible}
+        onClose={() => setFiltersVisible(false)}
+        title="Filtrar registros"
+        actions={(
+          <View style={styles.sheetActions}>
+            <Button
+              label="Limpar"
+              variant="secondary"
+              onPress={clearAdvancedFilters}
+              style={styles.sheetAction}
             />
-          )
-        }
-      />
+            <Button
+              label="Aplicar filtros"
+              onPress={applyFilters}
+              style={styles.sheetAction}
+            />
+          </View>
+        )}
+      >
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {activeTab !== 'resolvidas' ? (
+            <View style={styles.sheetSection}>
+              <Text style={styles.sheetLabel}>PRAZO</Text>
+              <View style={styles.optionList}>
+                {URGENCY_OPTIONS.map(option => {
+                  const Icon = option.Icon;
+                  const selected = draftUrgency === option.value;
+                  return (
+                    <Pressable
+                      key={option.value}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: selected }}
+                      onPress={() => setDraftUrgency(option.value)}
+                      style={[styles.optionRow, selected && styles.optionRowSelected]}
+                    >
+                      <View style={[styles.optionIcon, selected && styles.optionIconSelected]}>
+                        <Icon size={17} color={selected ? Colors.brand : Colors.textSecondary} />
+                      </View>
+                      <View style={styles.optionBody}>
+                        <Text style={[styles.optionTitle, selected && styles.optionTitleSelected]}>
+                          {option.label}
+                        </Text>
+                        <Text style={styles.optionDescription}>{option.description}</Text>
+                      </View>
+                      <View style={[styles.radio, selected && styles.radioSelected]}>
+                        {selected ? <View style={styles.radioDot} /> : null}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ) : null}
+
+          <View style={styles.sheetSection}>
+            <Text style={styles.sheetLabel}>PRIORIDADE</Text>
+            <View style={styles.priorityGrid}>
+              {PRIORITY_OPTIONS.map(option => {
+                const selected = draftPriority === option.value;
+                return (
+                  <Pressable
+                    key={option.value}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    onPress={() => setDraftPriority(option.value)}
+                    style={[styles.priorityOption, selected && styles.priorityOptionSelected]}
+                  >
+                    <Text style={[
+                      styles.priorityOptionText,
+                      selected && styles.priorityOptionTextSelected,
+                    ]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </ScrollView>
+      </ModalSheet>
     </SafeAreaView>
+  );
+}
+
+function SummaryFact({
+  value,
+  label,
+  tone,
+}: {
+  value: number;
+  label: string;
+  tone: string;
+}) {
+  return (
+    <View style={styles.summaryFact}>
+      <Text style={[styles.summaryFactValue, { color: tone }]}>{value}</Text>
+      <Text style={styles.summaryFactLabel}>{label}</Text>
+    </View>
   );
 }
 
 function NcGroupBlock({
   group,
-  twoColumns,
-  onReinspect,
+  onOpen,
 }: {
   group: NcGroup<NcRow>;
-  twoColumns: boolean;
-  onReinspect: (item: NcRow) => void;
+  onOpen: (ncId: string) => void;
 }) {
   return (
     <View style={styles.group}>
       <View style={styles.groupHeader}>
         <View style={styles.groupTitleRow}>
           <Text style={styles.groupTitle}>{group.title}</Text>
-          <Text style={styles.groupCount}>{String(group.items.length).padStart(2, '0')}</Text>
+          <Text style={styles.groupCount}>{group.items.length}</Text>
         </View>
         <Text style={styles.groupDescription}>{group.description}</Text>
       </View>
-      <View style={styles.groupGrid}>
-        {group.items.map(item => (
-          <NcCard
+      <ListSurface>
+        {group.items.map((item, index) => (
+          <NcRowItem
             key={item.id}
             item={item}
-            twoColumns={twoColumns}
-            onReinspect={() => onReinspect(item)}
+            last={index === group.items.length - 1}
+            onOpen={() => onOpen(item.id)}
           />
         ))}
-      </View>
+      </ListSurface>
     </View>
   );
 }
 
-function NcCard({
+function NcRowItem({
   item,
-  twoColumns,
-  onReinspect,
+  last,
+  onOpen,
 }: {
   item: NcRow;
-  twoColumns: boolean;
-  onReinspect: () => void;
+  last: boolean;
+  onOpen: () => void;
 }) {
-  const actionable = isActionableNc(item.status);
   const timing = getNcTiming(item.data_nova_verif);
   const status = STATUS_META[item.status] ?? {
     label: item.status.replaceAll('_', ' '),
     tone: 'neutral' as BadgeTone,
-    Icon: CircleDot,
   };
   const priority = PRIORITY_META[item.prioridade] ?? {
-    label: 'Prioridade não informada',
+    label: 'Não informada',
     tone: 'neutral' as BadgeTone,
   };
-  const StatusIcon = status.Icon;
 
   return (
-    <DatumCard
+    <OperationalRow
       tone={datumToneFor(item)}
-      style={[styles.card, twoColumns && styles.cardTwoColumns]}
+      last={last}
+      onPress={onOpen}
+      accessibilityLabel={`Abrir não conformidade: ${item.item_titulo}`}
+      trailing={<ChevronRight size={19} color={Colors.textTertiary} />}
     >
-      <View style={styles.cardTopline}>
-        <View style={styles.deadlineGroup}>
-          {actionable ? (
-            <>
-              <Text style={[
-                styles.deadlineLabel,
-                (timing.bucket === 'overdue' || timing.bucket === 'today') && styles.deadlineCritical,
-                timing.bucket === 'soon' && styles.deadlineWarning,
-              ]}>
-                {timing.label.toUpperCase()}
-              </Text>
-              {timing.dateLabel ? (
-                <Text style={styles.deadlineDate}>{timing.dateLabel}</Text>
-              ) : null}
-            </>
-          ) : (
-            <Text style={styles.deadlineLabel}>
-              {item.status === 'resolvida' ? 'REINSPEÇÃO CONCLUÍDA' : 'REGISTRO HISTÓRICO'}
-            </Text>
-          )}
-        </View>
+      <View style={styles.rowTop}>
+        <Text style={styles.rowTitle} numberOfLines={1}>{item.item_titulo}</Text>
         <Badge label={priority.label} tone={priority.tone} size="sm" />
       </View>
-
-      <Text style={styles.cardTitle} numberOfLines={2}>{item.item_titulo}</Text>
-      <Text style={styles.cardDescription} numberOfLines={2}>{item.descricao}</Text>
-
-      <View style={styles.context}>
-        <View style={styles.contextRow}>
-          <HardHat size={15} color={Colors.textTertiary} />
-          <Text style={styles.contextText} numberOfLines={1}>{item.obra_nome}</Text>
-        </View>
-        <View style={styles.contextRow}>
-          <MapPin size={15} color={Colors.textTertiary} />
-          <Text style={styles.contextText} numberOfLines={1}>{item.ambiente_nome}</Text>
-        </View>
-        <View style={styles.contextRow}>
-          <UserRound size={15} color={Colors.textTertiary} />
-          <Text style={styles.contextText} numberOfLines={1}>
-            {item.responsavel_nome ?? 'Responsável não informado'}
-          </Text>
-        </View>
+      <Text style={styles.rowContext} numberOfLines={1}>
+        {item.obra_nome} · {item.ambiente_nome}
+      </Text>
+      <Text style={styles.rowDescription} numberOfLines={1}>{item.descricao}</Text>
+      <View style={styles.rowFooter}>
+        <Text style={[styles.deadline, { color: badgeTextColor(deadlineTone(item)) }]}>
+          {isActionableNc(item.status) ? timing.label : status.label}
+        </Text>
+        <Text style={styles.owner} numberOfLines={1}>
+          {item.responsavel_nome ?? 'Sem responsável'}
+        </Text>
       </View>
-
-      <View style={styles.cardFooter}>
-        <Badge
-          label={status.label}
-          tone={status.tone}
-          Icon={StatusIcon}
-          size="sm"
-        />
-        {actionable ? (
-          <Button
-            label="Reinspecionar"
-            Icon={RotateCcw}
-            onPress={onReinspect}
-            accessibilityHint={`Abre uma nova verificação para ${item.item_titulo}`}
-            style={styles.reinspectButton}
-          />
-        ) : (
-          <View style={styles.closedMeta}>
-            <CheckCircle2
-              size={15}
-              color={item.status === 'resolvida' ? Colors.ok : Colors.textTertiary}
-            />
-            <Text style={styles.closedMetaText}>
-              {item.status === 'resolvida'
-                ? 'Ciclo concluído'
-                : `Prazo original ${formatNcDate(item.data_nova_verif) ?? 'não informado'}`}
-            </Text>
-          </View>
-        )}
-      </View>
-    </DatumCard>
+    </OperationalRow>
   );
+}
+
+function badgeTextColor(tone: BadgeTone): string {
+  if (tone === 'danger') return Colors.nok;
+  if (tone === 'warning') return Colors.warn;
+  if (tone === 'success') return Colors.ok;
+  if (tone === 'info') return Colors.info;
+  return Colors.textSecondary;
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  list: {
+  content: {
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
     padding: Spacing.lg,
     paddingBottom: 104,
-    gap: Spacing.xxl,
+    gap: Spacing.xl,
   },
-  headerContent: { gap: Spacing.xxl, marginBottom: Spacing.xs },
-  overview: {
-    backgroundColor: Colors.brand,
-    borderRadius: Radius.xl,
-    padding: Spacing.xxl,
+  summary: {
+    minHeight: 112,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.xxl,
-    overflow: 'hidden',
-  },
-  overviewLead: { flex: 0.85, minWidth: 220, gap: Spacing.xs },
-  overviewEyebrow: { ...Typography.overline, color: Colors.brandSignature },
-  overviewValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
-  overviewValue: {
-    color: Colors.surface,
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: 42,
-    lineHeight: 48,
-    letterSpacing: -1.5,
-  },
-  overviewUnit: {
-    color: Colors.surface,
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.md,
-  },
-  overviewCaption: { ...Typography.caption, color: Colors.surface, opacity: 0.72 },
-  overviewMetrics: {
-    flex: 1.4,
-    minWidth: 220,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
+    alignItems: 'stretch',
     backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
   },
-  overviewMetric: { flex: 1, minWidth: 0 },
-  metricDivider: { width: 1, height: 48, backgroundColor: Colors.border },
+  summaryPrimary: { flex: 1.5, justifyContent: 'center' },
+  summaryEyebrow: { ...Typography.overline, color: Colors.textTertiary },
+  summaryValue: {
+    marginTop: 2,
+    color: Colors.brand,
+    fontFamily: FontFamily.monoSemibold,
+    fontSize: 34,
+    lineHeight: 39,
+  },
+  summaryLabel: { ...Typography.caption, color: Colors.textSecondary },
+  summaryDivider: {
+    width: 1,
+    marginHorizontal: Spacing.lg,
+    backgroundColor: Colors.border,
+  },
+  summaryFacts: {
+    flex: 1,
+    minWidth: 116,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    gap: Spacing.md,
+  },
+  summaryFact: { alignItems: 'center', gap: 1 },
+  summaryFactValue: {
+    fontFamily: FontFamily.monoSemibold,
+    fontSize: FontSizes.xl,
+    lineHeight: 28,
+  },
+  summaryFactLabel: { ...Typography.caption, color: Colors.textTertiary },
   controls: { gap: Spacing.md },
+  searchRow: { flexDirection: 'row', gap: Spacing.sm },
   searchBox: {
     minHeight: 48,
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
@@ -620,82 +634,183 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBlock: { gap: Spacing.sm },
-  filterLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  filterLabel: { ...Typography.overline, color: Colors.textTertiary },
-  chipRow: { gap: Spacing.sm, paddingRight: Spacing.lg },
-  clearFilters: {
-    minHeight: 44,
-    flexDirection: 'row',
+  filterButton: {
+    width: 48,
+    height: 48,
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: Spacing.sm,
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.borderNormal,
+    backgroundColor: Colors.surface,
   },
-  clearFiltersText: { ...Typography.caption, color: Colors.brand, fontFamily: FontFamily.semibold },
-  group: { gap: Spacing.md },
-  groupHeader: {
-    paddingBottom: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    gap: 2,
+  filterButtonActive: {
+    width: 58,
+    backgroundColor: Colors.brand,
+    borderColor: Colors.brand,
   },
-  groupTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
-  groupTitle: { ...Typography.heading, color: Colors.text },
-  groupCount: {
+  filterButtonPressed: { opacity: 0.78 },
+  filterCount: {
+    color: Colors.surface,
+    fontFamily: FontFamily.monoSemibold,
+    fontSize: FontSizes.sm,
+  },
+  listHeading: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: Spacing.sm,
+    marginBottom: -Spacing.sm,
+  },
+  listTitle: { ...Typography.heading, color: Colors.text },
+  listCount: {
     fontFamily: FontFamily.monoSemibold,
     fontSize: FontSizes.sm,
     color: Colors.textTertiary,
   },
-  groupDescription: { ...Typography.caption, color: Colors.textSecondary },
-  groupGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
-  card: { width: '100%' },
-  cardTwoColumns: { flexBasis: '48%', flexGrow: 1, maxWidth: '50%' },
-  cardTopline: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
+  clearFilters: {
+    marginLeft: 'auto',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.sm,
   },
-  deadlineGroup: { flex: 1, gap: 2 },
-  deadlineLabel: { ...Typography.overline, color: Colors.textTertiary },
-  deadlineCritical: { color: Colors.nok },
-  deadlineWarning: { color: Colors.warn },
-  deadlineDate: {
-    fontFamily: FontFamily.mono,
+  clearFiltersText: {
+    ...Typography.caption,
+    color: Colors.brand,
+    fontFamily: FontFamily.semibold,
+  },
+  group: { gap: Spacing.sm },
+  groupHeader: { paddingHorizontal: 2, gap: 1 },
+  groupTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
+  groupTitle: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.base,
+    color: Colors.text,
+  },
+  groupCount: {
+    fontFamily: FontFamily.monoSemibold,
     fontSize: FontSizes.tiny,
+    color: Colors.textTertiary,
+  },
+  groupDescription: { ...Typography.caption, color: Colors.textTertiary },
+  rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  rowTitle: {
+    flex: 1,
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.base,
+    color: Colors.text,
+  },
+  rowContext: {
+    marginTop: 3,
+    fontFamily: FontFamily.medium,
+    fontSize: FontSizes.sm,
     color: Colors.textSecondary,
   },
-  cardTitle: { ...Typography.heading, color: Colors.text, marginTop: Spacing.md },
-  cardDescription: {
-    ...Typography.body,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xs,
-    minHeight: 48,
+  rowDescription: {
+    marginTop: 3,
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
   },
-  context: {
-    marginTop: Spacing.lg,
-    padding: Spacing.md,
-    backgroundColor: Colors.surface2,
-    borderRadius: Radius.md,
-    gap: Spacing.sm,
-  },
-  contextRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  contextText: { ...Typography.caption, color: Colors.textSecondary, flex: 1 },
-  cardFooter: {
-    marginTop: Spacing.lg,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+  rowFooter: {
+    marginTop: Spacing.sm,
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: Spacing.md,
   },
-  reinspectButton: { minHeight: 44, paddingHorizontal: Spacing.md },
-  closedMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, flex: 1 },
-  closedMetaText: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'right' },
+  deadline: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.tiny,
+    textTransform: 'uppercase',
+    letterSpacing: 0.35,
+  },
+  owner: {
+    flex: 1,
+    textAlign: 'right',
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.tiny,
+    color: Colors.textTertiary,
+  },
   loading: { gap: Spacing.md },
-  skeletonTitle: { width: 150, height: 24 },
-  skeletonCard: { width: '100%', height: 220, borderRadius: Radius.lg },
+  skeletonGroup: { width: 140, height: 20, borderRadius: Radius.sm },
+  skeletonRows: { width: '100%', height: 132, borderRadius: Radius.lg },
+  sheetActions: { flexDirection: 'row', gap: Spacing.sm },
+  sheetAction: { flex: 1 },
+  sheetSection: { gap: Spacing.sm, marginBottom: Spacing.xl },
+  sheetLabel: { ...Typography.overline, color: Colors.textTertiary },
+  optionList: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.md,
+    overflow: 'hidden',
+  },
+  optionRow: {
+    minHeight: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  optionRowSelected: { backgroundColor: Colors.brandLight },
+  optionIcon: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.surface2,
+  },
+  optionIconSelected: { backgroundColor: Colors.surface },
+  optionBody: { flex: 1 },
+  optionTitle: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSizes.sm,
+    color: Colors.text,
+  },
+  optionTitleSelected: { color: Colors.brand, fontFamily: FontFamily.semibold },
+  optionDescription: { ...Typography.caption, color: Colors.textTertiary },
+  radio: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: Colors.borderNormal,
+  },
+  radioSelected: { borderColor: Colors.brand },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.brand,
+  },
+  priorityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  priorityOption: {
+    minHeight: 42,
+    minWidth: 92,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.borderNormal,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.md,
+  },
+  priorityOptionSelected: {
+    borderColor: Colors.brand,
+    backgroundColor: Colors.brandLight,
+  },
+  priorityOptionText: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+  },
+  priorityOptionTextSelected: { color: Colors.brand, fontFamily: FontFamily.semibold },
 });

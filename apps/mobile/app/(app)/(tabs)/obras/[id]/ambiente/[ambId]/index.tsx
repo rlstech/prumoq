@@ -14,7 +14,6 @@ import {
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
-  FlatList,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -24,15 +23,12 @@ import {
 } from 'react-native';
 import { AppHeader } from '../../../../../../../components/AppHeader';
 import {
-  Badge,
-  type BadgeTone,
   Chip,
-  DatumCard,
   type DatumTone,
   EmptyState,
-  MetricBlock,
+  ListSurface,
+  OperationalRow,
   Progress,
-  SectionTitle,
 } from '../../../../../../../components/ui';
 import {
   Breakpoints,
@@ -71,8 +67,9 @@ type ServiceFilter = 'todos' | 'atencao' | 'em_curso' | 'concluidos';
 
 interface ServiceStatus {
   label: string;
-  tone: BadgeTone;
   datum: DatumTone;
+  color: string;
+  background: string;
   Icon: LucideIcon;
 }
 
@@ -84,13 +81,55 @@ const SERVICE_FILTERS: { key: ServiceFilter; label: string }[] = [
 ];
 
 const STATUS: Record<string, ServiceStatus> = {
-  conforme: { label: 'Concluído', tone: 'success', datum: 'success', Icon: CheckCircle2 },
-  concluida: { label: 'Concluído', tone: 'success', datum: 'success', Icon: CheckCircle2 },
-  concluida_ressalva: { label: 'Com ressalva', tone: 'warning', datum: 'warning', Icon: CircleAlert },
-  nao_conforme: { label: 'NC aberta', tone: 'danger', datum: 'danger', Icon: AlertTriangle },
-  em_andamento: { label: 'Em andamento', tone: 'info', datum: 'info', Icon: ArrowRight },
-  em_revisao: { label: 'Em revisão', tone: 'info', datum: 'info', Icon: ClipboardCheck },
-  pendente: { label: 'Pendente', tone: 'neutral', datum: 'neutral', Icon: Circle },
+  conforme: {
+    label: 'Concluído',
+    datum: 'success',
+    color: Colors.ok,
+    background: Colors.okBg,
+    Icon: CheckCircle2,
+  },
+  concluida: {
+    label: 'Concluído',
+    datum: 'success',
+    color: Colors.ok,
+    background: Colors.okBg,
+    Icon: CheckCircle2,
+  },
+  concluida_ressalva: {
+    label: 'Com ressalva',
+    datum: 'warning',
+    color: Colors.warn,
+    background: Colors.warnBg,
+    Icon: CircleAlert,
+  },
+  nao_conforme: {
+    label: 'NC aberta',
+    datum: 'danger',
+    color: Colors.nok,
+    background: Colors.nokBg,
+    Icon: AlertTriangle,
+  },
+  em_andamento: {
+    label: 'Em andamento',
+    datum: 'info',
+    color: Colors.info,
+    background: Colors.infoBg,
+    Icon: ArrowRight,
+  },
+  em_revisao: {
+    label: 'Em revisão',
+    datum: 'info',
+    color: Colors.info,
+    background: Colors.infoBg,
+    Icon: ClipboardCheck,
+  },
+  pendente: {
+    label: 'Pendente',
+    datum: 'neutral',
+    color: Colors.textTertiary,
+    background: Colors.surface2,
+    Icon: Circle,
+  },
 };
 
 function getStatus(status: string): ServiceStatus {
@@ -159,61 +198,6 @@ export default function AmbienteScreen() {
     ambiente?.obra_nome || null,
   ].filter(Boolean).join(' · ');
 
-  const summaryPanel = (
-    <DatumCard tone={summary.attention > 0 ? 'danger' : 'accent'} style={styles.summaryCard}>
-      <Text style={styles.summaryEyebrow}>CONTROLE DO AMBIENTE</Text>
-      <View style={styles.summaryProgressRow}>
-        <View style={styles.summaryValueRow}>
-          <Text style={styles.summaryValue}>{Math.round(summary.progress)}</Text>
-          <Text style={styles.summarySuffix}>%</Text>
-        </View>
-        <Text style={styles.summaryProgressLabel}>das FVS concluídas</Text>
-      </View>
-      <Progress
-        value={summary.progress}
-        tone={summary.attention > 0 ? 'danger' : 'brand'}
-        height={8}
-      />
-
-      <View style={styles.summaryMetrics}>
-        <MetricBlock
-          label="CONCLUÍDAS"
-          value={summary.completed}
-          suffix={`/ ${summary.total}`}
-          tone="success"
-          style={styles.summaryMetric}
-        />
-        <View style={styles.summaryMetricDivider} />
-        <MetricBlock
-          label="EM CURSO"
-          value={summary.inProgress}
-          tone="info"
-          style={styles.summaryMetric}
-        />
-        <View style={styles.summaryMetricDivider} />
-        <MetricBlock
-          label="ATENÇÃO"
-          value={summary.attention}
-          tone={summary.attention > 0 ? 'danger' : 'neutral'}
-          style={styles.summaryMetric}
-        />
-      </View>
-
-      <View style={styles.contextBlock}>
-        <Text style={styles.contextLabel}>CONTEXTO</Text>
-        <Text style={styles.contextValue}>
-          {ambiente?.tipo === 'interno' ? 'Ambiente interno' : 'Ambiente externo'}
-        </Text>
-        {ambiente?.localizacao ? (
-          <Text style={styles.contextSecondary}>{ambiente.localizacao}</Text>
-        ) : null}
-        {ambiente?.obra_nome ? (
-          <Text style={styles.contextSecondary}>{ambiente.obra_nome}</Text>
-        ) : null}
-      </View>
-    </DatumCard>
-  );
-
   return (
     <SafeAreaView style={styles.safe}>
       <AppHeader
@@ -223,92 +207,133 @@ export default function AmbienteScreen() {
         onBack={() => goBack(`/(app)/(tabs)/obras/${id}`)}
       />
 
-      <View style={[styles.workspace, isTablet && styles.workspaceTablet]}>
-        {isTablet ? <View style={styles.sidebar}>{summaryPanel}</View> : null}
-
-        <FlatList
-          data={filtered}
-          keyExtractor={item => item.id}
-          showsVerticalScrollIndicator={false}
-          style={styles.serviceList}
-          contentContainerStyle={styles.serviceListContent}
-          ListHeaderComponent={
-            <View style={styles.listHeader}>
-              {!isTablet ? summaryPanel : null}
-              <SectionTitle
-                eyebrow="PLANO DE INSPEÇÃO"
-                title="Serviços planejados"
-                description={`${filtered.length} de ${fvsList.length} serviços exibidos`}
-              />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filters}
-              >
-                {SERVICE_FILTERS.map(option => (
-                  <Chip
-                    key={option.key}
-                    label={option.label}
-                    selected={filter === option.key}
-                    onPress={() => setFilter(option.key)}
-                    Icon={option.key === 'atencao' ? AlertTriangle : undefined}
-                  />
-                ))}
-              </ScrollView>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.summary}>
+          <View style={styles.summaryHeading}>
+            <Text style={styles.summaryTitle}>Progresso do ambiente</Text>
+            <View style={styles.summaryValue}>
+              <Text style={styles.summaryPercent}>{Math.round(summary.progress)}</Text>
+              <Text style={styles.summarySuffix}>%</Text>
             </View>
-          }
-          renderItem={({ item }) => {
-            const status = getStatus(item.status);
-            const hasOpenNc = item.ncs_abertas > 0;
-            return (
-              <DatumCard
-                tone={hasOpenNc ? 'danger' : status.datum}
-                accessibilityLabel={`Abrir serviço ${item.subservico || 'sem nome'}, ${status.label}${hasOpenNc ? ', com NC aberta' : ''}`}
-                onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${item.id}` as never)}
-              >
-                <View style={styles.serviceTop}>
-                  <View style={styles.serviceIdentity}>
-                    <Text style={styles.serviceName} numberOfLines={2}>
-                      {item.subservico || 'Serviço'}
-                    </Text>
-                    <Badge
-                      label={status.label}
-                      tone={status.tone}
-                      Icon={status.Icon}
-                      size="sm"
-                    />
-                    {hasOpenNc ? (
-                      <Badge
-                        label={item.ncs_abertas === 1 ? '1 NC aberta' : `${item.ncs_abertas} NC abertas`}
-                        tone="danger"
-                        Icon={AlertTriangle}
-                        size="sm"
-                      />
-                    ) : null}
-                  </View>
-                  <ChevronRight size={20} color={Colors.textTertiary} />
-                </View>
+          </View>
 
-                <View style={styles.serviceFooter}>
-                  <View style={styles.serviceMeta}>
-                    <History size={15} color={Colors.textTertiary} />
-                    <Text style={styles.serviceMetaText}>
-                      {item.ultima_verif
-                        ? `Última verificação em ${formatDate(item.ultima_verif)}`
-                        : 'Ainda não iniciado'}
-                    </Text>
+          <Progress
+            value={summary.progress}
+            tone={summary.attention > 0 ? 'danger' : summary.progress === 100 ? 'success' : 'brand'}
+            height={5}
+          />
+
+          <View style={styles.summaryMeta}>
+            <Text style={styles.summaryMetaText}>
+              <Text style={styles.summaryMetaValue}>{summary.completed}/{summary.total}</Text>
+              {' concluídas'}
+            </Text>
+            <View style={styles.metaDot} />
+            <Text style={styles.summaryMetaText}>
+              {summary.inProgress} em curso
+            </Text>
+            <View style={styles.metaDot} />
+            <Text style={[
+              styles.summaryMetaText,
+              summary.attention > 0 && styles.summaryMetaDanger,
+            ]}>
+              {summary.attention} com atenção
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.listHeading}>
+          <Text style={styles.listTitle}>Serviços</Text>
+          <Text style={styles.listCount}>
+            {filtered.length}{filter === 'todos' ? '' : ` de ${fvsList.length}`}
+          </Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filters}
+        >
+          {SERVICE_FILTERS.map(option => (
+            <Chip
+              key={option.key}
+              label={option.label}
+              selected={filter === option.key}
+              onPress={() => setFilter(option.key)}
+              Icon={option.key === 'atencao' ? AlertTriangle : undefined}
+            />
+          ))}
+        </ScrollView>
+
+        {filtered.length > 0 ? (
+          <ListSurface>
+            {filtered.map((item, index) => {
+              const status = getStatus(item.status);
+              const hasOpenNc = item.ncs_abertas > 0;
+              const StatusIcon = hasOpenNc ? AlertTriangle : status.Icon;
+              const iconColor = hasOpenNc ? Colors.nok : status.color;
+              const iconBackground = hasOpenNc ? Colors.nokBg : status.background;
+              const ncLabel = item.ncs_abertas === 1
+                ? '1 NC aberta'
+                : `${item.ncs_abertas} NC abertas`;
+
+              return (
+                <OperationalRow
+                  key={item.id}
+                  tone={hasOpenNc ? 'danger' : status.datum}
+                  last={index === filtered.length - 1}
+                  accessibilityLabel={`Abrir serviço ${item.subservico || 'sem nome'}, ${status.label}${hasOpenNc ? `, ${ncLabel}` : ''}`}
+                  onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${item.id}` as never)}
+                  leading={(
+                    <View style={[styles.statusIcon, { backgroundColor: iconBackground }]}>
+                      <StatusIcon size={17} color={iconColor} strokeWidth={2.2} />
+                    </View>
+                  )}
+                  trailing={<ChevronRight size={19} color={Colors.textTertiary} />}
+                >
+                  <View style={[styles.rowContent, isTablet && styles.rowContentTablet]}>
+                    <View style={styles.identity}>
+                      <Text style={styles.serviceName} numberOfLines={2}>
+                        {item.subservico || 'Serviço'}
+                      </Text>
+                      <View style={styles.lastInspection}>
+                        <History size={13} color={Colors.textTertiary} />
+                        <Text style={styles.lastInspectionText} numberOfLines={1}>
+                          {item.ultima_verif
+                            ? `Última verificação em ${formatDate(item.ultima_verif)}`
+                            : 'Não iniciado'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={[styles.verifications, isTablet && styles.verificationsTablet]}>
+                      <Text style={styles.verificationValue}>{item.total_verificacoes}</Text>
+                      <Text style={styles.verificationLabel}>
+                        {item.total_verificacoes === 1 ? ' verificação' : ' verificações'}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.stateColumn, isTablet && styles.stateColumnTablet]}>
+                      <Text style={[styles.stateText, { color: status.color }]}>
+                        {status.label}
+                      </Text>
+                      {hasOpenNc ? (
+                        <View style={styles.ncState}>
+                          <AlertTriangle size={12} color={Colors.nok} />
+                          <Text style={styles.ncStateText}>{ncLabel}</Text>
+                        </View>
+                      ) : null}
+                    </View>
                   </View>
-                  <View style={styles.verificationCount}>
-                    <Text style={styles.verificationValue}>{item.total_verificacoes}</Text>
-                    <Text style={styles.verificationLabel}>
-                      {item.total_verificacoes === 1 ? ' verificação' : ' verificações'}
-                    </Text>
-                  </View>
-                </View>
-              </DatumCard>
-            );
-          }}
-          ListEmptyComponent={
+                </OperationalRow>
+              );
+            })}
+          </ListSurface>
+        ) : (
+          <View style={styles.emptySurface}>
             <EmptyState
               Icon={Layers3}
               title="Nenhum serviço neste filtro"
@@ -316,103 +341,137 @@ export default function AmbienteScreen() {
                 ? 'Este ambiente ainda não possui FVS planejadas.'
                 : 'Selecione outro filtro para visualizar os serviços.'}
             />
-          }
-        />
-      </View>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  workspace: {
-    flex: 1,
+  content: {
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
+    padding: Spacing.lg,
+    paddingBottom: 104,
+    gap: Spacing.lg,
   },
-  workspaceTablet: {
+  summary: {
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  summaryHeading: {
     flexDirection: 'row',
-    alignItems: 'stretch',
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.xxl,
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
   },
-  sidebar: {
-    width: 330,
-    paddingVertical: Spacing.lg,
-  },
-  summaryCard: { width: '100%' },
-  summaryEyebrow: { ...Typography.overline, color: Colors.textTertiary },
-  summaryProgressRow: { marginTop: Spacing.md, gap: 2 },
-  summaryValueRow: { flexDirection: 'row', alignItems: 'baseline' },
-  summaryValue: {
+  summaryTitle: { ...Typography.label, color: Colors.text },
+  summaryValue: { flexDirection: 'row', alignItems: 'baseline' },
+  summaryPercent: {
     fontFamily: FontFamily.monoSemibold,
-    fontSize: 44,
-    lineHeight: 50,
-    letterSpacing: -1.5,
+    fontSize: FontSizes.xxl,
+    lineHeight: 30,
     color: Colors.brand,
   },
   summarySuffix: {
     fontFamily: FontFamily.mono,
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xs,
     color: Colors.brand,
   },
-  summaryProgressLabel: { ...Typography.caption, color: Colors.textSecondary },
-  summaryMetrics: {
-    marginTop: Spacing.xl,
-    paddingTop: Spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+  summaryMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  summaryMetric: { flex: 1, minWidth: 0 },
-  summaryMetricDivider: { width: 1, height: 48, backgroundColor: Colors.border },
-  contextBlock: {
-    marginTop: Spacing.xl,
-    padding: Spacing.md,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surface2,
-    gap: 3,
-  },
-  contextLabel: { ...Typography.overline, color: Colors.textTertiary },
-  contextValue: { ...Typography.label, color: Colors.text, marginTop: 3 },
-  contextSecondary: { ...Typography.caption, color: Colors.textSecondary },
-  serviceList: { flex: 1 },
-  serviceListContent: {
-    padding: Spacing.lg,
-    gap: Spacing.md,
-    paddingBottom: 104,
-  },
-  listHeader: { gap: Spacing.xxl, marginBottom: Spacing.xs },
-  filters: { gap: Spacing.sm, paddingBottom: Spacing.xs },
-  serviceTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
-  },
-  serviceIdentity: { flex: 1, gap: Spacing.sm, alignItems: 'flex-start' },
-  serviceName: { ...Typography.heading, color: Colors.text },
-  serviceFooter: {
-    marginTop: Spacing.lg,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: Spacing.sm,
   },
-  serviceMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, minWidth: 210 },
-  serviceMetaText: { ...Typography.caption, color: Colors.textSecondary, flex: 1 },
-  verificationCount: { flexDirection: 'row', alignItems: 'baseline' },
+  summaryMetaText: { ...Typography.caption, color: Colors.textSecondary },
+  summaryMetaValue: { fontFamily: FontFamily.monoSemibold, color: Colors.text },
+  summaryMetaDanger: { color: Colors.nok, fontFamily: FontFamily.medium },
+  metaDot: {
+    width: 3,
+    height: 3,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.borderNormal,
+  },
+  listHeading: {
+    marginTop: Spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: Spacing.sm,
+  },
+  listTitle: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.xl,
+    lineHeight: 28,
+    color: Colors.text,
+  },
+  listCount: {
+    fontFamily: FontFamily.mono,
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+  },
+  filters: { gap: Spacing.sm, paddingRight: Spacing.lg },
+  statusIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowContent: { gap: Spacing.sm },
+  rowContentTablet: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xxl,
+  },
+  identity: { flex: 1, minWidth: 0, gap: 5 },
+  serviceName: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.md,
+    lineHeight: 22,
+    color: Colors.text,
+  },
+  lastInspection: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  lastInspectionText: { ...Typography.caption, color: Colors.textSecondary, flexShrink: 1 },
+  verifications: { flexDirection: 'row', alignItems: 'baseline' },
+  verificationsTablet: { width: 130 },
   verificationValue: {
     fontFamily: FontFamily.monoSemibold,
     fontSize: FontSizes.sm,
     color: Colors.text,
   },
   verificationLabel: { ...Typography.caption, color: Colors.textSecondary },
+  stateColumn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  stateColumnTablet: {
+    width: 170,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 3,
+  },
+  stateText: { ...Typography.caption, fontFamily: FontFamily.semibold },
+  ncState: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ncStateText: {
+    ...Typography.caption,
+    color: Colors.nok,
+    fontFamily: FontFamily.medium,
+  },
+  emptySurface: {
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
 });

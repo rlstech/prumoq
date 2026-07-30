@@ -122,6 +122,60 @@ export function DatumCard({
   );
 }
 
+export function ListSurface({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return <View style={[styles.listSurface, style]}>{children}</View>;
+}
+
+export function OperationalRow({
+  children,
+  leading,
+  trailing,
+  tone = 'neutral',
+  last = false,
+  onPress,
+  accessibilityLabel,
+  style,
+}: {
+  children: ReactNode;
+  leading?: ReactNode;
+  trailing?: ReactNode;
+  tone?: DatumTone;
+  last?: boolean;
+  onPress: () => void;
+  accessibilityLabel: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={({ pressed }) => [
+        styles.operationalRow,
+        style,
+        focused && styles.focusVisible,
+        pressed && styles.operationalRowPressed,
+      ]}
+    >
+      <View style={[styles.operationalDatum, { backgroundColor: datumPalette[tone] }]} />
+      {leading ? <View style={styles.operationalLeading}>{leading}</View> : null}
+      <View style={styles.operationalBody}>{children}</View>
+      {trailing ? <View style={styles.operationalTrailing}>{trailing}</View> : null}
+      {!last ? <View style={styles.operationalSeparator} /> : null}
+    </Pressable>
+  );
+}
+
 export function MetricBlock({
   label,
   value,
@@ -783,6 +837,54 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: Spacing.lg,
     paddingLeft: Spacing.lg + 3,
+  },
+  listSurface: {
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  operationalRow: {
+    minHeight: 84,
+    position: 'relative',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    paddingLeft: Spacing.lg + 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: Colors.surface,
+  },
+  operationalRowPressed: { backgroundColor: Colors.surface2 },
+  operationalDatum: {
+    position: 'absolute',
+    top: Spacing.md,
+    bottom: Spacing.md,
+    left: 0,
+    width: 3,
+    borderTopRightRadius: Radius.full,
+    borderBottomRightRadius: Radius.full,
+  },
+  operationalLeading: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  operationalBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  operationalTrailing: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  operationalSeparator: {
+    position: 'absolute',
+    right: Spacing.lg,
+    bottom: 0,
+    left: Spacing.lg + 3,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.border,
   },
   metricBlock: {
     minWidth: 88,
