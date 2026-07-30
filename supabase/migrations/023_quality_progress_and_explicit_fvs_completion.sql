@@ -195,7 +195,8 @@ SET
   updated_at = now()
 WHERE status = 'nao_conforme';
 
-CREATE OR REPLACE VIEW public.v_obras_com_fvs AS
+CREATE OR REPLACE VIEW public.v_obras_com_fvs
+WITH (security_invoker = true) AS
 SELECT
   o.id,
   o.nome,
