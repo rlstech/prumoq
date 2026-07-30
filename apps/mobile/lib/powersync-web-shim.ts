@@ -21,7 +21,7 @@ interface DynamicTable {
 
 function dynamicTable(name: string): DynamicTable {
   const from = supabase.from as unknown as (relation: string) => DynamicTable;
-  return from(name);
+  return from.call(supabase, name);
 }
 
 // ─────────────────────────────────────────────────────────
