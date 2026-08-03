@@ -8,7 +8,8 @@
     "start": "next start",
     "test": "tsx --test \"lib/**/*.test.ts\"",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "bootstrap:superadmin": "node --env-file=.env.local scripts/bootstrap-superadmin.mjs"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "5.3.0",

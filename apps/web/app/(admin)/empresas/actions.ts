@@ -1,12 +1,8 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
+import { requireTenantRole } from '@/lib/auth/context';
 import { revalidatePath } from 'next/cache';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export async function createEmpresa(data: {
   nome: string;
@@ -21,10 +17,13 @@ export async function createEmpresa(data: {
   telefone?: string;
 }) {
   try {
+    const context = await requireTenantRole(['admin']);
+    const supabase = await createClient();
     const payload: Record<string, any> = {
       nome: data.nome.trim(),
       cnpj: data.cnpj.replace(/\D/g, ''),
       ativo: true,
+      cliente_id: context.clienteId,
     };
     if (data.ie) payload.ie = data.ie.trim();
     if (data.endereco) payload.endereco = data.endereco.trim();
@@ -35,7 +34,7 @@ export async function createEmpresa(data: {
     if (data.email) payload.email = data.email.trim();
     if (data.telefone) payload.telefone = data.telefone.trim();
 
-    const { error } = await supabaseAdmin.from('empresas' as any).insert([payload]);
+    const { error } = await supabase.from('empresas').insert(payload as never);
     if (error) {
       if (error.message.includes('duplicate') || error.message.includes('unique')) {
         return { success: false, error: 'CNPJ já cadastrado.' };
@@ -63,6 +62,8 @@ export async function updateEmpresa(id: string, data: {
   ativo?: boolean;
 }) {
   try {
+    const context = await requireTenantRole(['admin']);
+    const supabase = await createClient();
     const payload: Record<string, any> = {};
     if (data.nome !== undefined) payload.nome = data.nome.trim();
     if (data.cnpj !== undefined) payload.cnpj = data.cnpj.replace(/\D/g, '');
@@ -76,7 +77,7 @@ export async function updateEmpresa(id: string, data: {
     if (data.telefone !== undefined) payload.telefone = data.telefone.trim() || null;
     if (data.ativo !== undefined) payload.ativo = data.ativo;
 
-    const { error } = await supabaseAdmin.from('empresas' as any).update(payload).eq('id', id);
+    const { error } = await supabase.from('empresas').update(payload as never).eq('id', id).eq('cliente_id', context.clienteId);
     if (error) {
       if (error.message.includes('duplicate') || error.message.includes('unique')) {
         return { success: false, error: 'CNPJ já cadastrado.' };

@@ -97,7 +97,7 @@ type Resultado = VerificationResult;
 interface ItemRow { id: string; ordem: number; titulo: string; metodo_verif: string; tolerancia: string }
 interface EquipeRow { id: string; nome: string; tipo: string }
 interface FvsRow { id: string; subservico: string; revisao_associada: number; status: string }
-interface UsuarioRow { id: string; nome: string; cargo: string }
+interface UsuarioRow { id: string; cliente_id: string; nome: string; cargo: string }
 interface CountRow { count: number }
 interface NcAbertaRow {
   nc_id: string;
@@ -338,7 +338,7 @@ export default function NovaVerificacaoScreen() {
     error: usuarioError,
   } = useQuery<UsuarioRow>(
     userId
-      ? `SELECT id, nome, cargo FROM usuarios WHERE id = ? LIMIT 1`
+      ? `SELECT id, cliente_id, nome, cargo FROM usuarios WHERE id = ? LIMIT 1`
       : `SELECT 1 WHERE 0`,
     userId ? [userId] : [],
   );
@@ -616,6 +616,11 @@ export default function NovaVerificacaoScreen() {
       return;
     }
     const inspectorId = userId;
+    const clienteId = usuario.cliente_id;
+    if (!clienteId) {
+      Alert.alert('Conta sem cliente', 'O usuário não está associado a um ambiente PrumoQ válido.');
+      return;
+    }
 
     if (!validate()) return;
     if (shouldConclude && !canConcludeCurrentFvs) {
@@ -636,11 +641,11 @@ export default function NovaVerificacaoScreen() {
     try {
       await db.execute(`
         INSERT INTO verificacoes
-          (id, fvs_planejada_id, numero_verif, inspetor_id, equipe_id, data_verif,
+          (id, cliente_id, fvs_planejada_id, numero_verif, inspetor_id, equipe_id, data_verif,
            status, observacoes, created_offline, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        verificacaoId, fvsId, proximoNumero,
+        verificacaoId, clienteId, fvsId, proximoNumero,
         inspectorId, selectedEquipeId, dataVerif,
         verificationStatus, observacoes, 1, now,
       ]);
@@ -650,17 +655,17 @@ export default function NovaVerificacaoScreen() {
         const itemVerifId = uuid();
         await db.execute(`
           INSERT INTO verificacao_itens
-            (id, verificacao_id, fvs_padrao_item_id, ordem, titulo,
+            (id, cliente_id, verificacao_id, fvs_padrao_item_id, ordem, titulo,
              metodo_verif, tolerancia, resultado)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `, [itemVerifId, verificacaoId, item.id, item.ordem,
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [itemVerifId, clienteId, verificacaoId, item.id, item.ordem,
             item.titulo, item.metodo_verif, item.tolerancia, resultado]);
 
         const ncAberta = ncAbertoByItemId[item.id];
         if (ncAberta) {
           const fotoUrl = reinspFoto ? `pending:${reinspFoto}` : null;
           if (resultado === 'conforme') {
-            await approveReinspecao({ ncId: ncAberta.nc_id, verificacaoId, inspetorId: inspectorId, fotoUrl });
+            await approveReinspecao({ clienteId, ncId: ncAberta.nc_id, verificacaoId, inspetorId: inspectorId, fotoUrl });
             if (pendingResult.type === 'idle') {
               pendingResult = {
                 type: 'aprovada',
@@ -673,6 +678,7 @@ export default function NovaVerificacaoScreen() {
             }
           } else if (resultado === 'nao_conforme') {
             const { proximaOcorrencia } = await reprovarReinspecao({
+              clienteId,
               ncId: ncAberta.nc_id,
               numeroOcorrenciaAtual: ncAberta.numero_ocorrencia,
               verificacaoId,
@@ -696,6 +702,7 @@ export default function NovaVerificacaoScreen() {
           const nc = ncDetails[item.id];
           if (nc) {
             await createNc({
+              clienteId,
               verificacaoId,
               verificacaoItemId: itemVerifId,
               descricao: nc.descricao,
@@ -712,9 +719,9 @@ export default function NovaVerificacaoScreen() {
         ...generalPhotos.map((localPath, i) =>
           db.execute(`
             INSERT INTO verificacao_fotos
-              (id, verificacao_id, r2_key, nome_arquivo, mime_type, ordem)
-            VALUES (?, ?, ?, ?, ?, ?)
-          `, [uuid(), verificacaoId, `pending:${localPath}`, localPath.split('/').pop() ?? 'photo.jpg', 'image/jpeg', i])
+              (id, cliente_id, verificacao_id, r2_key, nome_arquivo, mime_type, ordem)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `, [uuid(), clienteId, verificacaoId, `pending:${localPath}`, localPath.split('/').pop() ?? 'photo.jpg', 'image/jpeg', i])
         ),
         ...(signaturePath ? [db.execute(
           `UPDATE verificacoes SET assinatura_url = ?, assinada_em = ? WHERE id = ?`,
@@ -735,11 +742,11 @@ export default function NovaVerificacaoScreen() {
         const conclusionNumber = (conclusionCountRows[0]?.count ?? 0) + 1;
         await db.execute(
           `INSERT INTO fvs_conclusoes
-            (id, fvs_planejada_id, verificacao_id, inspetor_id, numero_conclusao,
+            (id, cliente_id, fvs_planejada_id, verificacao_id, inspetor_id, numero_conclusao,
              percentual_final, resultado, observacao_final, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            uuid(), fvsId, verificacaoId, inspectorId, conclusionNumber,
+            uuid(), clienteId, fvsId, verificacaoId, inspectorId, conclusionNumber,
             100, 'aprovado', observacoes || null, now,
           ],
         );
@@ -1470,6 +1477,7 @@ export default function NovaVerificacaoScreen() {
 
       {/* Re-inspeção reprovada */}
       <NCReprovadaPanel
+        clienteId={usuario?.cliente_id ?? ''}
         visible={reinspResult.type === 'reprovada'}
         ocorrencia={reinspResult.type === 'reprovada' ? reinspResult.ocorrencia : 0}
         ncAnteriorId={reinspResult.type === 'reprovada' ? reinspResult.ncAnteriorId : ''}

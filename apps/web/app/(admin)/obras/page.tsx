@@ -9,7 +9,7 @@ export default async function ObrasPage() {
     { data: empresas }
   ] = await Promise.all([
     supabase.rpc('get_obras_com_fvs'), // Will fail if RPC not returning proper type but we type it, actually it's fine.
-    supabase.from('empresas').select('id, nome, cnpj').eq('ativo', true)
+    supabase.from('empresas').select('id, nome, cnpj').eq('ativo', true).order('nome')
   ]);
 
   return (

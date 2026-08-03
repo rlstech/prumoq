@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../lib/powersync';
 import { supabase } from '../lib/supabase';
 import { SupabaseConnector } from '../lib/supabase-connector';
+import { validateMobileAccess } from '../lib/auth/mobile-access';
 import { ThemeProvider } from '../lib/theme/ThemeProvider';
 
 export default function RootLayout() {
@@ -19,7 +20,13 @@ export default function RootLayout() {
           supabase.auth.getSession(),
         ]);
         if (session) {
-          await db.connect(new SupabaseConnector());
+          const accessError = await validateMobileAccess(session.user.id);
+          if (accessError) {
+            await supabase.auth.signOut();
+            await db.disconnectAndClear();
+          } else {
+            await db.connect(new SupabaseConnector());
+          }
         }
       } catch (e) {
         console.error('[RootLayout] init error:', e);
@@ -38,7 +45,12 @@ export default function RootLayout() {
         if (event === 'SIGNED_IN' && session) {
           // Connect PowerSync on sign-in; navigation is handled by the
           // login screen after the profile check completes.
-          await db.connect(new SupabaseConnector());
+          const accessError = await validateMobileAccess(session.user.id);
+          if (accessError) {
+            await supabase.auth.signOut();
+          } else {
+            await db.connect(new SupabaseConnector());
+          }
         }
         if (event === 'SIGNED_OUT') {
           await db.disconnectAndClear();

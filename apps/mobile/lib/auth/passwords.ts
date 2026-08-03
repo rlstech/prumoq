@@ -5,6 +5,11 @@ import { z } from 'zod';
 export const RECOVERY_SESSION_STORAGE_KEY = 'prumoq:password-recovery-user';
 const PASSWORD_CHANGED_STORAGE_KEY = 'prumoq:password-changed';
 
+type PasswordSetupUser = {
+  invited_at?: string;
+  user_metadata?: Record<string, unknown>;
+};
+
 const emailSchema = z.string().trim().email('Informe um e-mail válido');
 const passwordSchema = z.string().min(8, 'A senha deve ter pelo menos 8 caracteres');
 
@@ -43,6 +48,10 @@ export function getPublicPwaOrigin(): string {
 
 export function getPasswordRecoveryRedirectUrl(): string {
   return `${getPublicPwaOrigin()}/redefinir-senha`;
+}
+
+export function isInvitationPasswordSetup(user: PasswordSetupUser): boolean {
+  return Boolean(user.invited_at) && !user.user_metadata?.onboarding_completed_at;
 }
 
 export function markPasswordRecoverySession(userId: string): void {

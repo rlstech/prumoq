@@ -1,6 +1,8 @@
 # Configuração da recuperação de senha
 
-O fluxo de senha usa o Supabase Auth diretamente e não exige migration.
+Os fluxos de recuperação e de ativação por convite usam o Supabase Auth.
+Ambos retornam para `/redefinir-senha`; a tela identifica o tipo da sessão e
+apresenta o conteúdo correspondente.
 
 ## URLs de autenticação
 
@@ -42,3 +44,10 @@ levará o usuário à página `/redefinir-senha` depois que o token for confirma
 3. Defina uma senha com pelo menos 8 caracteres.
 4. Confirme que a senha antiga não autentica e que a nova funciona.
 5. Confirme em outro dispositivo que a sessão anterior foi encerrada.
+
+## Verificação de convite
+
+1. Cadastre um cliente no painel da plataforma.
+2. Confirme que o painel mostra `Aguardando ativação` para o administrador.
+3. Abra o convite e defina a senha em `/redefinir-senha`.
+4. Confirme que o painel passa a mostrar `Ativado` sem alterar o status do ambiente.

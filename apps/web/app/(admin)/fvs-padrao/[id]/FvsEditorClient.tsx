@@ -4,6 +4,7 @@ import { useState } from 'react';
 import ChecklistEditor, { ChecklistItemType } from '@/components/ChecklistEditor';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
+import { FVS_CATEGORIES } from '@/lib/fvs/categories';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
 import Modal from '@/components/ui/Modal';
 import { useRouter } from 'next/navigation';
@@ -13,14 +14,17 @@ interface FvsEditorClientProps {
   fvs: any;
   initialItems: any[];
   logs: any[];
+  empresas: Array<{ id: string; nome: string }>;
+  initialEmpresaIds: string[];
 }
 
-export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorClientProps) {
+export default function FvsEditorClient({ fvs, initialItems, logs, empresas, initialEmpresaIds }: FvsEditorClientProps) {
   const { toast } = useToast();
   const router = useRouter();
   
   const [items, setItems] = useState<ChecklistItemType[]>(initialItems.filter(i => i.revisao === fvs.revisao_atual));
   const [fvsData, setFvsData] = useState(fvs);
+  const [empresaIds, setEmpresaIds] = useState<string[]>(initialEmpresaIds);
   
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [resumoAlteracoes, setResumoAlteracoes] = useState('');
@@ -47,6 +51,10 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
       toast('A FVS precisa ter pelo menos um item', 'error');
       return;
     }
+    if (fvsData.escopo === 'restrito' && empresaIds.length === 0) {
+      toast('Selecione pelo menos uma empresa para o escopo restrito', 'error');
+      return;
+    }
 
     setIsPublishing(true);
     const supabase = createClient();
@@ -68,6 +76,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
       descricao: fvsData.descricao,
       norma_ref: fvsData.norma_ref,
       revisao_atual: novaRevisao,
+      escopo: fvsData.escopo,
     }).eq('id', fvs.id);
 
     if (fvsError) {
@@ -75,8 +84,27 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
       setIsPublishing(false); return;
     }
 
+    const { error: scopeDeleteError } = await supabase
+      .from('fvs_padrao_empresas')
+      .delete()
+      .eq('fvs_padrao_id', fvs.id);
+    if (scopeDeleteError) {
+      toast('Erro ao atualizar o escopo da FVS.', 'error');
+      setIsPublishing(false); return;
+    }
+    if (fvsData.escopo === 'restrito') {
+      const { error: scopeInsertError } = await supabase.from('fvs_padrao_empresas').insert(
+        empresaIds.map(empresa_id => ({ cliente_id: fvs.cliente_id, fvs_padrao_id: fvs.id, empresa_id })),
+      );
+      if (scopeInsertError) {
+        toast('Erro ao vincular as empresas da FVS.', 'error');
+        setIsPublishing(false); return;
+      }
+    }
+
     // Insere logs
     await supabase.from('fvs_padrao_revisoes' as any).insert([{
+      cliente_id: fvs.cliente_id,
       fvs_padrao_id: fvs.id,
       numero_revisao: novaRevisao,
       revisado_por: user!.id,
@@ -85,6 +113,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
 
     // Insere items nova revisão
     const novosItens = items.filter(i => !i.deleted).map((it, idx) => ({
+      cliente_id: fvs.cliente_id,
       fvs_padrao_id: fvs.id,
       revisao: novaRevisao,
       ordem: idx + 1,
@@ -167,8 +196,8 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
                     value={fvsData.categoria}
                     onChange={e => setFvsData({...fvsData, categoria: e.target.value})}
                   >
-                    {["Estrutura", "Vedação", "Revestimento", "Instalações", "Cobertura", "Acabamento"].map(c => (
-                      <option key={c} value={c}>{c}</option>
+                    {FVS_CATEGORIES.map(category => (
+                      <option key={category.value} value={category.value}>{category.label}</option>
                     ))}
                   </select>
                </div>
@@ -182,6 +211,34 @@ export default function FvsEditorClient({ fvs, initialItems, logs }: FvsEditorCl
                  />
                </div>
              </div>
+          </div>
+
+          <div className="bg-bg-1 border border-brd-0 rounded-xl p-5">
+            <h3 className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-4">Escopo empresarial</h3>
+            <select
+              className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0"
+              value={fvsData.escopo ?? 'global'}
+              onChange={event => setFvsData({ ...fvsData, escopo: event.target.value })}
+            >
+              <option value="global">Todas as empresas do cliente</option>
+              <option value="restrito">Somente empresas selecionadas</option>
+            </select>
+            {fvsData.escopo === 'restrito' ? (
+              <div className="mt-3 max-h-40 space-y-2 overflow-y-auto">
+                {empresas.map(empresa => (
+                  <label key={empresa.id} className="flex items-center gap-2 text-xs text-txt">
+                    <input
+                      type="checkbox"
+                      checked={empresaIds.includes(empresa.id)}
+                      onChange={() => setEmpresaIds(current => current.includes(empresa.id)
+                        ? current.filter(id => id !== empresa.id)
+                        : [...current, empresa.id])}
+                    />
+                    {empresa.nome}
+                  </label>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="bg-bg-1 border border-brd-0 rounded-xl p-5">

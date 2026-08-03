@@ -2,14 +2,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '../lib/constants';
-
-const R2_PUBLIC_URL = process.env.EXPO_PUBLIC_R2_PUBLIC_URL ?? '';
-
-function resolveUri(key: string): string {
-  if (key.startsWith('pending:')) return key.slice('pending:'.length);
-  if (key.startsWith('blob:') || key.startsWith('data:') || key.startsWith('http')) return key;
-  return `${R2_PUBLIC_URL}/${key}`;
-}
+import { usePrivateMediaUris } from '../hooks/usePrivateMediaUris';
 
 interface Props {
   photos: string[];
@@ -20,6 +13,7 @@ interface Props {
 
 export function PhotoViewer({ photos, initialIndex = 0, visible, onClose }: Props) {
   const [index, setIndex] = useState(initialIndex);
+  const resolveUri = usePrivateMediaUris(photos);
 
   // Sync index when initialIndex or visibility changes
   const currentIndex = visible ? index : initialIndex;

@@ -1,101 +1,93 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
-import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { createClient } from '@/lib/supabase/server';
+import { requireTenantRole } from '@/lib/auth/context';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-async function getAuthenticatedUser() {
-  const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Não autenticado');
-
-  const { data } = await supabaseAdmin
-    .from('usuarios')
-    .select('empresa_id, perfil')
-    .eq('id', user.id)
-    .single();
-
-  if (!data) throw new Error('Usuário não encontrado');
-  if (data.perfil !== 'admin' && data.perfil !== 'gestor') {
-    throw new Error('Sem permissão para gerenciar equipes');
-  }
-
-  return { userId: user.id, empresaId: data.empresa_id as string };
-}
-
-export async function createEquipe(formData: {
+export type EquipeFormData = {
   nome: string;
   tipo: string;
   especialidade: string;
   responsavel: string;
   telefone: string;
   cnpj_terceiro: string;
-}) {
-  try {
-    const { empresaId } = await getAuthenticatedUser();
+  escopo?: 'global' | 'restrito';
+  empresaIds?: string[];
+};
 
-    const { data, error } = await supabaseAdmin
-      .from('equipes')
-      .insert({
-        nome: formData.nome,
-        tipo: formData.tipo,
-        especialidade: formData.especialidade || null,
-        responsavel: formData.responsavel || null,
-        telefone: formData.telefone || null,
-        cnpj_terceiro: formData.tipo === 'terceirizado' ? formData.cnpj_terceiro || null : null,
-        empresa_id: empresaId,
-        ativo: true,
-      })
-      .select()
-      .single();
+async function replaceScope(
+  equipeId: string,
+  clienteId: string,
+  formData: EquipeFormData,
+): Promise<void> {
+  const supabase = await createClient();
+  const { error: deleteError } = await supabase
+    .from('equipe_empresas')
+    .delete()
+    .eq('equipe_id', equipeId)
+    .eq('cliente_id', clienteId);
+  if (deleteError) throw deleteError;
 
+  if (formData.escopo === 'restrito' && formData.empresaIds?.length) {
+    const { error } = await supabase.from('equipe_empresas').insert(
+      formData.empresaIds.map(empresa_id => ({
+        equipe_id: equipeId,
+        empresa_id,
+        cliente_id: clienteId,
+      })),
+    );
     if (error) throw error;
-
-    revalidatePath('/equipes');
-    return { success: true, data };
-  } catch (error: any) {
-    return { success: false, error: error.message };
   }
 }
 
-export async function updateEquipe(
-  id: string,
-  formData: {
-    nome: string;
-    tipo: string;
-    especialidade: string;
-    responsavel: string;
-    telefone: string;
-    cnpj_terceiro: string;
-  }
-) {
+export async function createEquipe(formData: EquipeFormData) {
   try {
-    await getAuthenticatedUser();
-
-    const { data, error } = await supabaseAdmin
-      .from('equipes')
-      .update({
-        nome: formData.nome,
-        tipo: formData.tipo,
-        especialidade: formData.especialidade || null,
-        responsavel: formData.responsavel || null,
-        telefone: formData.telefone || null,
-        cnpj_terceiro: formData.tipo === 'terceirizado' ? formData.cnpj_terceiro || null : null,
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
+    const context = await requireTenantRole(['admin', 'gestor']);
+    if (formData.escopo === 'restrito' && !formData.empresaIds?.length) {
+      throw new Error('Selecione ao menos uma empresa para o escopo restrito.');
+    }
+    const supabase = await createClient();
+    const { data, error } = await supabase.from('equipes').insert({
+      nome: formData.nome.trim(),
+      tipo: formData.tipo as 'proprio' | 'terceirizado',
+      especialidade: formData.especialidade || null,
+      responsavel: formData.responsavel || null,
+      telefone: formData.telefone || null,
+      cnpj_terceiro: formData.tipo === 'terceirizado' ? formData.cnpj_terceiro || null : null,
+      cliente_id: context.clienteId,
+      escopo: formData.escopo ?? 'global',
+      ativo: true,
+    }).select().single();
     if (error) throw error;
-
+    await replaceScope(data.id, context.clienteId, formData);
     revalidatePath('/equipes');
-    return { success: true, data };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: true, data: { ...data, equipe_empresas: (formData.empresaIds ?? []).map(empresa_id => ({ empresa_id })) } };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Falha ao criar equipe.' };
+  }
+}
+
+export async function updateEquipe(id: string, formData: EquipeFormData) {
+  try {
+    const context = await requireTenantRole(['admin', 'gestor']);
+    if (formData.escopo === 'restrito' && !formData.empresaIds?.length) {
+      throw new Error('Selecione ao menos uma empresa para o escopo restrito.');
+    }
+    const supabase = await createClient();
+    const { data, error } = await supabase.from('equipes').update({
+      nome: formData.nome.trim(),
+      tipo: formData.tipo as 'proprio' | 'terceirizado',
+      especialidade: formData.especialidade || null,
+      responsavel: formData.responsavel || null,
+      telefone: formData.telefone || null,
+      cnpj_terceiro: formData.tipo === 'terceirizado' ? formData.cnpj_terceiro || null : null,
+      escopo: formData.escopo ?? 'global',
+    }).eq('id', id).eq('cliente_id', context.clienteId).select().single();
+    if (error) throw error;
+    await replaceScope(id, context.clienteId, formData);
+    revalidatePath('/equipes');
+    return { success: true, data: { ...data, equipe_empresas: (formData.empresaIds ?? []).map(empresa_id => ({ empresa_id })) } };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Falha ao atualizar equipe.' };
   }
 }

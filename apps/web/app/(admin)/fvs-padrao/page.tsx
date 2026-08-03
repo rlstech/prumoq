@@ -7,10 +7,13 @@ import { ClipboardList } from 'lucide-react';
 export default async function FvsPadraoPage() {
   const supabase = await createClient();
 
-  const { data: fvsList } = await supabase
-    .from('fvs_padrao')
-    .select('*, fvs_padrao_itens_current(count), fvs_planejadas(count)')
-    .order('nome');
+  const [{ data: fvsList, error: fvsError }, { data: empresas }] = await Promise.all([
+    supabase
+      .from('fvs_padrao')
+      .select('*, fvs_padrao_itens_current(count), fvs_planejadas!fvs_planejadas_fvs_padrao_id_fkey(count), fvs_padrao_empresas!fvs_padrao_empresas_fvs_padrao_id_fkey(empresa_id)')
+      .order('nome'),
+    supabase.from('empresas').select('id, nome').eq('ativo', true).order('nome'),
+  ]);
 
   const typedFvs = (fvsList as any[]) || [];
 
@@ -34,7 +37,11 @@ export default async function FvsPadraoPage() {
           <KPICard title="Revisões" value={contagens.revisoes} colorVariant="brand" />
         </div>
 
-        <FvsPadraoClient initialData={typedFvs} />
+        <FvsPadraoClient
+          initialData={typedFvs}
+          empresas={empresas ?? []}
+          loadError={fvsError ? 'Não foi possível carregar a biblioteca de FVS. Atualize a página ou tente novamente.' : undefined}
+        />
         </div>
       </div>
     </>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Modal from './Modal';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -20,11 +19,9 @@ export default function PhotoGallery({ photos }: PhotoGalleryProps) {
 
   if (!photos || photos.length === 0) return null;
 
-  const publicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || '';
-
   const getUrl = (key: string) => {
-    if (key.startsWith('http')) return key;
-    return `${publicUrl}/${key}`;
+    if (key.startsWith('http') || key.startsWith('data:') || key.startsWith('blob:')) return key;
+    return '';
   };
 
   const handlePrev = (e: React.MouseEvent) => {

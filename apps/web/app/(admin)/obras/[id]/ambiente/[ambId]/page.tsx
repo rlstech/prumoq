@@ -24,9 +24,11 @@ export default async function AmbientePage(props: { params: Promise<{ id: string
   // Fetch available standard FVS for this company
   const { data: fvsPadraoList } = await supabase
     .from('fvs_padrao' as any)
-    .select('id, nome, revisao_atual, categoria')
-    .eq('empresa_id', typedAmb.obras?.empresa_id)
+    .select('id, nome, revisao_atual, categoria, escopo, fvs_padrao_empresas!fvs_padrao_empresas_fvs_padrao_id_fkey(empresa_id)')
     .eq('ativo', true);
+  const availableFvs = ((fvsPadraoList as any[]) ?? []).filter(fvs =>
+    fvs.escopo === 'global' || (fvs.fvs_padrao_empresas ?? []).some((scope: any) => scope.empresa_id === typedAmb.obras?.empresa_id)
+  );
 
   return (
     <>
@@ -41,7 +43,7 @@ export default async function AmbientePage(props: { params: Promise<{ id: string
         <FvsPlannerClient 
           ambiente={typedAmb} 
           initialFvsList={fvsList || []} 
-          fvsPadraoList={fvsPadraoList || []}
+          fvsPadraoList={availableFvs}
         />
       </div>
     </>

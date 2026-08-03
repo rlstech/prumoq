@@ -18,13 +18,11 @@ import { Download, Loader2, Printer } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { getVerificacaoDetalhe } from './actions';
 
-const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? 'https://pub-fd4eb9827712433599dec5fe1fef3fa5.r2.dev';
-
 function resolveR2Url(key: string): string | null {
   if (!key) return null;
   if (key.startsWith('blob:')) return null;
   if (key.startsWith('data:') || key.startsWith('http')) return key;
-  return `${R2_PUBLIC_URL}/${key}`;
+  return null;
 }
 
 export default function VerificacoesClient({ initialData }: { initialData: any[] }) {

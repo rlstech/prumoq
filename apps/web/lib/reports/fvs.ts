@@ -9,6 +9,7 @@ import {
 } from '@prumoq/shared';
 import type { createClient } from '@/lib/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { signPrivateMedia } from '@/lib/media/signed-urls';
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type VerificationRpcRow =
@@ -40,15 +41,11 @@ export interface FvsReportData extends FvsPrintableReport {
   emitidoEm: string;
 }
 
-const R2_BASE =
-  process.env.NEXT_PUBLIC_R2_PUBLIC_URL ??
-  'https://pub-fd4eb9827712433599dec5fe1fef3fa5.r2.dev';
-
-function resolveR2(key: string | null | undefined): string | null {
+function resolveR2(key: string | null | undefined, signed: Map<string, string>): string | null {
   if (!key) return null;
   if (key.startsWith('http') || key.startsWith('data:')) return key;
   if (key.startsWith('pending:') || key.startsWith('blob:')) return null;
-  return `${R2_BASE}/${key}`;
+  return signed.get(key) ?? null;
 }
 
 function assertNoError(
@@ -174,10 +171,19 @@ export async function loadFvsReport(
   if (!header) return null;
 
   const verificacoes = [...verificationRows].reverse();
+  const conclusao = conclusaoRes.data?.[0] ?? null;
+  const signedMedia = await signPrivateMedia(client, [
+    ...photoRows.map(photo => photo.r2_key),
+    ...verificacoes.map(verification => verification.assinatura_url),
+    conclusao?.assinatura_url,
+  ]);
 
   const fotosMap = new Map<string, FvsReportPhoto[]>();
   for (const photo of photoRows) {
-    const source = resolveFvsReportPhotoSource(photo.r2_key, R2_BASE);
+    const signedSource = resolveR2(photo.r2_key, signedMedia);
+    const source = signedSource
+      ? { url: signedSource, availability: 'available' as const }
+      : resolveFvsReportPhotoSource(photo.r2_key, '');
     if (!source) continue;
     const photos = fotosMap.get(photo.verificacao_id) ?? [];
     photos.push({
@@ -205,12 +211,12 @@ export async function loadFvsReport(
     header,
     verificacoes: verificacoes.map((verification) => ({
       ...verification,
-      assinatura_url: resolveR2(verification.assinatura_url),
+      assinatura_url: resolveR2(verification.assinatura_url, signedMedia),
       items: itemsMap.get(verification.id) ?? [],
       fotos: fotosMap.get(verification.id) ?? [],
     })),
     ncs: ncRows,
-    conclusao: conclusaoRes.data?.[0] ?? null,
+    conclusao: conclusao ? { ...conclusao, assinatura_url: resolveR2(conclusao.assinatura_url, signedMedia) } : null,
     emitidoEm: new Intl.DateTimeFormat('pt-BR', {
       day: '2-digit',
       month: '2-digit',

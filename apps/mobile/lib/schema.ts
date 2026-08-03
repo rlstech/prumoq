@@ -4,6 +4,7 @@ import { column, Schema, Table } from '@powersync/react-native';
 // UUIDs, dates, and enums are stored as text.
 
 const obras = new Table({
+  cliente_id:       column.text,
   empresa_id:        column.text,
   nome:              column.text,
   eng_responsavel:   column.text,
@@ -18,6 +19,7 @@ const obras = new Table({
 });
 
 const obra_usuarios = new Table({
+  cliente_id: column.text,
   obra_id:    column.text,
   usuario_id: column.text,
   papel:      column.text,
@@ -25,12 +27,14 @@ const obra_usuarios = new Table({
 });
 
 const obra_equipes = new Table({
+  cliente_id: column.text,
   obra_id:   column.text,
   equipe_id: column.text,
 });
 
 const ambientes = new Table(
   {
+    cliente_id: column.text,
     obra_id:     column.text,
     nome:        column.text,
     tipo:        column.text,
@@ -43,7 +47,8 @@ const ambientes = new Table(
 );
 
 const fvs_padrao = new Table({
-  empresa_id:    column.text,
+  cliente_id:    column.text,
+  escopo:        column.text,
   nome:          column.text,
   descricao:     column.text,
   categoria:     column.text,
@@ -55,6 +60,7 @@ const fvs_padrao = new Table({
 });
 
 const fvs_padrao_revisoes = new Table({
+  cliente_id:     column.text,
   fvs_padrao_id:  column.text,
   numero_revisao: column.integer,
   descricao_alt:  column.text,
@@ -63,6 +69,7 @@ const fvs_padrao_revisoes = new Table({
 });
 
 const fvs_padrao_itens = new Table({
+  cliente_id:    column.text,
   fvs_padrao_id: column.text,
   revisao:       column.integer,
   ordem:         column.integer,
@@ -72,6 +79,7 @@ const fvs_padrao_itens = new Table({
 });
 
 const fvs_planejadas = new Table({
+  cliente_id:           column.text,
   ambiente_id:          column.text,
   fvs_padrao_id:        column.text,
   revisao_associada:    column.integer,
@@ -88,6 +96,7 @@ const fvs_planejadas = new Table({
 
 const fvs_conclusoes = new Table(
   {
+    cliente_id:      column.text,
     fvs_planejada_id: column.text,
     verificacao_id:   column.text,
     inspetor_id:      column.text,
@@ -106,6 +115,7 @@ const fvs_conclusoes = new Table(
 
 const fvs_reaberturas = new Table(
   {
+    cliente_id:       column.text,
     fvs_planejada_id:  column.text,
     solicitado_por:    column.text,
     autorizado_por:    column.text,
@@ -119,6 +129,7 @@ const fvs_reaberturas = new Table(
 
 const verificacoes = new Table(
   {
+    cliente_id:      column.text,
     fvs_planejada_id: column.text,
     numero_verif:     column.integer,
     inspetor_id:      column.text,
@@ -138,6 +149,7 @@ const verificacoes = new Table(
 
 const verificacao_itens = new Table(
   {
+    cliente_id:        column.text,
     verificacao_id:     column.text,
     fvs_padrao_item_id: column.text,
     ordem:              column.integer,
@@ -151,6 +163,7 @@ const verificacao_itens = new Table(
 
 const verificacao_fotos = new Table(
   {
+    cliente_id:    column.text,
     verificacao_id: column.text,
     r2_key:         column.text,
     r2_thumb_key:   column.text,
@@ -164,6 +177,7 @@ const verificacao_fotos = new Table(
 
 const nao_conformidades = new Table(
   {
+    cliente_id:             column.text,
     verificacao_id:        column.text,
     verificacao_item_id:   column.text,
     descricao:             column.text,
@@ -189,6 +203,7 @@ const nao_conformidades = new Table(
 );
 
 const nc_reinspecoes = new Table({
+  cliente_id:     column.text,
   nc_id:          column.text,
   verificacao_id: column.text,
   inspetor_id:    column.text,
@@ -200,6 +215,7 @@ const nc_reinspecoes = new Table({
 });
 
 const nc_fotos = new Table({
+  cliente_id:   column.text,
   nc_id:        column.text,
   r2_key:       column.text,
   r2_thumb_key: column.text,
@@ -209,7 +225,8 @@ const nc_fotos = new Table({
 });
 
 const equipes = new Table({
-  empresa_id:    column.text,
+  cliente_id:    column.text,
+  escopo:        column.text,
   nome:          column.text,
   tipo:          column.text,
   responsavel:   column.text,
@@ -218,11 +235,12 @@ const equipes = new Table({
 });
 
 const usuarios = new Table({
-  empresa_id: column.text,
-  nome:       column.text,
-  cargo:      column.text,
-  perfil:     column.text,
-  avatar_url: column.text,
+  cliente_id:              column.text,
+  nome:                    column.text,
+  cargo:                   column.text,
+  perfil:                  column.text,
+  avatar_url:              column.text,
+  onboarding_concluido_em: column.text,
 });
 
 export const AppSchema = new Schema({
@@ -248,15 +266,16 @@ export const AppSchema = new Schema({
 
 // Row types — manual interfaces matching the SQLite columns above
 // (PowerSync's Schema class does not expose per-table TypeScript types)
-export interface ObrasRow {
+export interface TenantRow { cliente_id: string }
+export interface ObrasRow extends TenantRow {
   id: string; empresa_id: string; nome: string; eng_responsavel: string;
   crea_cau: string; status: string; municipio: string; uf: string;
   data_inicio_prev: string; data_termino_prev: string; ativo: number; updated_at: string;
 }
-export interface ObraUsuariosRow { id: string; obra_id: string; usuario_id: string; papel: string; ativo: number }
-export interface ObraEquipesRow { id: string; obra_id: string; equipe_id: string }
-export interface AmbientesRow { id: string; obra_id: string; nome: string; tipo: string; localizacao: string; observacoes: string; ativo: number; updated_at: string }
-export interface FvsPadraoRow { id: string; empresa_id: string; nome: string; descricao: string; categoria: string; norma_ref: string; revisao_atual: number; ativo: number; created_by: string; updated_at: string }
+export interface ObraUsuariosRow extends TenantRow { id: string; obra_id: string; usuario_id: string; papel: string; ativo: number }
+export interface ObraEquipesRow extends TenantRow { id: string; obra_id: string; equipe_id: string }
+export interface AmbientesRow extends TenantRow { id: string; obra_id: string; nome: string; tipo: string; localizacao: string; observacoes: string; ativo: number; updated_at: string }
+export interface FvsPadraoRow extends TenantRow { id: string; escopo: string; nome: string; descricao: string; categoria: string; norma_ref: string; revisao_atual: number; ativo: number; created_by: string; updated_at: string }
 export interface FvsPadraoRevisoesRow { id: string; fvs_padrao_id: string; numero_revisao: number; descricao_alt: string; revisado_por: string; created_at: string }
 export interface FvsPadraoItensRow { id: string; fvs_padrao_id: string; revisao: number; ordem: number; titulo: string; metodo_verif: string; tolerancia: string }
 export interface FvsPlanejdasRow { id: string; ambiente_id: string; fvs_padrao_id: string; revisao_associada: number; subservico: string; status: string; percentual_exec: number; concluida_em: string; total_conclusoes: number; total_reaberturas: number; ultima_conclusao_em: string; ultima_reabertura_em: string; updated_at: string }
@@ -268,5 +287,5 @@ export interface VerificacaoFotosRow { id: string; verificacao_id: string; r2_ke
 export interface NaoConformidadesRow { id: string; verificacao_id: string; verificacao_item_id: string; descricao: string; solucao_proposta: string; responsavel_id: string | null; data_nova_verif: string; prioridade: string; status: string; numero_ocorrencia: number; nc_anterior_id: string | null; verificacao_reinsp_id: string | null; foto_reinspecao_url: string | null; resolvida_na_verif_id: string | null; resolvida_em: string | null; observacao_resolucao: string | null; created_at: string; updated_at: string }
 export interface NcFotosRow { id: string; nc_id: string; r2_key: string; r2_thumb_key: string | null; nome_arquivo: string | null; mime_type: string | null; ordem: number }
 export interface NcReinspecoesRow { id: string; nc_id: string; verificacao_id: string; inspetor_id: string; resultado: 'aprovada' | 'reprovada'; observacao: string | null; foto_url: string | null; nova_nc_id: string | null; created_at: string }
-export interface EquipesRow { id: string; empresa_id: string; nome: string; tipo: string; responsavel: string; especialidade: string; ativo: number }
-export interface UsuariosRow { id: string; empresa_id: string; nome: string; cargo: string; perfil: string; avatar_url: string }
+export interface EquipesRow extends TenantRow { id: string; escopo: string; nome: string; tipo: string; responsavel: string; especialidade: string; ativo: number }
+export interface UsuariosRow extends TenantRow { id: string; nome: string; cargo: string; perfil: string; avatar_url: string; onboarding_concluido_em: string | null }

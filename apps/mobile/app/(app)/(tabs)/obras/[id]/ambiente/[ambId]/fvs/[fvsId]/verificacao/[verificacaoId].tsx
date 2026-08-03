@@ -54,12 +54,12 @@ import {
   Typography,
 } from '../../../../../../../../../../lib/constants';
 import { goBack } from '../../../../../../../../../../lib/navigation';
+import { usePrivateMediaUris } from '../../../../../../../../../../hooks/usePrivateMediaUris';
 import {
   formatDateOnly,
   formatDateTime,
   groupByKey,
   isPendingMediaKey,
-  resolveStoredMediaUri,
   sortVerificationItems,
   summarizeVerificationItems,
 } from '../../../../../../../../../../lib/verification-detail';
@@ -261,6 +261,7 @@ export default function VerificationDetailScreen() {
   `, [verificacaoId]);
 
   const verification = headerQuery.data[0];
+  const resolveMediaUri = usePrivateMediaUris(verification?.assinatura_url ? [verification.assinatura_url] : []);
   const items = useMemo(
     () => sortVerificationItems(itemsQuery.data),
     [itemsQuery.data],
@@ -657,7 +658,7 @@ export default function VerificationDetailScreen() {
                 ]}
               >
                 <Image
-                  source={{ uri: resolveStoredMediaUri(verification.assinatura_url) }}
+                  source={{ uri: resolveMediaUri(verification.assinatura_url) }}
                   style={styles.signatureImage}
                   resizeMode="contain"
                 />

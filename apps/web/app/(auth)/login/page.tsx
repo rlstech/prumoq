@@ -27,7 +27,7 @@ export default function LoginPage() {
     startTransition(async () => {
       const result = await loginAction(null, formData);
       if (result?.error) setError(result.error);
-      else if (result?.success) router.push('/dashboard');
+      else if (result?.success) router.push(result.destination ?? '/dashboard');
     });
   }
 

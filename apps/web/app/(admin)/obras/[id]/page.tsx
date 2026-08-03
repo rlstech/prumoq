@@ -1,12 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ObraDetailClient from './ObraDetailClient';
 
 export default async function ObraDetailPage(props: { params: Promise<{ id: string }> }) {
-  const supabaseAdmin = createAdminClient();
   const params = await props.params;
   const { id } = params;
   const supabase = await createClient();
@@ -18,11 +16,11 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
     { data: fvsPadrao },
     { data: empresas },
   ] = await Promise.all([
-    supabaseAdmin.from('obras' as any).select('*').eq('id', id).single(),
+    supabase.from('obras' as any).select('*').eq('id', id).single(),
     (supabase.rpc as any)('get_obra_kpi', { p_obra_id: id }).single(),
-    (supabaseAdmin.rpc as any)('get_ambientes_obra', { p_obra_id: id }),
-    supabaseAdmin.from('fvs_padrao' as any).select('id, nome, revisao_atual, categoria').eq('ativo', true),
-    supabaseAdmin.from('empresas').select('id, nome').eq('ativo', true),
+    (supabase.rpc as any)('get_ambientes_obra', { p_obra_id: id }),
+    supabase.from('fvs_padrao' as any).select('id, nome, revisao_atual, categoria, escopo, fvs_padrao_empresas!fvs_padrao_empresas_fvs_padrao_id_fkey(empresa_id)').eq('ativo', true),
+    supabase.from('empresas').select('id, nome').eq('ativo', true),
   ]);
 
   const typedObra = obra as any;
@@ -32,7 +30,7 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
   const empresaNome = empresasList.find((e: any) => e.id === typedObra.empresa_id)?.nome ?? '';
 
   // 1. IDs das equipes já vinculadas a esta obra
-  const { data: obraEquipesLinks } = await supabaseAdmin
+  const { data: obraEquipesLinks } = await supabase
     .from('obra_equipes' as any)
     .select('equipe_id')
     .eq('obra_id', id);
@@ -40,13 +38,18 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
   const linkedIds: string[] = ((obraEquipesLinks as any[]) ?? []).map((r: any) => r.equipe_id).filter(Boolean);
 
   // 2. Todas as equipes ativas (sem filtro de empresa — igual à tela de Equipes)
-  const { data: allEquipes } = await supabaseAdmin
+  const { data: allEquipes } = await supabase
     .from('equipes' as any)
-    .select('id, nome, tipo, especialidade')
+    .select('id, nome, tipo, especialidade, escopo, equipe_empresas!equipe_empresas_equipe_id_fkey(empresa_id)')
     .eq('ativo', true)
     .order('nome');
 
-  const allEquipesList: any[] = (allEquipes as any[]) ?? [];
+  const allEquipesList: any[] = ((allEquipes as any[]) ?? []).filter((e: any) =>
+    e.escopo === 'global' || (e.equipe_empresas ?? []).some((scope: any) => scope.empresa_id === typedObra.empresa_id)
+  );
+  const availableFvs = ((fvsPadrao as any[]) ?? []).filter((f: any) =>
+    f.escopo === 'global' || (f.fvs_padrao_empresas ?? []).some((scope: any) => scope.empresa_id === typedObra.empresa_id)
+  );
 
   // Separar equipes vinculadas das disponíveis
   const obraEquipes: any[]     = allEquipesList.filter((e: any) => linkedIds.includes(e.id));
@@ -101,7 +104,7 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
           obra={typedObra}
           empresas={(empresas as any[] | null) || []}
           initialAmbientes={ambientes || []}
-          fvsPadraoList={fvsPadrao || []}
+          fvsPadraoList={availableFvs}
           obraEquipes={obraEquipes}
           availableEquipes={availableEquipes}
           totalEmpresaEquipes={allEquipesList.length}

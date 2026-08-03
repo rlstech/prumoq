@@ -108,7 +108,7 @@ export const db = {
 
 // ─────────────────────────────────────────────────────────
 // User access cache — which obras the current user can see
-// null = admin (all obras); string[] = allowed IDs
+// Always explicit IDs. RLS still enforces the tenant boundary server-side.
 // ─────────────────────────────────────────────────────────
 let _obraIdsCache: { ids: string[] | null; ts: number } | null = null;
 
@@ -127,8 +127,10 @@ async function _fetchAllowedObraIds(): Promise<string[] | null> {
   if (!user) { _obraIdsCache = { ids: [], ts: Date.now() }; return []; }
   const { data: u } = await supabase.from('usuarios').select('perfil').eq('id', user.id).single();
   if ((u as any)?.perfil === 'admin') {
-    _obraIdsCache = { ids: null, ts: Date.now() };
-    return null;
+    const { data: tenantObras } = await supabase.from('obras').select('id').eq('ativo', true);
+    const ids = (tenantObras ?? []).map(obra => obra.id);
+    _obraIdsCache = { ids, ts: Date.now() };
+    return ids;
   }
   const { data: ou } = await supabase.from('obra_usuarios').select('obra_id').eq('usuario_id', user.id);
   const ids = (ou ?? []).map((r: any) => r.obra_id as string);
@@ -166,7 +168,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 
     const { data, error } = await supabase
       .from('usuarios')
-      .select('id, nome, cargo, perfil, empresa_id')
+      .select('id, nome, cargo, perfil, cliente_id')
       .eq('id', userId)
       .limit(1);
 
@@ -824,6 +826,14 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 // ─────────────────────────────────────────────────────────
 // INSERT / UPDATE → Supabase
 // ─────────────────────────────────────────────────────────
+async function resolvePendingWebMedia(value: unknown, filename: string): Promise<unknown> {
+  if (typeof value !== 'string' || !value.startsWith('pending:')) return value;
+  const localValue = value.slice('pending:'.length);
+  if (localValue.startsWith('blob:')) return uploadBlobToR2(localValue, filename);
+  if (localValue.startsWith('data:')) return uploadDataUrlToR2(localValue, filename);
+  throw new Error('Formato de mídia pendente inválido no PWA.');
+}
+
 async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> {
   const s = sql.trim().toLowerCase().replace(/\s+/g, ' ');
 
@@ -841,8 +851,8 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
       try {
         finalUrl = await uploadDataUrlToR2(rawSig, `sig_${id}.png`);
       } catch (e) {
-        console.warn('[web shim] signature upload failed, storing data URL directly:', e);
-        finalUrl = rawSig; // fallback: store data URL (works for display but not ideal)
+        console.error('[web shim] signature upload failed:', e);
+        throw e;
       }
     }
 
@@ -868,7 +878,10 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
     const idParam = params[params.length - 1] as string;
     const updateData: Record<string, unknown> = {};
     for (let i = 0; i < setFields.length; i++) {
-      updateData[setFields[i]] = params[i];
+      updateData[setFields[i]] = await resolvePendingWebMedia(
+        params[i],
+        `${table}_${setFields[i]}_${Date.now()}.jpg`,
+      );
     }
 
     const { error } = await dynamicTable(table).update(updateData).eq('id', idParam);
@@ -901,20 +914,11 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
           try {
             val = await uploadBlobToR2(localPath, `photo_${Date.now()}.jpg`);
           } catch (e) {
-            console.error('[web shim] photo upload failed, storing as data URL:', e);
-            // Fallback: convert blob to data URL (persists across sessions, unlike blob: URLs)
-            try {
-              const blob = await fetch(localPath).then(r => r.blob());
-              val = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-              });
-            } catch {
-              val = localPath;
-            }
+            console.error('[web shim] photo upload failed:', e);
+            throw e;
           }
+        } else if (localPath.startsWith('data:')) {
+          val = await uploadDataUrlToR2(localPath, `photo_${Date.now()}.jpg`);
         }
       }
       row[cols[i]] = val;

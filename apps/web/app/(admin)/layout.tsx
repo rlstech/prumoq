@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { getAuthContext } from '@/lib/auth/context';
 import Sidebar from '@/components/layout/Sidebar';
 import QueryProvider from '@/lib/query-provider';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -10,17 +11,20 @@ import { ToastProvider } from '@/components/ui/Toast';
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const context = user ? await getAuthContext() : null;
 
-  if (!user) {
-    console.log(`[AdminLayout] Redirecting to /login because no user in layout.tsx!`);
+  if (!user || !context) {
     redirect('/login');
   }
+  if (context.perfil === 'superadmin') redirect('/clientes');
+  if (context.perfil === 'inspetor') redirect('/login');
+  if (context.clienteStatus !== 'ativo') redirect('/suspenso');
 
   return (
     <QueryProvider>
       <ToastProvider>
         <div className="flex h-screen overflow-hidden bg-bg-0">
-          <Sidebar />
+          <Sidebar profile={{ nome: context.nome, cargo: context.clienteNome, perfil: context.perfil }} />
           <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-bg-0">
             {children}
           </main>

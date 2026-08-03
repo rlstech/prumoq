@@ -10,6 +10,7 @@ function uuid(): string {
 // ─── Tipos públicos ───────────────────────────────────────────────────────────
 
 export interface NcCreateParams {
+  clienteId: string;
   verificacaoId: string;
   verificacaoItemId: string;
   descricao: string;
@@ -25,6 +26,7 @@ export interface NcCreateParams {
 }
 
 export interface ReinspecaoAprovadaParams {
+  clienteId: string;
   ncId: string;
   verificacaoId: string;
   inspetorId: string;
@@ -34,6 +36,7 @@ export interface ReinspecaoAprovadaParams {
 }
 
 export interface ReinspecaoReprovadaParams {
+  clienteId: string;
   ncId: string;
   /** numero_ocorrencia da NC sendo encerrada — passado pelo caller a partir da query. */
   numeroOcorrenciaAtual: number;
@@ -59,12 +62,13 @@ export async function createNc(params: NcCreateParams): Promise<string> {
 
   await db.execute(
     `INSERT INTO nao_conformidades
-       (id, verificacao_id, verificacao_item_id, descricao, solucao_proposta,
+       (id, cliente_id, verificacao_id, verificacao_item_id, descricao, solucao_proposta,
         responsavel_id, data_nova_verif, status, numero_ocorrencia,
         nc_anterior_id, prioridade, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       ncId,
+      params.clienteId,
       params.verificacaoId,
       params.verificacaoItemId,
       params.descricao,
@@ -81,10 +85,11 @@ export async function createNc(params: NcCreateParams): Promise<string> {
 
   if (params.foto_local_path) {
     await db.execute(
-      `INSERT INTO nc_fotos (id, nc_id, r2_key, nome_arquivo, mime_type, ordem)
-       VALUES (?, ?, ?, ?, 'image/jpeg', 0)`,
+      `INSERT INTO nc_fotos (id, cliente_id, nc_id, r2_key, nome_arquivo, mime_type, ordem)
+       VALUES (?, ?, ?, ?, ?, 'image/jpeg', 0)`,
       [
         uuid(),
+        params.clienteId,
         ncId,
         `pending:${params.foto_local_path}`,
         params.foto_local_path.split('/').pop() ?? 'nc.jpg',
@@ -108,10 +113,11 @@ export async function approveReinspecao(
 
   await db.execute(
     `INSERT INTO nc_reinspecoes
-       (id, nc_id, verificacao_id, inspetor_id, resultado, observacao, foto_url, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, cliente_id, nc_id, verificacao_id, inspetor_id, resultado, observacao, foto_url, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       uuid(),
+      params.clienteId,
       params.ncId,
       params.verificacaoId,
       params.inspetorId,
@@ -150,10 +156,11 @@ export async function reprovarReinspecao(
 
   await db.execute(
     `INSERT INTO nc_reinspecoes
-       (id, nc_id, verificacao_id, inspetor_id, resultado, observacao, foto_url, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, cliente_id, nc_id, verificacao_id, inspetor_id, resultado, observacao, foto_url, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       uuid(),
+      params.clienteId,
       params.ncId,
       params.verificacaoId,
       params.inspetorId,

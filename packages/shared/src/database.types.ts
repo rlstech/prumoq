@@ -14,9 +14,82 @@ export type Database = {
   }
   public: {
     Tables: {
+      auditoria_plataforma: {
+        Row: {
+          acao: string
+          ator_id: string | null
+          cliente_id: string | null
+          created_at: string
+          detalhes: Json
+          id: string
+        }
+        Insert: {
+          acao: string
+          ator_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          detalhes?: Json
+          id?: string
+        }
+        Update: {
+          acao?: string
+          ator_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          detalhes?: Json
+          id?: string
+        }
+        Relationships: []
+      }
+      clientes: {
+        Row: {
+          contato_email: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
+          created_at: string
+          id: string
+          limite_empresas: number | null
+          limite_obras: number | null
+          limite_usuarios: number | null
+          nome: string
+          slug: string
+          status: Database["public"]["Enums"]["status_cliente"]
+          updated_at: string
+        }
+        Insert: {
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          created_at?: string
+          id?: string
+          limite_empresas?: number | null
+          limite_obras?: number | null
+          limite_usuarios?: number | null
+          nome: string
+          slug: string
+          status?: Database["public"]["Enums"]["status_cliente"]
+          updated_at?: string
+        }
+        Update: {
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          created_at?: string
+          id?: string
+          limite_empresas?: number | null
+          limite_obras?: number | null
+          limite_usuarios?: number | null
+          nome?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["status_cliente"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ambientes: {
         Row: {
           ativo: boolean
+          cliente_id: string
           created_at: string
           id: string
           localizacao: string | null
@@ -28,6 +101,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          cliente_id: string
           created_at?: string
           id?: string
           localizacao?: string | null
@@ -39,6 +113,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          cliente_id?: string
           created_at?: string
           id?: string
           localizacao?: string | null
@@ -68,6 +143,7 @@ export type Database = {
       empresas: {
         Row: {
           ativo: boolean
+          cliente_id: string
           cep: string | null
           cnpj: string
           contato: string | null
@@ -84,6 +160,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          cliente_id: string
           cep?: string | null
           cnpj: string
           contato?: string | null
@@ -100,6 +177,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          cliente_id?: string
           cep?: string | null
           cnpj?: string
           contato?: string | null
@@ -119,9 +197,10 @@ export type Database = {
       equipes: {
         Row: {
           ativo: boolean
+          cliente_id: string
           cnpj_terceiro: string | null
           created_at: string
-          empresa_id: string
+          escopo: Database["public"]["Enums"]["escopo_cadastro"]
           especialidade: string | null
           id: string
           nome: string
@@ -132,9 +211,10 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          cliente_id: string
           cnpj_terceiro?: string | null
           created_at?: string
-          empresa_id: string
+          escopo?: Database["public"]["Enums"]["escopo_cadastro"]
           especialidade?: string | null
           id?: string
           nome: string
@@ -145,9 +225,10 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          cliente_id?: string
           cnpj_terceiro?: string | null
           created_at?: string
-          empresa_id?: string
+          escopo?: Database["public"]["Enums"]["escopo_cadastro"]
           especialidade?: string | null
           id?: string
           nome?: string
@@ -156,20 +237,19 @@ export type Database = {
           tipo?: Database["public"]["Enums"]["tipo_equipe"]
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "equipes_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      equipe_empresas: {
+        Row: { cliente_id: string; created_at: string; empresa_id: string; equipe_id: string }
+        Insert: { cliente_id: string; created_at?: string; empresa_id: string; equipe_id: string }
+        Update: { cliente_id?: string; created_at?: string; empresa_id?: string; equipe_id?: string }
+        Relationships: []
       }
       fvs_conclusoes: {
         Row: {
           assinada_em: string | null
           assinatura_url: string | null
+          cliente_id: string
           created_at: string
           fvs_planejada_id: string
           id: string
@@ -185,6 +265,7 @@ export type Database = {
         Insert: {
           assinada_em?: string | null
           assinatura_url?: string | null
+          cliente_id: string
           created_at?: string
           fvs_planejada_id: string
           id?: string
@@ -200,6 +281,7 @@ export type Database = {
         Update: {
           assinada_em?: string | null
           assinatura_url?: string | null
+          cliente_id?: string
           created_at?: string
           fvs_planejada_id?: string
           id?: string
@@ -244,7 +326,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           descricao: string | null
-          empresa_id: string
+          cliente_id: string
+          escopo: Database["public"]["Enums"]["escopo_cadastro"]
           id: string
           nome: string
           norma_ref: string | null
@@ -258,7 +341,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descricao?: string | null
-          empresa_id: string
+          cliente_id: string
+          escopo?: Database["public"]["Enums"]["escopo_cadastro"]
           id?: string
           nome: string
           norma_ref?: string | null
@@ -272,7 +356,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descricao?: string | null
-          empresa_id?: string
+          cliente_id?: string
+          escopo?: Database["public"]["Enums"]["escopo_cadastro"]
           id?: string
           nome?: string
           norma_ref?: string | null
@@ -287,17 +372,17 @@ export type Database = {
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fvs_padrao_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
         ]
+      }
+      fvs_padrao_empresas: {
+        Row: { cliente_id: string; created_at: string; empresa_id: string; fvs_padrao_id: string }
+        Insert: { cliente_id: string; created_at?: string; empresa_id: string; fvs_padrao_id: string }
+        Update: { cliente_id?: string; created_at?: string; empresa_id?: string; fvs_padrao_id?: string }
+        Relationships: []
       }
       fvs_padrao_itens: {
         Row: {
+          cliente_id: string
           created_at: string
           fvs_padrao_id: string
           id: string
@@ -308,6 +393,7 @@ export type Database = {
           tolerancia: string | null
         }
         Insert: {
+          cliente_id: string
           created_at?: string
           fvs_padrao_id: string
           id?: string
@@ -318,6 +404,7 @@ export type Database = {
           tolerancia?: string | null
         }
         Update: {
+          cliente_id?: string
           created_at?: string
           fvs_padrao_id?: string
           id?: string
@@ -339,6 +426,7 @@ export type Database = {
       }
       fvs_padrao_revisoes: {
         Row: {
+          cliente_id: string
           created_at: string
           descricao_alt: string
           fvs_padrao_id: string
@@ -347,6 +435,7 @@ export type Database = {
           revisado_por: string | null
         }
         Insert: {
+          cliente_id: string
           created_at?: string
           descricao_alt: string
           fvs_padrao_id: string
@@ -355,6 +444,7 @@ export type Database = {
           revisado_por?: string | null
         }
         Update: {
+          cliente_id?: string
           created_at?: string
           descricao_alt?: string
           fvs_padrao_id?: string
@@ -382,6 +472,7 @@ export type Database = {
       fvs_planejadas: {
         Row: {
           ambiente_id: string
+          cliente_id: string
           concluida_em: string | null
           created_at: string
           fvs_padrao_id: string
@@ -398,6 +489,7 @@ export type Database = {
         }
         Insert: {
           ambiente_id: string
+          cliente_id: string
           concluida_em?: string | null
           created_at?: string
           fvs_padrao_id: string
@@ -414,6 +506,7 @@ export type Database = {
         }
         Update: {
           ambiente_id?: string
+          cliente_id?: string
           concluida_em?: string | null
           created_at?: string
           fvs_padrao_id?: string
@@ -448,6 +541,7 @@ export type Database = {
       fvs_reaberturas: {
         Row: {
           autorizado_por: string
+          cliente_id: string
           created_at: string
           fvs_planejada_id: string
           id: string
@@ -458,6 +552,7 @@ export type Database = {
         }
         Insert: {
           autorizado_por: string
+          cliente_id: string
           created_at?: string
           fvs_planejada_id: string
           id?: string
@@ -468,6 +563,7 @@ export type Database = {
         }
         Update: {
           autorizado_por?: string
+          cliente_id?: string
           created_at?: string
           fvs_planejada_id?: string
           id?: string
@@ -502,6 +598,7 @@ export type Database = {
       }
       nao_conformidades: {
         Row: {
+          cliente_id: string
           created_at: string
           data_nova_verif: string
           descricao: string
@@ -522,6 +619,7 @@ export type Database = {
           verificacao_reinsp_id: string | null
         }
         Insert: {
+          cliente_id: string
           created_at?: string
           data_nova_verif: string
           descricao: string
@@ -542,6 +640,7 @@ export type Database = {
           verificacao_reinsp_id?: string | null
         }
         Update: {
+          cliente_id?: string
           created_at?: string
           data_nova_verif?: string
           descricao?: string
@@ -608,6 +707,7 @@ export type Database = {
       }
       nc_fotos: {
         Row: {
+          cliente_id: string
           created_at: string
           id: string
           mime_type: string | null
@@ -619,6 +719,7 @@ export type Database = {
           tamanho_bytes: number | null
         }
         Insert: {
+          cliente_id: string
           created_at?: string
           id?: string
           mime_type?: string | null
@@ -630,6 +731,7 @@ export type Database = {
           tamanho_bytes?: number | null
         }
         Update: {
+          cliente_id?: string
           created_at?: string
           id?: string
           mime_type?: string | null
@@ -652,6 +754,7 @@ export type Database = {
       }
       nc_reinspecoes: {
         Row: {
+          cliente_id: string
           created_at: string
           foto_url: string | null
           id: string
@@ -663,6 +766,7 @@ export type Database = {
           verificacao_id: string
         }
         Insert: {
+          cliente_id: string
           created_at?: string
           foto_url?: string | null
           id?: string
@@ -674,6 +778,7 @@ export type Database = {
           verificacao_id: string
         }
         Update: {
+          cliente_id?: string
           created_at?: string
           foto_url?: string | null
           id?: string
@@ -717,18 +822,21 @@ export type Database = {
       }
       obra_equipes: {
         Row: {
+          cliente_id: string
           created_at: string
           equipe_id: string
           id: string
           obra_id: string
         }
         Insert: {
+          cliente_id: string
           created_at?: string
           equipe_id: string
           id?: string
           obra_id: string
         }
         Update: {
+          cliente_id?: string
           created_at?: string
           equipe_id?: string
           id?: string
@@ -761,6 +869,7 @@ export type Database = {
       obra_usuarios: {
         Row: {
           ativo: boolean
+          cliente_id: string
           created_at: string
           id: string
           obra_id: string
@@ -769,6 +878,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          cliente_id: string
           created_at?: string
           id?: string
           obra_id: string
@@ -777,6 +887,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          cliente_id?: string
           created_at?: string
           id?: string
           obra_id?: string
@@ -812,6 +923,7 @@ export type Database = {
           area_total_m2: number | null
           ativo: boolean
           cep: string | null
+          cliente_id: string
           crea_cau: string
           created_at: string
           data_inicio_prev: string | null
@@ -837,6 +949,7 @@ export type Database = {
           area_total_m2?: number | null
           ativo?: boolean
           cep?: string | null
+          cliente_id: string
           crea_cau: string
           created_at?: string
           data_inicio_prev?: string | null
@@ -862,6 +975,7 @@ export type Database = {
           area_total_m2?: number | null
           ativo?: boolean
           cep?: string | null
+          cliente_id?: string
           crea_cau?: string
           created_at?: string
           data_inicio_prev?: string | null
@@ -899,9 +1013,10 @@ export type Database = {
           avatar_url: string | null
           cargo: string | null
           created_at: string
-          empresa_id: string | null
+          cliente_id: string | null
           id: string
           nome: string
+          onboarding_concluido_em: string | null
           perfil: Database["public"]["Enums"]["perfil_usuario"]
           telefone: string | null
           updated_at: string
@@ -911,9 +1026,10 @@ export type Database = {
           avatar_url?: string | null
           cargo?: string | null
           created_at?: string
-          empresa_id?: string | null
+          cliente_id?: string | null
           id: string
           nome: string
+          onboarding_concluido_em?: string | null
           perfil?: Database["public"]["Enums"]["perfil_usuario"]
           telefone?: string | null
           updated_at?: string
@@ -923,25 +1039,19 @@ export type Database = {
           avatar_url?: string | null
           cargo?: string | null
           created_at?: string
-          empresa_id?: string | null
+          cliente_id?: string | null
           id?: string
           nome?: string
+          onboarding_concluido_em?: string | null
           perfil?: Database["public"]["Enums"]["perfil_usuario"]
           telefone?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "usuarios_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       verificacao_fotos: {
         Row: {
+          cliente_id: string
           created_at: string
           id: string
           mime_type: string | null
@@ -953,6 +1063,7 @@ export type Database = {
           verificacao_id: string
         }
         Insert: {
+          cliente_id: string
           created_at?: string
           id?: string
           mime_type?: string | null
@@ -964,6 +1075,7 @@ export type Database = {
           verificacao_id: string
         }
         Update: {
+          cliente_id?: string
           created_at?: string
           id?: string
           mime_type?: string | null
@@ -986,6 +1098,7 @@ export type Database = {
       }
       verificacao_itens: {
         Row: {
+          cliente_id: string
           created_at: string
           fvs_padrao_item_id: string
           id: string
@@ -997,6 +1110,7 @@ export type Database = {
           verificacao_id: string
         }
         Insert: {
+          cliente_id: string
           created_at?: string
           fvs_padrao_item_id: string
           id?: string
@@ -1008,6 +1122,7 @@ export type Database = {
           verificacao_id: string
         }
         Update: {
+          cliente_id?: string
           created_at?: string
           fvs_padrao_item_id?: string
           id?: string
@@ -1046,6 +1161,7 @@ export type Database = {
         Row: {
           assinada_em: string | null
           assinatura_url: string | null
+          cliente_id: string
           created_at: string
           created_offline: boolean
           data_verif: string
@@ -1063,6 +1179,7 @@ export type Database = {
         Insert: {
           assinada_em?: string | null
           assinatura_url?: string | null
+          cliente_id: string
           created_at?: string
           created_offline?: boolean
           data_verif: string
@@ -1080,6 +1197,7 @@ export type Database = {
         Update: {
           assinada_em?: string | null
           assinatura_url?: string | null
+          cliente_id?: string
           created_at?: string
           created_offline?: boolean
           data_verif?: string
@@ -1162,6 +1280,7 @@ export type Database = {
       }
     }
     Functions: {
+      get_accessible_media_keys: { Args: { p_keys: string[] }; Returns: string[] }
       get_ambientes_obra: {
         Args: { p_obra_id: string }
         Returns: {
@@ -1175,7 +1294,30 @@ export type Database = {
           total_fvs: number
         }[]
       }
-      get_empresa_id: { Args: never; Returns: string }
+      get_cliente_id: { Args: never; Returns: string | null }
+      concluir_onboarding: { Args: never; Returns: string }
+      get_clientes_resumo: {
+        Args: never
+        Returns: {
+          admin_convite_enviado_em: string | null
+          admin_onboarding_concluido_em: string | null
+          admin_onboarding_status: string
+          contato_email: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
+          created_at: string
+          empresas_ativas: number
+          id: string
+          limite_empresas: number | null
+          limite_obras: number | null
+          limite_usuarios: number | null
+          nome: string
+          obras_ativas: number
+          slug: string
+          status: Database["public"]["Enums"]["status_cliente"]
+          usuarios_ativos: number
+        }[]
+      }
       get_fvs_attachments: {
         Args: { p_fvs_id: string }
         Returns: {
@@ -1414,8 +1556,14 @@ export type Database = {
         | "acabamento"
         | "fundacao"
         | "terraplanagem"
+        | "servicos_preliminares"
+        | "impermeabilizacao"
+        | "esquadrias_vidros"
+        | "urbanizacao_pavimentacao"
+        | "comunicacao_visual"
         | "outro"
-      perfil_usuario: "admin" | "gestor" | "inspetor"
+      escopo_cadastro: "global" | "restrito"
+      perfil_usuario: "superadmin" | "admin" | "gestor" | "inspetor"
       resultado_item: "conforme" | "nao_conforme" | "na"
       status_fvs:
         | "pendente"
@@ -1431,6 +1579,7 @@ export type Database = {
         | "resolvida"
         | "cancelada"
         | "encerrada_sem_resolucao"
+      status_cliente: "ativo" | "suspenso"
       status_obra: "nao_iniciada" | "em_andamento" | "paralisada" | "concluida"
       tipo_ambiente: "interno" | "externo"
       tipo_equipe: "proprio" | "terceirizado"
@@ -1570,9 +1719,15 @@ export const Constants = {
         "acabamento",
         "fundacao",
         "terraplanagem",
+        "servicos_preliminares",
+        "impermeabilizacao",
+        "esquadrias_vidros",
+        "urbanizacao_pavimentacao",
+        "comunicacao_visual",
         "outro",
       ],
-      perfil_usuario: ["admin", "gestor", "inspetor"],
+      escopo_cadastro: ["global", "restrito"],
+      perfil_usuario: ["superadmin", "admin", "gestor", "inspetor"],
       resultado_item: ["conforme", "nao_conforme", "na"],
       status_fvs: [
         "pendente",
@@ -1590,6 +1745,7 @@ export const Constants = {
         "cancelada",
         "encerrada_sem_resolucao",
       ],
+      status_cliente: ["ativo", "suspenso"],
       status_obra: ["nao_iniciada", "em_andamento", "paralisada", "concluida"],
       tipo_ambiente: ["interno", "externo"],
       tipo_equipe: ["proprio", "terceirizado"],

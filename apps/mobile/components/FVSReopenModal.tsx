@@ -73,6 +73,13 @@ export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: P
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Sessão expirada.');
+      const { data: profile, error: profileError } = await supabase
+        .from('usuarios')
+        .select('cliente_id')
+        .eq('id', user.id)
+        .single();
+      if (profileError || !profile?.cliente_id) throw new Error('Cliente do usuário não encontrado.');
       const now = new Date().toISOString();
 
       const { count } = await supabase
@@ -82,8 +89,8 @@ export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: P
       const numero = (count ?? 0) + 1;
 
       await db.execute(
-        `INSERT INTO fvs_reaberturas (id, fvs_planejada_id, solicitado_por, autorizado_por, motivo_tipo, justificativa, numero_reabertura, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [uuid(), fvsId, user!.id, autorizadoPor, motivo, justificativa, numero, now],
+        `INSERT INTO fvs_reaberturas (id, cliente_id, fvs_planejada_id, solicitado_por, autorizado_por, motivo_tipo, justificativa, numero_reabertura, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [uuid(), profile.cliente_id, fvsId, user.id, autorizadoPor, motivo, justificativa, numero, now],
       );
       if (Platform.OS !== 'web') {
         await db.execute(

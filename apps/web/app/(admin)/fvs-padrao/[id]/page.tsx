@@ -9,15 +9,22 @@ export default async function FvsPadraoDetailPage(props: { params: Promise<{ id:
   const supabase = await createClient();
 
   const [
-    { data: fvsData },
+    { data: fvsData, error: fvsError },
     { data: itemsData },
-    { data: logsData }
+    { data: logsData },
+    { data: empresasData },
+    { data: escopoData }
   ] = await Promise.all([
-    supabase.from('fvs_padrao' as any).select('*, fvs_planejadas(count)').eq('id', id).single(),
+    supabase.from('fvs_padrao' as any).select('*, fvs_planejadas!fvs_planejadas_fvs_padrao_id_fkey(count)').eq('id', id).maybeSingle(),
     supabase.from('fvs_padrao_itens' as any).select('*').eq('fvs_padrao_id', id).order('ordem'),
-    supabase.from('fvs_padrao_revisoes' as any).select('*, usuarios(nome)').eq('fvs_padrao_id', id).order('created_at', { ascending: false })
+    supabase.from('fvs_padrao_revisoes' as any).select('*, usuarios(nome)').eq('fvs_padrao_id', id).order('created_at', { ascending: false }),
+    supabase.from('empresas').select('id, nome').eq('ativo', true).order('nome'),
+    supabase.from('fvs_padrao_empresas').select('empresa_id').eq('fvs_padrao_id', id)
   ]);
 
+  if (fvsError) {
+    throw new Error(`Não foi possível carregar a FVS: ${fvsError.message}`);
+  }
   const fvs = fvsData as any;
   if (!fvs) return notFound();
 
@@ -35,6 +42,8 @@ export default async function FvsPadraoDetailPage(props: { params: Promise<{ id:
           fvs={fvs} 
           initialItems={itemsData as any[] || []} 
           logs={logsData as any[] || []} 
+          empresas={empresasData ?? []}
+          initialEmpresaIds={(escopoData ?? []).map(item => item.empresa_id)}
         />
       </div>
     </>

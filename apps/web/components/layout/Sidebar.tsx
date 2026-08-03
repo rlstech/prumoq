@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import type { PerfilUsuario } from '@prumoq/shared';
 import { BrandMark } from '@/components/ui/BrandMark';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -36,6 +37,7 @@ const NAV = [
 interface UserSummary {
   nome: string;
   cargo: string | null;
+  perfil: PerfilUsuario;
 }
 
 function initials(name: string) {
@@ -45,25 +47,15 @@ function initials(name: string) {
   return `${parts[0][0]}${parts.at(-1)?.[0] ?? ''}`.toUpperCase();
 }
 
-export default function Sidebar() {
+export default function Sidebar({ profile }: { profile: UserSummary }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<UserSummary | null>(null);
   const [ncCount, setNcCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
       const supabase = createClient();
-      const { data: authData } = await supabase.auth.getSession();
-      if (authData.session?.user) {
-        const { data: profile } = await supabase
-          .from('usuarios')
-          .select('nome, cargo')
-          .eq('id', authData.session.user.id)
-          .single();
-        if (profile) setUser(profile as UserSummary);
-      }
       const { count } = await supabase
         .from('nao_conformidades' as never)
         .select('*', { count: 'exact', head: true })
@@ -84,7 +76,7 @@ export default function Sidebar() {
   const navigation = (
     <>
       <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="Navegação principal">
-        {NAV.map(item => {
+        {NAV.filter(item => profile.perfil === 'admin' || (item.href !== '/empresas' && item.href !== '/usuarios')).map(item => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (
@@ -121,9 +113,9 @@ export default function Sidebar() {
           aria-label="Abrir minha conta"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent font-mono text-[11px] font-semibold text-txt">
-            {initials(user?.nome ?? '')}
+            {initials(profile.nome)}
           </div>
-          <div className="w-full truncate text-[10px] font-medium text-white/65">{user?.nome ?? 'PrumoQ'}</div>
+          <div className="w-full truncate text-[10px] font-medium text-white/65">{profile.nome}</div>
           <span className="flex items-center gap-1 text-[9px]">
             <KeyRound size={12} />
             Conta

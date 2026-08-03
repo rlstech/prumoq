@@ -1,28 +1,8 @@
 'use server';
 
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
-import { createClient as createServerSupabase } from '@/lib/supabase/server';
-
-const supabaseAdmin = createSupabaseAdmin(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-async function getAuthenticatedUser() {
-  const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Não autenticado');
-
-  // Busca empresa_id do usuário logado (a empresa que opera o sistema)
-  const { data: perfil } = await supabaseAdmin
-    .from('usuarios')
-    .select('empresa_id')
-    .eq('id', user.id)
-    .single();
-
-  return { ...user, empresa_id: (perfil as any)?.empresa_id as string | null };
-}
+import { createClient } from '@/lib/supabase/server';
+import { requireTenantRole } from '@/lib/auth/context';
 
 interface ObraFormData {
   nome: string;
@@ -37,84 +17,61 @@ interface ObraFormData {
   data_termino_prev: string | null;
 }
 
+async function assertEmpresa(clienteId: string, empresaId: string): Promise<void> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('empresas').select('id').eq('id', empresaId).eq('cliente_id', clienteId).eq('ativo', true).maybeSingle();
+  if (!data) throw new Error('Empresa fora do escopo deste cliente.');
+}
+
 export async function createObra(formData: ObraFormData) {
   try {
-    const creator = await getAuthenticatedUser();
-    const { data, error } = await supabaseAdmin
-      .from('obras')
-      .insert({
-        nome: formData.nome,
-        empresa_id: formData.empresa_id,
-        status: formData.status as any,
-        municipio: formData.municipio || null,
-        uf: formData.uf || null,
-        endereco: formData.endereco || null,
-        eng_responsavel: formData.eng_responsavel || null,
-        crea_cau: formData.crea_cau || null,
-        data_inicio_prev: formData.data_inicio_prev || null,
-        data_termino_prev: formData.data_termino_prev || null,
-        ativo: true,
-      })
-      .select()
-      .single();
-
+    const context = await requireTenantRole(['admin']);
+    await assertEmpresa(context.clienteId, formData.empresa_id);
+    const supabase = await createClient();
+    const { error } = await supabase.from('obras').insert({
+      cliente_id: context.clienteId,
+      nome: formData.nome.trim(),
+      empresa_id: formData.empresa_id,
+      status: formData.status as 'nao_iniciada' | 'em_andamento' | 'paralisada' | 'concluida',
+      municipio: formData.municipio || null,
+      uf: formData.uf || null,
+      endereco: formData.endereco || null,
+      eng_responsavel: formData.eng_responsavel,
+      crea_cau: formData.crea_cau,
+      data_inicio_prev: formData.data_inicio_prev || null,
+      data_termino_prev: formData.data_termino_prev || null,
+      ativo: true,
+    });
     if (error) throw error;
-
-    // Vincular todos os usuários ativos da empresa operadora (quem usa o sistema)
-    // à nova obra em obra_usuarios.
-    // Necessário para: (1) RLS de inspetores, (2) sincronização do PowerSync.
-    // Nota: a obra pode ser de uma empresa cliente (ex: COMBRASEN), mas os
-    // inspetores pertencem à empresa operadora (ex: PrumoQ).
-    const obraId = (data as any).id;
-    const operadoraEmpresaId = creator.empresa_id;
-    if (obraId) {
-      const query = supabaseAdmin.from('usuarios').select('id').eq('ativo', true);
-      // Filtra pela empresa do criador se disponível; caso contrário pega todos
-      const { data: usuarios } = operadoraEmpresaId
-        ? await query.eq('empresa_id', operadoraEmpresaId)
-        : await query;
-
-      if (usuarios && usuarios.length > 0) {
-        const rows = (usuarios as any[]).map((u: any) => ({
-          obra_id: obraId,
-          usuario_id: u.id,
-          ativo: true,
-        }));
-        await supabaseAdmin.from('obra_usuarios' as any).insert(rows as any);
-      }
-    }
-
     revalidatePath('/obras');
-    return { success: true, data };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Falha ao criar obra.' };
   }
 }
 
 export async function updateObra(id: string, formData: ObraFormData) {
   try {
-    await getAuthenticatedUser();
-    const { error } = await supabaseAdmin
-      .from('obras')
-      .update({
-        nome: formData.nome,
-        empresa_id: formData.empresa_id,
-        status: formData.status as any,
-        municipio: formData.municipio || null,
-        uf: formData.uf || null,
-        endereco: formData.endereco || null,
-        eng_responsavel: formData.eng_responsavel || null,
-        crea_cau: formData.crea_cau || null,
-        data_inicio_prev: formData.data_inicio_prev || null,
-        data_termino_prev: formData.data_termino_prev || null,
-      })
-      .eq('id', id);
-
+    const context = await requireTenantRole(['admin']);
+    await assertEmpresa(context.clienteId, formData.empresa_id);
+    const supabase = await createClient();
+    const { error } = await supabase.from('obras').update({
+      nome: formData.nome.trim(),
+      empresa_id: formData.empresa_id,
+      status: formData.status as 'nao_iniciada' | 'em_andamento' | 'paralisada' | 'concluida',
+      municipio: formData.municipio || null,
+      uf: formData.uf || null,
+      endereco: formData.endereco || null,
+      eng_responsavel: formData.eng_responsavel,
+      crea_cau: formData.crea_cau,
+      data_inicio_prev: formData.data_inicio_prev || null,
+      data_termino_prev: formData.data_termino_prev || null,
+    }).eq('id', id).eq('cliente_id', context.clienteId);
     if (error) throw error;
     revalidatePath('/obras');
     revalidatePath(`/obras/${id}`);
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Falha ao atualizar obra.' };
   }
 }

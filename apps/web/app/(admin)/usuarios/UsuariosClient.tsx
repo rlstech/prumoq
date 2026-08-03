@@ -7,6 +7,16 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { createUsuario, sendPasswordRecovery, updateUsuario } from './actions';
 
+type TenantProfile = 'admin' | 'gestor' | 'inspetor';
+type UsuarioForm = {
+  nome: string;
+  email: string;
+  senha: string;
+  perfil: TenantProfile;
+  cargo: string;
+  obras: string[];
+};
+
 export default function UsuariosClient({ initialUsers, availableObras }: { initialUsers: any[], availableObras: any[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,7 +26,7 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
   const [isSendingRecovery, setIsSendingRecovery] = useState(false);
   const { toast } = useToast();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<UsuarioForm>({
     nome: '',
     email: '',
     senha: '',
@@ -232,7 +242,7 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
                    <label key={p.id} className="flex items-center gap-2 text-sm text-txt cursor-pointer">
                      <input type="radio" className="accent-[var(--br)]" name="perfil" 
                        checked={formData.perfil === p.id} 
-                       onChange={() => setFormData({...formData, perfil: p.id})} 
+                       onChange={() => setFormData({...formData, perfil: p.id as TenantProfile})}
                      />
                      <span className="flex items-center">{p.icon}{p.label}</span>
                    </label>

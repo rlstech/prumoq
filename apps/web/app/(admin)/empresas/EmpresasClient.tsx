@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Search, Plus, Save } from 'lucide-react';
+import { CheckCircle2, Search, Plus, Save, XCircle } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { createEmpresa, updateEmpresa } from './actions';
 import { useToast } from '@/components/ui/Toast';
@@ -24,12 +24,26 @@ const EMPTY_FORM = {
   telefone: '',
 };
 
-export default function EmpresasClient({ initialData }: { initialData: any[] }) {
+type Feedback = {
+  type: 'success' | 'error';
+  message: string;
+};
+
+export default function EmpresasClient({
+  initialData,
+  loadError,
+}: {
+  initialData: any[];
+  loadError?: string;
+}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [feedback, setFeedback] = useState<Feedback | null>(
+    loadError ? { type: 'error', message: loadError } : null,
+  );
   const { toast } = useToast();
   const router = useRouter();
 
@@ -111,11 +125,15 @@ export default function EmpresasClient({ initialData }: { initialData: any[] }) 
 
     setLoading(false);
     if (result.success) {
-      toast(selectedEmpresa ? 'Empresa atualizada com sucesso!' : 'Empresa criada com sucesso!', 'success');
+      const message = selectedEmpresa ? 'Empresa atualizada com sucesso!' : 'Empresa criada com sucesso!';
+      setFeedback({ type: 'success', message });
+      toast(message, 'success');
       setModalOpen(false);
       router.refresh();
     } else {
-      toast(result.error || 'Erro ao salvar.', 'error');
+      const message = result.error || 'Erro ao salvar.';
+      setFeedback({ type: 'error', message });
+      toast(message, 'error');
     }
   };
 
@@ -196,6 +214,28 @@ export default function EmpresasClient({ initialData }: { initialData: any[] }) 
           <Plus size={16} /> Nova Empresa
         </button>
       </div>
+
+      {feedback && (
+        <div
+          role={feedback.type === 'error' ? 'alert' : 'status'}
+          className={`mb-5 flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium ${
+            feedback.type === 'success'
+              ? 'border-ok/20 bg-ok-bg text-ok'
+              : 'border-nok/20 bg-nok-bg text-nok'
+          }`}
+        >
+          {feedback.type === 'success' ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
+          <span className="flex-1">{feedback.message}</span>
+          <button
+            type="button"
+            onClick={() => setFeedback(null)}
+            className="rounded px-2 py-1 text-xs hover:bg-black/5"
+            aria-label="Fechar mensagem"
+          >
+            Fechar
+          </button>
+        </div>
+      )}
 
       <DataTable 
         columns={columns}

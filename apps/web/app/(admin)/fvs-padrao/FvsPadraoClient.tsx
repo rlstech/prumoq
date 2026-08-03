@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Search, Upload, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Plus, Search, Upload, Trash2, XCircle } from 'lucide-react';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
 import { useRouter } from 'next/navigation';
@@ -10,13 +10,22 @@ import { createClient } from '@/lib/supabase/client';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Modal from '@/components/ui/Modal';
 import FvsImportModal from './FvsImportModal';
+import { FVS_CATEGORIES, getFvsCategoryLabel } from '@/lib/fvs/categories';
 
-export default function FvsPadraoClient({ initialData }: { initialData: any[] }) {
+export default function FvsPadraoClient({
+  initialData,
+  empresas,
+  loadError,
+}: {
+  initialData: any[];
+  empresas: Array<{ id: string; nome: string }>;
+  loadError?: string;
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [data, setData] = useState(initialData);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoriaFilter, setCategoriaFilter] = useState('Todas');
+  const [categoriaFilter, setCategoriaFilter] = useState('todas');
   
   // Modals state
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -24,7 +33,11 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
   const [confirmToggle, setConfirmToggle] = useState<{ id: string, name: string, active: boolean, inUse: number } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string, name: string } | null>(null);
 
-  const [formData, setFormData] = useState({ nome: '', codigo: '', categoria: 'Estrutura' });
+  useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
+
+  const [formData, setFormData] = useState({ nome: '', codigo: '', categoria: 'estrutura', escopo: 'global' as 'global' | 'restrito', empresaIds: [] as string[] });
 
   const toggleStatus = async (item: any) => {
     const inUse = item.fvs_planejadas[0]?.count || 0;
@@ -66,18 +79,24 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
     e.preventDefault();
     const supabase = createClient();
     
-    const { data: userData } = await supabase.from('usuarios' as any).select('empresa_id').single();
-    const typedUser = userData as any;
-    if (!typedUser || !typedUser.empresa_id) {
-       toast('Sua conta não tem empresa vinculada.', 'error');
+    const { data: auth } = await supabase.auth.getUser();
+    const { data: userData } = await supabase.from('usuarios').select('cliente_id').eq('id', auth.user?.id ?? '').single();
+    const typedUser = userData as { cliente_id: string | null } | null;
+    if (!typedUser?.cliente_id) {
+       toast('Sua conta não tem cliente vinculado.', 'error');
        return;
+    }
+    if (formData.escopo === 'restrito' && !formData.empresaIds.length) {
+      toast('Selecione ao menos uma empresa.', 'error');
+      return;
     }
 
     const payload = {
       nome: formData.nome,
       codigo: formData.codigo.trim() || null,
-      categoria: formData.categoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
-      empresa_id: typedUser.empresa_id,
+      categoria: formData.categoria,
+      cliente_id: typedUser.cliente_id,
+      escopo: formData.escopo,
       revisao_atual: -1,
       ativo: true
     };
@@ -85,6 +104,12 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
     const { data: novafvs, error } = await supabase.from('fvs_padrao' as any).insert([payload] as any).select().single();
 
     if (!error && novafvs) {
+      if (formData.escopo === 'restrito') {
+        const { error: scopeError } = await supabase.from('fvs_padrao_empresas').insert(formData.empresaIds.map(empresa_id => ({
+          cliente_id: typedUser.cliente_id!, fvs_padrao_id: (novafvs as any).id, empresa_id,
+        })));
+        if (scopeError) { toast('FVS criada, mas o escopo não pôde ser salvo.', 'error'); return; }
+      }
       toast('FVS Padrão criada!', 'success');
       router.push(`/fvs-padrao/${(novafvs as any).id}`);
     } else {
@@ -93,11 +118,9 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
   };
 
   const filtered = data.filter(f => {
-    if (categoriaFilter !== 'Todas' && f.categoria !== categoriaFilter) return false;
+    if (categoriaFilter !== 'todas' && f.categoria !== categoriaFilter) return false;
     return f.nome.toLowerCase().includes(searchTerm.toLowerCase());
   });
-
-  const categorias = ["Estrutura", "Vedação", "Revestimento", "Instalações", "Cobertura", "Acabamento"];
 
   const columns: Column<any>[] = [
     {
@@ -119,7 +142,7 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
     },
     { 
       header: 'Categoria', 
-      cell: (item) => <span className="capitalize">{item.categoria.replace('vedacao', 'Vedação').replace('instalacoes', 'Instalações')}</span> 
+      cell: (item) => <span>{getFvsCategoryLabel(item.categoria)}</span>
     },
     { 
       header: 'Itens', 
@@ -197,8 +220,10 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
             onChange={e => setCategoriaFilter(e.target.value)}
             className="border-l border-brd-1 px-3 py-1.5 text-sm bg-bg-1 outline-none font-medium text-txt-2"
           >
-            <option value="Todas">Todas</option>
-            {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+            <option value="todas">Todas</option>
+            {FVS_CATEGORIES.map(category => (
+              <option key={category.value} value={category.value}>{category.label}</option>
+            ))}
           </select>
         </div>
 
@@ -217,6 +242,13 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
           </button>
         </div>
       </div>
+
+      {loadError && (
+        <div role="alert" className="mb-5 flex items-center gap-3 rounded-lg border border-nok/20 bg-nok-bg px-4 py-3 text-sm font-medium text-nok">
+          <XCircle size={18} />
+          <span>{loadError}</span>
+        </div>
+      )}
 
       <DataTable 
         columns={columns}
@@ -278,8 +310,18 @@ export default function FvsPadraoClient({ initialData }: { initialData: any[] })
               onChange={e => setFormData({ ...formData, categoria: e.target.value })}
               required
             >
-              {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+              {FVS_CATEGORIES.map(category => (
+                <option key={category.value} value={category.value}>{category.label}</option>
+              ))}
             </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-txt-2 mb-1">Disponibilidade</label>
+            <select className="prumo-field" value={formData.escopo} onChange={e => setFormData({...formData, escopo: e.target.value as 'global' | 'restrito', empresaIds: e.target.value === 'global' ? [] : formData.empresaIds})}>
+              <option value="global">Todas as empresas</option>
+              <option value="restrito">Empresas selecionadas</option>
+            </select>
+            {formData.escopo === 'restrito' ? <div className="mt-2 max-h-32 space-y-1 overflow-y-auto rounded border border-brd-0 p-2">{empresas.map(empresa => <label key={empresa.id} className="flex items-center gap-2 text-xs"><input type="checkbox" checked={formData.empresaIds.includes(empresa.id)} onChange={e => setFormData({...formData, empresaIds: e.target.checked ? [...formData.empresaIds, empresa.id] : formData.empresaIds.filter(id => id !== empresa.id)})} />{empresa.nome}</label>)}</div> : null}
           </div>
           <div className="mt-4 flex gap-3">
              <button type="button" onClick={() => setCreateModalOpen(false)} className="flex-1 py-2 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">Cancelar</button>

@@ -18,6 +18,7 @@ import {
   clearPasswordRecoverySession,
   getPasswordAuthErrorMessage,
   getPublicPwaOrigin,
+  isInvitationPasswordSetup,
   isMarkedPasswordRecoverySession,
   markPasswordRecoverySession,
   validateNewPassword,
@@ -35,14 +36,17 @@ import {
 import { supabase } from '../../lib/supabase';
 
 type RecoveryStatus = 'checking' | 'ready' | 'invalid' | 'success';
+type PasswordSetupFlow = 'recovery' | 'invitation';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const [status, setStatus] = useState<RecoveryStatus>('checking');
+  const [flow, setFlow] = useState<PasswordSetupFlow>('recovery');
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const [needsSignOutRetry, setNeedsSignOutRetry] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -52,6 +56,12 @@ export default function ResetPasswordScreen() {
       if (!mounted) return;
       if (event === 'PASSWORD_RECOVERY' && session) {
         markPasswordRecoverySession(session.user.id);
+        setFlow('recovery');
+        setStatus('ready');
+        return;
+      }
+      if (session && isInvitationPasswordSetup(session.user)) {
+        setFlow('invitation');
         setStatus('ready');
       }
     });
@@ -59,6 +69,10 @@ export default function ResetPasswordScreen() {
     void supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       if (session && isMarkedPasswordRecoverySession(session.user.id)) {
+        setFlow('recovery');
+        setStatus('ready');
+      } else if (session && isInvitationPasswordSetup(session.user)) {
+        setFlow('invitation');
         setStatus('ready');
       } else {
         setStatus(current => current === 'ready' ? current : 'invalid');
@@ -74,12 +88,14 @@ export default function ResetPasswordScreen() {
   async function finishGlobalSignOut(): Promise<boolean> {
     const { error: signOutError } = await supabase.auth.signOut({ scope: 'global' });
     if (signOutError) {
+      setNeedsSignOutRetry(true);
       setWarning(
         'A senha foi alterada, mas não foi possível confirmar o encerramento das outras sessões.',
       );
       return false;
     }
     clearPasswordRecoverySession();
+    setNeedsSignOutRetry(false);
     setWarning(null);
     return true;
   }
@@ -98,21 +114,41 @@ export default function ResetPasswordScreen() {
     }
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session || !isMarkedPasswordRecoverySession(session.user.id)) {
+    const invitationSetup = session ? isInvitationPasswordSetup(session.user) : false;
+    const recoverySetup = session ? isMarkedPasswordRecoverySession(session.user.id) : false;
+    if (!session || (!recoverySetup && !invitationSetup)) {
       setStatus('invalid');
       return;
     }
 
     setLoading(true);
     setError(null);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const { error: updateError } = await supabase.auth.updateUser({
+      password,
+      ...(invitationSetup ? {
+        data: {
+          ...session.user.user_metadata,
+          onboarding: 'cliente_admin',
+          onboarding_completed_at: new Date().toISOString(),
+        },
+      } : {}),
+    });
     if (updateError) {
       setError(getPasswordAuthErrorMessage(updateError.message));
       setLoading(false);
       return;
     }
 
-    await finishGlobalSignOut();
+    let onboardingWarning: string | null = null;
+    if (invitationSetup) {
+      const { error: onboardingError } = await supabase.rpc('concluir_onboarding');
+      if (onboardingError) {
+        onboardingWarning = 'A senha foi criada, mas o painel pode levar até o primeiro login para atualizar a ativação.';
+      }
+    }
+
+    const signedOut = await finishGlobalSignOut();
+    if (signedOut && onboardingWarning) setWarning(onboardingWarning);
     setLoading(false);
     setStatus('success');
   }
@@ -152,11 +188,12 @@ export default function ResetPasswordScreen() {
                 </View>
                 <Text style={styles.title}>Link inválido ou expirado</Text>
                 <Text style={styles.description}>
-                  Solicite um novo e-mail de recuperação. Por segurança, cada link pode ser usado
-                  somente durante um período limitado.
+                  {flow === 'invitation'
+                    ? 'Solicite um novo convite ou crie sua senha por e-mail. Por segurança, cada link pode ser usado somente uma vez e por tempo limitado.'
+                    : 'Solicite um novo e-mail de recuperação. Por segurança, cada link pode ser usado somente durante um período limitado.'}
                 </Text>
                 <Button
-                  label="Solicitar novo link"
+                  label={flow === 'invitation' ? 'Criar senha por e-mail' : 'Solicitar novo link'}
                   onPress={() => router.replace('/(auth)/recuperar-senha')}
                   fullWidth
                 />
@@ -175,10 +212,16 @@ export default function ResetPasswordScreen() {
                   <KeyRound size={28} color={Colors.brand} />
                 </View>
                 <View>
-                  <Text style={styles.eyebrow}>NOVAS CREDENCIAIS</Text>
-                  <Text style={styles.title}>Crie uma nova senha</Text>
+                  <Text style={styles.eyebrow}>
+                    {flow === 'invitation' ? 'ATIVAÇÃO DA CONTA' : 'NOVAS CREDENCIAIS'}
+                  </Text>
+                  <Text style={styles.title}>
+                    {flow === 'invitation' ? 'Ative seu acesso' : 'Crie uma nova senha'}
+                  </Text>
                   <Text style={styles.description}>
-                    Use pelo menos 8 caracteres. Ao concluir, suas sessões abertas serão encerradas.
+                    {flow === 'invitation'
+                      ? 'Defina uma senha com pelo menos 8 caracteres para concluir seu cadastro no PrumoQ.'
+                      : 'Use pelo menos 8 caracteres. Ao concluir, suas sessões abertas serão encerradas.'}
                   </Text>
                 </View>
                 <Field
@@ -207,7 +250,7 @@ export default function ResetPasswordScreen() {
                 />
                 {error ? <ErrorBanner message={error} /> : null}
                 <Button
-                  label="Salvar nova senha"
+                  label={flow === 'invitation' ? 'Ativar conta' : 'Salvar nova senha'}
                   onPress={handleUpdatePassword}
                   loading={loading}
                   fullWidth
@@ -220,12 +263,16 @@ export default function ResetPasswordScreen() {
                 <View style={[styles.iconBox, styles.successIcon]}>
                   <CheckCircle2 size={28} color={Colors.ok} />
                 </View>
-                <Text style={styles.title}>Senha alterada</Text>
+                <Text style={styles.title}>
+                  {flow === 'invitation' ? 'Conta ativada' : 'Senha alterada'}
+                </Text>
                 <Text style={styles.description}>
-                  Entre novamente usando sua nova senha.
+                  {flow === 'invitation'
+                    ? 'Seu cadastro foi concluído. Entre no painel usando a senha criada.'
+                    : 'Entre novamente usando sua nova senha.'}
                 </Text>
                 {warning ? <ErrorBanner message={warning} /> : null}
-                {warning ? (
+                {needsSignOutRetry ? (
                   <Button
                     label="Tentar encerrar sessões novamente"
                     onPress={retryGlobalSignOut}
@@ -235,14 +282,15 @@ export default function ResetPasswordScreen() {
                 ) : (
                   <>
                     <Button
-                      label="Entrar no aplicativo"
-                      onPress={() => router.replace('/(auth)/login')}
+                      label="Entrar no painel administrativo"
+                      onPress={openAdminLogin}
+                      variant={flow === 'invitation' ? undefined : 'secondary'}
                       fullWidth
                     />
                     <Button
-                      label="Entrar no painel administrativo"
-                      onPress={openAdminLogin}
-                      variant="secondary"
+                      label="Entrar no aplicativo"
+                      onPress={() => router.replace('/(auth)/login')}
+                      variant={flow === 'invitation' ? 'secondary' : undefined}
                       fullWidth
                     />
                   </>
