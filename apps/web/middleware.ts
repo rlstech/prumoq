@@ -31,8 +31,10 @@ export async function middleware(request: NextRequest) {
   // With basePath '/admin', Next.js strips the prefix before middleware sees it.
   // pathname is '/login', '/dashboard', etc. — not '/admin/login'.
   const isLoginPage = pathname === '/login';
+  const isSuspendedPage = pathname === '/suspenso';
   const isProtected =
     !pathname.startsWith('/login') &&
+    !pathname.startsWith('/suspenso') &&
     !pathname.startsWith('/_next') &&
     !pathname.startsWith('/favicon');
 
@@ -45,12 +47,33 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && isLoginPage) {
-    const redirectResponse = NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    const { data: profile } = await supabase
+      .from('usuarios')
+      .select('perfil, cliente_id, ativo')
+      .eq('id', user.id)
+      .maybeSingle();
+    let destination = '/admin/dashboard';
+    if (!profile?.ativo) {
+      await supabase.auth.signOut();
+      return supabaseResponse;
+    }
+    if (profile.perfil === 'superadmin') destination = '/admin/clientes';
+    if (profile.cliente_id) {
+      const { data: cliente } = await supabase
+        .from('clientes')
+        .select('status')
+        .eq('id', profile.cliente_id)
+        .maybeSingle();
+      if (cliente?.status === 'suspenso') destination = '/admin/suspenso';
+    }
+    const redirectResponse = NextResponse.redirect(new URL(destination, request.url));
     supabaseResponse.cookies.getAll().forEach(cookie => {
       redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
     });
     return redirectResponse;
   }
+
+  if (user && isSuspendedPage) return supabaseResponse;
 
   return supabaseResponse;
 }

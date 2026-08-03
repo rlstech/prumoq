@@ -6,6 +6,7 @@ import Modal from '@/components/ui/Modal';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
+import { getFvsCategoryLabel, normalizeFvsCategory } from '@/lib/fvs/categories';
 
 interface ParsedItem {
   titulo: string;
@@ -23,13 +24,6 @@ interface ParsedFvs {
 interface ParseError {
   line: number;
   message: string;
-}
-
-const VALID_CATEGORIAS = ['estrutura', 'vedacao', 'revestimento', 'instalacoes', 'cobertura', 'acabamento', 'fundacao', 'terraplanagem', 'outro'];
-
-function normalizeCategoria(raw: string): string {
-  const normalized = raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-  return VALID_CATEGORIAS.includes(normalized) ? normalized : 'outro';
 }
 
 function isHeaderLine(cols: string[]): boolean {
@@ -69,7 +63,7 @@ function parseTSV(text: string): { fvsList: ParsedFvs[]; errors: ParseError[] } 
       continue;
     }
 
-    const categoria = normalizeCategoria(categoriaRaw);
+    const categoria = normalizeFvsCategory(categoriaRaw);
     const key = `${nome.toLowerCase()}|${categoria}`;
 
     if (!fvsMap.has(key)) {
@@ -80,18 +74,6 @@ function parseTSV(text: string): { fvsList: ParsedFvs[]; errors: ParseError[] } 
 
   return { fvsList: Array.from(fvsMap.values()), errors };
 }
-
-const CATEGORIA_LABELS: Record<string, string> = {
-  estrutura: 'Estrutura',
-  vedacao: 'Vedação',
-  revestimento: 'Revestimento',
-  instalacoes: 'Instalações',
-  cobertura: 'Cobertura',
-  acabamento: 'Acabamento',
-  fundacao: 'Fundação',
-  terraplanagem: 'Terraplanagem',
-  outro: 'Outro',
-};
 
 interface FvsImportModalProps {
   isOpen: boolean;
@@ -141,16 +123,16 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
     setIsImporting(true);
     const supabase = createClient();
 
-    const { data: userData } = await supabase.from('usuarios' as any).select('empresa_id').single();
-    const typedUser = userData as any;
-    if (!typedUser?.empresa_id) {
-      toast('Sua conta não tem empresa vinculada.', 'error');
+    const { data: auth } = await supabase.auth.getUser();
+    const { data: userData } = await supabase.from('usuarios').select('cliente_id').eq('id', auth.user?.id ?? '').single();
+    const typedUser = userData as { cliente_id: string | null } | null;
+    if (!typedUser?.cliente_id) {
+      toast('Sua conta não tem cliente vinculado.', 'error');
       setIsImporting(false);
       return;
     }
 
-    const { data: auth } = await supabase.auth.getSession();
-    const userId = auth.session?.user?.id;
+    const userId = auth.user?.id;
 
     const createdList: { id: string; nome: string }[] = [];
 
@@ -160,7 +142,8 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
           nome: fvs.nome,
           codigo: fvs.codigo || null,
           categoria: fvs.categoria,
-          empresa_id: typedUser.empresa_id,
+          cliente_id: typedUser.cliente_id,
+          escopo: 'global',
           revisao_atual: 0,
           ativo: true,
         }] as any)
@@ -175,6 +158,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
       const fvsId = (novafvs as any).id;
 
       const itens = fvs.itens.map((it, idx) => ({
+        cliente_id: typedUser.cliente_id!,
         fvs_padrao_id: fvsId,
         revisao: 0,
         ordem: idx + 1,
@@ -186,6 +170,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
       await supabase.from('fvs_padrao_itens' as any).insert(itens as any);
 
       await supabase.from('fvs_padrao_revisoes' as any).insert([{
+        cliente_id: typedUser.cliente_id,
         fvs_padrao_id: fvsId,
         numero_revisao: 0,
         revisado_por: userId ?? null,
@@ -324,7 +309,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
                   <tr key={i} className="bg-bg-1 hover:bg-bg-2">
                     <td className="px-4 py-2.5 font-mono text-xs text-txt-2">{fvs.codigo || '—'}</td>
                     <td className="px-4 py-2.5 font-medium text-txt">{fvs.nome}</td>
-                    <td className="px-4 py-2.5 text-txt-2">{CATEGORIA_LABELS[fvs.categoria] ?? fvs.categoria}</td>
+                    <td className="px-4 py-2.5 text-txt-2">{getFvsCategoryLabel(fvs.categoria)}</td>
                     <td className="px-4 py-2.5 text-right text-txt-2">{fvs.itens.length}</td>
                   </tr>
                 ))}
@@ -377,7 +362,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
                     {isOpen ? <ChevronUp size={14} className="text-txt-3 shrink-0" /> : <ChevronDown size={14} className="text-txt-3 shrink-0" />}
                     <span className="font-mono text-xs text-txt-2 w-20 shrink-0">{fvs.codigo || '—'}</span>
                     <span className="font-medium text-[13px] text-txt flex-1 truncate">{fvs.nome}</span>
-                    <span className="text-xs text-txt-3 shrink-0">{CATEGORIA_LABELS[fvs.categoria]}</span>
+                    <span className="text-xs text-txt-3 shrink-0">{getFvsCategoryLabel(fvs.categoria)}</span>
                     <span className="text-xs text-txt-3 shrink-0 ml-3">{fvs.itens.length} itens</span>
                     {fvsWarnings > 0 && (
                       <span className="flex items-center gap-1 text-[11px] text-warn font-medium shrink-0 ml-2">

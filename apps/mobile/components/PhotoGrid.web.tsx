@@ -1,14 +1,7 @@
 import { Plus, X } from 'lucide-react-native';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors, FontFamily, Radius, Spacing } from '../lib/constants';
-
-const R2_PUBLIC_URL = process.env.EXPO_PUBLIC_R2_PUBLIC_URL ?? '';
-
-function resolveUri(key: string): string {
-  if (key.startsWith('blob:') || key.startsWith('data:') || key.startsWith('http')) return key;
-  if (key.startsWith('pending:')) return key.slice('pending:'.length);
-  return `${R2_PUBLIC_URL}/${key}`;
-}
+import { usePrivateMediaUris } from '../hooks/usePrivateMediaUris';
 
 function isPending(key: string): boolean {
   // blob: or data: = not yet uploaded to R2
@@ -27,6 +20,7 @@ interface Props {
 export function PhotoGrid({ photos, max, onAdd, onRemove, onPress, addLabel = 'Adicionar foto' }: Props) {
   const displayPhotos = max !== undefined ? photos.slice(0, max) : photos;
   const canAdd = onAdd && (max === undefined || photos.length < max);
+  const resolveUri = usePrivateMediaUris(displayPhotos);
 
   return (
     <View style={styles.grid}>

@@ -8,9 +8,17 @@ import * as FileSystem from 'expo-file-system';
 import { supabase } from './supabase';
 
 const PENDING_PREFIX = 'pending:';
-const PHOTO_TABLES = ['verificacao_fotos', 'nc_fotos'] as const;
+const MEDIA_FIELDS: Record<string, string[]> = {
+  verificacao_fotos: ['r2_key'],
+  nc_fotos: ['r2_key'],
+  verificacoes: ['assinatura_url'],
+  fvs_conclusoes: ['assinatura_url'],
+  nc_reinspecoes: ['foto_url'],
+  nao_conformidades: ['foto_reinspecao_url'],
+};
 
 export class SupabaseConnector implements PowerSyncBackendConnector {
+  private uploadedMedia = new Map<string, string>();
   async fetchCredentials() {
     const {
       data: { session },
@@ -36,6 +44,10 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
         await this.processOperation(op);
       }
       await transaction.complete();
+      for (const localPath of this.uploadedMedia.keys()) {
+        await FileSystem.deleteAsync(localPath, { idempotent: true });
+      }
+      this.uploadedMedia.clear();
     } catch (error) {
       console.error('[PowerSync] uploadData error:', error);
       throw error; // Let PowerSync retry
@@ -47,8 +59,8 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     const data = { ...(op.opData ?? {}) };
 
     // Resolve pending photo uploads before writing to Supabase
-    if (PHOTO_TABLES.includes(table as (typeof PHOTO_TABLES)[number])) {
-      await this.resolvePendingPhoto(data);
+    for (const field of MEDIA_FIELDS[table] ?? []) {
+      await this.resolvePendingMedia(data, field);
     }
 
     switch (op.op) {
@@ -68,11 +80,16 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
    * If r2_key starts with 'pending:', uploads the local file to R2
    * via presigned URL and replaces r2_key with the final cloud key.
    */
-  private async resolvePendingPhoto(data: Record<string, unknown>): Promise<void> {
-    const r2Key = data['r2_key'] as string | undefined;
+  private async resolvePendingMedia(data: Record<string, unknown>, field: string): Promise<void> {
+    const r2Key = data[field] as string | undefined;
     if (!r2Key?.startsWith(PENDING_PREFIX)) return;
 
     const localPath = r2Key.slice(PENDING_PREFIX.length);
+    const cachedKey = this.uploadedMedia.get(localPath);
+    if (cachedKey) {
+      data[field] = cachedKey;
+      return;
+    }
     const filename = localPath.split('/').pop() ?? 'photo.jpg';
     const mimeType = (data['mime_type'] as string | undefined) ?? 'image/jpeg';
 
@@ -113,8 +130,8 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     }
 
     // Replace pending path with final R2 key, clean up local file
-    data['r2_key'] = key;
-    await FileSystem.deleteAsync(localPath, { idempotent: true });
+    data[field] = key;
+    this.uploadedMedia.set(localPath, key);
   }
 
   private async upsertRow(table: string, data: Record<string, unknown>): Promise<void> {

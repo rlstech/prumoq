@@ -1,13 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
-import { HardHat, Search, Plus, Save } from 'lucide-react';
+import { HardHat, Search, Plus, Save, XCircle } from 'lucide-react';
 import { createEquipe, updateEquipe } from './actions';
 
-export default function EquipesClient({ initialEquipes }: { initialEquipes: any[] }) {
+export default function EquipesClient({
+  initialEquipes,
+  empresas,
+  loadError,
+}: {
+  initialEquipes: any[];
+  empresas: Array<{ id: string; nome: string }>;
+  loadError?: string;
+}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [equipes, setEquipes] = useState(initialEquipes);
   const [modalOpen, setModalOpen] = useState(false);
@@ -15,6 +23,10 @@ export default function EquipesClient({ initialEquipes }: { initialEquipes: any[
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setEquipes(initialEquipes);
+  }, [initialEquipes]);
 
   const proprios = equipes.filter(e => e.tipo === 'proprio' && e.nome.toLowerCase().includes(searchTerm.toLowerCase()));
   const terceirizados = equipes.filter(e => e.tipo === 'terceirizado' && e.nome.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -25,12 +37,14 @@ export default function EquipesClient({ initialEquipes }: { initialEquipes: any[
     especialidade: '',
     responsavel: '',
     telefone: '',
-    cnpj_terceiro: ''
+    cnpj_terceiro: '',
+    escopo: 'global' as 'global' | 'restrito',
+    empresaIds: [] as string[],
   });
 
   const openNewEquipeModal = () => {
     setSelectedEquipe(null);
-    setFormData({ nome: '', tipo: 'proprio', especialidade: '', responsavel: '', telefone: '', cnpj_terceiro: '' });
+    setFormData({ nome: '', tipo: 'proprio', especialidade: '', responsavel: '', telefone: '', cnpj_terceiro: '', escopo: 'global', empresaIds: [] });
     setModalOpen(true);
   };
 
@@ -42,7 +56,9 @@ export default function EquipesClient({ initialEquipes }: { initialEquipes: any[
       especialidade: eq.especialidade || '',
       responsavel: eq.responsavel || '',
       telefone: eq.telefone || '',
-      cnpj_terceiro: eq.cnpj_terceiro || ''
+      cnpj_terceiro: eq.cnpj_terceiro || '',
+      escopo: eq.escopo || 'global',
+      empresaIds: (eq.equipe_empresas || []).map((item: { empresa_id: string }) => item.empresa_id),
     });
     setModalOpen(true);
   };
@@ -115,6 +131,13 @@ export default function EquipesClient({ initialEquipes }: { initialEquipes: any[
         </button>
       </div>
 
+      {loadError && (
+        <div role="alert" className="mb-5 flex items-center gap-3 rounded-lg border border-nok/20 bg-nok-bg px-4 py-3 text-sm font-medium text-nok">
+          <XCircle size={18} />
+          <span>{loadError}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
            <div className="flex items-center gap-2 mb-4">
@@ -162,6 +185,24 @@ export default function EquipesClient({ initialEquipes }: { initialEquipes: any[
             <div>
               <label className="block text-xs font-medium text-txt-2 mb-1">Especialidade</label>
               <input type="text" placeholder="Ex: Carpintaria, Instalações Elétricas..." className="w-full px-3 py-2 border border-brd-1 rounded bg-bg-1 text-[13px] outline-none focus:border-[var(--br)]" value={formData.especialidade} onChange={e => setFormData({...formData, especialidade: e.target.value})} />
+            </div>
+
+            <div className="rounded-lg border border-brd-0 bg-bg-0 p-4">
+              <label className="block text-xs font-medium text-txt-2 mb-1">Disponibilidade</label>
+              <select className="w-full px-3 py-2 border border-brd-1 rounded bg-bg-1 text-[13px]" value={formData.escopo} onChange={e => setFormData({...formData, escopo: e.target.value as 'global' | 'restrito', empresaIds: e.target.value === 'global' ? [] : formData.empresaIds})}>
+                <option value="global">Todas as empresas do cliente</option>
+                <option value="restrito">Somente empresas selecionadas</option>
+              </select>
+              {formData.escopo === 'restrito' ? (
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {empresas.map(empresa => (
+                    <label key={empresa.id} className="flex items-center gap-2 text-xs text-txt">
+                      <input type="checkbox" checked={formData.empresaIds.includes(empresa.id)} onChange={e => setFormData({...formData, empresaIds: e.target.checked ? [...formData.empresaIds, empresa.id] : formData.empresaIds.filter(id => id !== empresa.id)})} />
+                      {empresa.nome}
+                    </label>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

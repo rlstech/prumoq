@@ -1,14 +1,7 @@
 import { X } from 'lucide-react-native';
 import { FlatList, Image, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Colors } from '../lib/constants';
-
-const R2_PUBLIC_URL = process.env.EXPO_PUBLIC_R2_PUBLIC_URL ?? '';
-
-function resolveUri(key: string): string {
-  if (key.startsWith('pending:')) return key.slice('pending:'.length);
-  if (key.startsWith('data:') || key.startsWith('http')) return key;
-  return `${R2_PUBLIC_URL}/${key}`;
-}
+import { usePrivateMediaUris } from '../hooks/usePrivateMediaUris';
 
 interface Props {
   photos: string[];
@@ -19,6 +12,7 @@ interface Props {
 
 export function PhotoViewer({ photos, initialIndex = 0, visible, onClose }: Props) {
   const { width, height } = useWindowDimensions();
+  const resolveUri = usePrivateMediaUris(photos);
 
   return (
     <Modal visible={visible} animationType="fade" statusBarTranslucent onRequestClose={onClose}>

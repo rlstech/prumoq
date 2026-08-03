@@ -17,8 +17,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 
-const R2_BASE = process.env.EXPO_PUBLIC_R2_PUBLIC_URL ?? '';
-
 type RawVerification = Omit<FvsPrintableVerification, 'items' | 'fotos'>;
 type ItemRow = FvsPrintableItem & { verificacao_id: string };
 type PhotoRow = {
@@ -34,11 +32,11 @@ const REPORT_PAGE_SIZE = 1000;
 const VERIFICATION_ID_BATCH_SIZE = 100;
 const IMAGE_READY_TIMEOUT_MS = 3_000;
 
-function resolveR2(key: string | null | undefined): string | null {
+function resolveR2(key: string | null | undefined, signed: Record<string, string>): string | null {
   if (!key) return null;
   if (key.startsWith('http') || key.startsWith('data:')) return key;
   if (key.startsWith('blob:') || key.startsWith('pending:')) return null;
-  return `${R2_BASE}/${key}`;
+  return signed[key] ?? null;
 }
 
 async function waitForPrintableImage(
@@ -190,9 +188,20 @@ export default function FvsPrintPage() {
 
         const verifications = [...verificationRows].reverse();
 
+        const mediaKeys = Array.from(new Set([
+          ...photoRows.map(photo => photo.r2_key),
+          ...verifications.map(verification => verification.assinatura_url).filter((value): value is string => Boolean(value)),
+          ...((conclusaoRes.data ?? []) as Array<{ assinatura_url: string | null }>).map(row => row.assinatura_url).filter((value): value is string => Boolean(value)),
+        ].filter(key => !key.startsWith('http') && !key.startsWith('data:') && !key.startsWith('pending:') && !key.startsWith('blob:'))));
+        const { data: signedResult, error: signedError } = mediaKeys.length
+          ? await supabase.functions.invoke('r2-presign', { body: { operation: 'download', keys: mediaKeys } })
+          : { data: { urls: {} }, error: null };
+        if (signedError) throw signedError;
+        const signedMedia = (signedResult as { urls?: Record<string, string> } | null)?.urls ?? {};
+
         const photosMap = new Map<string, FvsPrintablePhoto[]>();
         for (const photo of photoRows) {
-          const source = resolveFvsReportPhotoSource(photo.r2_key, R2_BASE);
+          const source = resolveFvsReportPhotoSource(resolveR2(photo.r2_key, signedMedia) ?? '', '');
           if (!source) continue;
           const photos = photosMap.get(photo.verificacao_id) ?? [];
           photos.push({
@@ -220,17 +229,22 @@ export default function FvsPrintPage() {
           header,
           verificacoes: verifications.map((verification) => ({
             ...verification,
-            assinatura_url: resolveR2(verification.assinatura_url),
+            assinatura_url: resolveR2(verification.assinatura_url, signedMedia),
             items: itemsMap.get(verification.id) ?? [],
             fotos: photosMap.get(verification.id) ?? [],
           })),
           ncs: ncRows,
-          conclusao:
-            (
+          conclusao: (() => {
+            const conclusion = (
               conclusaoRes.data as unknown as
                 | FvsPrintableConclusion[]
                 | null
-            )?.[0] ?? null,
+            )?.[0] ?? null;
+            return conclusion ? {
+              ...conclusion,
+              assinatura_url: resolveR2(conclusion.assinatura_url, signedMedia),
+            } : null;
+          })(),
           emitidoEm: new Intl.DateTimeFormat('pt-BR', {
             day: '2-digit',
             month: '2-digit',

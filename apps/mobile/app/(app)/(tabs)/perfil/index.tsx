@@ -22,7 +22,7 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-interface UsuarioRow { id: string; nome: string; cargo: string; perfil: string; empresa_id: string }
+interface UsuarioRow { id: string; nome: string; cargo: string; perfil: string; cliente_id: string }
 interface ObraRow    { id: string; nome: string; municipio: string; uf: string }
 interface CountRow   { count: number }
 
@@ -72,7 +72,7 @@ export default function PerfilScreen() {
     error: usuarioError,
   } = useQuery<UsuarioRow>(
     userId
-      ? `SELECT id, nome, cargo, perfil, empresa_id FROM usuarios WHERE id = ? LIMIT 1`
+      ? `SELECT id, nome, cargo, perfil, cliente_id FROM usuarios WHERE id = ? LIMIT 1`
       : `SELECT 1 WHERE 0`,
     userId ? [userId] : [],
   );

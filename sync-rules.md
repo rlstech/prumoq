@@ -1,5 +1,25 @@
 # PrumoQ — Regras de Sincronização (PowerSync)
 
+## Regra definitiva de multitenancy (migrations 026+)
+
+Os exemplos históricos abaixo antecedem o modo SaaS. A configuração de produção
+deve resolver `cliente_id` a partir de `usuarios.id = token_parameters.user_id`,
+incluir `cliente_id` em toda linha sincronizada e nunca usar `empresa_id` como
+fronteira de tenant. `empresa_id` agora identifica somente a empresa legal dona
+de uma obra.
+
+```yaml
+parameters:
+  - name: cliente_id
+    query: SELECT cliente_id FROM usuarios WHERE id = token_parameters.user_id AND ativo = true
+```
+
+Toda query de bucket deve conter `cliente_id = :cliente_id`. Tabelas ligadas a
+obras também mantêm a restrição por `obra_usuarios` para gestores e inspetores;
+admins recebem IDs explícitos das obras ativas do mesmo cliente. `superadmin`
+não possui `cliente_id` e não recebe buckets operacionais. `clientes` e
+`auditoria_plataforma` nunca são sincronizadas para o app de campo.
+
 ## Visão Geral
 
 O app mobile usa **PowerSync** para manter um banco SQLite local no dispositivo.
@@ -528,21 +548,9 @@ PowerSync sync event (conexão restaurada):
 
 ### Supabase Edge Function: presigned URL
 
-```typescript
-// supabase/functions/r2-presign/index.ts
-import { createClient } from '@supabase/supabase-js';
-
-Deno.serve(async (req) => {
-  const { filename, contentType } = await req.json();
-  const userId = req.headers.get('x-user-id');
-  const key = `fotos/${userId}/${Date.now()}_${filename}`;
-
-  // Gerar presigned URL via S3 SDK para Cloudflare R2
-  const url = await generatePresignedUrl(key, contentType);
-
-  return Response.json({ url, key });
-});
-```
+A Edge Function valida o JWT, o status do cliente e o acesso ao registro. Uploads
+recebem chaves `fotos/{cliente_id}/{user_id}/...`; downloads usam URLs GET
+assinadas de curta duração. O bucket não possui URL pública.
 
 ### Variáveis de ambiente necessárias
 
@@ -558,13 +566,11 @@ R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET_NAME=prumoq-fotos
-R2_PUBLIC_URL=https://fotos.prumoq.com.br
 
 # .env (Expo)
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 EXPO_PUBLIC_POWERSYNC_URL=
-EXPO_PUBLIC_R2_PUBLIC_URL=https://fotos.prumoq.com.br
 ```
 
 ---

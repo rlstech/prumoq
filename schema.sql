@@ -18,7 +18,9 @@ create type status_nc as enum ('aberta', 'em_correcao', 'resolvida', 'cancelada'
 create type tipo_equipe as enum ('proprio', 'terceirizado');
 create type categoria_fvs as enum (
   'estrutura', 'vedacao', 'revestimento', 'instalacoes',
-  'cobertura', 'acabamento', 'fundacao', 'terraplanagem', 'outro'
+  'cobertura', 'acabamento', 'fundacao', 'terraplanagem',
+  'servicos_preliminares', 'impermeabilizacao', 'esquadrias_vidros',
+  'urbanizacao_pavimentacao', 'comunicacao_visual', 'outro'
 );
 
 -- ============================================================

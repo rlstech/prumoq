@@ -15,6 +15,7 @@ import { BrandMark } from '../../components/BrandMark';
 import { Button, ErrorBanner, Field, Toast } from '../../components/ui';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 import { consumePasswordChanged } from '../../lib/auth/passwords';
+import { validateMobileAccess } from '../../lib/auth/mobile-access';
 import {
   Breakpoints,
   Colors,
@@ -72,15 +73,9 @@ export default function LoginScreen() {
     }
 
     if (authData.user) {
-      const { data: perfilData } = await supabase
-        .from('usuarios' as never)
-        .select('perfil')
-        .eq('id', authData.user.id)
-        .single();
-
-      const perfil = perfilData as { perfil: string } | null;
-      if (perfil && !['inspetor', 'admin', 'gestor'].includes(perfil.perfil)) {
-        setError('Perfil sem acesso ao aplicativo.');
+      const accessError = await validateMobileAccess(authData.user.id);
+      if (accessError) {
+        setError(accessError);
         await supabase.auth.signOut();
         setLoading(false);
         return;

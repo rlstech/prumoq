@@ -19,8 +19,10 @@ import {
 import Header from '@/components/layout/Header';
 import PhotoGallery from '@/components/ui/PhotoGallery';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { signPrivateMedia } from '@/lib/media/signed-urls';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@prumoq/shared';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
@@ -275,13 +277,22 @@ export default async function NcDetailPage({ params }: PageProps) {
   const inspectorsById = new Map(reinspectionInspectors.map(row => [row.id, row.nome]));
   const verificationsById = new Map(reinspectionVerifications.map(row => [row.id, row.numero_verif]));
 
+  const signedMedia = await signPrivateMedia(
+    supabase as unknown as SupabaseClient<Database>,
+    [
+      ...photoRows.flatMap(photo => [photo.r2_key, photo.r2_thumb_key]),
+      ...reinspections.map(reinspection => reinspection.foto_url),
+      nc.foto_reinspecao_url,
+    ],
+  );
+
   const deadline = deadlineMeta(nc.data_nova_verif, nc.status);
   const isOpen = nc.status === 'aberta' || nc.status === 'em_correcao';
   const photos = photoRows.map(photo => ({
-    r2_key: photo.r2_key,
-    r2_thumb_key: photo.r2_thumb_key ?? undefined,
+    r2_key: signedMedia.get(photo.r2_key) ?? '',
+    r2_thumb_key: photo.r2_thumb_key ? signedMedia.get(photo.r2_thumb_key) : undefined,
     caption: photo.nome_arquivo ?? 'Evidência da não conformidade',
-  }));
+  })).filter(photo => Boolean(photo.r2_key));
   return (
     <>
       <Header
@@ -367,10 +378,10 @@ export default async function NcDetailPage({ params }: PageProps) {
                         tone={approved ? 'success' : 'warning'}
                         last={isLast}
                       >
-                        {reinspection.foto_url ? (
+                        {reinspection.foto_url && signedMedia.has(reinspection.foto_url) ? (
                           <div className="mt-3 max-w-[280px]">
                             <PhotoGallery photos={[{
-                              r2_key: reinspection.foto_url,
+                              r2_key: signedMedia.get(reinspection.foto_url)!,
                               caption: 'Evidência da reinspeção',
                             }]} />
                           </div>
@@ -395,10 +406,10 @@ export default async function NcDetailPage({ params }: PageProps) {
                       tone="success"
                       last
                     >
-                      {nc.foto_reinspecao_url ? (
+                      {nc.foto_reinspecao_url && signedMedia.has(nc.foto_reinspecao_url) ? (
                         <div className="mt-3 max-w-[280px]">
                           <PhotoGallery photos={[{
-                            r2_key: nc.foto_reinspecao_url,
+                            r2_key: signedMedia.get(nc.foto_reinspecao_url)!,
                             caption: 'Evidência de encerramento',
                           }]} />
                         </div>

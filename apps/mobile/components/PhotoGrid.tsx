@@ -1,7 +1,7 @@
 import { Plus, X } from 'lucide-react-native';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors, FontFamily, Radius, Spacing } from '../lib/constants';
-import { resolveStoredMediaUri } from '../lib/verification-detail';
+import { usePrivateMediaUris } from '../hooks/usePrivateMediaUris';
 
 interface Props {
   photos: string[];       // r2_key values or 'pending:[local_path]'
@@ -15,13 +15,14 @@ interface Props {
 export function PhotoGrid({ photos, max, onAdd, onRemove, onPress, addLabel = 'Adicionar foto' }: Props) {
   const displayPhotos = max !== undefined ? photos.slice(0, max) : photos;
   const canAdd = onAdd && (max === undefined || photos.length < max);
+  const resolveUri = usePrivateMediaUris(displayPhotos);
 
   return (
     <View style={styles.grid}>
       {displayPhotos.map((key, index) => (
         <View key={key + index} style={styles.cell}>
           <Pressable accessibilityRole="button" accessibilityLabel={`Abrir foto ${index + 1}`} onPress={() => onPress?.(index)}>
-            <Image source={{ uri: resolveStoredMediaUri(key) }} style={styles.thumb} resizeMode="cover" />
+            <Image source={{ uri: resolveUri(key) }} style={styles.thumb} resizeMode="cover" />
           </Pressable>
           {onRemove && (
             <Pressable accessibilityRole="button" accessibilityLabel={`Remover foto ${index + 1}`} style={styles.remove} onPress={() => onRemove(index)} hitSlop={8}>

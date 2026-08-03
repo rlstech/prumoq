@@ -2,11 +2,24 @@
 // Use these for type-safe comparisons in both apps.
 
 export const PerfilUsuario = {
+  superadmin: 'superadmin',
   admin:    'admin',
   gestor:   'gestor',
   inspetor: 'inspetor',
 } as const;
 export type PerfilUsuario = (typeof PerfilUsuario)[keyof typeof PerfilUsuario];
+
+export const StatusCliente = {
+  ativo: 'ativo',
+  suspenso: 'suspenso',
+} as const;
+export type StatusCliente = (typeof StatusCliente)[keyof typeof StatusCliente];
+
+export const EscopoCadastro = {
+  global: 'global',
+  restrito: 'restrito',
+} as const;
+export type EscopoCadastro = (typeof EscopoCadastro)[keyof typeof EscopoCadastro];
 
 export const TipoAmbiente = {
   interno: 'interno',
@@ -88,6 +101,11 @@ export const CategoriaFvs = {
   acabamento:    'acabamento',
   fundacao:      'fundacao',
   terraplanagem: 'terraplanagem',
+  servicosPreliminares: 'servicos_preliminares',
+  impermeabilizacao: 'impermeabilizacao',
+  esquadriasVidros: 'esquadrias_vidros',
+  urbanizacaoPavimentacao: 'urbanizacao_pavimentacao',
+  comunicacaoVisual: 'comunicacao_visual',
   outro:         'outro',
 } as const;
 export type CategoriaFvs = (typeof CategoriaFvs)[keyof typeof CategoriaFvs];

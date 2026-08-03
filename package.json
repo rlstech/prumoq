@@ -10,6 +10,7 @@
     "web": "pnpm --filter @prumoq/web dev",
     "build:web": "pnpm --filter @prumoq/web build",
     "brand:assets": "node scripts/generate-brand-assets.mjs",
+    "bootstrap:superadmin": "pnpm --filter @prumoq/web bootstrap:superadmin",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint"
   },

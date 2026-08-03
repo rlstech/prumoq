@@ -7,6 +7,7 @@ import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
 import { createNc } from '../services/nc.service';
 
 interface Props {
+  clienteId: string;
   visible: boolean;
   ocorrencia: number;
   ncAnteriorId: string;
@@ -25,6 +26,7 @@ function fmtDate(iso: string): string {
 }
 
 export function NCReprovadaPanel({
+  clienteId,
   visible, ocorrencia, ncAnteriorId, ncAnteriorDescricao,
   ncAnteriorVerifNum, ncAnteriorDataCriacao,
   verificacaoId, verificacaoItemId, onSalvo,
@@ -66,6 +68,7 @@ export function NCReprovadaPanel({
     setIsSaving(true);
     try {
       await createNc({
+        clienteId,
         verificacaoId,
         verificacaoItemId,
         descricao: descricao.trim(),

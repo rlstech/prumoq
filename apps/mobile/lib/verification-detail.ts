@@ -115,14 +115,14 @@ export function isPendingMediaKey(value: string | null | undefined): boolean {
 
 export function resolveStoredMediaUri(
   value: string,
-  publicBaseUrl = process.env.EXPO_PUBLIC_R2_PUBLIC_URL ?? '',
+  publicBaseUrl = '',
 ): string {
   if (value.startsWith('pending:')) return value.slice('pending:'.length);
   if (value.startsWith('data:') || value.startsWith('blob:') || /^https?:\/\//.test(value)) {
     return value;
   }
 
-  return `${publicBaseUrl.replace(/\/$/, '')}/${value}`;
+  return publicBaseUrl ? `${publicBaseUrl.replace(/\/$/, '')}/${value}` : '';
 }
 
 export function formatDateOnly(value: string | null | undefined): string {
