@@ -280,6 +280,12 @@ Copie `.env.example` e preencha:
 - RLS sempre ativo — nunca `supabase.rpc()` sem verificação
 - `supabase.from().select()` com joins ao invés de múltiplas queries
 - No mobile: `usePowerSyncQuery()` para queries reativas
+- **Embeds PostgREST exigem hint `!constraint`**: a migration 027 adicionou FKs
+  compostas `(coluna, cliente_id)` ao lado das FKs simples originais. Todo embed
+  (`select('*, obras(...)')`) entre pares de tabelas com duas FKs falha com
+  PGRST201 ("more than one relationship") — desambiguar sempre
+  (ex.: `obras!ambientes_obra_id_fkey(...)`, `usuarios!inspetor_id(...)`;
+  combina com `!inner`: `fvs_planejadas!verificacoes_fvs_planejada_id_fkey!inner(...)`).
 
 ### PowerSync
 - Schema local em `apps/mobile/lib/schema.ts` (15 tabelas)

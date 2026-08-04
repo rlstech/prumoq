@@ -492,7 +492,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 
   // ── detalhe ambiente ──────────────────────────────────
   if (s.includes('from ambientes a') && s.includes('join obras o') && s.includes('where a.id = ?') && params[0]) {
-    const { data } = await supabase.from('ambientes').select('id, nome, tipo, localizacao, obras(nome)').eq('id', params[0] as string);
+    const { data } = await supabase.from('ambientes').select('id, nome, tipo, localizacao, obras!ambientes_obra_id_fkey(nome)').eq('id', params[0] as string);
     const mapped = (data ?? []).map((a: Record<string, unknown>) => ({
       id: a.id,
       nome: a.nome,
@@ -555,12 +555,12 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
         data_verif, percentual_exec, status, observacoes, assinatura_url,
         assinada_em, created_offline, created_at,
         usuarios!inspetor_id(nome, cargo),
-        equipes(nome, tipo, responsavel, especialidade),
-        fvs_planejadas!inner(
+        equipes!verificacoes_equipe_id_fkey(nome, tipo, responsavel, especialidade),
+        fvs_planejadas!verificacoes_fvs_planejada_id_fkey!inner(
           subservico,
-          ambientes!inner(
+          ambientes!fvs_planejadas_ambiente_id_fkey!inner(
             nome,
-            obras!inner(nome, eng_responsavel, crea_cau)
+            obras!ambientes_obra_id_fkey!inner(nome, eng_responsavel, crea_cau)
           )
         )
       `)

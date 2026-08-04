@@ -1,0 +1,55 @@
+
+> prumoq@1.0.0 web C:\Code\prumoq
+> pnpm --filter @prumoq/web dev
+
+
+> @prumoq/web@1.0.0 dev C:\Code\prumoq\apps\web
+> next dev
+
+  ▲ Next.js 14.2.29
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+  - Experiments (use with caution):
+    · outputFileTracingRoot
+
+ ✓ Starting...
+ ✓ Ready in 3s
+ ✓ Compiled /middleware in 238ms (124 modules)
+ ○ Compiling /obras ...
+ ✓ Compiled /obras in 4.1s (1036 modules)
+ GET /obras 200 in 6433ms
+ ✓ Compiled /icon.svg in 357ms (625 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 458ms
+ POST /obras 200 in 4681ms
+ GET /obras 200 in 1979ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 16ms
+ GET /obras 200 in 1317ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 7ms
+ GET /obras 200 in 1624ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 23ms
+ GET /obras 200 in 1465ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 9ms
+ GET /obras 200 in 1774ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 13ms
+ ✓ Compiled in 623ms (1036 modules)
+ ✓ Compiled in 261ms (443 modules)
+ ✓ Compiled in 452ms (1037 modules)
+ GET /obras 200 in 2336ms
+ ✓ Compiled /icon.svg in 189ms (626 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 274ms
+ GET /obras 200 in 1966ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 8ms
+ POST /obras 200 in 3025ms
+ POST /obras 200 in 2892ms
+ POST /obras 200 in 3302ms
+ POST /obras 200 in 2737ms
+ ○ Compiling /obras/[id] ...
+ ✓ Compiled /obras/[id] in 780ms (1055 modules)
+ ○ Compiling /fvs-padrao ...
+ ✓ Compiled /fvs-padrao in 926ms (1089 modules)
+ ✓ Compiled in 286ms (461 modules)
+ GET /obras 200 in 1497ms
+ ✓ Compiled /icon.svg in 241ms (638 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 337ms
+ ✓ Compiled /dashboard in 479ms (1070 modules)
+ ✓ Compiled /obras/[id]/ambiente/[ambId] in 452ms (1054 modules)

@@ -11,7 +11,7 @@ export default async function AmbientePage(props: { params: Promise<{ id: string
   // Fetch ambiente with obra relations
   const { data: ambiente } = await supabase
     .from('ambientes' as any)
-    .select('*, obras(nome, empresa_id)')
+    .select('*, obras!ambientes_obra_id_fkey(nome, empresa_id)')
     .eq('id', ambId)
     .single();
 

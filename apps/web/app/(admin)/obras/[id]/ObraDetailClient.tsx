@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { HardHat, Pencil, Trash2 } from 'lucide-react';
+import { HardHat, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import AmbienteModal from './AmbienteModal';
 import ObraEquipeModal from './ObraEquipeModal';
-import { removeEquipeFromObra } from './actions';
+import { deleteObra, removeEquipeFromObra } from './actions';
 import ObraModal from '../ObraModal';
 
 interface ObraDetailClientProps {
@@ -19,6 +20,8 @@ interface ObraDetailClientProps {
   obraEquipes: { id: string; nome: string; tipo: string; especialidade?: string }[];
   availableEquipes: { id: string; nome: string; tipo: string; especialidade?: string }[];
   totalEmpresaEquipes: number;
+  totalUsuariosVinculados: number;
+  canDelete: boolean;
 }
 
 export default function ObraDetailClient({
@@ -30,6 +33,8 @@ export default function ObraDetailClient({
   obraEquipes,
   availableEquipes,
   totalEmpresaEquipes,
+  totalUsuariosVinculados,
+  canDelete,
 }: ObraDetailClientProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -41,6 +46,7 @@ export default function ObraDetailClient({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   const filtered = initialAmbientes.filter(a => {
     if (filterType === 'Com NC' && !(a.ncs_abertas > 0)) return false;
@@ -61,6 +67,24 @@ export default function ObraDetailClient({
         router.refresh();
       } else {
         toast(result.error ?? 'Erro ao remover equipe.', 'error');
+      }
+    });
+  }
+
+  const hasAssociations =
+    initialAmbientes.length > 0 || obraEquipes.length > 0 || totalUsuariosVinculados > 0;
+
+  function handleDeleteObra() {
+    if (!confirmDelete) return;
+    startTransition(async () => {
+      const result = await deleteObra(confirmDelete.id);
+      if (result.success) {
+        toast('Obra excluída com sucesso.', 'success');
+        setConfirmDelete(null);
+        router.push('/obras');
+      } else {
+        toast('Erro ao excluir obra: ' + (result.error ?? ''), 'error');
+        setConfirmDelete(null);
       }
     });
   }
@@ -266,6 +290,41 @@ export default function ObraDetailClient({
         </div>
       )}
 
+      {/* Zona de Perigo — exclusão da obra */}
+      {canDelete && (
+        <section className="mt-8 border border-nok/30 rounded-xl bg-nok/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-nok/10 text-nok shrink-0">
+              <AlertTriangle size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-[13px] font-semibold text-nok">Zona de Perigo</h3>
+              <p className="text-xs text-txt-2 mt-1 leading-relaxed">
+                A exclusão é <span className="font-medium">permanente</span> e não pode ser desfeita.
+                A obra só pode ser excluída se não tiver ambientes, equipes ou usuários vinculados.
+                {hasAssociations && (
+                  <span className="block mt-1.5 text-nok">
+                    Esta obra possui {initialAmbientes.length} ambiente(s), {obraEquipes.length} equipe(s) e {totalUsuariosVinculados} usuário(s) vinculado(s).
+                  </span>
+                )}
+              </p>
+              <button
+                onClick={() => setConfirmDelete({ id: obraId, name: obra?.nome ?? '' })}
+                disabled={hasAssociations || isPending}
+                title={hasAssociations ? 'Obra possui registros associados' : 'Excluir obra'}
+                className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors ${
+                  hasAssociations
+                    ? 'bg-bg-0 text-txt-3 cursor-not-allowed opacity-50'
+                    : 'bg-nok text-white border-nok hover:bg-nok/90'
+                }`}
+              >
+                <Trash2 size={13} /> Excluir obra
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {isAmbienteModalOpen && (
         <AmbienteModal
           isOpen={isAmbienteModalOpen}
@@ -290,6 +349,17 @@ export default function ObraDetailClient({
         onClose={() => setIsEditModalOpen(false)}
         empresas={empresas}
         initialData={editInitialData}
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleDeleteObra}
+        title="Excluir Obra"
+        message={`Tem certeza que deseja excluir "${confirmDelete?.name}"? Esta ação é permanente e não pode ser desfeita.`}
+        confirmText="Sim, Excluir"
+        variant="danger"
+        isLoading={isPending}
       />
     </div>
   );
