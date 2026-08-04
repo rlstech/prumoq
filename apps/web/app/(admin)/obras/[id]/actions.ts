@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { assertObraInTenant, requireTenantRole } from '@/lib/auth/context';
 
 async function requireObra(obraId: string) {
@@ -83,6 +84,56 @@ export async function removeEquipeFromObra(obraId: string, equipeId: string) {
     return { success: true };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Falha ao remover equipe.' };
+  }
+}
+
+export async function deleteObra(obraId: string) {
+  try {
+    const context = await requireTenantRole(['admin']);
+    await assertObraInTenant(obraId, context.clienteId);
+    // Service role: RLS não possui policy de DELETE em obras — o client SSR
+    // deletaria 0 linhas silenciosamente. As verificações de auth/tenant acima
+    // garantem a segurança no lugar da RLS.
+    const admin = createAdminClient();
+
+    const [amb, usr, eq] = await Promise.all([
+      admin.from('ambientes').select('id', { count: 'exact', head: true })
+        .eq('obra_id', obraId).eq('cliente_id', context.clienteId),
+      admin.from('obra_usuarios').select('id', { count: 'exact', head: true })
+        .eq('obra_id', obraId).eq('cliente_id', context.clienteId),
+      admin.from('obra_equipes').select('id', { count: 'exact', head: true })
+        .eq('obra_id', obraId).eq('cliente_id', context.clienteId),
+    ]);
+
+    const counts = {
+      ambientes: amb.count ?? 0,
+      usuarios: usr.count ?? 0,
+      equipes: eq.count ?? 0,
+    };
+    const total = counts.ambientes + counts.usuarios + counts.equipes;
+    if (total > 0) {
+      const partes = [
+        counts.ambientes && `${counts.ambientes} ambiente(s)`,
+        counts.usuarios && `${counts.usuarios} usuário(s) vinculado(s)`,
+        counts.equipes && `${counts.equipes} equipe(s) vinculada(s)`,
+      ].filter(Boolean).join(', ');
+      return {
+        success: false,
+        error: `Obra não pode ser excluída: possui ${partes}. Remova-os antes de tentar novamente.`,
+      };
+    }
+
+    const { data: deleted, error } = await admin.from('obras').delete()
+      .eq('id', obraId).eq('cliente_id', context.clienteId).select('id');
+    if (error) throw error;
+    if (!deleted?.length) {
+      return { success: false, error: 'Obra não encontrada ou já excluída.' };
+    }
+
+    revalidatePath('/obras');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Falha ao excluir obra.' };
   }
 }
 

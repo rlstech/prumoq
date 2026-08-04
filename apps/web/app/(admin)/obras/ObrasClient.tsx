@@ -1,27 +1,49 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { useState, useTransition } from 'react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
 import Header from '@/components/layout/Header';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/Toast';
 import ObraModal from './ObraModal';
+import { deleteObra } from './[id]/actions';
 
 interface ObrasClientProps {
   initialObras: any[];
   empresas: any[];
+  canDelete: boolean;
 }
 
-export default function ObrasClient({ initialObras, empresas }: ObrasClientProps) {
+export default function ObrasClient({ initialObras, empresas, canDelete }: ObrasClientProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const filteredObras = initialObras.filter(o => 
+  const filteredObras = initialObras.filter(o =>
     o.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  function handleDeleteObra() {
+    if (!confirmDelete) return;
+    startTransition(async () => {
+      const result = await deleteObra(confirmDelete.id);
+      if (result.success) {
+        toast('Obra excluída com sucesso.', 'success');
+        setConfirmDelete(null);
+        router.refresh();
+      } else {
+        toast('Erro ao excluir obra: ' + (result.error ?? ''), 'error');
+        setConfirmDelete(null);
+      }
+    });
+  }
 
   const columns: Column<any>[] = [
     {
@@ -74,14 +96,30 @@ export default function ObrasClient({ initialObras, empresas }: ObrasClientProps
     },
     {
       header: '',
-      cell: (item) => (
-        <button 
-          onClick={(e) => { e.stopPropagation(); router.push(`/obras/${item.id}`); }}
-          className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors"
-        >
-          Abrir
-        </button>
-      )
+      cell: (item) => {
+        const inUse = (item.total_ambientes ?? 0) > 0 || (item.total_fvs ?? 0) > 0;
+        return (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); router.push(`/obras/${item.id}`); }}
+              className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors"
+            >
+              Abrir
+            </button>
+            {canDelete && (
+              <button
+                onClick={(e) => { e.stopPropagation(); !inUse && setConfirmDelete({ id: item.id, name: item.nome }); }}
+                disabled={inUse}
+                title={inUse ? 'Obra possui registros — não pode ser excluída' : 'Excluir obra'}
+                className={`p-1.5 rounded transition-colors ${inUse ? 'text-txt-3 cursor-not-allowed opacity-40' : 'text-nok hover:bg-nok/10'}`}
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+          </div>
+        );
+      },
+      className: 'w-24'
     }
   ];
 
@@ -136,10 +174,21 @@ export default function ObrasClient({ initialObras, empresas }: ObrasClientProps
         </div>
       </div>
 
-      <ObraModal 
+      <ObraModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         empresas={empresas}
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleDeleteObra}
+        title="Excluir Obra"
+        message={`Tem certeza que deseja excluir "${confirmDelete?.name}"? Esta ação é permanente e não pode ser desfeita.`}
+        confirmText="Sim, Excluir"
+        variant="danger"
+        isLoading={isPending}
       />
     </>
   );

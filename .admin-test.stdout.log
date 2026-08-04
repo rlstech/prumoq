@@ -1,0 +1,150 @@
+
+> prumoq@1.0.0 web C:\Code\prumoq
+> pnpm --filter @prumoq/web dev
+
+
+> @prumoq/web@1.0.0 dev C:\Code\prumoq\apps\web
+> next dev
+
+  ▲ Next.js 14.2.29
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+  - Experiments (use with caution):
+    · outputFileTracingRoot
+
+ ✓ Starting...
+ ✓ Ready in 3.4s
+ ✓ Compiled /middleware in 176ms
+ ✓ Compiled (124 modules)
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 4.6s (910 modules)
+ GET /dashboard 200 in 6587ms
+ ✓ Compiled /icon.svg in 349ms (516 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 442ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 799ms (1045 modules)
+ GET /login 200 in 1017ms
+ ✓ Compiled /conta in 390ms (1038 modules)
+ ✓ Compiled /usuarios in 489ms (1096 modules)
+ ✓ Compiled /obras in 348ms (1113 modules)
+ ○ Compiling /empresas ...
+ ✓ Compiled /empresas in 511ms (1130 modules)
+ POST /empresas 200 in 2666ms
+ GET /empresas 200 in 752ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 16ms
+ GET /empresas 200 in 492ms
+ GET /empresas 200 in 652ms
+ GET /empresas 200 in 1239ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 10ms
+ ○ Compiling /relatorios ...
+ ✓ Compiled /relatorios in 655ms (1132 modules)
+ GET /empresas 200 in 801ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 12ms
+ ✓ Compiled /login in 227ms (703 modules)
+ POST /login 200 in 1834ms
+ ✓ Compiled in 1170ms (1142 modules)
+ GET /empresas 200 in 778ms
+ ✓ Compiled /icon.svg in 264ms (691 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 337ms
+ GET /empresas 200 in 1415ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 11ms
+ ✓ Compiled /obras in 257ms (701 modules)
+ POST /obras 200 in 2497ms
+ POST /obras 200 in 1250ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 570ms (1099 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 702ms
+ POST /obras 200 in 1328ms
+ ✓ Compiled in 648ms (1141 modules)
+ POST /obras 200 in 2439ms
+ GET /obras 200 in 705ms
+ ✓ Compiled /_not-found in 342ms (1099 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 395ms
+ ✓ Compiled /icon.svg in 210ms (691 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 286ms
+ ○ Compiling /obras/[id] ...
+ ✓ Compiled /obras/[id] in 780ms (1153 modules)
+ GET /equipes 404 in 88ms
+ GET /equipes 404 in 44ms
+ GET /obras/03891899-afec-4452-ace0-8396cdea797b 200 in 1309ms
+ ○ Compiling /equipes ...
+ ✓ Compiled /equipes in 728ms (1162 modules)
+ ✓ Compiled in 195ms (497 modules)
+ POST /equipes 200 in 4267ms
+ POST /equipes 200 in 3518ms
+ POST /equipes 200 in 3010ms
+ GET /equipes 200 in 1736ms
+ ✓ Compiled /icon.svg in 270ms (672 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 353ms
+ GET /equipes 200 in 1050ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 10ms
+ GET /equipes 200 in 622ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 14ms
+ GET /equipes 200 in 1077ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 8ms
+ ✓ Compiled in 764ms (1167 modules)
+ ✓ Compiled /dashboard in 337ms (650 modules)
+ POST /obras/012bb9b3-3f3b-4107-960b-223de5f48628 200 in 3383ms
+ ○ Compiling /obras/[id]/ambiente/[ambId] ...
+ ✓ Compiled /obras/[id]/ambiente/[ambId] in 958ms (1103 modules)
+ GET /obras/012bb9b3-3f3b-4107-960b-223de5f48628/ambiente/96605b8d-0b80-490e-b09e-5ec5be278357 200 in 1200ms
+ ✓ Compiled /icon.svg in 168ms (680 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 254ms
+ ○ Compiling /fvs-padrao ...
+ ✓ Compiled /fvs-padrao in 555ms (1154 modules)
+ ○ Compiling /fvs-padrao/[id] ...
+ ✓ Compiled /fvs-padrao/[id] in 790ms (1132 modules)
+ GET /fvs-padrao/611f6c90-1685-4d23-ad51-a18d00c6176d 404 in 819ms
+ ✓ Compiled /icon.svg in 173ms (679 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 251ms
+ GET /fvs-padrao/611f6c90-1685-4d23-ad51-a18d00c6176d 404 in 1051ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 7ms
+ ✓ Compiled /_not-found in 307ms (1154 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 401ms
+ GET /fvs-padrao/611f6c90-1685-4d23-ad51-a18d00c6176d 404 in 776ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 19ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 18ms
+ ✓ Compiled in 870ms (1164 modules)
+ GET /fvs-padrao/611f6c90-1685-4d23-ad51-a18d00c6176d 200 in 1162ms
+ ✓ Compiled /_not-found in 246ms (1122 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 324ms
+ ✓ Compiled /icon.svg in 137ms (680 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 243ms
+ ✓ Compiled in 238ms (517 modules)
+ ✓ Compiled in 768ms (1166 modules)
+ GET /fvs-padrao 200 in 1167ms
+ ✓ Compiled /icon.svg in 232ms (680 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 311ms
+ GET /fvs-padrao 200 in 1087ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 8ms
+ GET /fvs-padrao 200 in 804ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 8ms
+ GET /fvs-padrao 200 in 1339ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 14ms
+ ✓ Compiled /obras in 351ms (658 modules)
+ ✓ Compiled /login in 356ms (659 modules)
+ POST /login 200 in 2157ms
+ ✓ Compiled /obras/[id] in 223ms (658 modules)
+ ✓ Compiled /dashboard in 242ms (669 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 641ms (1159 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 730ms
+ GET /obras/012bb9b3-3f3b-4107-960b-223de5f48628/ambiente/96605b8d-0b80-490e-b09e-5ec5be278357 404 in 1637ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 20ms
+ ○ Compiling /icon.svg ...
+ ✓ Compiled /icon.svg in 646ms (671 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 731ms
+ ✓ Compiled in 512ms (1156 modules)
+ GET /obras/012bb9b3-3f3b-4107-960b-223de5f48628/ambiente/96605b8d-0b80-490e-b09e-5ec5be278357 200 in 843ms
+ ✓ Compiled /_not-found in 287ms (1114 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 385ms
+ ✓ Compiled /icon.svg in 160ms (671 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 267ms
+ ✓ Compiled in 148ms (520 modules)
+ ✓ Compiled in 181ms (520 modules)
+ ✓ Compiled in 232ms (520 modules)
+ GET /obras/012bb9b3-3f3b-4107-960b-223de5f48628/ambiente/96605b8d-0b80-490e-b09e-5ec5be278357 200 in 1376ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 25ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 9ms
+ POST /obras/012bb9b3-3f3b-4107-960b-223de5f48628/ambiente/96605b8d-0b80-490e-b09e-5ec5be278357 200 in 2703ms
+[?25h

@@ -1,0 +1,23 @@
+{
+  "name": "prumoq",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "mobile": "pnpm --filter @prumoq/mobile start",
+    "mobile:web": "pnpm --filter @prumoq/mobile web",
+    "mobile:build:web": "pnpm --filter @prumoq/mobile build:web",
+    "web": "pnpm --filter @prumoq/web dev",
+    "build:web": "pnpm --filter @prumoq/web build",
+    "brand:assets": "node scripts/generate-brand-assets.mjs",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.3"
+  }
+}

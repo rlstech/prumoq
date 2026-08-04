@@ -1,0 +1,21 @@
+C:\Code\prumoq\node_modules\@expo\cli\build\src\utils\errors.js:123
+    throw error;
+    ^
+
+Error: ENOENT: no such file or directory, watch 'C:\Code\prumoq\apps\web\.next\export'
+    at FSWatcher.<computed> (node:internal/fs/watchers:321:19)
+    at Object.watch (node:fs:2548:36)
+    at FallbackWatcher._watchdir (C:\Code\prumoq\node_modules\metro-file-map\src\watchers\FallbackWatcher.js:88:24)
+    at C:\Code\prumoq\node_modules\metro-file-map\src\watchers\FallbackWatcher.js:185:22
+    at Walker.<anonymous> (C:\Code\prumoq\node_modules\metro-file-map\src\watchers\FallbackWatcher.js:322:31)
+    at Walker.emit (node:events:509:28)
+    at C:\Code\prumoq\node_modules\walker\lib\walker.js:69:16
+    at FSReqCallback.oncomplete (node:fs:185:23) {
+  errno: -4058,
+  syscall: 'watch',
+  code: 'ENOENT',
+  path: 'C:\\Code\\prumoq\\apps\\web\\.next\\export',
+  filename: 'C:\\Code\\prumoq\\apps\\web\\.next\\export'
+}
+
+Node.js v24.18.0

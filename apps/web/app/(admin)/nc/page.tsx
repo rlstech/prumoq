@@ -26,8 +26,8 @@ export default async function NcPage() {
       id, descricao, status, prioridade, data_nova_verif, created_at, resolvida_em,
       equipes(nome),
       verificacoes!nao_conformidades_verificacao_id_fkey(
-        fvs_planejadas(subservico, ambientes(nome, obras(nome))),
-        usuarios(nome)
+        fvs_planejadas!verificacoes_fvs_planejada_id_fkey(subservico, ambientes!fvs_planejadas_ambiente_id_fkey(nome, obras!ambientes_obra_id_fkey(nome))),
+        usuarios!inspetor_id(nome)
       )
     `)
     .order('data_nova_verif', { ascending: true, nullsFirst: false });

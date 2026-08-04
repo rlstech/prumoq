@@ -1,0 +1,45 @@
+
+> prumoq@1.0.0 web C:\Code\prumoq
+> pnpm --filter @prumoq/web dev
+
+
+> @prumoq/web@1.0.0 dev C:\Code\prumoq\apps\web
+> next dev
+
+  ▲ Next.js 14.2.29
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+  - Experiments (use with caution):
+    · outputFileTracingRoot
+
+ ✓ Starting...
+ ✓ Ready in 3.8s
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 3.6s (487 modules)
+ GET / 404 in 3826ms
+ ○ Compiling / ...
+ ✓ Compiled / in 602ms (524 modules)
+ GET / 307 in 792ms
+ GET / 307 in 80ms
+ ✓ Compiled /middleware in 260ms (124 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 972ms (602 modules)
+ GET /login 200 in 1148ms
+ ✓ Compiled /icon.svg in 220ms (389 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 300ms
+ GET / 404 in 119ms
+ POST /login 200 in 2273ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 1700ms (969 modules)
+ GET /dashboard 200 in 1501ms
+ ○ Compiling /usuarios ...
+ ✓ Compiled /usuarios in 627ms (1034 modules)
+ ✓ Compiled /empresas in 410ms (1053 modules)
+ ✓ Compiled /relatorios in 489ms (1074 modules)
+ ✓ Compiled /nc in 315ms (1083 modules)
+ ✓ Compiled /verificacoes in 370ms (1101 modules)
+ ○ Compiling /fvs-padrao ...
+ ✓ Compiled /fvs-padrao in 664ms (1130 modules)
+ ○ Compiling /obras ...
+ ✓ Compiled /obras in 668ms (1106 modules)
+[?25h

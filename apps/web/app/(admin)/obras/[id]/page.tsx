@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/context';
 import { notFound } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -8,6 +9,7 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
   const params = await props.params;
   const { id } = params;
   const supabase = await createClient();
+  const authContext = await getAuthContext();
 
   const [
     { data: obra },
@@ -15,12 +17,14 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
     { data: ambientes },
     { data: fvsPadrao },
     { data: empresas },
+    { count: totalUsuariosVinculados },
   ] = await Promise.all([
     supabase.from('obras' as any).select('*').eq('id', id).single(),
     (supabase.rpc as any)('get_obra_kpi', { p_obra_id: id }).single(),
     (supabase.rpc as any)('get_ambientes_obra', { p_obra_id: id }),
     supabase.from('fvs_padrao' as any).select('id, nome, revisao_atual, categoria, escopo, fvs_padrao_empresas!fvs_padrao_empresas_fvs_padrao_id_fkey(empresa_id)').eq('ativo', true),
     supabase.from('empresas').select('id, nome').eq('ativo', true),
+    supabase.from('obra_usuarios' as any).select('id', { count: 'exact', head: true }).eq('obra_id', id),
   ]);
 
   const typedObra = obra as any;
@@ -108,6 +112,8 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
           obraEquipes={obraEquipes}
           availableEquipes={availableEquipes}
           totalEmpresaEquipes={allEquipesList.length}
+          totalUsuariosVinculados={totalUsuariosVinculados ?? 0}
+          canDelete={authContext?.perfil === 'admin'}
         />
         </div>
       </div>

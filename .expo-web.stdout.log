@@ -1,0 +1,20 @@
+
+> prumoq@1.0.0 mobile:web C:\Code\prumoq
+> pnpm --filter @prumoq/mobile web
+
+
+> @prumoq/mobile@1.0.0 web C:\Code\prumoq\apps\mobile
+> expo start --web
+
+env: load .env
+env: export EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_POWERSYNC_URL EXPO_PUBLIC_R2_PUBLIC_URL
+Starting project at C:\Code\prumoq\apps\mobile
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web Bundled 2209ms node_modules\expo-router\entry.js (2454 modules)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 81ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 73ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console

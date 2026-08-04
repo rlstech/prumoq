@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/context';
 import ObrasClient from './ObrasClient';
 
 export default async function ObrasPage() {
   const supabase = await createClient();
+  const authContext = await getAuthContext();
 
   const [
     { data: obras },
@@ -13,9 +15,10 @@ export default async function ObrasPage() {
   ]);
 
   return (
-    <ObrasClient 
-      initialObras={obras || []} 
-      empresas={empresas || []} 
+    <ObrasClient
+      initialObras={obras || []}
+      empresas={empresas || []}
+      canDelete={authContext?.perfil === 'admin'}
     />
   );
 }

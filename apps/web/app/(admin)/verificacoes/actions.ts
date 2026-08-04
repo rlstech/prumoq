@@ -13,10 +13,10 @@ export async function getVerificacaoDetalhe(id: string) {
     .from('verificacoes' as any)
     .select(`
       *,
-      fvs_planejadas(subservico, ambientes(nome, obras(nome))),
-      usuarios(nome),
-      verificacao_itens(id, ordem, titulo, metodo_verif, tolerancia, resultado),
-      verificacao_fotos(id, r2_key, ordem),
+      fvs_planejadas!verificacoes_fvs_planejada_id_fkey(subservico, ambientes!fvs_planejadas_ambiente_id_fkey(nome, obras!ambientes_obra_id_fkey(nome))),
+      usuarios!inspetor_id(nome),
+      verificacao_itens!verificacao_itens_verificacao_id_fkey(id, ordem, titulo, metodo_verif, tolerancia, resultado),
+      verificacao_fotos!verificacao_fotos_verificacao_id_fkey(id, r2_key, ordem),
       nao_conformidades!nao_conformidades_verificacao_id_fkey(id, verificacao_item_id, descricao, status, prioridade)
     `)
     .eq('id', id)
