@@ -159,6 +159,17 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 
   if (s === 'select 1 where 0') return [];
 
+  // Gestores disponíveis para atribuição da análise financeira de NC.
+  if (s.includes('from usuarios') && s.includes("perfil in ('admin','gestor')")) {
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('id, nome')
+      .in('perfil', ['admin', 'gestor'])
+      .order('nome');
+    if (error) throw new Error(`Erro ao carregar gestores: ${error.message}`);
+    return (data ?? []) as T[];
+  }
+
   // ── usuarios ──────────────────────────────────────────
   if (s.includes('from usuarios') && !s.includes('join')) {
     const userId = params[0];
@@ -182,6 +193,88 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── obras ativas (obras list screen) ──────────────────
+  // Flags efetivas da obra. No PWA, boolean é normalizado para 0/1 como no SQLite.
+  if (s.includes('controle_medicoes_efetivo') && s.includes('controle_financeiro_nc_efetivo') && s.includes('from obras')) {
+    const obraId = params[0];
+    if (typeof obraId !== 'string') throw new Error('Obra inválida ao carregar recursos opcionais.');
+    const { data, error } = await supabase
+      .from('obras')
+      .select('controle_medicoes_efetivo, controle_financeiro_nc_efetivo')
+      .eq('id', obraId)
+      .maybeSingle();
+    if (error) throw new Error(`Erro ao carregar recursos da obra: ${error.message}`);
+    if (!data) return [];
+    return [{
+      controle_medicoes_efetivo: data.controle_medicoes_efetivo ? 1 : 0,
+      controle_financeiro_nc_efetivo: data.controle_financeiro_nc_efetivo ? 1 : 0,
+    }] as T[];
+  }
+
+  // Escopo ativo e último avanço acumulado usados pela verificação de campo.
+  if (s.includes('from vinculos_execucao_servico v') && s.includes('avancos_aprovados_servico aa')) {
+    const fvsId = params[0];
+    if (typeof fvsId !== 'string') throw new Error('FVS inválida ao carregar o avanço físico.');
+
+    const [{ data: links, error: linksError }, { data: config, error: configError }] = await Promise.all([
+      supabase.from('vinculos_execucao_servico')
+        .select('id, etapa_id, equipe_id, escopo_atribuido')
+        .eq('fvs_planejada_id', fvsId)
+        .eq('status', 'ativo'),
+      supabase.from('fvs_medicao_configuracoes')
+        .select('unidade')
+        .eq('fvs_planejada_id', fvsId)
+        .maybeSingle(),
+    ]);
+    if (linksError) throw new Error(`Erro ao carregar responsáveis da medição: ${linksError.message}`);
+    if (configError) throw new Error(`Erro ao carregar configuração da medição: ${configError.message}`);
+    if (!links?.length || !config) return [];
+
+    const teamIds = [...new Set(links.map(link => link.equipe_id))];
+    const stageIds = [...new Set(links.map(link => link.etapa_id).filter((stageId): stageId is string => stageId !== null))];
+    const linkIds = links.map(link => link.id);
+    const [{ data: teams, error: teamsError }, stageResult, { data: advances, error: advancesError }] = await Promise.all([
+      supabase.from('equipes').select('id, nome').in('id', teamIds),
+      stageIds.length
+        ? supabase.from('fvs_medicao_etapas').select('id, nome, ordem, permite_avanco_parcial').in('id', stageIds)
+        : Promise.resolve({ data: [], error: null }),
+      supabase.from('avancos_aprovados_servico')
+        .select('vinculacao_id, executado_atual, aprovado_atual, data_aprovacao, created_at')
+        .in('vinculacao_id', linkIds)
+        .order('data_aprovacao', { ascending: false })
+        .order('created_at', { ascending: false }),
+    ]);
+    const { data: stages, error: stagesError } = stageResult;
+    if (teamsError) throw new Error(`Erro ao carregar equipes da medição: ${teamsError.message}`);
+    if (stagesError) throw new Error(`Erro ao carregar etapas da medição: ${stagesError.message}`);
+    if (advancesError) throw new Error(`Erro ao carregar avanços aprovados: ${advancesError.message}`);
+
+    const teamMap = new Map((teams ?? []).map(team => [team.id, team.nome]));
+    const stageMap = new Map((stages ?? []).map(stage => [stage.id, stage]));
+    const latestAdvance = new Map<string, { executado_atual: number; aprovado_atual: number }>();
+    for (const advance of advances ?? []) {
+      if (!latestAdvance.has(advance.vinculacao_id)) latestAdvance.set(advance.vinculacao_id, advance);
+    }
+    return links
+      .map(link => {
+        const stage = link.etapa_id ? stageMap.get(link.etapa_id) : undefined;
+        const advance = latestAdvance.get(link.id);
+        return {
+          id: link.id,
+          etapa_id: link.etapa_id,
+          equipe_id: link.equipe_id,
+          equipe_nome: teamMap.get(link.equipe_id) ?? 'Equipe',
+          etapa_nome: stage?.nome ?? null,
+          escopo_atribuido: String(link.escopo_atribuido),
+          unidade: config.unidade,
+          permite_avanco_parcial: stage ? (stage.permite_avanco_parcial ? 1 : 0) : 1,
+          executado_atual: String(advance?.executado_atual ?? 0),
+          aprovado_atual: String(advance?.aprovado_atual ?? 0),
+          ordem: stage?.ordem ?? 0,
+        };
+      })
+      .sort((left, right) => left.ordem - right.ordem) as T[];
+  }
+
   if (s.includes('progresso_percentual') && s.includes('o.municipio') && s.includes('from obras o') && s.includes('where o.ativo = 1')) {
     const [{ data }, ids] = await Promise.all([supabase.rpc('get_obras_com_fvs'), getAllowedObraIds()]);
     return filterByObraId((data ?? []) as T[], 'id' as keyof T, ids);

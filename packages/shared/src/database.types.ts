@@ -90,6 +90,8 @@ export type Database = {
         Row: {
           ativo: boolean
           cliente_id: string
+          controle_financeiro_nc_habilitado: boolean
+          controle_medicoes_habilitado: boolean
           created_at: string
           id: string
           localizacao: string | null
@@ -102,6 +104,8 @@ export type Database = {
         Insert: {
           ativo?: boolean
           cliente_id: string
+          controle_financeiro_nc_habilitado?: boolean
+          controle_medicoes_habilitado?: boolean
           created_at?: string
           id?: string
           localizacao?: string | null
@@ -114,6 +118,8 @@ export type Database = {
         Update: {
           ativo?: boolean
           cliente_id?: string
+          controle_financeiro_nc_habilitado?: boolean
+          controle_medicoes_habilitado?: boolean
           created_at?: string
           id?: string
           localizacao?: string | null
@@ -144,6 +150,8 @@ export type Database = {
         Row: {
           ativo: boolean
           cliente_id: string
+          controle_financeiro_nc_habilitado: boolean
+          controle_medicoes_habilitado: boolean
           cep: string | null
           cnpj: string
           contato: string | null
@@ -161,6 +169,8 @@ export type Database = {
         Insert: {
           ativo?: boolean
           cliente_id: string
+          controle_financeiro_nc_habilitado?: boolean
+          controle_medicoes_habilitado?: boolean
           cep?: string | null
           cnpj: string
           contato?: string | null
@@ -178,6 +188,8 @@ export type Database = {
         Update: {
           ativo?: boolean
           cliente_id?: string
+          controle_financeiro_nc_habilitado?: boolean
+          controle_medicoes_habilitado?: boolean
           cep?: string | null
           cnpj?: string
           contato?: string | null
@@ -598,41 +610,71 @@ export type Database = {
       }
       nao_conformidades: {
         Row: {
+          bloqueio_medicao: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null
+          categoria_financeira: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null
           cliente_id: string
+          documento_financeiro_r2_key: string | null
+          financeiro_requerido: boolean
           created_at: string
           data_nova_verif: string
           descricao: string
           foto_reinspecao_url: string | null
           id: string
+          justificativa_sem_impacto: string | null
           nc_anterior_id: string | null
           numero_ocorrencia: number
           observacao_resolucao: string | null
+          observacao_financeira: string | null
           prioridade: string
+          percentual_bloqueado: number | null
+          prazo_avaliacao: string | null
+          quantidade_bloqueada: number | null
+          responsavel_avaliacao_id: string | null
+          responsavel_financeiro: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null
           resolvida_em: string | null
           resolvida_na_verif_id: string | null
           responsavel_id: string | null
           solucao_proposta: string
           status: Database["public"]["Enums"]["status_nc"]
+          situacao_financeira: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null
           updated_at: string
+          valor_confirmado: number | null
+          valor_bloqueado: number | null
+          valor_estimado: number | null
           verificacao_id: string
           verificacao_item_id: string
           verificacao_reinsp_id: string | null
         }
         Insert: {
+          bloqueio_medicao?: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null
+          categoria_financeira?: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null
           cliente_id: string
+          documento_financeiro_r2_key?: string | null
+          financeiro_requerido?: boolean
           created_at?: string
           data_nova_verif: string
           descricao: string
           foto_reinspecao_url?: string | null
           id?: string
+          justificativa_sem_impacto?: string | null
           nc_anterior_id?: string | null
           numero_ocorrencia?: number
           observacao_resolucao?: string | null
+          observacao_financeira?: string | null
           prioridade?: string
+          percentual_bloqueado?: number | null
+          prazo_avaliacao?: string | null
+          quantidade_bloqueada?: number | null
+          responsavel_avaliacao_id?: string | null
+          responsavel_financeiro?: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null
           resolvida_em?: string | null
           resolvida_na_verif_id?: string | null
           responsavel_id?: string | null
           solucao_proposta: string
+          situacao_financeira?: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null
+          valor_confirmado?: number | null
+          valor_bloqueado?: number | null
+          valor_estimado?: number | null
           status?: Database["public"]["Enums"]["status_nc"]
           updated_at?: string
           verificacao_id: string
@@ -640,22 +682,37 @@ export type Database = {
           verificacao_reinsp_id?: string | null
         }
         Update: {
+          bloqueio_medicao?: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null
+          categoria_financeira?: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null
           cliente_id?: string
           created_at?: string
           data_nova_verif?: string
           descricao?: string
+          documento_financeiro_r2_key?: string | null
+          financeiro_requerido?: boolean
           foto_reinspecao_url?: string | null
           id?: string
+          justificativa_sem_impacto?: string | null
           nc_anterior_id?: string | null
           numero_ocorrencia?: number
           observacao_resolucao?: string | null
+          observacao_financeira?: string | null
           prioridade?: string
+          percentual_bloqueado?: number | null
+          prazo_avaliacao?: string | null
+          quantidade_bloqueada?: number | null
+          responsavel_avaliacao_id?: string | null
+          responsavel_financeiro?: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null
           resolvida_em?: string | null
           resolvida_na_verif_id?: string | null
           responsavel_id?: string | null
           solucao_proposta?: string
+          situacao_financeira?: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null
           status?: Database["public"]["Enums"]["status_nc"]
           updated_at?: string
+          valor_confirmado?: number | null
+          valor_bloqueado?: number | null
+          valor_estimado?: number | null
           verificacao_id?: string
           verificacao_item_id?: string
           verificacao_reinsp_id?: string | null
@@ -924,6 +981,10 @@ export type Database = {
           ativo: boolean
           cep: string | null
           cliente_id: string
+          controle_financeiro_nc_efetivo: boolean
+          controle_financeiro_nc_override: boolean | null
+          controle_medicoes_efetivo: boolean
+          controle_medicoes_override: boolean | null
           crea_cau: string
           created_at: string
           data_inicio_prev: string | null
@@ -950,6 +1011,10 @@ export type Database = {
           ativo?: boolean
           cep?: string | null
           cliente_id: string
+          controle_financeiro_nc_efetivo?: boolean
+          controle_financeiro_nc_override?: boolean | null
+          controle_medicoes_efetivo?: boolean
+          controle_medicoes_override?: boolean | null
           crea_cau: string
           created_at?: string
           data_inicio_prev?: string | null
@@ -976,6 +1041,10 @@ export type Database = {
           ativo?: boolean
           cep?: string | null
           cliente_id?: string
+          controle_financeiro_nc_efetivo?: boolean
+          controle_financeiro_nc_override?: boolean | null
+          controle_medicoes_efetivo?: boolean
+          controle_medicoes_override?: boolean | null
           crea_cau?: string
           created_at?: string
           data_inicio_prev?: string | null
@@ -1236,6 +1305,72 @@ export type Database = {
           },
         ]
       }
+      modelos_etapas_medicao: {
+        Row: { id: string; cliente_id: string; empresa_id: string; nome: string; ativo: boolean; criado_por: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; cliente_id: string; empresa_id: string; nome: string; ativo?: boolean; criado_por?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; cliente_id?: string; empresa_id?: string; nome?: string; ativo?: boolean; criado_por?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      modelo_etapas_medicao_itens: {
+        Row: { id: string; cliente_id: string; modelo_id: string; ordem: number; nome: string; peso_percentual: number; permite_avanco_parcial: boolean; ativo: boolean }
+        Insert: { id?: string; cliente_id: string; modelo_id: string; ordem: number; nome: string; peso_percentual: number; permite_avanco_parcial?: boolean; ativo?: boolean }
+        Update: { id?: string; cliente_id?: string; modelo_id?: string; ordem?: number; nome?: string; peso_percentual?: number; permite_avanco_parcial?: boolean; ativo?: boolean }
+        Relationships: []
+      }
+      fvs_medicao_configuracoes: {
+        Row: { id: string; cliente_id: string; fvs_planejada_id: string; metodo: Database["public"]["Enums"]["metodo_medicao_servico"]; unidade: string; quantidade_total: number; preco_unitario: number | null; permite_medicoes_parciais: boolean; modelo_origem_id: string | null; criado_por: string; updated_by: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; cliente_id: string; fvs_planejada_id: string; metodo: Database["public"]["Enums"]["metodo_medicao_servico"]; unidade: string; quantidade_total: number; preco_unitario?: number | null; permite_medicoes_parciais?: boolean; modelo_origem_id?: string | null; criado_por: string; updated_by?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; cliente_id?: string; fvs_planejada_id?: string; metodo?: Database["public"]["Enums"]["metodo_medicao_servico"]; unidade?: string; quantidade_total?: number; preco_unitario?: number | null; permite_medicoes_parciais?: boolean; modelo_origem_id?: string | null; criado_por?: string; updated_by?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      fvs_medicao_etapas: {
+        Row: { id: string; cliente_id: string; configuracao_id: string; ordem: number; nome: string; peso_percentual: number; permite_avanco_parcial: boolean; ativo: boolean; status: Database["public"]["Enums"]["status_etapa_medicao"]; percentual_interno: number | null; equipe_responsavel_id: string | null; verificacao_evidencia_id: string | null; updated_by: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; cliente_id: string; configuracao_id: string; ordem: number; nome: string; peso_percentual: number; permite_avanco_parcial?: boolean; ativo?: boolean; status?: Database["public"]["Enums"]["status_etapa_medicao"]; percentual_interno?: number | null; equipe_responsavel_id?: string | null; verificacao_evidencia_id?: string | null; updated_by?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; cliente_id?: string; configuracao_id?: string; ordem?: number; nome?: string; peso_percentual?: number; permite_avanco_parcial?: boolean; ativo?: boolean; status?: Database["public"]["Enums"]["status_etapa_medicao"]; percentual_interno?: number | null; equipe_responsavel_id?: string | null; verificacao_evidencia_id?: string | null; updated_by?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      vinculos_execucao_servico: {
+        Row: { id: string; cliente_id: string; fvs_planejada_id: string; etapa_id: string | null; equipe_id: string; data_inicio: string; data_termino: string | null; escopo_atribuido: number; aprovado_congelado: number; medido_congelado: number; status: Database["public"]["Enums"]["status_vinculo_execucao"]; motivo_encerramento: string | null; criado_por: string; encerrado_por: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; cliente_id: string; fvs_planejada_id: string; etapa_id?: string | null; equipe_id: string; data_inicio: string; data_termino?: string | null; escopo_atribuido: number; aprovado_congelado?: number; medido_congelado?: number; status?: Database["public"]["Enums"]["status_vinculo_execucao"]; motivo_encerramento?: string | null; criado_por: string; encerrado_por?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; cliente_id?: string; fvs_planejada_id?: string; etapa_id?: string | null; equipe_id?: string; data_inicio?: string; data_termino?: string | null; escopo_atribuido?: number; aprovado_congelado?: number; medido_congelado?: number; status?: Database["public"]["Enums"]["status_vinculo_execucao"]; motivo_encerramento?: string | null; criado_por?: string; encerrado_por?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      avancos_aprovados_servico: {
+        Row: { id: string; cliente_id: string; vinculacao_id: string; verificacao_id: string; etapa_id: string | null; executado_anterior: number; executado_atual: number; aprovado_anterior: number; aprovado_atual: number; unidade: string; aprovado_por: string; data_aprovacao: string; created_offline: boolean; created_at: string }
+        Insert: { id?: string; cliente_id: string; vinculacao_id: string; verificacao_id: string; etapa_id?: string | null; executado_anterior: number; executado_atual: number; aprovado_anterior: number; aprovado_atual: number; unidade: string; aprovado_por: string; data_aprovacao?: string; created_offline?: boolean; created_at?: string }
+        Update: { id?: string; cliente_id?: string; vinculacao_id?: string; verificacao_id?: string; etapa_id?: string | null; executado_anterior?: number; executado_atual?: number; aprovado_anterior?: number; aprovado_atual?: number; unidade?: string; aprovado_por?: string; data_aprovacao?: string; created_offline?: boolean; created_at?: string }
+        Relationships: []
+      }
+      medicoes_servico: {
+        Row: { id: string; cliente_id: string; obra_id: string; equipe_id: string; referencia: string; periodo_inicio: string; periodo_fim: string; data_medicao: string; status: Database["public"]["Enums"]["status_medicao_servico"]; observacao: string | null; criado_por: string; aprovado_por: string | null; aprovado_em: string | null; cancelado_por: string | null; cancelado_em: string | null; motivo_cancelamento: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; cliente_id: string; obra_id: string; equipe_id: string; referencia: string; periodo_inicio: string; periodo_fim: string; data_medicao?: string; status?: Database["public"]["Enums"]["status_medicao_servico"]; observacao?: string | null; criado_por: string; aprovado_por?: string | null; aprovado_em?: string | null; cancelado_por?: string | null; cancelado_em?: string | null; motivo_cancelamento?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; cliente_id?: string; obra_id?: string; equipe_id?: string; referencia?: string; periodo_inicio?: string; periodo_fim?: string; data_medicao?: string; status?: Database["public"]["Enums"]["status_medicao_servico"]; observacao?: string | null; criado_por?: string; aprovado_por?: string | null; aprovado_em?: string | null; cancelado_por?: string | null; cancelado_em?: string | null; motivo_cancelamento?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      medicao_servico_itens: {
+        Row: { id: string; cliente_id: string; medicao_id: string; vinculacao_id: string; etapa_id: string | null; verificacao_id: string | null; nc_id: string | null; tipo: Database["public"]["Enums"]["tipo_item_medicao"]; quantidade_anterior: number; quantidade_atual: number; quantidade_periodo: number; quantidade_bloqueada: number; unidade: string; preco_unitario: number | null; valor_calculado: number; created_at: string }
+        Insert: { id?: string; cliente_id: string; medicao_id: string; vinculacao_id: string; etapa_id?: string | null; verificacao_id?: string | null; nc_id?: string | null; tipo?: Database["public"]["Enums"]["tipo_item_medicao"]; quantidade_anterior?: number; quantidade_atual?: number; quantidade_periodo?: number; quantidade_bloqueada?: number; unidade: string; preco_unitario?: number | null; valor_calculado?: number; created_at?: string }
+        Update: { id?: string; cliente_id?: string; medicao_id?: string; vinculacao_id?: string; etapa_id?: string | null; verificacao_id?: string | null; nc_id?: string | null; tipo?: Database["public"]["Enums"]["tipo_item_medicao"]; quantidade_anterior?: number; quantidade_atual?: number; quantidade_periodo?: number; quantidade_bloqueada?: number; unidade?: string; preco_unitario?: number | null; valor_calculado?: number; created_at?: string }
+        Relationships: []
+      }
+      medicao_item_liberacoes: {
+        Row: { id: string; cliente_id: string; medicao_item_id: string; avanco_id: string; quantidade_utilizada: number; ativa: boolean; created_at: string }
+        Insert: { id?: string; cliente_id: string; medicao_item_id: string; avanco_id: string; quantidade_utilizada: number; ativa?: boolean; created_at?: string }
+        Update: { id?: string; cliente_id?: string; medicao_item_id?: string; avanco_id?: string; quantidade_utilizada?: number; ativa?: boolean; created_at?: string }
+        Relationships: []
+      }
+      auditoria_operacional: {
+        Row: { id: string; cliente_id: string; obra_id: string | null; entidade: string; entidade_id: string; acao: string; dados: Json; usuario_id: string | null; created_at: string }
+        Insert: { id?: string; cliente_id: string; obra_id?: string | null; entidade: string; entidade_id: string; acao: string; dados?: Json; usuario_id?: string | null; created_at?: string }
+        Update: { id?: string; cliente_id?: string; obra_id?: string | null; entidade?: string; entidade_id?: string; acao?: string; dados?: Json; usuario_id?: string | null; created_at?: string }
+        Relationships: []
+      }
+      nc_financeiro_historico: {
+        Row: { id: string; cliente_id: string; nc_id: string; situacao: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null; bloqueio: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null; dados: Json; alterado_por: string | null; created_at: string }
+        Insert: { id?: string; cliente_id: string; nc_id: string; situacao?: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null; bloqueio?: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null; dados: Json; alterado_por?: string | null; created_at?: string }
+        Update: { id?: string; cliente_id?: string; nc_id?: string; situacao?: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null; bloqueio?: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null; dados?: Json; alterado_por?: string | null; created_at?: string }
+        Relationships: []
+      }
     }
     Views: {
       fvs_padrao_itens_current: {
@@ -1278,8 +1413,26 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_saldos_medicao_servico: {
+        Row: { vinculacao_id: string | null; cliente_id: string | null; obra_id: string | null; fvs_planejada_id: string | null; etapa_id: string | null; equipe_id: string | null; escopo_atribuido: number | null; aprovado: number | null; medido: number | null; bloqueado: number | null; disponivel: number | null; unidade: string | null; preco_unitario: number | null; valor_disponivel: number | null }
+        Relationships: []
+      }
+      vw_indicadores_medicoes: {
+        Row: { obra_id: string | null; quantidade_disponivel: number | null; valor_disponivel: number | null; quantidade_medida: number | null; quantidade_bloqueada: number | null; custo_estimado_retrabalho: number | null; custo_confirmado_retrabalho: number | null }
+        Relationships: []
+      }
     }
     Functions: {
+      set_obra_feature_overrides: { Args: { p_obra_id: string; p_medicoes_override: boolean | null; p_financeiro_override: boolean | null }; Returns: undefined }
+      salvar_modelo_etapas_medicao: { Args: { p_modelo_id: string | null; p_empresa_id: string; p_nome: string; p_ativo: boolean; p_etapas: Json }; Returns: string }
+      salvar_configuracao_medicao_fvs: { Args: { p_fvs_id: string; p_metodo: Database["public"]["Enums"]["metodo_medicao_servico"]; p_unidade: string; p_quantidade_total: number; p_preco_unitario: number | null; p_permite_parciais: boolean; p_modelo_id: string | null; p_etapas: Json; p_equipe_inicial_id: string; p_data_inicio: string }; Returns: string }
+      registrar_avanco_aprovado: { Args: { p_id: string | null; p_vinculo_id: string; p_verificacao_id: string; p_executado_atual: number; p_aprovado_atual: number; p_created_offline?: boolean }; Returns: string }
+      salvar_medicao_rascunho: { Args: { p_medicao_id: string | null; p_obra_id: string; p_equipe_id: string; p_referencia: string; p_periodo_inicio: string; p_periodo_fim: string; p_data_medicao: string; p_observacao: string | null; p_itens: Json }; Returns: string }
+      descartar_medicao_rascunho: { Args: { p_medicao_id: string }; Returns: undefined }
+      aprovar_medicao_servico: { Args: { p_medicao_id: string }; Returns: undefined }
+      cancelar_medicao_servico: { Args: { p_medicao_id: string; p_motivo: string }; Returns: undefined }
+      trocar_empreiteiro_servico: { Args: { p_vinculo_id: string; p_nova_equipe_id: string; p_data: string; p_motivo: string }; Returns: string }
+      atualizar_impacto_financeiro_nc: { Args: { p_nc_id: string; p_situacao: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]; p_bloqueio: Database["public"]["Enums"]["bloqueio_medicao_nc"]; p_justificativa: string | null; p_responsavel_avaliacao: string | null; p_prazo: string | null; p_valor_estimado: number | null; p_valor_confirmado: number | null; p_responsavel_financeiro: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null; p_categoria: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null; p_quantidade_bloqueada: number | null; p_percentual_bloqueado: number | null; p_observacao: string | null; p_documento: string | null }; Returns: undefined }
       get_accessible_media_keys: { Args: { p_keys: string[] }; Returns: string[] }
       get_ambientes_obra: {
         Args: { p_obra_id: string }
@@ -1563,6 +1716,13 @@ export type Database = {
         | "comunicacao_visual"
         | "outro"
       escopo_cadastro: "global" | "restrito"
+      bloqueio_medicao_nc: "nao" | "total" | "parcial"
+      categoria_impacto_financeiro_nc: "mao_obra_retrabalho" | "perda_material" | "equipamento_mobilizacao" | "atraso" | "glosa_retencao" | "desconto_empreiteiro" | "outro"
+      metodo_medicao_servico: "quantidade" | "unidade_concluida" | "etapas_ponderadas"
+      status_etapa_medicao: "nao_iniciada" | "em_execucao" | "concluida" | "aprovada" | "bloqueada_nc"
+      status_vinculo_execucao: "ativo" | "concluido" | "substituido"
+      status_medicao_servico: "rascunho" | "aprovada" | "cancelada"
+      tipo_item_medicao: "avanco" | "retrabalho"
       perfil_usuario: "superadmin" | "admin" | "gestor" | "inspetor"
       resultado_item: "conforme" | "nao_conforme" | "na"
       status_fvs:
@@ -1579,6 +1739,8 @@ export type Database = {
         | "resolvida"
         | "cancelada"
         | "encerrada_sem_resolucao"
+      situacao_impacto_financeiro_nc: "sem_impacto" | "em_avaliacao" | "estimado" | "confirmado"
+      responsavel_financeiro_nc: "construtora" | "empreiteiro" | "fornecedor" | "projetista" | "em_analise"
       status_cliente: "ativo" | "suspenso"
       status_obra: "nao_iniciada" | "em_andamento" | "paralisada" | "concluida"
       tipo_ambiente: "interno" | "externo"
@@ -1727,6 +1889,15 @@ export const Constants = {
         "outro",
       ],
       escopo_cadastro: ["global", "restrito"],
+      bloqueio_medicao_nc: ["nao", "total", "parcial"],
+      categoria_impacto_financeiro_nc: ["mao_obra_retrabalho", "perda_material", "equipamento_mobilizacao", "atraso", "glosa_retencao", "desconto_empreiteiro", "outro"],
+      metodo_medicao_servico: ["quantidade", "unidade_concluida", "etapas_ponderadas"],
+      status_etapa_medicao: ["nao_iniciada", "em_execucao", "concluida", "aprovada", "bloqueada_nc"],
+      status_vinculo_execucao: ["ativo", "concluido", "substituido"],
+      status_medicao_servico: ["rascunho", "aprovada", "cancelada"],
+      tipo_item_medicao: ["avanco", "retrabalho"],
+      situacao_impacto_financeiro_nc: ["sem_impacto", "em_avaliacao", "estimado", "confirmado"],
+      responsavel_financeiro_nc: ["construtora", "empreiteiro", "fornecedor", "projetista", "em_analise"],
       perfil_usuario: ["superadmin", "admin", "gestor", "inspetor"],
       resultado_item: ["conforme", "nao_conforme", "na"],
       status_fvs: [

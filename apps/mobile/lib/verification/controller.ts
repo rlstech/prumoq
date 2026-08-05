@@ -58,6 +58,9 @@ export function emptyVerificationFormState(today = new Date().toISOString().slic
     signaturePath: null,
     reinspFoto: null,
     generalPhotos: [],
+    registrarAvanco: false,
+    measurementAdvances: {},
+    userTouchedItemIds: [],
   };
 }
 
@@ -74,6 +77,8 @@ export function patchVerificationState(
       ? Object.fromEntries(Object.entries(patch.ncDetails).map(([id, detail]) => [id, { ...detail }]))
       : Object.fromEntries(Object.entries(state.ncDetails).map(([id, detail]) => [id, { ...detail }])),
     generalPhotos: patch.generalPhotos ? [...patch.generalPhotos] : [...state.generalPhotos],
+    measurementAdvances: patch.measurementAdvances ? { ...patch.measurementAdvances } : { ...(state.measurementAdvances ?? {}) },
+    userTouchedItemIds: patch.userTouchedItemIds ? [...patch.userTouchedItemIds] : [...state.userTouchedItemIds],
   };
 }
 
@@ -91,11 +96,15 @@ export function setVerificationItemResult(
       data_nova_verif: '',
       responsavel_id: '',
       foto: null,
+      financeiro: null,
     } satisfies NcDraftDetail;
   } else {
     delete ncDetails[itemId];
   }
-  return { ...state, itemResults, ncDetails };
+  const userTouchedItemIds = state.userTouchedItemIds.includes(itemId)
+    ? state.userTouchedItemIds
+    : [...state.userTouchedItemIds, itemId];
+  return { ...state, itemResults, ncDetails, userTouchedItemIds };
 }
 
 export function isVerificationDraftCompatible(
@@ -115,16 +124,17 @@ export function isVerificationDraftCompatible(
 
 export function hasMeaningfulVerificationProgress(
   state: VerificationFormState,
-  currentStep: VerificationStep,
+  // Kept for API compatibility — no longer part of the criterion.
+  _currentStep: VerificationStep,
 ): boolean {
-  return currentStep !== 'context'
-    || !!state.selectedEquipeId
-    || Object.keys(state.itemResults).length > 0
-    || Object.keys(state.ncDetails).length > 0
-    || !!state.observacoes.trim()
-    || !!state.signaturePath
-    || !!state.reinspFoto
-    || state.generalPhotos.length > 0;
+  // Rascunho só deve nascer quando o usuário fez ao menos um apontamento real
+  // do checklist. Equipe auto-preenchida, data, observações, assinatura e
+  // fotos isoladas NÃO contam — caso contrário abrir a tela de Nova
+  // Verificação já cria um rascunho vazio na Dashboard. Itens pré-preenchidos
+  // em re-inspeção também não contam: só o que o usuário efetivamente tocou
+  // (via setVerificationItemResult) aparece em userTouchedItemIds.
+  return state.userTouchedItemIds.length > 0
+    || Object.keys(state.ncDetails).length > 0;
 }
 
 export function mediaSourcesFromVerificationState(state: VerificationFormState): DraftMediaSource[] {

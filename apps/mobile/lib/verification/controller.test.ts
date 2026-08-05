@@ -61,6 +61,48 @@ test('detecta progresso, serializa mídia e verifica compatibilidade de revisão
   assert.deepEqual(mediaSourcesFromVerificationState(withSignature).map(media => media.kind), ['general', 'signature']);
 });
 
+test('rascunho só nasce com apontamento real do checklist', () => {
+  // Estado vazio: nenhum progresso.
+  const empty = emptyVerificationFormState();
+  assert.equal(hasMeaningfulVerificationProgress(empty, 'context'), false);
+
+  // Equipe auto-preenchida (sem toque do usuário no checklist) NÃO é progresso.
+  const withTeam = { ...empty, selectedEquipeId: 'team-1' };
+  assert.equal(hasMeaningfulVerificationProgress(withTeam, 'context'), false);
+
+  // Assinatura + observações + fotos sem apontamento também NÃO são progresso.
+  const withExtras = {
+    ...empty,
+    observacoes: 'texto qualquer',
+    signaturePath: 'sig.png',
+    reinspFoto: 'reinsp.png',
+    generalPhotos: ['a.jpg', 'b.jpg'],
+  };
+  assert.equal(hasMeaningfulVerificationProgress(withExtras, 'review'), false);
+
+  // Avançar de etapa sem apontar NÃO é progresso.
+  assert.equal(hasMeaningfulVerificationProgress(empty, 'checklist'), false);
+  assert.equal(hasMeaningfulVerificationProgress(empty, 'review'), false);
+
+  // ItemResults pré-preenchido (re-inspeção) sem userTouchedItemIds NÃO é progresso.
+  const preFilled = { ...empty, itemResults: { 'item-1': 'conforme' as const, 'item-2': 'na' as const } };
+  assert.equal(hasMeaningfulVerificationProgress(preFilled, 'context'), false);
+
+  // Um único item efetivamente tocado pelo usuário já é progresso.
+  const touched = setVerificationItemResult(empty, 'item-1', 'conforme');
+  assert.equal(hasMeaningfulVerificationProgress(touched, 'context'), true);
+
+  // NC manual via updateNc (sem setVerificationItemResult) também conta.
+  const ncOnly = { ...empty, ncDetails: { 'item-2': { descricao: '', solucao_proposta: '', data_nova_verif: '', responsavel_id: '', foto: null, financeiro: null } } };
+  assert.equal(hasMeaningfulVerificationProgress(ncOnly, 'context'), true);
+
+  // setVerificationItemResult acumula o itemId em userTouchedItemIds (dedupe).
+  const doubleTouched = setVerificationItemResult(touched, 'item-1', 'na');
+  assert.deepEqual(doubleTouched.userTouchedItemIds, ['item-1']);
+  const twoItems = setVerificationItemResult(touched, 'item-2', 'nao_conforme');
+  assert.deepEqual(twoItems.userTouchedItemIds, ['item-1', 'item-2']);
+});
+
 test('conclusão exige todos os itens sem não conformidade', () => {
   const state = { ...emptyVerificationFormState(), itemResults: { a: 'conforme' as const } };
   assert.equal(isVerificationComplete(state, ['a']), true);

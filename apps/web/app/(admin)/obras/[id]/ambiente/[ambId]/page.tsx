@@ -11,7 +11,7 @@ export default async function AmbientePage(props: { params: Promise<{ id: string
   // Fetch ambiente with obra relations
   const { data: ambiente } = await supabase
     .from('ambientes' as any)
-    .select('*, obras!ambientes_obra_id_fkey(nome, empresa_id)')
+    .select('*, obras!ambientes_obra_id_fkey(nome, empresa_id, controle_medicoes_efetivo)')
     .eq('id', ambId)
     .single();
 
@@ -44,6 +44,7 @@ export default async function AmbientePage(props: { params: Promise<{ id: string
           ambiente={typedAmb} 
           initialFvsList={fvsList || []} 
           fvsPadraoList={availableFvs}
+          measurementEnabled={Boolean(typedAmb.obras?.controle_medicoes_efetivo)}
         />
       </div>
     </>

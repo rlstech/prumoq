@@ -19,7 +19,6 @@ import {
 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -62,6 +61,7 @@ import {
   Typography,
 } from '../../../../../../../../../../lib/constants';
 import { db } from '../../../../../../../../../../lib/powersync';
+import { confirmDialog, alertInfo } from '../../../../../../../../../../lib/platform-alert';
 import { supabase } from '../../../../../../../../../../lib/supabase';
 import {
   makeDraftId,
@@ -75,6 +75,8 @@ import {
   verificationStatusFromResults,
 } from '../../../../../../../../../../lib/verification/controller';
 import { approveReinspecao, createNc, reprovarReinspecao } from '../../../../../../../../../../services/nc.service';
+import { recordApprovedAdvances } from '../../../../../../../../../../services/measurement.service';
+import type { NcFinancialDeclaration, NcFinancialSituation, NcMeasurementBlock } from '../../../../../../../../../../lib/nc-finance';
 
 function uuid(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -96,6 +98,9 @@ type Resultado = VerificationResult;
 
 interface ItemRow { id: string; ordem: number; titulo: string; metodo_verif: string; tolerancia: string }
 interface EquipeRow { id: string; nome: string; tipo: string }
+interface ManagerRow { id: string; nome: string }
+interface FeatureRow { controle_medicoes_efetivo: number; controle_financeiro_nc_efetivo: number }
+interface MeasurementLinkRow { id: string; etapa_id: string | null; equipe_id: string; equipe_nome: string; etapa_nome: string | null; escopo_atribuido: string; unidade: string; permite_avanco_parcial: number; executado_atual: string; aprovado_atual: string }
 interface FvsRow { id: string; subservico: string; revisao_associada: number; status: string }
 interface UsuarioRow { id: string; cliente_id: string; nome: string; cargo: string }
 interface CountRow { count: number }
@@ -133,6 +138,9 @@ function NcPanel({
   onAddPhoto,
   equipes,
   responsibleError,
+  financialRequired,
+  managers,
+  financialError,
 }: {
   visible: boolean;
   detail: NcDetail;
@@ -140,14 +148,27 @@ function NcPanel({
   onAddPhoto: () => void;
   equipes: EquipeRow[];
   responsibleError?: string;
+  financialRequired: boolean;
+  managers: ManagerRow[];
+  financialError?: string;
 }) {
   const [showRespPicker, setShowRespPicker] = useState(false);
+  const [showManagerPicker, setShowManagerPicker] = useState(false);
   if (!visible) return null;
 
   const selectedResp = equipes.find(e => e.id === detail.responsavel_id);
   const photoUri = detail.foto
     ? (detail.foto.startsWith('pending:') ? detail.foto.slice(8) : detail.foto)
     : null;
+  const financial = detail.financeiro;
+  const patchFinancial = (patch: Partial<NcFinancialDeclaration>) => onChange({
+    financeiro: {
+      situacao: financial?.situacao ?? 'em_avaliacao',
+      bloqueio: financial?.bloqueio ?? 'nao',
+      ...financial,
+      ...patch,
+    },
+  });
 
   return (
     <View style={ncSt.panel}>
@@ -177,6 +198,22 @@ function NcPanel({
         <Text style={ncSt.title}>Registro de não conformidade</Text>
         <View style={ncSt.badge}><Text style={ncSt.badgeText}>Obrigatório</Text></View>
       </View>
+
+      {financialRequired ? (
+        <View style={ncSt.financeBox}>
+          <View style={ncSt.header}><Text style={ncSt.financeTitle}>Impacto financeiro *</Text><View style={ncSt.badge}><Text style={ncSt.badgeText}>Obrigatório</Text></View></View>
+          {financialError ? <Text style={ncSt.errorText}>{financialError}</Text> : null}
+          <Text style={ncSt.label}>Situação financeira</Text>
+          <View style={ncSt.optionWrap}>{([
+            ['sem_impacto','Sem impacto'],['em_avaliacao','Em avaliação'],['estimado','Estimado'],['confirmado','Confirmado'],
+          ] as [NcFinancialSituation,string][]).map(([value,label])=><Pressable key={value} onPress={()=>patchFinancial({situacao:value,valorConfirmado:value==='sem_impacto'?'0':financial?.valorConfirmado})} style={[ncSt.option,financial?.situacao===value&&ncSt.optionActive]}><Text style={[ncSt.optionText,financial?.situacao===value&&ncSt.optionTextActive]}>{label}</Text></Pressable>)}</View>
+          {financial?.situacao === 'sem_impacto' ? <><Text style={ncSt.label}>Justificativa *</Text><TextInput style={ncSt.input} value={financial.justificativaSemImpacto??''} onChangeText={value=>patchFinancial({justificativaSemImpacto:value,valorConfirmado:'0'})} placeholder="Por que não existe impacto?" placeholderTextColor={Colors.textTertiary}/></> : null}
+          {financial?.situacao === 'em_avaliacao' ? <><Modal visible={showManagerPicker} transparent animationType="fade"><Pressable style={ncSt.overlay} onPress={()=>setShowManagerPicker(false)}><View style={ncSt.pickerBox}><Text style={ncSt.pickerTitle}>Responsável pela avaliação</Text><ScrollView>{managers.map(manager=><Pressable key={manager.id} style={ncSt.pickerItem} onPress={()=>{patchFinancial({responsavelAvaliacaoId:manager.id});setShowManagerPicker(false)}}><Text style={ncSt.pickerItemText}>{manager.nome}</Text></Pressable>)}</ScrollView></View></Pressable></Modal><Text style={ncSt.label}>Responsável pela avaliação *</Text><Pressable style={ncSt.selectBtn} onPress={()=>setShowManagerPicker(true)}><Text style={ncSt.selectText}>{managers.find(m=>m.id===financial.responsavelAvaliacaoId)?.nome??'Selecionar gestor'}</Text><ChevronDown size={12} color={Colors.textSecondary}/></Pressable><Text style={ncSt.label}>Prazo para definição *</Text><TextInput style={ncSt.input} value={financial.prazoAvaliacao??''} onChangeText={value=>patchFinancial({prazoAvaliacao:value})} placeholder="AAAA-MM-DD" placeholderTextColor={Colors.textTertiary}/></> : null}
+          {financial && (financial.situacao === 'estimado' || financial.situacao === 'confirmado') ? <><Text style={ncSt.label}>{financial.situacao==='estimado'?'Valor estimado *':'Valor confirmado *'}</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" value={(financial.situacao==='estimado'?financial.valorEstimado:financial.valorConfirmado)??''} onChangeText={value=>patchFinancial(financial.situacao==='estimado'?{valorEstimado:value}:{valorConfirmado:value})} placeholder="0,00" placeholderTextColor={Colors.textTertiary}/><Text style={ncSt.label}>Responsável financeiro *</Text><View style={ncSt.optionWrap}>{(['construtora','empreiteiro','fornecedor','projetista','em_analise'] as const).map(value=><Pressable key={value} style={[ncSt.option,financial.responsavelFinanceiro===value&&ncSt.optionActive]} onPress={()=>patchFinancial({responsavelFinanceiro:value})}><Text style={[ncSt.optionText,financial.responsavelFinanceiro===value&&ncSt.optionTextActive]}>{value.replaceAll('_',' ')}</Text></Pressable>)}</View><Text style={ncSt.label}>Categoria *</Text><View style={ncSt.optionWrap}>{(['mao_obra_retrabalho','perda_material','equipamento_mobilizacao','atraso','glosa_retencao','desconto_empreiteiro','outro'] as const).map(value=><Pressable key={value} style={[ncSt.option,financial.categoria===value&&ncSt.optionActive]} onPress={()=>patchFinancial({categoria:value})}><Text style={[ncSt.optionText,financial.categoria===value&&ncSt.optionTextActive]}>{value.replaceAll('_',' ')}</Text></Pressable>)}</View></> : null}
+          <Text style={ncSt.label}>Esta NC bloqueia a medição?</Text><View style={ncSt.optionWrap}>{([['nao','Não'],['total','Totalmente'],['parcial','Parcialmente']] as [NcMeasurementBlock,string][]).map(([value,label])=><Pressable key={value} style={[ncSt.option,financial?.bloqueio===value&&ncSt.optionActive]} onPress={()=>patchFinancial({bloqueio:value})}><Text style={[ncSt.optionText,financial?.bloqueio===value&&ncSt.optionTextActive]}>{label}</Text></Pressable>)}</View>
+          {financial?.bloqueio==='parcial'?<View style={ncSt.twoCol}><View style={{flex:1}}><Text style={ncSt.label}>Quantidade</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" value={financial.quantidadeBloqueada??''} onChangeText={value=>patchFinancial({quantidadeBloqueada:value})}/></View><View style={{flex:1}}><Text style={ncSt.label}>Percentual</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" value={financial.percentualBloqueado??''} onChangeText={value=>patchFinancial({percentualBloqueado:value})}/></View></View>:null}
+        </View>
+      ) : null}
 
       <Text style={ncSt.label}>Descrição da não conformidade *</Text>
       <TextInput
@@ -314,6 +351,13 @@ const ncSt = StyleSheet.create({
   selectError: { borderColor: Colors.nok, borderWidth: 1.5 },
   selectText: { flex: 1, fontSize: FontSizes.sm, color: Colors.text },
   errorText: { fontSize: FontSizes.tiny, color: Colors.nok, fontFamily: FontFamily.semibold },
+  financeBox: { backgroundColor: Colors.surface, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.warn, padding: Spacing.sm, gap: Spacing.xs },
+  financeTitle: { fontSize: FontSizes.sm, color: Colors.text, fontFamily: FontFamily.semibold },
+  optionWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  option: { borderWidth: 1, borderColor: Colors.borderNormal, borderRadius: Radius.full, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: Colors.surface2 },
+  optionActive: { borderColor: Colors.progress, backgroundColor: Colors.progressBg },
+  optionText: { fontSize: FontSizes.tiny, color: Colors.textSecondary },
+  optionTextActive: { color: Colors.progress, fontFamily: FontFamily.semibold },
   // picker modal
   overlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
   pickerBox:     { width: '90%', maxHeight: 280, backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md },
@@ -348,6 +392,30 @@ export default function NovaVerificacaoScreen() {
     SELECT id, subservico, revisao_associada, status FROM fvs_planejadas WHERE id = ?
   `, [fvsId]);
   const fvs = fvsRows[0];
+
+  const { data: featureRows } = useQuery<FeatureRow>(`
+    SELECT controle_medicoes_efetivo, controle_financeiro_nc_efetivo FROM obras WHERE id = ?
+  `, [id]);
+  const features = featureRows[0];
+  const measurementEnabled = features?.controle_medicoes_efetivo === 1;
+  const financialRequired = features?.controle_financeiro_nc_efetivo === 1;
+
+  const { data: managers } = useQuery<ManagerRow>(`
+    SELECT id, nome FROM usuarios WHERE perfil IN ('admin','gestor') ORDER BY nome
+  `);
+
+  const { data: measurementLinks, isLoading: measurementLinksLoading } = useQuery<MeasurementLinkRow>(`
+    SELECT v.id, v.etapa_id, v.equipe_id, e.nome AS equipe_nome, s.nome AS etapa_nome,
+           v.escopo_atribuido, c.unidade, COALESCE(s.permite_avanco_parcial, 1) AS permite_avanco_parcial,
+           COALESCE((SELECT aa.executado_atual FROM avancos_aprovados_servico aa WHERE aa.vinculacao_id = v.id ORDER BY aa.data_aprovacao DESC LIMIT 1), 0) AS executado_atual,
+           COALESCE((SELECT aa.aprovado_atual FROM avancos_aprovados_servico aa WHERE aa.vinculacao_id = v.id ORDER BY aa.data_aprovacao DESC LIMIT 1), 0) AS aprovado_atual
+    FROM vinculos_execucao_servico v
+    JOIN fvs_medicao_configuracoes c ON c.fvs_planejada_id = v.fvs_planejada_id
+    JOIN equipes e ON e.id = v.equipe_id
+    LEFT JOIN fvs_medicao_etapas s ON s.id = v.etapa_id
+    WHERE v.fvs_planejada_id = ? AND v.status = 'ativo'
+    ORDER BY s.ordem
+  `, [fvsId]);
 
   const { data: ambienteRows } = useQuery<{ nome: string }>(`
     SELECT a.nome FROM ambientes a JOIN obras o ON o.id = a.obra_id WHERE a.id = ?
@@ -484,6 +552,7 @@ export default function NovaVerificacaoScreen() {
     itemIds,
     openNcItemIds,
     isReinspection: hasOpenNCs,
+    validation: { financialRequired },
   });
   const {
     state: {
@@ -495,6 +564,9 @@ export default function NovaVerificacaoScreen() {
       signaturePath,
       reinspFoto,
       generalPhotos,
+      registrarAvanco,
+      measurementAdvances,
+      userTouchedItemIds,
     },
     currentStep,
     steps: flowSteps,
@@ -514,6 +586,7 @@ export default function NovaVerificacaoScreen() {
     stepForError,
     restoreDraft,
     discardDraft,
+    discardDraftAndReset,
   } = flow;
 
   const {
@@ -526,6 +599,23 @@ export default function NovaVerificacaoScreen() {
   });
 
   const selectedEquipe = equipes.find(e => e.id === selectedEquipeId) ?? null;
+  const currentMeasurementAdvances = measurementAdvances ?? {};
+  const selectedMeasurementLinks = measurementLinks.filter(link => link.equipe_id === selectedEquipeId);
+  function updateMeasurementAdvance(linkId: string, field: 'executadoDelta' | 'aprovadoDelta', value: string) {
+    updateState({ measurementAdvances: {
+      ...currentMeasurementAdvances,
+      [linkId]: {
+        executadoDelta: currentMeasurementAdvances[linkId]?.executadoDelta ?? '',
+        aprovadoDelta: currentMeasurementAdvances[linkId]?.aprovadoDelta ?? '',
+        [field]: value,
+      },
+    } });
+  }
+  // Soma em 6 casas decimais para evitar artefatos de ponto flutuante
+  // (numeric(18,6) no banco).
+  function measurementTotal(previous: string, delta: string): number {
+    return Math.round(((Number(previous) || 0) + (Number(delta) || 0)) * 1e6) / 1e6;
+  }
   const algumNaoConforme = Object.values(itemResults).some(r => r === 'nao_conforme');
   const canConcludeCurrentFvs = canConcludeFvs(
     {
@@ -537,6 +627,8 @@ export default function NovaVerificacaoScreen() {
       signaturePath,
       reinspFoto,
       generalPhotos,
+      registrarAvanco,
+      userTouchedItemIds,
     },
     itemIds,
     {
@@ -545,13 +637,21 @@ export default function NovaVerificacaoScreen() {
     },
   );
 
-  // Pré-preenche equipe da última verificação (editável pelo usuário).
+  // Pré-preenche a equipe: prioriza a equipe vinculada na medição da FVS
+  // (empreiteiro responsável); se houver mais de uma, usa a da última
+  // verificação. Nunca sobrescreve escolha manual ou rascunho restaurado.
+  const linkedTeamIds = useMemo(
+    () => [...new Set(measurementLinks.map(link => link.equipe_id))],
+    [measurementLinks],
+  );
   useEffect(() => {
-    const equipeId = lastEquipeRows[0]?.equipe_id;
-    if (equipeId && selectedEquipeId === null) {
+    if (selectedEquipeId !== null || measurementLinksLoading) return;
+    const linkedTeamId = measurementEnabled && linkedTeamIds.length === 1 ? linkedTeamIds[0] : null;
+    const equipeId = linkedTeamId ?? lastEquipeRows[0]?.equipe_id;
+    if (equipeId) {
       updateState({ selectedEquipeId: equipeId });
     }
-  }, [lastEquipeRows, selectedEquipeId, updateState]);
+  }, [linkedTeamIds, lastEquipeRows, measurementEnabled, measurementLinksLoading, selectedEquipeId, updateState]);
 
   // Pré-preenche resultados da última verificação no modo de re-inspeção.
   useEffect(() => {
@@ -579,10 +679,7 @@ export default function NovaVerificacaoScreen() {
 
     if (Object.keys(errs).length > 0) {
       scrollRef.current?.scrollTo({ y: 0, animated: true });
-      Alert.alert(
-        'Etapa incompleta',
-        'Revise os campos indicados antes de continuar.',
-      );
+      showToast('Revise os campos indicados antes de continuar.', 'error');
       return false;
     }
     return true;
@@ -609,7 +706,7 @@ export default function NovaVerificacaoScreen() {
 
   async function handleSave(shouldConclude = false) {
     if (!userId || !usuario || usuario.id !== userId || usuarioError) {
-      Alert.alert(
+      alertInfo(
         'Identidade indisponível',
         'Não foi possível confirmar o usuário autenticado. Entre novamente no sistema antes de salvar a verificação.',
       );
@@ -618,13 +715,42 @@ export default function NovaVerificacaoScreen() {
     const inspectorId = userId;
     const clienteId = usuario.cliente_id;
     if (!clienteId) {
-      Alert.alert('Conta sem cliente', 'O usuário não está associado a um ambiente PrumoQ válido.');
+      alertInfo('Conta sem cliente', 'O usuário não está associado a um ambiente PrumoQ válido.');
       return;
     }
 
     if (!validate()) return;
+    if (measurementEnabled && registrarAvanco) {
+      for (const link of selectedMeasurementLinks) {
+        const draft = currentMeasurementAdvances[link.id];
+        const executedDelta = Number(draft?.executadoDelta || 0);
+        const approvedDelta = Number(draft?.aprovadoDelta || 0);
+        if (executedDelta === 0 && approvedDelta === 0) continue;
+        const previousExecuted = Number(link.executado_atual);
+        const previousApproved = Number(link.aprovado_atual);
+        const scope = Number(link.escopo_atribuido);
+        if (![executedDelta, approvedDelta, previousExecuted, previousApproved, scope].every(Number.isFinite)) {
+          showToast('Informe valores numéricos válidos para o avanço físico.', 'error');
+          return;
+        }
+        if (executedDelta < 0 || approvedDelta < 0) {
+          showToast('O avanço informado não pode ser negativo.', 'error');
+          return;
+        }
+        const executed = previousExecuted + executedDelta;
+        const approved = previousApproved + approvedDelta;
+        if (approved > executed || executed > scope) {
+          showToast('O avanço deve respeitar: aprovado ≤ executado ≤ escopo atribuído.', 'error');
+          return;
+        }
+        if (!link.permite_avanco_parcial && approved !== 0 && approved !== scope) {
+          showToast(`A etapa ${link.etapa_nome ?? 'selecionada'} é binária e só pode ser aprovada integralmente.`, 'error');
+          return;
+        }
+      }
+    }
     if (shouldConclude && !canConcludeCurrentFvs) {
-      Alert.alert(
+      alertInfo(
         'Conclusão indisponível',
         'A FVS só pode ser concluída em uma verificação posterior, conforme e sem NC aberta.',
       );
@@ -710,9 +836,28 @@ export default function NovaVerificacaoScreen() {
               responsavel_id: nc.responsavel_id || null,
               data_nova_verif: nc.data_nova_verif,
               foto_local_path: nc.foto,
+              financeiro: financialRequired ? nc.financeiro ?? null : null,
             });
           }
         }
+      }
+
+      if (measurementEnabled && registrarAvanco) {
+        await recordApprovedAdvances(selectedMeasurementLinks.map(link => {
+          const draft = currentMeasurementAdvances[link.id];
+          return {
+            clienteId,
+            verificacaoId,
+            vinculoId: link.id,
+            etapaId: link.etapa_id,
+            executadoAnterior: link.executado_atual,
+            executadoAtual: String(measurementTotal(link.executado_atual, draft?.executadoDelta ?? '')),
+            aprovadoAnterior: link.aprovado_atual,
+            aprovadoAtual: String(measurementTotal(link.aprovado_atual, draft?.aprovadoDelta ?? '')),
+            unidade: link.unidade,
+            aprovadoPor: inspectorId,
+          };
+        }));
       }
 
       await Promise.all([
@@ -785,17 +930,12 @@ export default function NovaVerificacaoScreen() {
 
   function handleConclude() {
     if (!validate()) return;
-    Alert.alert(
-      'Concluir esta FVS?',
-      'A FVS será bloqueada. Para registrar outra verificação depois, será necessário reabri-la com justificativa.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Salvar e concluir',
-          onPress: () => { void handleSave(true); },
-        },
-      ],
-    );
+    confirmDialog({
+      title: 'Concluir esta FVS?',
+      message: 'A FVS será bloqueada. Para registrar outra verificação depois, será necessário reabri-la com justificativa.',
+      confirmText: 'Salvar e concluir',
+      onConfirm: () => { void handleSave(true); },
+    });
   }
 
   const inspectorInitials = usuario?.nome ? getInitials(usuario.nome) : 'IN';
@@ -896,7 +1036,19 @@ export default function NovaVerificacaoScreen() {
                 </View>
               </View>
               <View style={st.draftBannerActions}>
-                <Button label="Descartar" onPress={() => { void discardDraft(); }} variant="ghost" />
+                <Button
+                  label="Descartar"
+                  onPress={() => {
+                    void (async () => {
+                      try {
+                        await discardDraftAndReset();
+                      } finally {
+                        goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}/fvs/${fvsId}`);
+                      }
+                    })();
+                  }}
+                  variant="ghost"
+                />
                 {!draftConflict ? <Button label="Continuar rascunho" onPress={restoreDraft} /> : null}
               </View>
             </Card>
@@ -909,7 +1061,7 @@ export default function NovaVerificacaoScreen() {
                   <SectionTitle
                     eyebrow="ETAPA 1 DE 4"
                     title="Contexto do serviço"
-                    description="Confirme quem está executando o serviço e o avanço encontrado em campo."
+                    description="Confirme a data e quem está executando o serviço nesta verificação."
                   />
 
                   {hasOpenNCs ? (
@@ -1162,11 +1314,15 @@ export default function NovaVerificacaoScreen() {
                                 data_nova_verif: '',
                                 responsavel_id: '',
                                 foto: null,
+                                financeiro: financialRequired ? { situacao: 'em_avaliacao', bloqueio: 'nao' } : null,
                               }}
                               onChange={patch => updateNc(item.id, patch)}
                               onAddPhoto={() => addNcPhoto(item.id)}
                               equipes={equipes}
                               responsibleError={errors[`nc_resp_${item.id}`]}
+                              financialRequired={financialRequired}
+                              managers={managers}
+                              financialError={errors[`nc_fin_${item.id}`]}
                             />
                           ) : null}
                         </View>
@@ -1335,6 +1491,42 @@ export default function NovaVerificacaoScreen() {
                     </Card>
                   )}
 
+                  {measurementEnabled && measurementLinks.length > 0 ? (
+                    <Card style={st.formCard}>
+                      <View style={st.section}>
+                        <Text style={st.sectionTitle}>Avanço físico (opcional)</Text>
+                        <Text style={st.helperText}>Esta verificação teve acompanhamento físico? Se sim, informe apenas o que foi executado e aprovado nesta verificação. O sistema soma ao acumulado e libera apenas essa diferença para a medição.</Text>
+                        <SegmentedControl
+                          accessibilityLabel="Registrar avanço físico nesta verificação"
+                          value={registrarAvanco ? 'registrar' : 'sem_avanco'}
+                          onChange={value => updateState({ registrarAvanco: value === 'registrar' })}
+                          options={[
+                            { value: 'sem_avanco', label: 'Sem avanço' },
+                            { value: 'registrar', label: 'Registrar avanço' },
+                          ]}
+                        />
+                        {registrarAvanco ? (
+                          <>
+                            {selectedMeasurementLinks.length === 0 ? <ErrorBanner message="A equipe selecionada não é a responsável ativa por este serviço. Nenhum avanço poderá ser atribuído a ela." /> : null}
+                            {selectedMeasurementLinks.map(link => {
+                              const draft = currentMeasurementAdvances[link.id];
+                              return <View key={link.id} style={ncSt.financeBox}>
+                                <Text style={st.teamName}>{link.etapa_nome ?? fvs?.subservico ?? 'Serviço'}</Text>
+                                <Text style={st.helperText}>Empreiteiro: {link.equipe_nome} · escopo {link.escopo_atribuido} {link.unidade}</Text>
+                                <Text style={st.helperText}>Acumulado anterior: executado {link.executado_atual} {link.unidade} · aprovado {link.aprovado_atual} {link.unidade}</Text>
+                                <View style={ncSt.twoCol}>
+                                  <View style={{ flex: 1 }}><Text style={ncSt.label}>Executado nesta verificação</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={Colors.textTertiary} value={draft?.executadoDelta ?? ''} onChangeText={value => updateMeasurementAdvance(link.id, 'executadoDelta', value)} /></View>
+                                  <View style={{ flex: 1 }}><Text style={ncSt.label}>Aprovado nesta verificação</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={Colors.textTertiary} value={draft?.aprovadoDelta ?? ''} onChangeText={value => updateMeasurementAdvance(link.id, 'aprovadoDelta', value)} /></View>
+                                </View>
+                                <Text style={st.helperText}>Novo acumulado: executado {measurementTotal(link.executado_atual, draft?.executadoDelta ?? '')} · aprovado {measurementTotal(link.aprovado_atual, draft?.aprovadoDelta ?? '')} {link.unidade}</Text>
+                              </View>;
+                            })}
+                          </>
+                        ) : null}
+                      </View>
+                    </Card>
+                  ) : null}
+
                   <Card style={st.formCard}>
                     <View style={st.section}>
                       <Text style={st.sectionTitle}>Assinatura digital *</Text>
@@ -1487,6 +1679,8 @@ export default function NovaVerificacaoScreen() {
         verificacaoId={reinspResult.type === 'reprovada' ? reinspResult.verificacaoId : ''}
         verificacaoItemId={reinspResult.type === 'reprovada' ? reinspResult.verificacaoItemId : ''}
         equipes={equipes}
+        financialRequired={financialRequired}
+        managers={managers}
         onSalvo={() => goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}/fvs/${fvsId}`)}
       />
 
@@ -1699,6 +1893,7 @@ const st = StyleSheet.create({
   content:    { padding: Spacing.lg, gap: Spacing.lg },
   section: { gap: Spacing.sm },
   sectionTitle: { ...Typography.label, color: Colors.text },
+  helperText: { ...Typography.caption, color: Colors.textSecondary },
 
   // Inspector card
   inspectorCard: {

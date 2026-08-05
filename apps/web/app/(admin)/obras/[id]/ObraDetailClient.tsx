@@ -10,6 +10,7 @@ import AmbienteModal from './AmbienteModal';
 import ObraEquipeModal from './ObraEquipeModal';
 import { deleteObra, removeEquipeFromObra } from './actions';
 import ObraModal from '../ObraModal';
+import ObraFeatureControls from './ObraFeatureControls';
 
 interface ObraDetailClientProps {
   obraId: string;
@@ -111,6 +112,13 @@ export default function ObraDetailClient({
 
   return (
     <div>
+      <ObraFeatureControls
+        obraId={obraId}
+        medicionesOverride={obra.controle_medicoes_override ?? null}
+        financeiroOverride={obra.controle_financeiro_nc_override ?? null}
+        medicionesEffective={Boolean(obra.controle_medicoes_efetivo)}
+        financeiroEffective={Boolean(obra.controle_financeiro_nc_efetivo)}
+      />
       {/* Tabs + Edit button */}
       <div className="flex items-center justify-between border-b border-brd-0 mb-6">
       <div className="flex gap-0">

@@ -9,9 +9,10 @@ import {
   ClipboardCheck,
   Clock3,
   FileClock,
+  Trash2,
 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppHeader } from '../../../components/AppHeader';
 import { OfflineBanner } from '../../../components/OfflineBanner';
 import { ProgressBar } from '../../../components/ProgressBar';
@@ -248,6 +249,41 @@ export default function DashboardScreen() {
       `/obras/${draft.obraId}/ambiente/${draft.ambienteId}/fvs/${draft.fvsId}/verificacao/nova` as never,
     );
   };
+
+  const discardDraft = useCallback(async (draftId: string) => {
+    try {
+      await draftStore.delete(draftId);
+      setDrafts(previous => previous.filter(draft => draft.draftId !== draftId));
+    } catch (error) {
+      console.warn('[Dashboard] discard draft error:', error);
+      Alert.alert('Erro', 'Não foi possível descartar o rascunho. Tente novamente.');
+    }
+  }, []);
+
+  const confirmDiscardDraft = useCallback((draft: VerificationDraftV1) => {
+    const title = 'Descartar rascunho?';
+    const message = `O preenchimento de "${draft.fvsName || 'Verificação em andamento'}" será apagado do aparelho. Esta ação não pode ser desfeita.`;
+    // Alert.alert é no-op no react-native-web — usar window.confirm no PWA.
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.confirm === 'function') {
+      if (window.confirm(`${title}\n\n${message}`)) {
+        void discardDraft(draft.draftId);
+      }
+      return;
+    }
+    Alert.alert(
+      title,
+      message,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Descartar',
+          style: 'destructive',
+          onPress: () => { void discardDraft(draft.draftId); },
+        },
+      ],
+    );
+  }, [discardDraft]);
+
   const hasActions = drafts.length > 0 || ncsUrgentes.length > 0;
 
   return (
@@ -313,28 +349,38 @@ export default function DashboardScreen() {
                       <Text style={styles.actionTitle}>Continue de onde parou</Text>
                     </View>
                     {drafts.slice(0, 2).map(draft => (
-                      <Pressable
-                        key={draft.draftId}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Continuar ${draft.fvsName}`}
-                        onPress={() => resumeDraft(draft)}
-                        style={({ pressed }) => [styles.draftCard, pressed && styles.pressed]}
-                      >
-                        <View style={styles.draftIcon}>
-                          <FileClock size={23} color={Colors.brandSignature} />
-                        </View>
-                        <View style={styles.draftBody}>
-                          <Text style={styles.draftTitle} numberOfLines={1}>{draft.fvsName || 'Verificação em andamento'}</Text>
-                          <Text style={styles.draftMeta} numberOfLines={1}>
-                            {draft.ambienteName} · Etapa {stepNumber(draft.currentStep)} de 4
-                          </Text>
-                          <Text style={styles.draftTime}>Salvo em {formatDraftTime(draft.updatedAt)}</Text>
-                        </View>
-                        <View style={styles.continueAction}>
-                          <Text style={styles.continueText}>Continuar</Text>
-                          <ArrowRight size={18} color={Colors.brandSignature} />
-                        </View>
-                      </Pressable>
+                      <View key={draft.draftId} style={styles.draftCard}>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Continuar ${draft.fvsName}`}
+                          onPress={() => resumeDraft(draft)}
+                          style={({ pressed }) => [styles.draftCardMain, pressed && styles.pressed]}
+                        >
+                          <View style={styles.draftIcon}>
+                            <FileClock size={23} color={Colors.brandSignature} />
+                          </View>
+                          <View style={styles.draftBody}>
+                            <Text style={styles.draftTitle} numberOfLines={1}>{draft.fvsName || 'Verificação em andamento'}</Text>
+                            <Text style={styles.draftMeta} numberOfLines={1}>
+                              {draft.ambienteName} · Etapa {stepNumber(draft.currentStep)} de 4
+                            </Text>
+                            <Text style={styles.draftTime}>Salvo em {formatDraftTime(draft.updatedAt)}</Text>
+                          </View>
+                          <View style={styles.continueAction}>
+                            <Text style={styles.continueText}>Continuar</Text>
+                            <ArrowRight size={18} color={Colors.brandSignature} />
+                          </View>
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Descartar rascunho de ${draft.fvsName}`}
+                          onPress={() => confirmDiscardDraft(draft)}
+                          hitSlop={8}
+                          style={({ pressed }) => [styles.draftDiscardButton, pressed && styles.pressed]}
+                        >
+                          <Trash2 size={18} color={Colors.nok} />
+                        </Pressable>
+                      </View>
                     ))}
                   </View>
                 ) : null}
@@ -600,11 +646,27 @@ const styles = StyleSheet.create({
   draftCard: {
     borderRadius: Radius.lg,
     backgroundColor: Colors.text,
+    flexDirection: 'row',
+    alignItems: 'center',
+    ...Elevation.card,
+    overflow: 'hidden',
+  },
+  draftCardMain: {
+    flex: 1,
     padding: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    ...Elevation.card,
+    minWidth: 0,
+  },
+  draftDiscardButton: {
+    alignSelf: 'stretch',
+    width: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(198,40,40,0.10)',
   },
   draftIcon: {
     width: 48,

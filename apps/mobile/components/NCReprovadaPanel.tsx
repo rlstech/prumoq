@@ -17,6 +17,8 @@ interface Props {
   verificacaoId: string;
   verificacaoItemId: string;
   equipes: { id: string; nome: string }[];
+  financialRequired: boolean;
+  managers: { id: string; nome: string }[];
   onSalvo: () => void;
 }
 
@@ -29,7 +31,7 @@ export function NCReprovadaPanel({
   clienteId,
   visible, ocorrencia, ncAnteriorId, ncAnteriorDescricao,
   ncAnteriorVerifNum, ncAnteriorDataCriacao,
-  verificacaoId, verificacaoItemId, onSalvo,
+  verificacaoId, verificacaoItemId, financialRequired, managers, onSalvo,
 }: Props) {
   const [descricao, setDescricao] = useState('');
   const [solucao, setSolucao] = useState('');
@@ -40,6 +42,7 @@ export function NCReprovadaPanel({
   });
   const [foto, setFoto] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [financialManagerId, setFinancialManagerId] = useState('');
 
   if (!visible) return null;
 
@@ -65,6 +68,10 @@ export function NCReprovadaPanel({
       Alert.alert('Campo obrigatório', 'Informe a nova data de re-inspeção.');
       return;
     }
+    if (financialRequired && !financialManagerId) {
+      Alert.alert('Impacto financeiro', 'Selecione o gestor responsável pela avaliação financeira.');
+      return;
+    }
     setIsSaving(true);
     try {
       await createNc({
@@ -78,6 +85,12 @@ export function NCReprovadaPanel({
         foto_local_path: foto,
         nc_anterior_id: ncAnteriorId,
         numero_ocorrencia: ocorrencia,
+        financeiro: financialRequired ? {
+          situacao: 'em_avaliacao',
+          bloqueio: 'nao',
+          responsavelAvaliacaoId: financialManagerId,
+          prazoAvaliacao: dataVerif,
+        } : null,
       });
       onSalvo();
     } catch {
@@ -173,6 +186,25 @@ export function NCReprovadaPanel({
                 </View>
               </View>
             </View>
+            {financialRequired ? (
+              <View style={st.financeBox}>
+                <Text style={st.financeTitle}>Impacto financeiro: Em avaliação</Text>
+                <Text style={st.financeHelper}>A nova ocorrência será atribuída a um gestor e não poderá ser encerrada até a definição final.</Text>
+                <Text style={st.fieldLabel}>Gestor responsável *</Text>
+                <View style={st.managerList}>
+                  {managers.map(manager => (
+                    <Pressable
+                      key={manager.id}
+                      onPress={() => setFinancialManagerId(manager.id)}
+                      style={[st.managerOption, financialManagerId === manager.id && st.managerOptionActive]}
+                    >
+                      <Text style={[st.managerText, financialManagerId === manager.id && st.managerTextActive]}>{manager.nome}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                {!managers.length ? <Text style={st.financeError}>Nenhum gestor disponível para receber a avaliação.</Text> : null}
+              </View>
+            ) : null}
           </View>
         </ScrollView>
 
@@ -225,6 +257,15 @@ const st = StyleSheet.create({
   fieldLabel:  { fontSize: FontSizes.xs, fontWeight: '500', color: Colors.textSecondary, marginBottom: 4 },
   altaBadgeBox: { backgroundColor: Colors.nokBg, borderRadius: Radius.sm, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderWidth: 0.5, borderColor: Colors.nok, alignItems: 'center', justifyContent: 'center', height: 38 },
   altaText:    { fontSize: FontSizes.sm, color: Colors.nok, fontWeight: '600' },
+  financeBox: { margin: Spacing.md, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.warn, backgroundColor: Colors.warnBg, gap: Spacing.sm },
+  financeTitle: { fontSize: FontSizes.sm, fontWeight: '700', color: Colors.text },
+  financeHelper: { fontSize: FontSizes.xs, color: Colors.textSecondary, lineHeight: 17 },
+  managerList: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
+  managerOption: { borderWidth: 1, borderColor: Colors.borderNormal, borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, backgroundColor: Colors.surface },
+  managerOptionActive: { borderColor: Colors.brand, backgroundColor: Colors.brandLight },
+  managerText: { fontSize: FontSizes.xs, color: Colors.textSecondary },
+  managerTextActive: { color: Colors.brand, fontWeight: '700' },
+  financeError: { fontSize: FontSizes.xs, color: Colors.nok },
 
   footer:       { padding: Spacing.md, paddingBottom: Spacing.xl, borderTopWidth: 0.5, borderTopColor: Colors.border, backgroundColor: Colors.surface },
   btnSalvar:    { backgroundColor: Colors.brand, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },

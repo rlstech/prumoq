@@ -15,6 +15,8 @@ const obras = new Table({
   data_inicio_prev:  column.text,
   data_termino_prev: column.text,
   ativo:             column.integer,
+  controle_medicoes_efetivo: column.integer,
+  controle_financeiro_nc_efetivo: column.integer,
   updated_at:        column.text,
 });
 
@@ -193,6 +195,21 @@ const nao_conformidades = new Table(
     resolvida_na_verif_id: column.text,
     resolvida_em:          column.text,
     observacao_resolucao:  column.text,
+    financeiro_requerido: column.integer,
+    situacao_financeira: column.text,
+    justificativa_sem_impacto: column.text,
+    responsavel_avaliacao_id: column.text,
+    prazo_avaliacao: column.text,
+    valor_estimado: column.text,
+    valor_confirmado: column.text,
+    responsavel_financeiro: column.text,
+    categoria_financeira: column.text,
+    observacao_financeira: column.text,
+    documento_financeiro_r2_key: column.text,
+    bloqueio_medicao: column.text,
+    quantidade_bloqueada: column.text,
+    percentual_bloqueado: column.text,
+    valor_bloqueado: column.text,
     created_at:            column.text,
     updated_at:            column.text,
   },
@@ -243,6 +260,32 @@ const usuarios = new Table({
   onboarding_concluido_em: column.text,
 });
 
+const fvs_medicao_configuracoes = new Table({
+  cliente_id: column.text, fvs_planejada_id: column.text, metodo: column.text,
+  unidade: column.text, quantidade_total: column.text, preco_unitario: column.text,
+  permite_medicoes_parciais: column.integer, modelo_origem_id: column.text,
+});
+const fvs_medicao_etapas = new Table({
+  cliente_id: column.text, configuracao_id: column.text, ordem: column.integer,
+  nome: column.text, peso_percentual: column.text, permite_avanco_parcial: column.integer,
+  ativo: column.integer,
+  status: column.text, percentual_interno: column.text,
+  equipe_responsavel_id: column.text, verificacao_evidencia_id: column.text,
+  updated_by: column.text, updated_at: column.text,
+});
+const vinculos_execucao_servico = new Table({
+  cliente_id: column.text, fvs_planejada_id: column.text, etapa_id: column.text,
+  equipe_id: column.text, data_inicio: column.text, data_termino: column.text,
+  escopo_atribuido: column.text, status: column.text,
+});
+const avancos_aprovados_servico = new Table({
+  cliente_id: column.text, vinculacao_id: column.text, verificacao_id: column.text,
+  etapa_id: column.text, executado_anterior: column.text, executado_atual: column.text,
+  aprovado_anterior: column.text, aprovado_atual: column.text, unidade: column.text,
+  aprovado_por: column.text, data_aprovacao: column.text,
+  created_offline: column.integer, created_at: column.text,
+});
+
 export const AppSchema = new Schema({
   obras,
   obra_usuarios,
@@ -262,6 +305,10 @@ export const AppSchema = new Schema({
   nc_reinspecoes,
   equipes,
   usuarios,
+  fvs_medicao_configuracoes,
+  fvs_medicao_etapas,
+  vinculos_execucao_servico,
+  avancos_aprovados_servico,
 });
 
 // Row types — manual interfaces matching the SQLite columns above
@@ -270,7 +317,7 @@ export interface TenantRow { cliente_id: string }
 export interface ObrasRow extends TenantRow {
   id: string; empresa_id: string; nome: string; eng_responsavel: string;
   crea_cau: string; status: string; municipio: string; uf: string;
-  data_inicio_prev: string; data_termino_prev: string; ativo: number; updated_at: string;
+  data_inicio_prev: string; data_termino_prev: string; ativo: number; controle_medicoes_efetivo: number; controle_financeiro_nc_efetivo: number; updated_at: string;
 }
 export interface ObraUsuariosRow extends TenantRow { id: string; obra_id: string; usuario_id: string; papel: string; ativo: number }
 export interface ObraEquipesRow extends TenantRow { id: string; obra_id: string; equipe_id: string }
@@ -284,7 +331,11 @@ export interface FvsReaberturasRow { id: string; fvs_planejada_id: string; solic
 export interface VerificacoesRow { id: string; fvs_planejada_id: string; numero_verif: number; inspetor_id: string; equipe_id: string; data_verif: string; percentual_exec: number; status: string; observacoes: string; assinatura_url: string; assinada_em: string; created_offline: number; created_at: string; updated_at: string }
 export interface VerificacaoItensRow { id: string; verificacao_id: string; fvs_padrao_item_id: string; ordem: number; titulo: string; metodo_verif: string; tolerancia: string; resultado: string }
 export interface VerificacaoFotosRow { id: string; verificacao_id: string; r2_key: string; r2_thumb_key: string; nome_arquivo: string; tamanho_bytes: number; mime_type: string; ordem: number }
-export interface NaoConformidadesRow { id: string; verificacao_id: string; verificacao_item_id: string; descricao: string; solucao_proposta: string; responsavel_id: string | null; data_nova_verif: string; prioridade: string; status: string; numero_ocorrencia: number; nc_anterior_id: string | null; verificacao_reinsp_id: string | null; foto_reinspecao_url: string | null; resolvida_na_verif_id: string | null; resolvida_em: string | null; observacao_resolucao: string | null; created_at: string; updated_at: string }
+export interface NaoConformidadesRow { id: string; verificacao_id: string; verificacao_item_id: string; descricao: string; solucao_proposta: string; responsavel_id: string | null; data_nova_verif: string; prioridade: string; status: string; numero_ocorrencia: number; nc_anterior_id: string | null; verificacao_reinsp_id: string | null; foto_reinspecao_url: string | null; resolvida_na_verif_id: string | null; resolvida_em: string | null; observacao_resolucao: string | null; financeiro_requerido: number; situacao_financeira: string | null; justificativa_sem_impacto: string | null; responsavel_avaliacao_id: string | null; prazo_avaliacao: string | null; valor_estimado: string | null; valor_confirmado: string | null; responsavel_financeiro: string | null; categoria_financeira: string | null; observacao_financeira: string | null; documento_financeiro_r2_key: string | null; bloqueio_medicao: string | null; quantidade_bloqueada: string | null; percentual_bloqueado: string | null; valor_bloqueado: string | null; created_at: string; updated_at: string }
+export interface FvsMedicaoConfiguracaoRow extends TenantRow { id: string; fvs_planejada_id: string; metodo: string; unidade: string; quantidade_total: string; preco_unitario: string | null; permite_medicoes_parciais: number }
+export interface FvsMedicaoEtapaRow extends TenantRow { id: string; configuracao_id: string; ordem: number; nome: string; peso_percentual: string; permite_avanco_parcial: number; ativo: number }
+export interface VinculoExecucaoServicoRow extends TenantRow { id: string; fvs_planejada_id: string; etapa_id: string | null; equipe_id: string; escopo_atribuido: string; status: string }
+export interface AvancoAprovadoServicoRow extends TenantRow { id: string; vinculacao_id: string; verificacao_id: string; etapa_id: string | null; executado_anterior: string; executado_atual: string; aprovado_anterior: string; aprovado_atual: string; unidade: string }
 export interface NcFotosRow { id: string; nc_id: string; r2_key: string; r2_thumb_key: string | null; nome_arquivo: string | null; mime_type: string | null; ordem: number }
 export interface NcReinspecoesRow { id: string; nc_id: string; verificacao_id: string; inspetor_id: string; resultado: 'aprovada' | 'reprovada'; observacao: string | null; foto_url: string | null; nova_nc_id: string | null; created_at: string }
 export interface EquipesRow extends TenantRow { id: string; escopo: string; nome: string; tipo: string; responsavel: string; especialidade: string; ativo: number }

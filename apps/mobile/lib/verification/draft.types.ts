@@ -8,6 +8,14 @@ export interface NcDraftDetail {
   data_nova_verif: string;
   responsavel_id: string;
   foto: string | null;
+  financeiro?: import('../nc-finance').NcFinancialDeclaration | null;
+}
+
+export interface MeasurementAdvanceDraft {
+  /** Quantidade executada somente nesta verificação (delta sobre o acumulado). */
+  executadoDelta: string;
+  /** Quantidade aprovada somente nesta verificação (delta liberado para medição). */
+  aprovadoDelta: string;
 }
 
 export interface VerificationFormState {
@@ -19,6 +27,16 @@ export interface VerificationFormState {
   signaturePath: string | null;
   reinspFoto: string | null;
   generalPhotos: string[];
+  /** false = verificação simples, sem acompanhamento físico. */
+  registrarAvanco: boolean;
+  measurementAdvances?: Record<string, MeasurementAdvanceDraft>;
+  /**
+   * Itens do checklist efetivamente tocados pelo usuário. Não inclui itens
+   * pré-preenchidos em modo re-inspeção — só é preenchido via
+   * setVerificationItemResult. É o critério canônico para decidir se há
+   * progresso significativo que justifique persistir um rascunho.
+   */
+  userTouchedItemIds: string[];
 }
 
 export type DraftMediaKind = 'general' | 'nc' | 'reinspection' | 'signature';
@@ -40,7 +58,7 @@ export interface DraftMediaSource {
 }
 
 export interface VerificationDraftV1 {
-  schemaVersion: 2;
+  schemaVersion: 4;
   draftId: string;
   userId: string;
   obraId: string;
@@ -65,7 +83,7 @@ export interface DraftStore {
   deleteForUser(userId: string): Promise<void>;
 }
 
-export const DRAFT_SCHEMA_VERSION = 2 as const;
+export const DRAFT_SCHEMA_VERSION = 4 as const;
 
 export function makeDraftId(userId: string, fvsId: string, mode: VerificationMode): string {
   return `${userId}:${fvsId}:${mode}`;
@@ -77,6 +95,7 @@ export function sanitizeDraftState(state: VerificationFormState): VerificationFo
     signaturePath: null,
     reinspFoto: null,
     generalPhotos: [],
+    userTouchedItemIds: [...state.userTouchedItemIds],
     ncDetails: Object.fromEntries(
       Object.entries(state.ncDetails).map(([itemId, detail]) => [
         itemId,
@@ -96,6 +115,7 @@ export function applyHydratedMedia(
       Object.entries(state.ncDetails).map(([itemId, detail]) => [itemId, { ...detail }]),
     ),
     generalPhotos: [],
+    userTouchedItemIds: [...state.userTouchedItemIds],
   };
 
   for (const { ref, uri } of hydrated) {

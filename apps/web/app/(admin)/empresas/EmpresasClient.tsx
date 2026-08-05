@@ -8,6 +8,7 @@ import Modal from '@/components/ui/Modal';
 import { createEmpresa, updateEmpresa } from './actions';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const UFS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
 
@@ -22,6 +23,8 @@ const EMPTY_FORM = {
   contato: '',
   email: '',
   telefone: '',
+  controle_medicoes_habilitado: false,
+  controle_financeiro_nc_habilitado: false,
 };
 
 type Feedback = {
@@ -94,6 +97,8 @@ export default function EmpresasClient({
       contato: empresa.contato || '',
       email: empresa.email || '',
       telefone: empresa.telefone || '',
+      controle_medicoes_habilitado: Boolean(empresa.controle_medicoes_habilitado),
+      controle_financeiro_nc_habilitado: Boolean(empresa.controle_financeiro_nc_habilitado),
     });
     setModalOpen(true);
   };
@@ -178,6 +183,7 @@ export default function EmpresasClient({
       header: '',
       cell: (item) => (
         <div className="flex gap-1">
+          <Link href={`/empresas/${item.id}/modelos-medicao`} className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-brand hover:bg-bg-2 transition-colors">Modelos</Link>
           <button onClick={() => openEdit(item)} className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors">Editar</button>
           <button
             onClick={() => toggleAtivo(item)}
@@ -307,6 +313,35 @@ export default function EmpresasClient({
                 <input type="text" className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]" value={formatCEP(formData.cep)} onChange={e => setFormData(p => ({...p, cep: e.target.value}))} placeholder="00000-000" maxLength={9} />
               </div>
             </div>
+          </div>
+
+          <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+            <div className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-1">Recursos opcionais</div>
+            <p className="mb-3 text-xs leading-5 text-txt-3">Defina o padrão para as obras desta empresa. Cada obra pode herdar ou sobrescrever estes controles.</p>
+            <label className="flex items-start gap-3 rounded-lg border border-brd-1 bg-bg-1 p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.controle_medicoes_habilitado}
+                onChange={e => setFormData(p => ({ ...p, controle_medicoes_habilitado: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 accent-[var(--br)]"
+              />
+              <span>
+                <span className="block text-sm font-medium text-txt">Controle de medições</span>
+                <span className="block mt-0.5 text-xs text-txt-3">Libera avanço aprovado, vínculos de execução e boletins de medição nas obras habilitadas.</span>
+              </span>
+            </label>
+            <label className="mt-2 flex items-start gap-3 rounded-lg border border-brd-1 bg-bg-1 p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.controle_financeiro_nc_habilitado}
+                onChange={e => setFormData(p => ({ ...p, controle_financeiro_nc_habilitado: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 accent-[var(--br)]"
+              />
+              <span>
+                <span className="block text-sm font-medium text-txt">Impacto financeiro de não conformidades</span>
+                <span className="block mt-0.5 text-xs text-txt-3">Exige situação financeira e decisão de bloqueio de medição para novas NCs.</span>
+              </span>
+            </label>
           </div>
 
           <div className="flex gap-3 justify-end pt-2">

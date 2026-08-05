@@ -61,7 +61,14 @@ export interface VerificationFlowApi {
   stepForError: (errorKey: string) => VerificationStep;
   persistDraft: () => Promise<void>;
   restoreDraft: () => boolean;
+  /** Remove o rascunho do storage sem tocar no state — usado após salvar a verificação. */
   discardDraft: () => Promise<void>;
+  /**
+   * Remove o rascunho do storage e zera o state — usado pelo botão "Descartar"
+   * da tela Nova Verificação. Garante que hasMeaningfulVerificationProgress
+   * volte a false e o debounce não regrave o rascunho logo em seguida.
+   */
+  discardDraftAndReset: () => Promise<void>;
 }
 
 /**
@@ -95,6 +102,9 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
   const loadedContextRef = useRef<string | null>(null);
   const persistInFlightRef = useRef<Promise<void> | null>(null);
   const persistQueuedRef = useRef(false);
+  // Guard contra race: enquanto discardDraftAndReset está em andamento, abortar
+  // qualquer persistDraft que entre (ex.: timer do debounce já em voo).
+  const discardingRef = useRef(false);
 
   const hasMeaningfulProgress = useMemo(
     () => hasMeaningfulVerificationProgress(state, currentStep),
@@ -123,6 +133,7 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
         data_nova_verif: '',
         responsavel_id: '',
         foto: null,
+        financeiro: null,
       } satisfies NcDraftDetail;
       return patchVerificationState(previous, { ncDetails: { ...previous.ncDetails, [itemId]: { ...detail, ...patch } } });
     });
@@ -154,6 +165,7 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
   );
 
   const persistDraft = useCallback(async (): Promise<void> => {
+    if (discardingRef.current) return;
     const snapshotContext = latestRef.current.context;
     const snapshotState = latestRef.current.state;
     const snapshotStep = latestRef.current.currentStep;
@@ -285,6 +297,19 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
     setDraftStatus('idle');
   }, [context, store]);
 
+  const discardDraftAndReset = useCallback(async (): Promise<void> => {
+    discardingRef.current = true;
+    if (context) await store.delete(context.draftId);
+    setDraftCandidate(null);
+    setDraftConflict(false);
+    setDraftStatus('idle');
+    setState(emptyVerificationFormState());
+    setCurrentStep('context');
+    setErrors({});
+    // O componente é desmontado pela navegação logo após este call — não é
+    // necessário limpar discardingRef.current.
+  }, [context, store]);
+
   return {
     state,
     currentStep,
@@ -307,5 +332,6 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
     persistDraft,
     restoreDraft,
     discardDraft,
+    discardDraftAndReset,
   };
 }

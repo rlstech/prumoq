@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import Modal from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { addEquipeToObra } from './actions';
 
 interface Props {
@@ -17,24 +18,33 @@ interface Props {
 export default function ObraEquipeModal({ isOpen, onClose, obraId, availableEquipes, totalEmpresaEquipes }: Props) {
   const { toast } = useToast();
   const router = useRouter();
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
 
   function toggle(id: string) {
-    setSelected(prev => (prev === id ? null : id));
+    setSelected(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+  }
+
+  function selectAll() {
+    setSelected(availableEquipes.map(e => e.id));
+  }
+
+  function clearAll() {
+    setSelected([]);
   }
 
   function handleSave() {
-    if (!selected) {
-      toast('Selecione uma equipe', 'error');
+    if (!selected.length) {
+      toast('Selecione ao menos uma equipe', 'error');
       return;
     }
     startTransition(async () => {
       const result = await addEquipeToObra(obraId, selected);
       if (result.success) {
-        toast('Equipe adicionada à obra!', 'success');
+        const plural = selected.length > 1;
+        toast(`Equipe${plural ? 's' : ''} adicionada${plural ? 's' : ''} à obra!`, 'success');
         router.refresh();
-        setSelected(null);
+        setSelected([]);
         onClose();
       } else {
         toast(result.error ?? 'Erro ao adicionar equipe.', 'error');
@@ -50,9 +60,9 @@ export default function ObraEquipeModal({ isOpen, onClose, obraId, availableEqui
             {totalEmpresaEquipes === 0 ? (
               <>
                 <p className="text-sm text-txt-2">Nenhuma equipe cadastrada para esta empresa.</p>
-                <a href="/equipes" className="text-xs text-[var(--br)] hover:underline font-medium">
+                <Link href="/equipes" className="text-xs text-[var(--br)] hover:underline font-medium">
                   Ir para Equipes →
-                </a>
+                </Link>
               </>
             ) : (
               <p className="text-sm text-txt-2">Todas as equipes já estão vinculadas a esta obra.</p>
@@ -60,8 +70,32 @@ export default function ObraEquipeModal({ isOpen, onClose, obraId, availableEqui
           </div>
         ) : (
           <div className="border border-brd-0 rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-brd-0 bg-bg-2 text-[11px]">
+              <span className="text-txt-2">
+                {selected.length} de {availableEquipes.length} selecionada{availableEquipes.length > 1 ? 's' : ''}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={selectAll}
+                  disabled={selected.length === availableEquipes.length}
+                  className="text-[var(--br)] hover:underline font-medium disabled:opacity-40"
+                >
+                  Selecionar todas
+                </button>
+                <span className="text-brd-1">·</span>
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  disabled={!selected.length}
+                  className="text-txt-2 hover:underline font-medium disabled:opacity-40"
+                >
+                  Limpar
+                </button>
+              </div>
+            </div>
             {availableEquipes.map(eq => {
-              const isSelected = selected === eq.id;
+              const isSelected = selected.includes(eq.id);
               const isProprio = eq.tipo === 'proprio';
               return (
                 <div
@@ -72,10 +106,10 @@ export default function ObraEquipeModal({ isOpen, onClose, obraId, availableEqui
                   }`}
                 >
                   {/* Checkbox */}
-                  <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${
-                    isSelected ? 'border-[var(--br)] bg-[var(--br)]' : 'border-brd-1'
+                  <div className={`w-4 h-4 rounded flex items-center justify-center border-2 shrink-0 transition-colors ${
+                    isSelected ? 'bg-[var(--br)] border-[var(--br)]' : 'border-brd-1 bg-white'
                   }`}>
-                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
                   </div>
 
                   {/* Avatar */}
@@ -115,10 +149,10 @@ export default function ObraEquipeModal({ isOpen, onClose, obraId, availableEqui
             <button
               type="button"
               onClick={handleSave}
-              disabled={!selected || isPending}
+              disabled={!selected.length || isPending}
               className="flex-1 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-50"
             >
-              {isPending ? 'Adicionando...' : 'Adicionar'}
+              {isPending ? 'Adicionando...' : selected.length ? `Adicionar (${selected.length})` : 'Adicionar'}
             </button>
           )}
         </div>

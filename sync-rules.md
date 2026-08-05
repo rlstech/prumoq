@@ -503,6 +503,58 @@ bucket_definitions:
               WHERE usuario_id = :usuario_id AND ativo = true
             )
           )
+
+  # Gestores da empresa para atribuição da avaliação financeira no app.
+  gestores_da_empresa:
+    parameters:
+      - name: usuario_id
+        value: token_parameters.user_id
+    data:
+      - table: usuarios
+        where: >
+          cliente_id = (SELECT cliente_id FROM usuarios WHERE id = :usuario_id)
+          AND perfil IN ('admin', 'gestor')
+
+  # Configuração, responsáveis e avanços de medição das obras acessíveis.
+  medicoes_das_obras:
+    parameters:
+      - name: usuario_id
+        value: token_parameters.user_id
+    data:
+      - table: fvs_medicao_configuracoes
+        where: >
+          fvs_planejada_id IN (
+            SELECT fp.id FROM fvs_planejadas fp
+            JOIN ambientes a ON fp.ambiente_id = a.id
+            JOIN obra_usuarios ou ON a.obra_id = ou.obra_id
+            WHERE ou.usuario_id = :usuario_id AND ou.ativo = true
+          )
+      - table: fvs_medicao_etapas
+        where: >
+          configuracao_id IN (
+            SELECT c.id FROM fvs_medicao_configuracoes c
+            JOIN fvs_planejadas fp ON fp.id = c.fvs_planejada_id
+            JOIN ambientes a ON a.id = fp.ambiente_id
+            JOIN obra_usuarios ou ON ou.obra_id = a.obra_id
+            WHERE ou.usuario_id = :usuario_id AND ou.ativo = true
+          )
+      - table: vinculos_execucao_servico
+        where: >
+          fvs_planejada_id IN (
+            SELECT fp.id FROM fvs_planejadas fp
+            JOIN ambientes a ON fp.ambiente_id = a.id
+            JOIN obra_usuarios ou ON a.obra_id = ou.obra_id
+            WHERE ou.usuario_id = :usuario_id AND ou.ativo = true
+          )
+      - table: avancos_aprovados_servico
+        where: >
+          vinculacao_id IN (
+            SELECT ves.id FROM vinculos_execucao_servico ves
+            JOIN fvs_planejadas fp ON fp.id = ves.fvs_planejada_id
+            JOIN ambientes a ON a.id = fp.ambiente_id
+            JOIN obra_usuarios ou ON ou.obra_id = a.obra_id
+            WHERE ou.usuario_id = :usuario_id AND ou.ativo = true
+          )
 ```
 
 ---

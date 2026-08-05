@@ -11,6 +11,37 @@ async function requireObra(obraId: string) {
   return context;
 }
 
+type FeatureOverrideInput = {
+  controleMedicoesOverride: boolean | null;
+  controleFinanceiroNcOverride: boolean | null;
+};
+
+export async function updateObraFeatureOverrides(obraId: string, input: FeatureOverrideInput) {
+  try {
+    await requireObra(obraId);
+    const supabase = await createClient();
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
+      name: 'set_obra_feature_overrides',
+      args: {
+        p_obra_id: string;
+        p_medicoes_override: boolean | null;
+        p_financeiro_override: boolean | null;
+      },
+    ) => Promise<{ error: { message: string } | null }>;
+    const { error } = await rpc('set_obra_feature_overrides', {
+      p_obra_id: obraId,
+      p_medicoes_override: input.controleMedicoesOverride,
+      p_financeiro_override: input.controleFinanceiroNcOverride,
+    });
+    if (error) throw error;
+    revalidatePath(`/obras/${obraId}`);
+    revalidatePath('/medicoes');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Falha ao configurar recursos da obra.' };
+  }
+}
+
 export async function createAmbiente(
   obraId: string,
   formData: { nome: string; tipo: string; localizacao: string; observacoes: string },
@@ -56,15 +87,18 @@ export async function createAmbiente(
   }
 }
 
-export async function addEquipeToObra(obraId: string, equipeId: string) {
+export async function addEquipeToObra(obraId: string, equipeIds: string[]) {
   try {
+    if (!equipeIds.length) return { success: false, error: 'Selecione ao menos uma equipe.' };
     const context = await requireObra(obraId);
     const supabase = await createClient();
-    const { error } = await supabase.from('obra_equipes').insert({
-      cliente_id: context.clienteId,
-      obra_id: obraId,
-      equipe_id: equipeId,
-    });
+    const { error } = await supabase.from('obra_equipes').insert(
+      equipeIds.map(equipeId => ({
+        cliente_id: context.clienteId,
+        obra_id: obraId,
+        equipe_id: equipeId,
+      })),
+    );
     if (error) throw error;
     revalidatePath(`/obras/${obraId}`);
     return { success: true };

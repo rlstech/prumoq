@@ -3,6 +3,7 @@ import {
   VerificationResult,
   VerificationStep,
 } from './draft.types';
+import { validateNcFinancialDeclaration } from '../nc-finance';
 
 export interface VerificationValidationInput {
   selectedEquipeId: string | null;
@@ -13,6 +14,7 @@ export interface VerificationValidationInput {
   itemResults: Record<string, VerificationResult>;
   ncDetails: Record<string, NcDraftDetail>;
   openNcItemIds: string[];
+  financialRequired?: boolean;
 }
 
 export function collectVerificationErrors(
@@ -36,6 +38,10 @@ export function collectVerificationErrors(
       if (!nc?.solucao_proposta.trim()) errors[`nc_sol_${itemId}`] = 'Solução obrigatória';
       if (!nc?.data_nova_verif) errors[`nc_data_${itemId}`] = 'Data obrigatória';
       if (!nc?.responsavel_id) errors[`nc_resp_${itemId}`] = 'Responsável obrigatório';
+      if (input.financialRequired) {
+        const financialError = validateNcFinancialDeclaration(nc?.financeiro);
+        if (financialError) errors[`nc_fin_${itemId}`] = financialError;
+      }
     }
   }
 

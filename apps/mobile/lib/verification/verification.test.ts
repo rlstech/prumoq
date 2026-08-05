@@ -26,6 +26,8 @@ function formState(): VerificationFormState {
     signaturePath: 'data:image/png;base64,signature',
     reinspFoto: 'blob:reinspection',
     generalPhotos: ['blob:general'],
+    registrarAvanco: false,
+    userTouchedItemIds: ['item1'],
   };
 }
 

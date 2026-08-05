@@ -15,6 +15,8 @@ export async function createEmpresa(data: {
   contato?: string;
   email?: string;
   telefone?: string;
+  controle_medicoes_habilitado?: boolean;
+  controle_financeiro_nc_habilitado?: boolean;
 }) {
   try {
     const context = await requireTenantRole(['admin']);
@@ -33,6 +35,8 @@ export async function createEmpresa(data: {
     if (data.contato) payload.contato = data.contato.trim();
     if (data.email) payload.email = data.email.trim();
     if (data.telefone) payload.telefone = data.telefone.trim();
+    payload.controle_medicoes_habilitado = data.controle_medicoes_habilitado ?? false;
+    payload.controle_financeiro_nc_habilitado = data.controle_financeiro_nc_habilitado ?? false;
 
     const { error } = await supabase.from('empresas').insert(payload as never);
     if (error) {
@@ -60,6 +64,8 @@ export async function updateEmpresa(id: string, data: {
   email?: string;
   telefone?: string;
   ativo?: boolean;
+  controle_medicoes_habilitado?: boolean;
+  controle_financeiro_nc_habilitado?: boolean;
 }) {
   try {
     const context = await requireTenantRole(['admin']);
@@ -76,6 +82,12 @@ export async function updateEmpresa(id: string, data: {
     if (data.email !== undefined) payload.email = data.email.trim() || null;
     if (data.telefone !== undefined) payload.telefone = data.telefone.trim() || null;
     if (data.ativo !== undefined) payload.ativo = data.ativo;
+    if (data.controle_medicoes_habilitado !== undefined) {
+      payload.controle_medicoes_habilitado = data.controle_medicoes_habilitado;
+    }
+    if (data.controle_financeiro_nc_habilitado !== undefined) {
+      payload.controle_financeiro_nc_habilitado = data.controle_financeiro_nc_habilitado;
+    }
 
     const { error } = await supabase.from('empresas').update(payload as never).eq('id', id).eq('cliente_id', context.clienteId);
     if (error) {

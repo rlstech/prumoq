@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   Clock3,
+  CircleDollarSign,
   FileQuestion,
   HardHat,
   History,
@@ -78,6 +79,21 @@ interface NcDetailRow {
   observacao_resolucao: string | null;
   created_at: string | null;
   updated_at: string | null;
+  financeiro_requerido: number;
+  situacao_financeira: string | null;
+  justificativa_sem_impacto: string | null;
+  responsavel_avaliacao_id: string | null;
+  prazo_avaliacao: string | null;
+  valor_estimado: number | null;
+  valor_confirmado: number | null;
+  responsavel_financeiro: string | null;
+  categoria_financeira: string | null;
+  observacao_financeira: string | null;
+  documento_financeiro_r2_key: string | null;
+  bloqueio_medicao: string | null;
+  quantidade_bloqueada: number | null;
+  percentual_bloqueado: number | null;
+  valor_bloqueado: number | null;
   item_titulo: string;
   item_metodo: string | null;
   item_tolerancia: string | null;
@@ -128,7 +144,13 @@ const NC_DETAIL_QUERY = `
          n.prioridade, n.status, n.numero_ocorrencia, n.nc_anterior_id,
          n.verificacao_reinsp_id, n.foto_reinspecao_url,
          n.resolvida_na_verif_id, n.resolvida_em, n.observacao_resolucao,
-         n.created_at, n.updated_at,
+         n.created_at, n.updated_at, n.financeiro_requerido,
+         n.situacao_financeira, n.justificativa_sem_impacto,
+         n.responsavel_avaliacao_id, n.prazo_avaliacao,
+         n.valor_estimado, n.valor_confirmado, n.responsavel_financeiro,
+         n.categoria_financeira, n.observacao_financeira,
+         n.documento_financeiro_r2_key, n.bloqueio_medicao,
+         n.quantidade_bloqueada, n.percentual_bloqueado, n.valor_bloqueado,
          vi.titulo AS item_titulo, vi.metodo_verif AS item_metodo,
          vi.tolerancia AS item_tolerancia, vi.resultado AS item_resultado,
          v.numero_verif, v.data_verif,
@@ -316,6 +338,22 @@ export default function NcDetailScreen() {
             />
           </View>
         </Section>
+
+        {nc.financeiro_requerido ? (
+          <Section eyebrow="IMPACTO" title="Impacto financeiro e medição" Icon={CircleDollarSign}>
+            <DetailBlock label="Situação financeira" value={financialStatusLabel(nc.situacao_financeira)} emphasized />
+            {nc.justificativa_sem_impacto ? <DetailBlock label="Justificativa" value={nc.justificativa_sem_impacto} /> : null}
+            {nc.prazo_avaliacao ? <DetailBlock label="Prazo da avaliação" value={formatDateOnly(nc.prazo_avaliacao)} /> : null}
+            {nc.valor_estimado !== null ? <DetailBlock label="Custo estimado" value={formatMoney(nc.valor_estimado)} /> : null}
+            {nc.valor_confirmado !== null ? <DetailBlock label="Custo confirmado" value={formatMoney(nc.valor_confirmado)} /> : null}
+            {nc.categoria_financeira ? <DetailBlock label="Categoria" value={financialCategoryLabel(nc.categoria_financeira)} /> : null}
+            {nc.responsavel_financeiro ? <DetailBlock label="Responsabilidade" value={financialResponsibleLabel(nc.responsavel_financeiro)} /> : null}
+            <DetailBlock label="Bloqueio de medição" value={measurementBlockLabel(nc)} />
+            {nc.valor_bloqueado !== null && nc.valor_bloqueado > 0 ? <DetailBlock label="Valor bloqueado" value={formatMoney(nc.valor_bloqueado)} /> : null}
+            {nc.observacao_financeira ? <DetailBlock label="Observação financeira" value={nc.observacao_financeira} /> : null}
+            {nc.documento_financeiro_r2_key ? <DetailBlock label="Documento de suporte" value={nc.documento_financeiro_r2_key} /> : null}
+          </Section>
+        ) : null}
 
         <Section eyebrow="CONTEXTO" title="Origem da ocorrência" Icon={ClipboardCheck}>
           <View style={styles.contextList}>
@@ -626,6 +664,51 @@ function RelatedNc({
       <ChevronRight size={18} color={Colors.textTertiary} />
     </Pressable>
   );
+}
+
+function formatMoney(value: number): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+}
+
+function financialStatusLabel(status: string | null): string {
+  return ({
+    sem_impacto: 'Sem impacto financeiro',
+    em_avaliacao: 'Em avaliação',
+    estimado: 'Impacto estimado',
+    confirmado: 'Impacto confirmado',
+  } as Record<string, string>)[status ?? ''] ?? 'Não informado';
+}
+
+function financialCategoryLabel(category: string): string {
+  return ({
+    mao_obra_retrabalho: 'Mão de obra de retrabalho',
+    perda_material: 'Perda de material',
+    equipamento_mobilizacao: 'Equipamento ou mobilização',
+    atraso: 'Atraso',
+    glosa_retencao: 'Glosa ou retenção',
+    desconto_empreiteiro: 'Desconto do empreiteiro',
+    outro: 'Outro',
+  } as Record<string, string>)[category] ?? category;
+}
+
+function financialResponsibleLabel(responsible: string): string {
+  return ({
+    construtora: 'Construtora',
+    empreiteiro: 'Empreiteiro',
+    fornecedor: 'Fornecedor',
+    projetista: 'Projetista',
+    em_analise: 'Em análise',
+  } as Record<string, string>)[responsible] ?? responsible;
+}
+
+function measurementBlockLabel(nc: NcDetailRow): string {
+  if (nc.bloqueio_medicao === 'total') return 'Bloqueio total';
+  if (nc.bloqueio_medicao === 'parcial') {
+    if (nc.quantidade_bloqueada !== null) return `Bloqueio parcial · ${nc.quantidade_bloqueada}`;
+    if (nc.percentual_bloqueado !== null) return `Bloqueio parcial · ${nc.percentual_bloqueado}%`;
+    return 'Bloqueio parcial';
+  }
+  return 'Não bloqueia';
 }
 
 function statusTone(status: string): BadgeTone {

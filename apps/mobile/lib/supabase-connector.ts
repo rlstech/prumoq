@@ -135,6 +135,14 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
   }
 
   private async upsertRow(table: string, data: Record<string, unknown>): Promise<void> {
+    if (table === 'avancos_aprovados_servico') {
+      const { error } = await supabase.from(table).insert(data as never);
+      // PowerSync may retry a PUT after the server committed but before the
+      // client received confirmation. The immutable UUID makes 23505 a safe,
+      // idempotent acknowledgement; the DB trigger rejects mismatched payloads.
+      if (error && error.code !== '23505') throw error;
+      return;
+    }
     const { error } = await supabase.from(table as never).upsert(data as never);
     if (error) throw error;
   }

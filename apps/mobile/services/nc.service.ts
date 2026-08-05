@@ -1,4 +1,6 @@
 import { db } from '../lib/powersync';
+import type { NcFinancialDeclaration } from '../lib/nc-finance';
+export { validateNcFinancialDeclaration } from '../lib/nc-finance';
 
 function uuid(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -23,7 +25,9 @@ export interface NcCreateParams {
   nc_anterior_id?: string | null;
   /** Padrão 1 para primeira ocorrência. >= 2 eleva prioridade para alta. */
   numero_ocorrencia?: number;
+  financeiro?: NcFinancialDeclaration | null;
 }
+
 
 export interface ReinspecaoAprovadaParams {
   clienteId: string;
@@ -64,8 +68,11 @@ export async function createNc(params: NcCreateParams): Promise<string> {
     `INSERT INTO nao_conformidades
        (id, cliente_id, verificacao_id, verificacao_item_id, descricao, solucao_proposta,
         responsavel_id, data_nova_verif, status, numero_ocorrencia,
-        nc_anterior_id, prioridade, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        nc_anterior_id, prioridade, situacao_financeira, justificativa_sem_impacto,
+        responsavel_avaliacao_id, prazo_avaliacao, valor_estimado, valor_confirmado,
+        responsavel_financeiro, categoria_financeira, bloqueio_medicao,
+        quantidade_bloqueada, percentual_bloqueado, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       ncId,
       params.clienteId,
@@ -79,6 +86,17 @@ export async function createNc(params: NcCreateParams): Promise<string> {
       numeroOcorrencia,
       params.nc_anterior_id ?? null,
       prioridade,
+      params.financeiro?.situacao ?? null,
+      params.financeiro?.justificativaSemImpacto ?? null,
+      params.financeiro?.responsavelAvaliacaoId ?? null,
+      params.financeiro?.prazoAvaliacao ?? null,
+      params.financeiro?.valorEstimado ?? null,
+      params.financeiro?.valorConfirmado ?? null,
+      params.financeiro?.responsavelFinanceiro ?? null,
+      params.financeiro?.categoria ?? null,
+      params.financeiro?.bloqueio ?? null,
+      params.financeiro?.quantidadeBloqueada ?? null,
+      params.financeiro?.percentualBloqueado ?? null,
       now,
     ],
   );

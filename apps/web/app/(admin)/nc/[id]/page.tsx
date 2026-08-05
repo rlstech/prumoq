@@ -23,6 +23,7 @@ import { signPrivateMedia } from '@/lib/media/signed-urls';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@prumoq/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import NcFinancialPanel from './NcFinancialPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +74,7 @@ interface WorkRecord {
   uf: string;
   eng_responsavel: string;
   crea_cau: string;
+  controle_financeiro_nc_efetivo: boolean;
 }
 
 interface UserRecord {
@@ -256,7 +258,7 @@ export default async function NcDetailPage({ params }: PageProps) {
 
   const { data: workData } = await supabase
     .from('obras')
-    .select('id, nome, municipio, uf, eng_responsavel, crea_cau')
+    .select('id, nome, municipio, uf, eng_responsavel, crea_cau, controle_financeiro_nc_efetivo')
     .eq('id', environment.obra_id)
     .maybeSingle();
   const work = workData as unknown as WorkRecord | null;
@@ -293,6 +295,12 @@ export default async function NcDetailPage({ params }: PageProps) {
     r2_thumb_key: photo.r2_thumb_key ? signedMedia.get(photo.r2_thumb_key) : undefined,
     caption: photo.nome_arquivo ?? 'Evidência da não conformidade',
   })).filter(photo => Boolean(photo.r2_key));
+  const [{ data: financialUsers }, { data: financialHistory }] = work.controle_financeiro_nc_efetivo
+    ? await Promise.all([
+      supabase.from('usuarios').select('id,nome').in('perfil', ['admin', 'gestor']).order('nome'),
+      supabase.from('nc_financeiro_historico').select('id,situacao,bloqueio,created_at,alterado_por').eq('nc_id', nc.id).order('created_at', { ascending: false }),
+    ])
+    : [{ data: [] }, { data: [] }];
   return (
     <>
       <Header
@@ -474,6 +482,29 @@ export default async function NcDetailPage({ params }: PageProps) {
                 <Detail label="Especialidade" value={responsible?.especialidade ?? 'Não informada'} compact />
                 <Detail label="Data prevista" value={formatDate(nc.data_nova_verif)} compact />
               </Panel>
+
+              {work.controle_financeiro_nc_efetivo ? (
+                <NcFinancialPanel
+                  ncId={nc.id}
+                  initial={{
+                    situacao: nc.situacao_financeira ?? undefined,
+                    bloqueio: nc.bloqueio_medicao ?? undefined,
+                    justificativaSemImpacto: nc.justificativa_sem_impacto,
+                    responsavelAvaliacaoId: nc.responsavel_avaliacao_id,
+                    prazoAvaliacao: nc.prazo_avaliacao,
+                    valorEstimado: nc.valor_estimado,
+                    valorConfirmado: nc.valor_confirmado,
+                    responsavelFinanceiro: nc.responsavel_financeiro,
+                    categoriaFinanceira: nc.categoria_financeira,
+                    quantidadeBloqueada: nc.quantidade_bloqueada,
+                    percentualBloqueado: nc.percentual_bloqueado,
+                    observacao: nc.observacao_financeira,
+                    documento: nc.documento_financeiro_r2_key,
+                  }}
+                  users={financialUsers ?? []}
+                  history={financialHistory ?? []}
+                />
+              ) : null}
 
               <section className="rounded-xl border border-brd-0 bg-bg-1 p-4">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.7px] text-txt-3">Auditoria</div>

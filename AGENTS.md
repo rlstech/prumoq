@@ -175,11 +175,15 @@ pnpm lint                 # lint (somente apps/web — mobile não tem lint scri
 # Executar schema no Supabase:
 # Colar supabase/migrations/001_initial_schema.sql no SQL Editor do Supabase Dashboard
 # Colar supabase/migrations/002_web_views_and_rpcs.sql também
-# Existem migrations adicionais 003-020 (obra_equipes, correções de RLS, ciclo de
-# vida de FVS, reinspeção de NC, RPC get_fvs_header) — aplicar todas em ordem.
+# Existem migrations adicionais 003-058 (obra_equipes, correções de RLS, ciclo de
+# vida de FVS, reinspeção de NC, RPC get_fvs_header, módulo de medições 038-058) —
+# aplicar todas em ordem.
 # Várias são correções de bugs em RLS/cálculo de progresso (ex.:
 # 007_fix_nc_join_inflates_progress.sql, 010_fix_verificacoes_rls_obra_access.sql) —
 # essa área é sensível, revisar com cautela extra ao alterá-la.
+# O módulo de medições (038+) usa triggers autoritativos em
+# avancos_aprovados_servico: validação com rebase do delta no saldo real (058),
+# imutabilidade de histórico (052) e status de etapa + auditoria via trigger (057).
 
 # Gerar tipos TypeScript após aplicar o schema:
 npx supabase gen types typescript --project-id <id> \

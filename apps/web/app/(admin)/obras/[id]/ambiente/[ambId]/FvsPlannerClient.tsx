@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { AlertTriangle, FileText } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
@@ -11,9 +12,10 @@ interface FvsPlannerClientProps {
   ambiente: any;
   initialFvsList: any[];
   fvsPadraoList: any[];
+  measurementEnabled: boolean;
 }
 
-export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoList }: FvsPlannerClientProps) {
+export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoList, measurementEnabled }: FvsPlannerClientProps) {
   const [selectedFvsId, setSelectedFvsId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -70,6 +72,14 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
                    </td>
                    <td className="py-3 px-5 text-right">
                      <div className="flex items-center justify-end gap-3">
+                       {measurementEnabled ? (
+                         <Link
+                           href={`/obras/${ambiente.obra_id}/ambiente/${ambiente.id}/fvs/${fvs.id}/medicao`}
+                           className="text-xs font-semibold text-ok hover:underline"
+                         >
+                           Medição
+                         </Link>
+                       ) : null}
                        <a
                          href={`/admin/relatorio/fvs/${fvs.id}/pdf`}
                          target="_blank"
