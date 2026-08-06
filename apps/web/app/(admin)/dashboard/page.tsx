@@ -16,6 +16,7 @@ export default async function DashboardPage() {
     { data: verifsRecentesData },
     { data: ncsUrgentesData },
     { data: measurementIndicatorsData },
+    { data: ncFinanceiroData },
   ] = await Promise.all([
     supabase.from('obras' as any).select('*', { count: 'exact', head: true }).neq('status', 'concluida').eq('ativo', true),
     supabase.from('ambientes' as any).select('*', { count: 'exact', head: true }).eq('ativo', true),
@@ -25,6 +26,7 @@ export default async function DashboardPage() {
     (supabase.rpc as any)('get_verificacoes_recentes'),
     (supabase.rpc as any)('get_ncs_urgentes'),
     supabase.from('vw_indicadores_medicoes').select('*'),
+    supabase.from('nao_conformidades' as any).select('situacao_financeira, valor_estimado, valor_confirmado').in('situacao_financeira', ['em_avaliacao', 'estimado', 'confirmado']),
   ]);
 
   const obrasProgresso = (obrasProgressoData as any[]) || [];
@@ -35,8 +37,14 @@ export default async function DashboardPage() {
     available: summary.available + Number(item.quantidade_disponivel ?? 0),
     value: summary.value + Number(item.valor_disponivel ?? 0),
     blocked: summary.blocked + Number(item.quantidade_bloqueada ?? 0),
-    pendingCosts: summary.pendingCosts + Number(item.custo_estimado_retrabalho ?? 0),
-  }), { available: 0, value: 0, blocked: 0, pendingCosts: 0 });
+  }), { available: 0, value: 0, blocked: 0 });
+
+  // Custo com retrabalho — todas as situações de impacto financeiro
+  // (confirmado usa valor_confirmado com fallback; em_avaliacao/estimado usam valor_estimado)
+  const reworkCost = ((ncFinanceiroData as any[]) ?? []).reduce(
+    (total, nc) => total + Number(nc.valor_confirmado ?? nc.valor_estimado ?? 0),
+    0,
+  );
 
   return (
     <div className="prumo-page">
@@ -50,14 +58,14 @@ export default async function DashboardPage() {
           <Link href="/obras" className="prumo-primary-button">Abrir portfólio <span aria-hidden="true">→</span></Link>
         </div>
 
-        {measurementIndicators.length ? (
+        {(measurementIndicators.length || reworkCost > 0) && (
           <Link href="/medicoes" className="grid gap-3 rounded-xl border border-brd-0 bg-bg-1 p-4 transition-colors hover:bg-bg-0 sm:grid-cols-4">
             <div><div className="text-[10px] font-semibold uppercase text-txt-3">Pronto para medir</div><div className="mt-1 text-lg font-semibold text-ok">{measurementSummary.available.toLocaleString('pt-BR')}</div></div>
             <div><div className="text-[10px] font-semibold uppercase text-txt-3">Valor disponível</div><div className="mt-1 text-lg font-semibold text-txt">{measurementSummary.value.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
             <div><div className="text-[10px] font-semibold uppercase text-txt-3">Bloqueado por NC</div><div className="mt-1 text-lg font-semibold text-nok">{measurementSummary.blocked.toLocaleString('pt-BR')}</div></div>
-            <div><div className="text-[10px] font-semibold uppercase text-txt-3">Retrabalho estimado</div><div className="mt-1 text-lg font-semibold text-warn">{measurementSummary.pendingCosts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
+            <div><div className="text-[10px] font-semibold uppercase text-txt-3">Custo com retrabalho</div><div className="mt-1 text-lg font-semibold text-warn">{reworkCost.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
           </Link>
-        ) : null}
+        )}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[1.55fr_1fr_1fr_1fr]">
           <div className="prumo-datum relative min-h-[166px] overflow-hidden rounded-xl bg-sidebar p-6 text-white shadow-card md:col-span-2 xl:col-span-1">

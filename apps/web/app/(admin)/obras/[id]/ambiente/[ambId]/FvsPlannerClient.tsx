@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, FileText } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { AlertTriangle, FileText, Trash2 } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/components/ui/Toast';
 import ChecklistEditorModal from './ChecklistEditorModal';
 import AddFvsModal from './AddFvsModal';
+import { deleteFvsPlanejada } from '../../actions';
 
 interface FvsPlannerClientProps {
   ambiente: any;
@@ -18,6 +22,10 @@ interface FvsPlannerClientProps {
 export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoList, measurementEnabled }: FvsPlannerClientProps) {
   const [selectedFvsId, setSelectedFvsId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [fvsToDelete, setFvsToDelete] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+  const router = useRouter();
 
   const concluidasCount = initialFvsList.filter(f =>
     f.status === 'conforme' || f.status === 'concluida' || f.status === 'concluida_ressalva'
@@ -25,6 +33,23 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
   const progress = initialFvsList.length > 0 ? Math.round((concluidasCount / initialFvsList.length) * 100) : 0;
 
   const alreadyLinkedIds = initialFvsList.map(f => f.fvs_padrao_id);
+
+  const fvsDeleteTarget = initialFvsList.find(f => f.id === fvsToDelete) ?? null;
+
+  function handleDeleteFvs() {
+    if (!fvsToDelete) return;
+    startTransition(async () => {
+      const result = await deleteFvsPlanejada(ambiente.obra_id, ambiente.id, fvsToDelete);
+      if (result.success) {
+        toast('FVS excluída com sucesso.', 'success');
+        setFvsToDelete(null);
+        router.refresh();
+      } else {
+        toast(result.error ?? 'Erro ao excluir FVS.', 'error');
+        setFvsToDelete(null);
+      }
+    });
+  }
 
   return (
     <div className="flex flex-col lg:flex-row h-full gap-6">
@@ -80,21 +105,30 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
                            Medição
                          </Link>
                        ) : null}
-                       <a
-                         href={`/admin/relatorio/fvs/${fvs.id}/pdf`}
-                         target="_blank"
-                         rel="noreferrer"
-                         className="p-1 text-txt-3 hover:text-brand rounded transition-colors"
-                         title="Exportar PDF"
-                       >
-                         <FileText size={14} />
-                       </a>
-                       <button
-                         onClick={() => setSelectedFvsId(fvs.id)}
-                         className="text-xs font-semibold text-[var(--br)] hover:text-[var(--brd)]"
-                       >
-                         Ver Checklist
-                       </button>
+                        <a
+                          href={`/admin/relatorio/fvs/${fvs.id}/pdf`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1 text-txt-3 hover:text-brand rounded transition-colors"
+                          title="Exportar PDF"
+                        >
+                          <FileText size={14} />
+                        </a>
+                        {fvs.total_verificacoes === 0 ? (
+                          <button
+                            onClick={() => setFvsToDelete(fvs.id)}
+                            className="p-1 text-txt-3 hover:text-nok rounded transition-colors"
+                            title="Excluir FVS"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        ) : null}
+                        <button
+                          onClick={() => setSelectedFvsId(fvs.id)}
+                          className="text-xs font-semibold text-[var(--br)] hover:text-[var(--brd)]"
+                        >
+                          Ver Checklist
+                        </button>
                      </div>
                    </td>
                  </tr>
@@ -177,6 +211,17 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
           alreadyLinkedIds={alreadyLinkedIds}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={!!fvsToDelete}
+        onClose={() => setFvsToDelete(null)}
+        onConfirm={handleDeleteFvs}
+        title="Excluir FVS"
+        message={`Tem certeza que deseja excluir "${fvsDeleteTarget?.subservico || 'esta FVS'}"? Esta ação é permanente e não pode ser desfeita.`}
+        confirmText="Sim, Excluir"
+        variant="danger"
+        isLoading={isPending}
+      />
     </div>
   );
 }

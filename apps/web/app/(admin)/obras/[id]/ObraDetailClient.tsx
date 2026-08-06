@@ -1,22 +1,44 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { HardHat, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
+import { HardHat, Pencil, Ruler, Trash2, AlertTriangle } from 'lucide-react';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import AmbienteModal from './AmbienteModal';
 import ObraEquipeModal from './ObraEquipeModal';
-import { deleteObra, removeEquipeFromObra } from './actions';
+import { deleteObra, deleteAmbiente, removeEquipeFromObra } from './actions';
 import ObraModal from '../ObraModal';
 import ObraFeatureControls from './ObraFeatureControls';
+
+export interface MeasurementServiceSummary {
+  fvsId: string;
+  ambienteId: string;
+  subservico: string;
+  ambienteNome: string;
+  metodo: string;
+  unidade: string;
+  quantidadeTotal: number;
+  precoUnitario: number | null;
+  empreiteiro: string | null;
+  dataInicio: string | null;
+  escopo: number;
+  aprovado: number;
+  medido: number;
+  bloqueado: number;
+  disponivel: number;
+  valorDisponivel: number;
+}
 
 interface ObraDetailClientProps {
   obraId: string;
   obra: any;
   empresas: { id: string; nome: string }[];
   initialAmbientes: any[];
+  ambientesWithVerificacoes: Record<string, boolean>;
+  medicoesServices: MeasurementServiceSummary[];
   fvsPadraoList: any[];
   obraEquipes: { id: string; nome: string; tipo: string; especialidade?: string }[];
   availableEquipes: { id: string; nome: string; tipo: string; especialidade?: string }[];
@@ -30,6 +52,8 @@ export default function ObraDetailClient({
   obra,
   empresas,
   initialAmbientes,
+  ambientesWithVerificacoes,
+  medicoesServices,
   fvsPadraoList,
   obraEquipes,
   availableEquipes,
@@ -48,6 +72,7 @@ export default function ObraDetailClient({
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [confirmAmbienteDelete, setConfirmAmbienteDelete] = useState<{ id: string; name: string } | null>(null);
 
   const filtered = initialAmbientes.filter(a => {
     if (filterType === 'Com NC' && !(a.ncs_abertas > 0)) return false;
@@ -90,11 +115,36 @@ export default function ObraDetailClient({
     });
   }
 
+  function handleDeleteAmbiente() {
+    if (!confirmAmbienteDelete) return;
+    startTransition(async () => {
+      const result = await deleteAmbiente(obraId, confirmAmbienteDelete.id);
+      if (result.success) {
+        toast('Ambiente excluído com sucesso.', 'success');
+        setConfirmAmbienteDelete(null);
+        router.refresh();
+      } else {
+        toast(result.error ?? 'Erro ao excluir ambiente.', 'error');
+        setConfirmAmbienteDelete(null);
+      }
+    });
+  }
+
   const tabs = [
     { id: 'ambientes', label: 'Ambientes' },
     { id: 'equipe',    label: 'Equipe' },
-    { id: 'docs',      label: 'Documentos' },
+    { id: 'medicoes',  label: 'Medições' },
   ];
+
+  const medicoesEnabled = Boolean(obra.controle_medicoes_efetivo);
+  const metodoLabels: Record<string, string> = {
+    quantidade: 'Quantidade',
+    unidade_concluida: 'Unidade concluída',
+    etapas_ponderadas: 'Etapas ponderadas',
+  };
+  const fmt = (v: number | null | undefined, digits = 2) => Number(v ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: digits });
+  const money = (v: number | null | undefined) => Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const fmtDate = (d: string | null | undefined) => d ? d.slice(0, 10).split('-').reverse().join('/') : '';
 
   const editInitialData = obra ? {
     id:               obra.id,
@@ -136,6 +186,11 @@ export default function ObraDetailClient({
             {tab.id === 'equipe' && obraEquipes.length > 0 && (
               <span className="ml-1.5 text-[10px] bg-pg-bg text-pg font-semibold px-1.5 py-0.5 rounded-full">
                 {obraEquipes.length}
+              </span>
+            )}
+            {tab.id === 'medicoes' && medicoesServices.length > 0 && (
+              <span className="ml-1.5 text-[10px] bg-pg-bg text-pg font-semibold px-1.5 py-0.5 rounded-full">
+                {medicoesServices.length}
               </span>
             )}
           </div>
@@ -192,11 +247,25 @@ export default function ObraDetailClient({
                 >
                   <div className="flex justify-between items-start">
                     <h4 className="text-[13px] font-semibold text-txt">{amb.nome}</h4>
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                      hasNC ? 'bg-nok-bg text-nok' : percent >= 80 ? 'bg-ok-bg text-ok' : percent > 0 ? 'bg-pg-bg text-pg' : 'bg-na-bg text-na'
-                    }`}>
-                      {hasNC ? 'NC' : `${amb.fvs_concluidas}/${amb.total_fvs}`}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                        hasNC ? 'bg-nok-bg text-nok' : percent >= 80 ? 'bg-ok-bg text-ok' : percent > 0 ? 'bg-pg-bg text-pg' : 'bg-na-bg text-na'
+                      }`}>
+                        {hasNC ? 'NC' : `${amb.fvs_concluidas}/${amb.total_fvs}`}
+                      </span>
+                      {!ambientesWithVerificacoes[amb.id] && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmAmbienteDelete({ id: amb.id, name: amb.nome });
+                          }}
+                          title="Excluir ambiente"
+                          className="p-1 text-txt-3 hover:text-nok hover:bg-nok-bg rounded-lg transition-colors"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="text-xs text-txt-2 mt-1">{amb.tipo} · {amb.localizacao}</p>
                   <div className="mt-2.5">
@@ -291,10 +360,85 @@ export default function ObraDetailClient({
         </div>
       )}
 
-      {/* Tab: Documentos */}
-      {activeTab === 'docs' && (
-        <div className="py-10 text-center text-sm text-txt-3">
-          Funcionalidade de documentos disponível na versão completa.
+      {/* Tab: Medições */}
+      {activeTab === 'medicoes' && (
+        <div className="bg-bg-1 border border-brd-0 rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-brd-0 flex items-center justify-between">
+            <h3 className="text-[14px] font-semibold text-txt">Serviços com medição configurada</h3>
+            {medicoesServices.length > 0 && (
+              <span className="text-xs text-txt-2">{medicoesServices.length} serviço(s)</span>
+            )}
+          </div>
+
+          {!medicoesEnabled ? (
+            <div className="py-10 text-center text-sm text-txt-3 flex flex-col items-center gap-2">
+              <Ruler size={24} className="opacity-40" />
+              <span>O controle de medições está desativado nesta obra.</span>
+              <span className="text-xs">Ative-o nos recursos opcionais da obra (seção acima).</span>
+            </div>
+          ) : medicoesServices.length === 0 ? (
+            <div className="py-10 text-center text-sm text-txt-3 flex flex-col items-center gap-2">
+              <Ruler size={24} className="opacity-40" />
+              <span>Nenhum serviço com medição configurada.</span>
+              <span className="text-xs">
+                Abra uma FVS em um ambiente e configure a medição em <b>Medição</b>.
+              </span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-brd-0 text-[11px] uppercase tracking-wider text-txt-3">
+                    <th className="py-3 px-5 font-semibold">Serviço</th>
+                    <th className="py-3 px-5 font-semibold">Método</th>
+                    <th className="py-3 px-5 font-semibold text-right">Previsto</th>
+                    <th className="py-3 px-5 font-semibold text-right">Aprovado</th>
+                    <th className="py-3 px-5 font-semibold text-right">Disponível</th>
+                    <th className="py-3 px-5 font-semibold text-right">Valor disponível</th>
+                    <th className="py-3 px-5 font-semibold">Empreiteiro</th>
+                    <th className="py-3 px-5 font-semibold text-right">Ação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {medicoesServices.map(svc => (
+                    <tr key={svc.fvsId} className="border-b border-brd-0 last:border-0 hover:bg-bg-2">
+                      <td className="py-3 px-5">
+                        <div className="font-medium text-[13px] text-txt">{svc.subservico}</div>
+                        <div className="text-xs text-txt-2">{svc.ambienteNome}</div>
+                      </td>
+                      <td className="py-3 px-5">
+                        <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                          svc.metodo === 'quantidade' ? 'bg-pg-bg text-pg'
+                          : svc.metodo === 'unidade_concluida' ? 'bg-ok-bg text-ok'
+                          : 'bg-warn-bg text-warn'
+                        }`}>
+                          {metodoLabels[svc.metodo] ?? svc.metodo}
+                        </span>
+                      </td>
+                      <td className="py-3 px-5 text-right text-[13px] text-txt">{fmt(svc.escopo || svc.quantidadeTotal)} {svc.unidade}</td>
+                      <td className="py-3 px-5 text-right text-[13px] text-txt">{fmt(svc.aprovado)}</td>
+                      <td className="py-3 px-5 text-right text-[13px] text-ok font-medium">{fmt(svc.disponivel)}</td>
+                      <td className="py-3 px-5 text-right text-[13px] text-txt">{money(svc.valorDisponivel)}</td>
+                      <td className="py-3 px-5">
+                        <div className="text-[13px] text-txt">{svc.empreiteiro ?? '—'}</div>
+                        {svc.dataInicio && (
+                          <div className="text-xs text-txt-3">desde {fmtDate(svc.dataInicio)}</div>
+                        )}
+                      </td>
+                      <td className="py-3 px-5 text-right">
+                        <Link
+                          href={`/obras/${obraId}/ambiente/${svc.ambienteId}/fvs/${svc.fvsId}/medicao`}
+                          className="text-xs font-semibold text-[var(--br)] hover:underline"
+                        >
+                          Abrir
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -365,6 +509,17 @@ export default function ObraDetailClient({
         onConfirm={handleDeleteObra}
         title="Excluir Obra"
         message={`Tem certeza que deseja excluir "${confirmDelete?.name}"? Esta ação é permanente e não pode ser desfeita.`}
+        confirmText="Sim, Excluir"
+        variant="danger"
+        isLoading={isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmAmbienteDelete}
+        onClose={() => setConfirmAmbienteDelete(null)}
+        onConfirm={handleDeleteAmbiente}
+        title="Excluir Ambiente"
+        message={`Tem certeza que deseja excluir o ambiente "${confirmAmbienteDelete?.name}"? As FVS vinculadas sem verificações também serão excluídas. Esta ação é permanente.`}
         confirmText="Sim, Excluir"
         variant="danger"
         isLoading={isPending}

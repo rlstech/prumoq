@@ -23,8 +23,17 @@ export async function loadMeasurementOptions(obraId:string,equipeId:string){
   ]);
   const advanceIds=(advances??[]).map(item=>item.id); const {data:used}=advanceIds.length?await supabase.from('medicao_item_liberacoes').select('avanco_id,quantidade_utilizada').in('avanco_id',advanceIds).eq('ativa',true):{data:[]};
   const usedByAdvance=new Map<string,number>();(used??[]).forEach(item=>usedByAdvance.set(item.avanco_id,(usedByAdvance.get(item.avanco_id)??0)+Number(item.quantidade_utilizada)));
+  // Saldo disponível por vínculo (já desconta aprovado medido e bloqueios de NC
+  // por valor — ex.: medição de R$ 800 com R$ 200 bloqueados libera R$ 600).
+  const availableByVinculo=new Map<string,number>();
+  (balances??[]).forEach(row=>{if(row.vinculacao_id)availableByVinculo.set(row.vinculacao_id,Number(row.disponivel??0));});
   const releases=(advances??[]).flatMap(item=>{
-   const available=Number(item.aprovado_atual)-Number(item.aprovado_anterior)-(usedByAdvance.get(item.id)??0);if(available<=0)return[];
+   const remaining=availableByVinculo.get(item.vinculacao_id)??0;
+   if(remaining<=0)return[];
+   const rawAvailable=Number(item.aprovado_atual)-Number(item.aprovado_anterior)-(usedByAdvance.get(item.id)??0);
+   const available=Math.min(rawAvailable,remaining);
+   availableByVinculo.set(item.vinculacao_id,remaining-available);
+   if(available<=0)return[];
    const link=(links??[]).find(value=>value.id===item.vinculacao_id);const planned=(fvs??[]).find(value=>value.id===link?.fvs_planejada_id);const config=(configs??[]).find(value=>value.fvs_planejada_id===link?.fvs_planejada_id);const stage=(stages??[]).find(value=>value.id===link?.etapa_id);return[{id:item.id,vinculacaoId:item.vinculacao_id,verificacaoId:item.verificacao_id,fvsId:link?.fvs_planejada_id??'',service:planned?.subservico??'Serviço',stage:stage?.nome??null,previous:Number(item.aprovado_anterior),current:Number(item.aprovado_atual),quantity:available,unit:config?.unidade??item.unidade,unitPrice:config?.preco_unitario==null?null:Number(config.preco_unitario)}];
   });
   const {data:verifications}=fvsIds.length?await supabase.from('verificacoes').select('id,fvs_planejada_id').in('fvs_planejada_id',fvsIds):{data:[]};

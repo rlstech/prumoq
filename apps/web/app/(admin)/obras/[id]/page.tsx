@@ -33,13 +33,91 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
   const empresasList: any[] = (empresas as any[] | null) ?? [];
   const empresaNome = empresasList.find((e: any) => e.id === typedObra.empresa_id)?.nome ?? '';
 
-  // 1. IDs das equipes já vinculadas a esta obra
-  const { data: obraEquipesLinks } = await supabase
-    .from('obra_equipes' as any)
-    .select('equipe_id')
-    .eq('obra_id', id);
+  const [obraEquipesLinks] = await Promise.all([
+    supabase.from('obra_equipes' as any).select('equipe_id').eq('obra_id', id),
+  ]);
 
-  const linkedIds: string[] = ((obraEquipesLinks as any[]) ?? []).map((r: any) => r.equipe_id).filter(Boolean);
+  const linkedIds: string[] = ((obraEquipesLinks?.data as any[]) ?? []).map((r: any) => r.equipe_id).filter(Boolean);
+
+  // Ambientes com verificação registrada (não podem ser excluídos)
+  const { data: fvsVerifData } = (await supabase
+    .from('fvs_planejadas' as any)
+    .select('ambiente_id, verificacoes!verificacoes_fvs_planejada_id_fkey(count)')) as { data: any[] | null };
+  const ambientesWithVerificacoes: Record<string, boolean> = {};
+  for (const f of (fvsVerifData ?? [])) {
+    if ((f.verificacoes?.[0]?.count ?? 0) > 0) ambientesWithVerificacoes[f.ambiente_id] = true;
+  }
+
+  // Serviços com medição configurada (aba Medições)
+  const ambientesList: any[] = (ambientes as any[]) ?? [];
+  let medicoesServices: any[] = [];
+  if (typedObra.controle_medicoes_efetivo && ambientesList.length) {
+    const ambIds = ambientesList.map((a: any) => a.id);
+    const { data: fvsOfObra } = await supabase
+      .from('fvs_planejadas' as any)
+      .select('id, ambiente_id')
+      .in('ambiente_id', ambIds);
+    const fvsIds: string[] = ((fvsOfObra as any[]) ?? []).map((f: any) => f.id);
+
+    if (fvsIds.length) {
+      const [{ data: configsRaw }, { data: balancesRaw }, { data: activeLinksRaw }] = await Promise.all([
+        supabase.from('fvs_medicao_configuracoes' as any)
+          .select('fvs_planejada_id, metodo, unidade, quantidade_total, preco_unitario, fvs_planejadas!fvs_medicao_configuracoes_fvs_planejada_id_fkey(id, subservico, ambiente_id, ambientes!fvs_planejadas_ambiente_id_fkey(nome))')
+          .in('fvs_planejada_id', fvsIds),
+        supabase.from('vw_saldos_medicao_servico' as any)
+          .select('fvs_planejada_id, escopo_atribuido, aprovado, medido, bloqueado, disponivel, valor_disponivel')
+          .in('fvs_planejada_id', fvsIds),
+        supabase.from('vinculos_execucao_servico' as any)
+          .select('fvs_planejada_id, equipe_id, data_inicio')
+          .eq('status', 'ativo')
+          .in('fvs_planejada_id', fvsIds),
+      ]);
+
+      const configsList: any[] = (configsRaw as any[]) ?? [];
+      const balancesList: any[] = (balancesRaw as any[]) ?? [];
+      const activeLinksList: any[] = (activeLinksRaw as any[]) ?? [];
+
+      const teamIds = Array.from(new Set(activeLinksList.map((l: any) => l.equipe_id).filter(Boolean)));
+      const { data: teamsRaw } = teamIds.length
+        ? await supabase.from('equipes' as any).select('id, nome').in('id', teamIds)
+        : { data: [] };
+      const teamNames = new Map(((teamsRaw as any[]) ?? []).map((t: any) => [t.id, t.nome]));
+      const ambienteNames = new Map(ambientesList.map((a: any) => [a.id, a.nome]));
+
+      medicoesServices = configsList.map((c: any) => {
+        const fvs = c.fvs_planejadas;
+        const links = activeLinksList.filter((l: any) => l.fvs_planejada_id === fvs?.id);
+        const sums = balancesList
+          .filter((b: any) => b.fvs_planejada_id === fvs?.id)
+          .reduce((acc: any, b: any) => ({
+            escopo: acc.escopo + Number(b.escopo_atribuido ?? 0),
+            aprovado: acc.aprovado + Number(b.aprovado ?? 0),
+            medido: acc.medido + Number(b.medido ?? 0),
+            bloqueado: acc.bloqueado + Number(b.bloqueado ?? 0),
+            disponivel: acc.disponivel + Number(b.disponivel ?? 0),
+            valorDisponivel: acc.valorDisponivel + Number(b.valor_disponivel ?? 0),
+          }), { escopo: 0, aprovado: 0, medido: 0, bloqueado: 0, disponivel: 0, valorDisponivel: 0 });
+
+        return {
+          fvsId: fvs?.id ?? c.fvs_planejada_id,
+          ambienteId: fvs?.ambiente_id ?? '',
+          subservico: fvs?.subservico ?? 'Serviço',
+          ambienteNome: fvs?.ambientes?.nome ?? ambienteNames.get(fvs?.ambiente_id) ?? '',
+          metodo: c.metodo,
+          unidade: c.unidade,
+          quantidadeTotal: Number(c.quantidade_total ?? 0),
+          precoUnitario: c.preco_unitario == null ? null : Number(c.preco_unitario),
+          empreiteiro: links.map((l: any) => teamNames.get(l.equipe_id)).filter(Boolean).join(', ') || null,
+          dataInicio: links.length ? links.map((l: any) => l.data_inicio).sort()[0] : null,
+          ...sums,
+        };
+      });
+
+      medicoesServices.sort((a: any, b: any) =>
+        (a.ambienteNome ?? '').localeCompare(b.ambienteNome ?? '') || (a.subservico ?? '').localeCompare(b.subservico ?? '')
+      );
+    }
+  }
 
   // 2. Todas as equipes ativas (sem filtro de empresa — igual à tela de Equipes)
   const { data: allEquipes } = await supabase
@@ -108,6 +186,8 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
           obra={typedObra}
           empresas={(empresas as any[] | null) || []}
           initialAmbientes={ambientes || []}
+          ambientesWithVerificacoes={ambientesWithVerificacoes}
+          medicoesServices={medicoesServices}
           fvsPadraoList={availableFvs}
           obraEquipes={obraEquipes}
           availableEquipes={availableEquipes}

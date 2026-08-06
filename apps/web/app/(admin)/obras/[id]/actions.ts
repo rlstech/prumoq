@@ -203,3 +203,92 @@ export async function addFvsToAmbiente(
     return { success: false, error: error instanceof Error ? error.message : 'Falha ao associar FVS.' };
   }
 }
+
+export async function deleteFvsPlanejada(obraId: string, ambId: string, fvsId: string) {
+  try {
+    await requireObra(obraId);
+    const supabase = await createClient();
+
+    const { data: fvs } = (await supabase
+      .from('fvs_planejadas' as any)
+      .select('id, ambientes!fvs_planejadas_ambiente_id_fkey(obra_id)')
+      .eq('id', fvsId)
+      .maybeSingle()) as { data: any };
+    if (!fvs || fvs.ambientes?.obra_id !== obraId) {
+      return { success: false, error: 'FVS fora do escopo desta obra.' };
+    }
+
+    const { count } = await supabase
+      .from('verificacoes' as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('fvs_planejada_id', fvsId);
+    if ((count ?? 0) > 0) {
+      return {
+        success: false,
+        error: `FVS não pode ser excluída: possui ${count} ${count === 1 ? 'verificação' : 'verificações'}.`,
+      };
+    }
+
+    const { error } = await supabase.from('fvs_planejadas').delete()
+      .eq('id', fvsId)
+      .eq('ambiente_id', ambId);
+    if (error) throw error;
+
+    revalidatePath(`/obras/${obraId}/ambiente/${ambId}`);
+    revalidatePath(`/obras/${obraId}`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Falha ao excluir FVS.' };
+  }
+}
+
+export async function deleteAmbiente(obraId: string, ambId: string) {
+  try {
+    await requireObra(obraId);
+    const supabase = await createClient();
+
+    const { data: ambiente } = await supabase
+      .from('ambientes' as any)
+      .select('id')
+      .eq('id', ambId)
+      .eq('obra_id', obraId)
+      .maybeSingle();
+    if (!ambiente) return { success: false, error: 'Ambiente fora do escopo desta obra.' };
+
+    const { data: fvsList } = await supabase
+      .from('fvs_planejadas' as any)
+      .select('id')
+      .eq('ambiente_id', ambId);
+    const fvsIds: string[] = ((fvsList as any[]) ?? []).map((r: any) => r.id);
+
+    let verifCount = 0;
+    if (fvsIds.length) {
+      const { count } = await supabase
+        .from('verificacoes' as any)
+        .select('id', { count: 'exact', head: true })
+        .in('fvs_planejada_id', fvsIds);
+      verifCount = count ?? 0;
+    }
+    if (verifCount > 0) {
+      return {
+        success: false,
+        error: `Ambiente não pode ser excluído: existe(m) ${verifCount} verificação(ões) registrada(s) nas FVS deste ambiente.`,
+      };
+    }
+
+    const { data: deleted, error } = await supabase
+      .from('ambientes')
+      .delete()
+      .eq('id', ambId)
+      .eq('obra_id', obraId)
+      .select('id');
+    if (error) throw error;
+    if (!deleted?.length) return { success: false, error: 'Ambiente não encontrado ou já excluído.' };
+
+    revalidatePath(`/obras/${obraId}`);
+    revalidatePath(`/obras/${obraId}/ambiente/${ambId}`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Falha ao excluir ambiente.' };
+  }
+}

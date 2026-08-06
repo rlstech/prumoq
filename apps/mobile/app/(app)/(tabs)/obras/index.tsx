@@ -1,30 +1,27 @@
 import { useQuery } from '@powersync/react-native';
-import {
-  AlertTriangle,
-  Building2,
-  ChevronRight,
-  MapPin,
-  Search,
-} from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { Building2, ChevronRight, Search, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  FlatList,
+  Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-  useWindowDimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { AppHeader } from '../../../../components/AppHeader';
 import {
   Badge,
   type BadgeTone,
-  DatumCard,
   EmptyState,
-  MetricBlock,
-  Progress,
+  ErrorBanner,
+  ListSurface,
+  OperationalRow,
+  SegmentedControl,
+  Skeleton,
+  type DatumTone,
 } from '../../../../components/ui';
 import {
   Breakpoints,
@@ -82,6 +79,14 @@ const OBRAS_QUERY = `
   ORDER BY o.nome
 `;
 
+type ObraTab = 'em_andamento' | 'concluidas' | 'todas';
+
+const TAB_OPTIONS = [
+  { value: 'em_andamento' as const, label: 'Em andamento' },
+  { value: 'concluidas' as const, label: 'Concluídas' },
+  { value: 'todas' as const, label: 'Todas' },
+];
+
 const OBRA_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
   nao_iniciada: { label: 'Não iniciada', tone: 'neutral' },
   em_andamento: { label: 'Em andamento', tone: 'info' },
@@ -89,10 +94,24 @@ const OBRA_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
   concluida: { label: 'Concluída', tone: 'success' },
 };
 
+const GROUP_ORDER: { status: string; title: string }[] = [
+  { status: 'em_andamento', title: 'Em andamento' },
+  { status: 'paralisada', title: 'Paralisada' },
+  { status: 'nao_iniciada', title: 'Não iniciada' },
+  { status: 'concluida', title: 'Concluída' },
+];
+
+function datumToneFor(item: ObraRow): DatumTone {
+  if (item.ncs_abertas > 0) return 'danger';
+  if (item.status === 'concluida') return 'success';
+  if (item.status === 'paralisada') return 'warning';
+  if (item.status === 'em_andamento') return 'info';
+  return 'neutral';
+}
+
 export default function ObrasScreen() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const columns = width >= Breakpoints.tablet ? 2 : 1;
+  const [activeTab, setActiveTab] = useState<ObraTab>('em_andamento');
   const [search, setSearch] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [perfil, setPerfil] = useState<string | null>(null);
@@ -110,19 +129,15 @@ export default function ObrasScreen() {
     });
   }, []);
 
-  const { data: obras } = useQuery<ObraRow>(
-    userId && perfil ? OBRAS_QUERY : 'SELECT 1 WHERE 0',
-    userId && perfil ? [perfil, userId] : []
+  const ready = Boolean(userId && perfil);
+  const {
+    data: obras,
+    isLoading,
+    error,
+  } = useQuery<ObraRow>(
+    ready ? OBRAS_QUERY : 'SELECT 1 WHERE 0',
+    ready ? [perfil, userId] : []
   );
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return obras;
-    const query = search.toLowerCase();
-    return obras.filter(obra =>
-      obra.nome.toLowerCase().includes(query)
-      || obra.municipio?.toLowerCase().includes(query)
-    );
-  }, [obras, search]);
 
   const portfolio = useMemo(() => {
     const totalFvs = obras.reduce((total, obra) => total + (obra.total_fvs ?? 0), 0);
@@ -132,157 +147,304 @@ export default function ObrasScreen() {
     return { totalFvs, completedFvs, openNc, progress };
   }, [obras]);
 
+  const activeCount = useMemo(
+    () =>
+      obras.filter(obra => obra.status === 'em_andamento' || obra.status === 'paralisada').length,
+    [obras]
+  );
+  const doneCount = useMemo(
+    () => obras.filter(obra => obra.status === 'concluida').length,
+    [obras]
+  );
+
+  const filtered = useMemo(() => {
+    let list = obras;
+    if (search.trim()) {
+      const query = search.toLowerCase();
+      list = list.filter(
+        obra =>
+          obra.nome.toLowerCase().includes(query) ||
+          obra.municipio?.toLowerCase().includes(query)
+      );
+    }
+    if (activeTab === 'em_andamento') {
+      list = list.filter(obra => obra.status === 'em_andamento' || obra.status === 'paralisada');
+    } else if (activeTab === 'concluidas') {
+      list = list.filter(obra => obra.status === 'concluida');
+    }
+    return list;
+  }, [obras, search, activeTab]);
+
+  const groups = useMemo(
+    () =>
+      GROUP_ORDER.map(group => ({
+        ...group,
+        items: filtered.filter(obra => obra.status === group.status),
+      })).filter(group => group.items.length > 0),
+    [filtered]
+  );
+
+  const hasRefinements = Boolean(search.trim());
+
+  function clearAllFilters() {
+    setSearch('');
+  }
+
+  const emptyTitle = hasRefinements
+    ? 'Nenhuma obra corresponde aos filtros'
+    : activeTab === 'em_andamento'
+      ? 'Nenhuma obra em andamento'
+      : activeTab === 'concluidas'
+        ? 'Nenhuma obra concluída'
+        : 'Nenhuma obra encontrada';
+
   return (
     <SafeAreaView style={styles.safe}>
       <AppHeader
         title="Obras"
-        subtitle={`${obras.length} ativa${obras.length !== 1 ? 's' : ''} no seu acesso`}
-      >
-        <View style={styles.searchBox}>
-          <Search size={18} color={Colors.textTertiary} />
-          <TextInput
-            accessibilityLabel="Buscar obras"
-            style={styles.searchInput}
-            placeholder="Buscar por nome ou cidade"
-            placeholderTextColor={Colors.textTertiary}
-            value={search}
-            onChangeText={setSearch}
-            returnKeyType="search"
-          />
-        </View>
-      </AppHeader>
-
-      <FlatList
-        key={columns}
-        data={filtered}
-        numColumns={columns}
-        keyExtractor={item => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.list}
-        columnWrapperStyle={columns > 1 ? styles.columns : undefined}
-        ListHeaderComponent={
-          <View style={styles.portfolio}>
-            <View style={styles.portfolioLead}>
-              <Text style={styles.eyebrow}>CARTEIRA EM CAMPO</Text>
-              <View style={styles.portfolioValueRow}>
-                <Text style={styles.portfolioValue}>{Math.round(portfolio.progress)}</Text>
-                <Text style={styles.portfolioSuffix}>%</Text>
-              </View>
-              <Text style={styles.portfolioCaption}>avanço ponderado das FVS</Text>
-              <View
-                accessibilityRole="progressbar"
-                accessibilityValue={{ min: 0, max: 100, now: Math.round(portfolio.progress) }}
-                style={styles.heroProgressTrack}
-              >
-                <View
-                  style={[
-                    styles.heroProgressFill,
-                    { width: `${Math.min(Math.max(portfolio.progress, 0), 100)}%` as `${number}%` },
-                  ]}
-                />
-              </View>
-            </View>
-            <View style={styles.portfolioMetrics}>
-              <MetricBlock
-                label="FVS CONCLUÍDAS"
-                value={portfolio.completedFvs}
-                suffix={`/ ${portfolio.totalFvs}`}
-                tone="success"
-                style={styles.portfolioMetric}
-              />
-              <View style={styles.metricDivider} />
-              <MetricBlock
-                label="NC ABERTAS"
-                value={portfolio.openNc}
-                tone={portfolio.openNc > 0 ? 'danger' : 'neutral'}
-                style={styles.portfolioMetric}
-              />
-            </View>
-          </View>
-        }
-        renderItem={({ item }) => {
-          const progress = item.progresso_percentual ?? 0;
-          const hasNc = item.ncs_abertas > 0;
-          const status = OBRA_STATUS[item.status] ?? OBRA_STATUS.nao_iniciada;
-          const datumTone = hasNc ? 'danger' : progress >= 100 ? 'success' : 'accent';
-
-          return (
-            <DatumCard
-              tone={datumTone}
-              style={styles.card}
-              accessibilityLabel={`Abrir obra ${item.nome}`}
-              onPress={() => router.push(`/obras/${item.id}` as never)}
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.cardTitleGroup}>
-                  <Text style={styles.cardEyebrow}>OBRA ATIVA</Text>
-                  <Text style={styles.cardName} numberOfLines={2}>{item.nome}</Text>
-                </View>
-                <Badge label={status.label} tone={status.tone} size="sm" />
-              </View>
-
-              <View style={styles.locationRow}>
-                <MapPin size={15} color={Colors.textTertiary} />
-                <Text style={styles.locationText} numberOfLines={1}>
-                  {item.municipio || 'Local não informado'}{item.uf ? `, ${item.uf}` : ''}
-                </Text>
-              </View>
-
-              <View style={styles.progressBlock}>
-                <View style={styles.progressValueRow}>
-                  <Text style={styles.progressValue}>{Math.round(progress)}</Text>
-                  <Text style={styles.progressSuffix}>%</Text>
-                </View>
-                <View style={styles.progressDetail}>
-                  <Text style={styles.progressLabel}>AVANÇO DAS FVS</Text>
-                  <Progress value={progress} tone={hasNc ? 'danger' : progress >= 100 ? 'success' : 'brand'} height={6} />
-                </View>
-              </View>
-
-              <View style={styles.cardFooter}>
-                <Text style={styles.fvsCount}>
-                  <Text style={styles.mono}>{item.fvs_concluidas}</Text>
-                  {` de ${item.total_fvs} FVS concluídas`}
-                </Text>
-                <View style={styles.footerAction}>
-                  {hasNc ? (
-                    <View style={styles.ncLabel}>
-                      <AlertTriangle size={14} color={Colors.nok} />
-                      <Text style={styles.ncText}>{item.ncs_abertas} NC</Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.noNcText}>Sem NC</Text>
-                  )}
-                  <ChevronRight size={18} color={Colors.textTertiary} />
-                </View>
-              </View>
-            </DatumCard>
-          );
-        }}
-        ListEmptyComponent={
-          <EmptyState
-            Icon={Building2}
-            title="Nenhuma obra encontrada"
-            description={search ? 'Tente outro nome ou cidade.' : 'As obras liberadas para o seu acesso aparecerão aqui.'}
-          />
-        }
+        subtitle={`${activeCount} em andamento · ${doneCount} concluídas`}
       />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.summary}>
+          <View style={styles.summaryPrimary}>
+            <Text style={styles.summaryEyebrow}>CARTEIRA EM CAMPO</Text>
+            <Text style={styles.summaryValue}>{Math.round(portfolio.progress)}%</Text>
+            <Text style={styles.summaryLabel}>avanço ponderado das FVS</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryFacts}>
+            <SummaryFact
+              value={portfolio.completedFvs}
+              label="FVS concluídas"
+              tone={Colors.text}
+            />
+            <SummaryFact
+              value={portfolio.openNc}
+              label="NC abertas"
+              tone={portfolio.openNc > 0 ? Colors.nok : Colors.text}
+            />
+          </View>
+        </View>
+
+        <View style={styles.controls}>
+          <SegmentedControl
+            value={activeTab}
+            options={TAB_OPTIONS}
+            onChange={setActiveTab}
+            accessibilityLabel="Filtrar por situação da obra"
+          />
+
+          <View style={styles.searchBox}>
+            <Search size={18} color={Colors.textTertiary} />
+            <TextInput
+              accessibilityLabel="Buscar obras"
+              style={styles.searchInput}
+              placeholder="Buscar por nome ou cidade"
+              placeholderTextColor={Colors.textTertiary}
+              value={search}
+              onChangeText={setSearch}
+              returnKeyType="search"
+            />
+            {search ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Limpar busca"
+                onPress={() => setSearch('')}
+                style={styles.clearSearch}
+              >
+                <X size={17} color={Colors.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+
+        {error ? (
+          <ErrorBanner message="Não foi possível carregar as obras." />
+        ) : null}
+
+        <View style={styles.listHeading}>
+          <Text style={styles.listTitle}>Registros</Text>
+          <Text style={styles.listCount}>{String(filtered.length).padStart(2, '0')}</Text>
+          {hasRefinements ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Limpar todos os filtros"
+              onPress={clearAllFilters}
+              style={styles.clearFilters}
+            >
+              <Text style={styles.clearFiltersText}>Limpar filtros</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
+        {!ready || isLoading ? (
+          <View style={styles.loading}>
+            <Skeleton style={styles.skeletonGroup} />
+            <Skeleton style={styles.skeletonRows} />
+            <Skeleton style={styles.skeletonRows} />
+          </View>
+        ) : groups.length ? (
+          groups.map(group => (
+            <View key={group.status} style={styles.group}>
+              <View style={styles.groupHeader}>
+                <View style={styles.groupTitleRow}>
+                  <Text style={styles.groupTitle}>{group.title}</Text>
+                  <Text style={styles.groupCount}>{group.items.length}</Text>
+                </View>
+              </View>
+              <ListSurface>
+                {group.items.map((item, index) => (
+                  <ObraRowItem
+                    key={item.id}
+                    item={item}
+                    last={index === group.items.length - 1}
+                    onOpen={() => router.push(`/obras/${item.id}` as never)}
+                  />
+                ))}
+              </ListSurface>
+            </View>
+          ))
+        ) : (
+          <EmptyState
+            Icon={hasRefinements ? Search : Building2}
+            title={emptyTitle}
+            description={
+              hasRefinements
+                ? 'Ajuste a busca para ampliar os resultados.'
+                : 'As obras liberadas para o seu acesso aparecerão aqui.'
+            }
+            actionLabel={hasRefinements ? 'Limpar filtros' : undefined}
+            onAction={hasRefinements ? clearAllFilters : undefined}
+          />
+        )}
+      </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function SummaryFact({
+  value,
+  label,
+  tone,
+}: {
+  value: number;
+  label: string;
+  tone: string;
+}) {
+  return (
+    <View style={styles.summaryFact}>
+      <Text style={[styles.summaryFactValue, { color: tone }]}>{value}</Text>
+      <Text style={styles.summaryFactLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function ObraRowItem({
+  item,
+  last,
+  onOpen,
+}: {
+  item: ObraRow;
+  last: boolean;
+  onOpen: () => void;
+}) {
+  const status = OBRA_STATUS[item.status] ?? OBRA_STATUS.nao_iniciada;
+  const progress = item.progresso_percentual ?? 0;
+  const hasNc = item.ncs_abertas > 0;
+
+  return (
+    <OperationalRow
+      tone={datumToneFor(item)}
+      last={last}
+      onPress={onOpen}
+      accessibilityLabel={`Abrir obra ${item.nome}`}
+      trailing={<ChevronRight size={19} color={Colors.textTertiary} />}
+    >
+      <View style={styles.rowTop}>
+        <Text style={styles.rowTitle} numberOfLines={1}>{item.nome}</Text>
+        <Badge label={status.label} tone={status.tone} size="sm" />
+      </View>
+      <Text style={styles.rowContext} numberOfLines={1}>
+        {item.municipio || 'Local não informado'}{item.uf ? `, ${item.uf}` : ''}
+      </Text>
+      <Text style={styles.rowDescription} numberOfLines={1}>
+        {item.fvs_concluidas ?? 0} de {item.total_fvs ?? 0} FVS concluídas
+        {hasNc ? ` · ${item.ncs_abertas} NC abertas` : ''}
+      </Text>
+      <View style={styles.rowFooter}>
+        <Text style={[styles.footerLabel, { color: hasNc ? Colors.nok : Colors.ok }]}>
+          {hasNc ? `${item.ncs_abertas} NC` : 'Sem NC'}
+        </Text>
+        <Text style={styles.footerProgress}>{Math.round(progress)}%</Text>
+      </View>
+    </OperationalRow>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
+  content: {
+    width: '100%',
+    maxWidth: Breakpoints.maxContent,
+    alignSelf: 'center',
+    padding: Spacing.lg,
+    paddingBottom: 104,
+    gap: Spacing.xl,
+  },
+  summary: {
+    minHeight: 112,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+  },
+  summaryPrimary: { flex: 1.5, justifyContent: 'center' },
+  summaryEyebrow: { ...Typography.overline, color: Colors.textTertiary },
+  summaryValue: {
+    marginTop: 2,
+    color: Colors.brand,
+    fontFamily: FontFamily.monoSemibold,
+    fontSize: 34,
+    lineHeight: 39,
+  },
+  summaryLabel: { ...Typography.caption, color: Colors.textSecondary },
+  summaryDivider: {
+    width: 1,
+    marginHorizontal: Spacing.lg,
+    backgroundColor: Colors.border,
+  },
+  summaryFacts: {
+    flex: 1,
+    minWidth: 116,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    gap: Spacing.md,
+  },
+  summaryFact: { alignItems: 'center', gap: 1 },
+  summaryFactValue: {
+    fontFamily: FontFamily.monoSemibold,
+    fontSize: FontSizes.xl,
+    lineHeight: 28,
+  },
+  summaryFactLabel: { ...Typography.caption, color: Colors.textTertiary },
+  controls: { gap: Spacing.md },
   searchBox: {
     minHeight: 48,
-    marginTop: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.borderNormal,
     borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
+    paddingLeft: Spacing.md,
     gap: Spacing.sm,
   },
   searchInput: {
@@ -292,129 +454,87 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.regular,
     fontSize: FontSizes.base,
   },
-  list: {
-    width: '100%',
-    maxWidth: Breakpoints.maxContent,
-    alignSelf: 'center',
-    padding: Spacing.lg,
-    gap: Spacing.md,
-    paddingBottom: 104,
-  },
-  columns: { gap: Spacing.md },
-  portfolio: {
-    backgroundColor: Colors.brand,
-    borderRadius: Radius.xl,
-    padding: Spacing.xxl,
-    marginBottom: Spacing.xs,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.xxl,
-    overflow: 'hidden',
-  },
-  portfolioLead: { flex: 1.25, minWidth: 220, gap: Spacing.xs },
-  eyebrow: {
-    ...Typography.overline,
-    color: Colors.brandSignature,
-  },
-  portfolioValueRow: { flexDirection: 'row', alignItems: 'baseline' },
-  portfolioValue: {
-    color: Colors.surface,
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: 42,
-    lineHeight: 48,
-    letterSpacing: -1.5,
-  },
-  portfolioSuffix: {
-    color: Colors.brandSignature,
-    fontFamily: FontFamily.mono,
-    fontSize: FontSizes.lg,
-  },
-  portfolioCaption: { ...Typography.caption, color: Colors.surface, opacity: 0.72 },
-  portfolioMetrics: {
-    flex: 1,
-    minWidth: 220,
-    flexDirection: 'row',
+  clearSearch: {
+    width: 44,
+    height: 44,
     alignItems: 'center',
-    gap: Spacing.lg,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
+    justifyContent: 'center',
   },
-  portfolioMetric: { flex: 1 },
-  metricDivider: { width: 1, height: 48, backgroundColor: Colors.border },
-  heroProgressTrack: {
-    height: 7,
-    marginTop: Spacing.xs,
-    overflow: 'hidden',
-    borderRadius: Radius.full,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-  },
-  heroProgressFill: {
-    height: '100%',
-    borderRadius: Radius.full,
-    backgroundColor: Colors.brandSignature,
-  },
-  card: { flex: 1 },
-  cardHeader: {
+  listHeading: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
+    alignItems: 'baseline',
+    gap: Spacing.sm,
+    marginBottom: -Spacing.sm,
   },
-  cardTitleGroup: { flex: 1, gap: 3 },
-  cardEyebrow: { ...Typography.overline, color: Colors.textTertiary },
-  cardName: { ...Typography.heading, color: Colors.text },
-  locationRow: {
-    minHeight: 28,
+  listTitle: { ...Typography.heading, color: Colors.text },
+  listCount: {
+    fontFamily: FontFamily.monoSemibold,
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+  },
+  clearFilters: {
+    marginLeft: 'auto',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.sm,
+  },
+  clearFiltersText: {
+    ...Typography.caption,
+    color: Colors.brand,
+    fontFamily: FontFamily.semibold,
+  },
+  group: { gap: Spacing.sm },
+  groupHeader: { paddingHorizontal: 2, gap: 1 },
+  groupTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
+  groupTitle: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.base,
+    color: Colors.text,
+  },
+  groupCount: {
+    fontFamily: FontFamily.monoSemibold,
+    fontSize: FontSizes.tiny,
+    color: Colors.textTertiary,
+  },
+  rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  rowTitle: {
+    flex: 1,
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.base,
+    color: Colors.text,
+  },
+  rowContext: {
+    marginTop: 3,
+    fontFamily: FontFamily.medium,
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+  },
+  rowDescription: {
+    marginTop: 3,
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+  },
+  rowFooter: {
     marginTop: Spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: Spacing.md,
   },
-  locationText: { ...Typography.caption, color: Colors.textSecondary, flex: 1 },
-  progressBlock: {
-    marginTop: Spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: Spacing.lg,
+  footerLabel: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.tiny,
+    textTransform: 'uppercase',
+    letterSpacing: 0.35,
   },
-  progressValueRow: { flexDirection: 'row', alignItems: 'baseline' },
-  progressValue: {
+  footerProgress: {
+    flex: 1,
+    textAlign: 'right',
     fontFamily: FontFamily.monoSemibold,
-    fontSize: 34,
-    lineHeight: 38,
-    color: Colors.brand,
-    letterSpacing: -1,
+    fontSize: FontSizes.tiny,
+    color: Colors.textTertiary,
   },
-  progressSuffix: {
-    fontFamily: FontFamily.mono,
-    fontSize: FontSizes.sm,
-    color: Colors.brand,
-  },
-  progressDetail: { flex: 1, gap: 6, paddingBottom: 4 },
-  progressLabel: { ...Typography.overline, color: Colors.textTertiary },
-  cardFooter: {
-    marginTop: Spacing.lg,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
-  },
-  fvsCount: { ...Typography.caption, color: Colors.textSecondary, flex: 1 },
-  mono: { fontFamily: FontFamily.monoSemibold, color: Colors.text },
-  footerAction: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  ncLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: Colors.nokBg,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.sm,
-    minHeight: 28,
-  },
-  ncText: { ...Typography.caption, color: Colors.nok, fontFamily: FontFamily.semibold },
-  noNcText: { ...Typography.caption, color: Colors.ok, fontFamily: FontFamily.medium },
+  loading: { gap: Spacing.md },
+  skeletonGroup: { width: 140, height: 20, borderRadius: Radius.sm },
+  skeletonRows: { width: '100%', height: 132, borderRadius: Radius.lg },
 });

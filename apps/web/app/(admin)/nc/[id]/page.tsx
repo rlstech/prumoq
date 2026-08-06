@@ -496,8 +496,7 @@ export default async function NcDetailPage({ params }: PageProps) {
                     valorConfirmado: nc.valor_confirmado,
                     responsavelFinanceiro: nc.responsavel_financeiro,
                     categoriaFinanceira: nc.categoria_financeira,
-                    quantidadeBloqueada: nc.quantidade_bloqueada,
-                    percentualBloqueado: nc.percentual_bloqueado,
+                    valorBloqueado: nc.valor_bloqueado,
                     observacao: nc.observacao_financeira,
                     documento: nc.documento_financeiro_r2_key,
                   }}

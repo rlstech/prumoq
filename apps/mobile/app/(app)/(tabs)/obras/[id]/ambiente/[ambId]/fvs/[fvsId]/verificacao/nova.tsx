@@ -211,7 +211,7 @@ function NcPanel({
           {financial?.situacao === 'em_avaliacao' ? <><Modal visible={showManagerPicker} transparent animationType="fade"><Pressable style={ncSt.overlay} onPress={()=>setShowManagerPicker(false)}><View style={ncSt.pickerBox}><Text style={ncSt.pickerTitle}>Responsável pela avaliação</Text><ScrollView>{managers.map(manager=><Pressable key={manager.id} style={ncSt.pickerItem} onPress={()=>{patchFinancial({responsavelAvaliacaoId:manager.id});setShowManagerPicker(false)}}><Text style={ncSt.pickerItemText}>{manager.nome}</Text></Pressable>)}</ScrollView></View></Pressable></Modal><Text style={ncSt.label}>Responsável pela avaliação *</Text><Pressable style={ncSt.selectBtn} onPress={()=>setShowManagerPicker(true)}><Text style={ncSt.selectText}>{managers.find(m=>m.id===financial.responsavelAvaliacaoId)?.nome??'Selecionar gestor'}</Text><ChevronDown size={12} color={Colors.textSecondary}/></Pressable><Text style={ncSt.label}>Prazo para definição *</Text><TextInput style={ncSt.input} value={financial.prazoAvaliacao??''} onChangeText={value=>patchFinancial({prazoAvaliacao:value})} placeholder="AAAA-MM-DD" placeholderTextColor={Colors.textTertiary}/></> : null}
           {financial && (financial.situacao === 'estimado' || financial.situacao === 'confirmado') ? <><Text style={ncSt.label}>{financial.situacao==='estimado'?'Valor estimado *':'Valor confirmado *'}</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" value={(financial.situacao==='estimado'?financial.valorEstimado:financial.valorConfirmado)??''} onChangeText={value=>patchFinancial(financial.situacao==='estimado'?{valorEstimado:value}:{valorConfirmado:value})} placeholder="0,00" placeholderTextColor={Colors.textTertiary}/><Text style={ncSt.label}>Responsável financeiro *</Text><View style={ncSt.optionWrap}>{(['construtora','empreiteiro','fornecedor','projetista','em_analise'] as const).map(value=><Pressable key={value} style={[ncSt.option,financial.responsavelFinanceiro===value&&ncSt.optionActive]} onPress={()=>patchFinancial({responsavelFinanceiro:value})}><Text style={[ncSt.optionText,financial.responsavelFinanceiro===value&&ncSt.optionTextActive]}>{value.replaceAll('_',' ')}</Text></Pressable>)}</View><Text style={ncSt.label}>Categoria *</Text><View style={ncSt.optionWrap}>{(['mao_obra_retrabalho','perda_material','equipamento_mobilizacao','atraso','glosa_retencao','desconto_empreiteiro','outro'] as const).map(value=><Pressable key={value} style={[ncSt.option,financial.categoria===value&&ncSt.optionActive]} onPress={()=>patchFinancial({categoria:value})}><Text style={[ncSt.optionText,financial.categoria===value&&ncSt.optionTextActive]}>{value.replaceAll('_',' ')}</Text></Pressable>)}</View></> : null}
           <Text style={ncSt.label}>Esta NC bloqueia a medição?</Text><View style={ncSt.optionWrap}>{([['nao','Não'],['total','Totalmente'],['parcial','Parcialmente']] as [NcMeasurementBlock,string][]).map(([value,label])=><Pressable key={value} style={[ncSt.option,financial?.bloqueio===value&&ncSt.optionActive]} onPress={()=>patchFinancial({bloqueio:value})}><Text style={[ncSt.optionText,financial?.bloqueio===value&&ncSt.optionTextActive]}>{label}</Text></Pressable>)}</View>
-          {financial?.bloqueio==='parcial'?<View style={ncSt.twoCol}><View style={{flex:1}}><Text style={ncSt.label}>Quantidade</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" value={financial.quantidadeBloqueada??''} onChangeText={value=>patchFinancial({quantidadeBloqueada:value})}/></View><View style={{flex:1}}><Text style={ncSt.label}>Percentual</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" value={financial.percentualBloqueado??''} onChangeText={value=>patchFinancial({percentualBloqueado:value})}/></View></View>:null}
+          {financial?.bloqueio==='parcial'?<><Text style={ncSt.label}>Valor bloqueado *</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" placeholder="0,00" placeholderTextColor={Colors.textTertiary} value={financial.valorBloqueado??''} onChangeText={value=>patchFinancial({valorBloqueado:value})}/><Text style={st.helperText}>Descontado da medição quando o responsável financeiro é o empreiteiro executor do serviço.</Text></>:null}
         </View>
       ) : null}
 
@@ -637,21 +637,39 @@ export default function NovaVerificacaoScreen() {
     },
   );
 
-  // Pré-preenche a equipe: prioriza a equipe vinculada na medição da FVS
-  // (empreiteiro responsável); se houver mais de uma, usa a da última
-  // verificação. Nunca sobrescreve escolha manual ou rascunho restaurado.
+  // Pré-preenche a equipe: quando o serviço tem medição ativa com equipe
+  // executora vinculada (vínculo ativo), a equipe fica fixa — não é possível
+  // trocá-la nem visualizar outras equipes. Caso contrário, prioriza a da
+  // última verificação. Nunca sobrescreve escolha manual ou rascunho restaurado.
   const linkedTeamIds = useMemo(
     () => [...new Set(measurementLinks.map(link => link.equipe_id))],
     [measurementLinks],
   );
+  const equipeLocked = measurementEnabled && linkedTeamIds.length > 0;
+  const equipeLockedSingle = equipeLocked && linkedTeamIds.length === 1;
+  const lockedTeams = useMemo<EquipeRow[]>(() => {
+    const seen = new Set<string>();
+    return measurementLinks.flatMap(link => {
+      if (seen.has(link.equipe_id)) return [];
+      seen.add(link.equipe_id);
+      return [{ id: link.equipe_id, nome: link.equipe_nome, tipo: '' }];
+    });
+  }, [measurementLinks]);
+  const pickerEquipes = equipeLocked ? lockedTeams : equipes;
   useEffect(() => {
-    if (selectedEquipeId !== null || measurementLinksLoading) return;
-    const linkedTeamId = measurementEnabled && linkedTeamIds.length === 1 ? linkedTeamIds[0] : null;
-    const equipeId = linkedTeamId ?? lastEquipeRows[0]?.equipe_id;
+    if (measurementLinksLoading) return;
+    if (equipeLocked) {
+      if (linkedTeamIds.length > 0 && !linkedTeamIds.includes(selectedEquipeId ?? '')) {
+        updateState({ selectedEquipeId: linkedTeamIds[0] });
+      }
+      return;
+    }
+    if (selectedEquipeId !== null) return;
+    const equipeId = lastEquipeRows[0]?.equipe_id;
     if (equipeId) {
       updateState({ selectedEquipeId: equipeId });
     }
-  }, [linkedTeamIds, lastEquipeRows, measurementEnabled, measurementLinksLoading, selectedEquipeId, updateState]);
+  }, [equipeLocked, linkedTeamIds, lastEquipeRows, measurementLinksLoading, selectedEquipeId, updateState]);
 
   // Pré-preenche resultados da última verificação no modo de re-inspeção.
   useEffect(() => {
@@ -1122,46 +1140,55 @@ export default function NovaVerificacaoScreen() {
                     <View style={st.section}>
                       <Text style={st.sectionTitle}>Equipe executora</Text>
                       {errors.equipe ? <Text style={st.errorText}>{errors.equipe}</Text> : null}
-                      <Modal visible={showEquipePicker} transparent animationType="fade">
-                        <Pressable style={ncSt.overlay} onPress={() => setShowEquipePicker(false)}>
-                          <View style={ncSt.pickerBox}>
-                            <Text style={ncSt.pickerTitle}>Equipe executora</Text>
-                            <ScrollView>
-                              {equipes.map(team => (
-                                <Pressable
-                                  accessibilityRole="radio"
-                                  accessibilityState={{ checked: selectedEquipeId === team.id }}
-                                  key={team.id}
-                                  style={[ncSt.pickerItem, selectedEquipeId === team.id && ncSt.pickerItemActive]}
-                                  onPress={() => {
-                                    updateState({ selectedEquipeId: team.id });
-                                    setShowEquipePicker(false);
-                                  }}
-                                >
-                                  <Text style={[ncSt.pickerItemText, selectedEquipeId === team.id && ncSt.pickerItemTextActive]}>
-                                    {team.nome}
-                                  </Text>
-                                  <Text style={st.equipePickerTipo}>{team.tipo}</Text>
-                                </Pressable>
-                              ))}
-                            </ScrollView>
-                          </View>
-                        </Pressable>
-                      </Modal>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Selecionar equipe executora"
-                        style={[st.teamSelectBtn, errors.equipe && st.inputError]}
-                        onPress={() => setShowEquipePicker(true)}
-                      >
-                        <View style={st.flex}>
-                          <Text style={st.teamSelectLabel}>Responsável técnico e equipe</Text>
-                          <Text style={st.teamSelectBtnText} numberOfLines={1}>
-                            {selectedEquipe ? selectedEquipe.nome : 'Selecionar equipe'}
-                          </Text>
+                      {equipeLockedSingle ? (
+                        <View style={st.lockedEquipeBox}>
+                          <LockKeyhole size={14} color={Colors.ok} />
+                          <Text style={st.lockedEquipeHint}>Equipe fixa · vinculada à medição deste serviço</Text>
                         </View>
-                        <ChevronDown size={18} color={Colors.textSecondary} />
-                      </Pressable>
+                      ) : (
+                        <>
+                          <Modal visible={showEquipePicker} transparent animationType="fade">
+                            <Pressable style={ncSt.overlay} onPress={() => setShowEquipePicker(false)}>
+                              <View style={ncSt.pickerBox}>
+                                <Text style={ncSt.pickerTitle}>Equipe executora</Text>
+                                <ScrollView>
+                                  {pickerEquipes.map(team => (
+                                    <Pressable
+                                      accessibilityRole="radio"
+                                      accessibilityState={{ checked: selectedEquipeId === team.id }}
+                                      key={team.id}
+                                      style={[ncSt.pickerItem, selectedEquipeId === team.id && ncSt.pickerItemActive]}
+                                      onPress={() => {
+                                        updateState({ selectedEquipeId: team.id });
+                                        setShowEquipePicker(false);
+                                      }}
+                                    >
+                                      <Text style={[ncSt.pickerItemText, selectedEquipeId === team.id && ncSt.pickerItemTextActive]}>
+                                        {team.nome}
+                                      </Text>
+                                      <Text style={st.equipePickerTipo}>{team.tipo}</Text>
+                                    </Pressable>
+                                  ))}
+                                </ScrollView>
+                              </View>
+                            </Pressable>
+                          </Modal>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Selecionar equipe executora"
+                            style={[st.teamSelectBtn, errors.equipe && st.inputError]}
+                            onPress={() => setShowEquipePicker(true)}
+                          >
+                            <View style={st.flex}>
+                              <Text style={st.teamSelectLabel}>Responsável técnico e equipe</Text>
+                              <Text style={st.teamSelectBtnText} numberOfLines={1}>
+                                {selectedEquipe ? selectedEquipe.nome : 'Selecionar equipe'}
+                              </Text>
+                            </View>
+                            <ChevronDown size={18} color={Colors.textSecondary} />
+                          </Pressable>
+                        </>
+                      )}
                       {selectedEquipe ? (
                         <View style={st.teamSelected}>
                           <View style={st.teamAvatar}>
@@ -1958,6 +1985,19 @@ const st = StyleSheet.create({
     gap: Spacing.sm,
   },
   teamSelectBtnText: { ...Typography.bodyMedium, color: Colors.text },
+  lockedEquipeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.okBg,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.ok,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  lockedEquipeHint: { ...Typography.caption, color: Colors.ok, fontFamily: FontFamily.semibold },
   teamDivider: { height: 0.5, backgroundColor: 'rgba(0,0,0,0.08)', marginHorizontal: Spacing.md },
   teamSelected: {
     flexDirection: 'row',

@@ -21,8 +21,7 @@ const financialSchema=z.object({
   valorConfirmado:z.number().nonnegative().nullable(),
   responsavelFinanceiro:z.enum(['construtora','empreiteiro','fornecedor','projetista','em_analise']).nullable() satisfies z.ZodType<FinancialResponsible|null>,
   categoriaFinanceira:z.enum(['mao_obra_retrabalho','perda_material','equipamento_mobilizacao','atraso','glosa_retencao','desconto_empreiteiro','outro']).nullable() satisfies z.ZodType<FinancialCategory|null>,
-  quantidadeBloqueada:z.number().positive().nullable(),
-  percentualBloqueado:z.number().positive().max(100).nullable(),
+  valorBloqueado:z.number().positive().nullable(),
   observacao:z.string().trim().max(2000).nullable(),
   documento:z.string().trim().max(500).nullable(),
 }).superRefine((value,context)=>{
@@ -30,7 +29,7 @@ const financialSchema=z.object({
   if(value.situacao==='em_avaliacao'&&(!value.responsavelAvaliacaoId||!value.prazoAvaliacao))context.addIssue({code:z.ZodIssueCode.custom,message:'Impacto em avaliação exige responsável e prazo.'});
   if(value.situacao==='estimado'&&(!value.valorEstimado||!value.responsavelFinanceiro||!value.categoriaFinanceira))context.addIssue({code:z.ZodIssueCode.custom,message:'Impacto estimado exige valor, responsável e categoria.'});
   if(value.situacao==='confirmado'&&(!(value.valorConfirmado&&value.valorConfirmado>0)||!value.responsavelFinanceiro||!value.categoriaFinanceira))context.addIssue({code:z.ZodIssueCode.custom,message:'Impacto confirmado exige valor, responsável e categoria.'});
-  if(value.bloqueio==='parcial'&&!value.quantidadeBloqueada&&!value.percentualBloqueado)context.addIssue({code:z.ZodIssueCode.custom,message:'Bloqueio parcial exige quantidade ou percentual.'});
+  if(value.bloqueio==='parcial'&&!(value.valorBloqueado&&value.valorBloqueado>0))context.addIssue({code:z.ZodIssueCode.custom,message:'Bloqueio parcial exige valor bloqueado positivo.'});
 });
 export type NcFinancialInput=z.input<typeof financialSchema>;
 
@@ -59,12 +58,12 @@ export async function updateNcFinancialImpact(ncId: string, input: NcFinancialIn
     if (!environment) throw new Error('Não foi possível identificar a obra da não conformidade.');
     await assertObraInTenant(environment.obra_id, context.clienteId);
 
-    const { error } = await supabase.rpc('atualizar_impacto_financeiro_nc', {
+    const { error } = await (supabase.rpc as any)('atualizar_impacto_financeiro_nc', {
       p_nc_id: ncId, p_situacao: validated.situacao, p_bloqueio: validated.bloqueio,
       p_justificativa: validated.justificativaSemImpacto, p_responsavel_avaliacao: validated.responsavelAvaliacaoId,
       p_prazo: validated.prazoAvaliacao, p_valor_estimado: validated.valorEstimado, p_valor_confirmado: validated.valorConfirmado,
       p_responsavel_financeiro: validated.responsavelFinanceiro, p_categoria: validated.categoriaFinanceira,
-      p_quantidade_bloqueada: validated.quantidadeBloqueada, p_percentual_bloqueado: validated.percentualBloqueado,
+      p_valor_bloqueado: validated.valorBloqueado,
       p_observacao: validated.observacao, p_documento: validated.documento,
     });
     if (error) throw error;

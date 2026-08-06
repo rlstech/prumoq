@@ -34,8 +34,7 @@ export default function NcFinancialPanel({ ncId, initial, users, history }: Prop
     valorConfirmado: initial.valorConfirmado ?? null,
     responsavelFinanceiro: initial.responsavelFinanceiro ?? null,
     categoriaFinanceira: initial.categoriaFinanceira ?? null,
-    quantidadeBloqueada: initial.quantidadeBloqueada ?? null,
-    percentualBloqueado: initial.percentualBloqueado ?? null,
+    valorBloqueado: initial.valorBloqueado ?? null,
     observacao: initial.observacao ?? null,
     documento: initial.documento ?? null,
   });
@@ -65,7 +64,10 @@ export default function NcFinancialPanel({ ncId, initial, users, history }: Prop
         {form.situacao === 'sem_impacto' && <Field label="Justificativa"><input value={form.justificativaSemImpacto ?? ''} onChange={event => set('justificativaSemImpacto', event.target.value || null)} /></Field>}
         {form.situacao === 'em_avaliacao' && <><Field label="Responsável pela avaliação"><select value={form.responsavelAvaliacaoId ?? ''} onChange={event => set('responsavelAvaliacaoId', event.target.value || null)}><option value="">Selecione</option>{users.map(user=><option key={user.id} value={user.id}>{user.nome}</option>)}</select></Field><Field label="Prazo para definição"><input type="date" value={form.prazoAvaliacao ?? ''} onChange={event => set('prazoAvaliacao', event.target.value || null)} /></Field></>}
         {requiresValue && <><Field label={form.situacao === 'estimado' ? 'Valor estimado' : 'Valor confirmado'}><input type="number" min="0" step="0.01" value={form.situacao === 'estimado' ? form.valorEstimado ?? '' : form.valorConfirmado ?? ''} onChange={event => set(form.situacao === 'estimado' ? 'valorEstimado' : 'valorConfirmado', event.target.value ? Number(event.target.value) : null)} /></Field><Field label="Responsável financeiro"><select value={form.responsavelFinanceiro ?? ''} onChange={event => set('responsavelFinanceiro', (event.target.value || null) as NcFinancialInput['responsavelFinanceiro'])}><option value="">Selecione</option><option value="construtora">Construtora</option><option value="empreiteiro">Empreiteiro</option><option value="fornecedor">Fornecedor</option><option value="projetista">Projetista</option><option value="em_analise">Em análise</option></select></Field><Field label="Categoria"><select value={form.categoriaFinanceira ?? ''} onChange={event => set('categoriaFinanceira', (event.target.value || null) as NcFinancialInput['categoriaFinanceira'])}><option value="">Selecione</option><option value="mao_obra_retrabalho">Mão de obra de retrabalho</option><option value="perda_material">Perda de material</option><option value="equipamento_mobilizacao">Equipamento ou mobilização</option><option value="atraso">Atraso</option><option value="glosa_retencao">Glosa ou retenção</option><option value="desconto_empreiteiro">Desconto do empreiteiro</option><option value="outro">Outro</option></select></Field></>}
-        {form.bloqueio === 'parcial' && <><Field label="Quantidade bloqueada"><input type="number" min="0" step="0.000001" value={form.quantidadeBloqueada ?? ''} onChange={event => set('quantidadeBloqueada', event.target.value ? Number(event.target.value) : null)} /></Field><Field label="Percentual bloqueado"><input type="number" min="0" max="100" step="0.0001" value={form.percentualBloqueado ?? ''} onChange={event => set('percentualBloqueado', event.target.value ? Number(event.target.value) : null)} /></Field></>}
+        {form.bloqueio === 'parcial' && <><Field label="Valor bloqueado (R$)"><input type="number" min="0" step="0.01" value={form.valorBloqueado ?? ''} onChange={event => set('valorBloqueado', event.target.value ? Number(event.target.value) : null)} /></Field>
+          <div className="text-[11px] text-txt-3 sm:col-span-2">
+            Valor descontado da medição quando o responsável financeiro é o empreiteiro executor do serviço. Ex.: medição de R$ 800 com R$ 200 bloqueados libera R$ 600.
+          </div></>}
       </div>
       <Field label="Observação financeira"><textarea rows={2} value={form.observacao ?? ''} onChange={event => set('observacao', event.target.value || null)} /></Field>
       <Field label="Documento/evidência (chave R2 ou referência)"><input value={form.documento ?? ''} onChange={event => set('documento', event.target.value || null)} /></Field>

@@ -291,6 +291,10 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
   }, [context, draftCandidate, draftConflict]);
 
   const discardDraft = useCallback(async (): Promise<void> => {
+    // Bloqueia o debounce de auto-save de regravar o rascunho logo após
+    // excluí-lo. Sem esta guarda, o fluxo de `handleSave` → `discardDraft`
+    // deixava um rascunho órfão no storage (carbono em `discardDraftAndReset`).
+    discardingRef.current = true;
     if (context) await store.delete(context.draftId);
     setDraftCandidate(null);
     setDraftConflict(false);
@@ -298,17 +302,13 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
   }, [context, store]);
 
   const discardDraftAndReset = useCallback(async (): Promise<void> => {
-    discardingRef.current = true;
-    if (context) await store.delete(context.draftId);
-    setDraftCandidate(null);
-    setDraftConflict(false);
-    setDraftStatus('idle');
+    await discardDraft();
     setState(emptyVerificationFormState());
     setCurrentStep('context');
     setErrors({});
     // O componente é desmontado pela navegação logo após este call — não é
     // necessário limpar discardingRef.current.
-  }, [context, store]);
+  }, [discardDraft]);
 
   return {
     state,

@@ -71,8 +71,8 @@ export async function createNc(params: NcCreateParams): Promise<string> {
         nc_anterior_id, prioridade, situacao_financeira, justificativa_sem_impacto,
         responsavel_avaliacao_id, prazo_avaliacao, valor_estimado, valor_confirmado,
         responsavel_financeiro, categoria_financeira, bloqueio_medicao,
-        quantidade_bloqueada, percentual_bloqueado, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        valor_bloqueado, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       ncId,
       params.clienteId,
@@ -95,8 +95,7 @@ export async function createNc(params: NcCreateParams): Promise<string> {
       params.financeiro?.responsavelFinanceiro ?? null,
       params.financeiro?.categoria ?? null,
       params.financeiro?.bloqueio ?? null,
-      params.financeiro?.quantidadeBloqueada ?? null,
-      params.financeiro?.percentualBloqueado ?? null,
+      params.financeiro?.valorBloqueado ?? null,
       now,
     ],
   );
