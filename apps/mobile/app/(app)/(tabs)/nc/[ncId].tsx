@@ -213,9 +213,10 @@ export default function NcDetailScreen() {
     [nc, reinspectionQuery.data],
   );
   const evidence = useMemo(
-    () => photoQuery.data.map(photo => photo.r2_key),
+    () => photoQuery.data.map(photo => ({ key: photo.r2_key, thumbnailKey: photo.r2_thumb_key })),
     [photoQuery.data],
   );
+  const evidenceKeys = useMemo(() => evidence.map(photo => photo.key), [evidence]);
   const actionable = nc ? isActionableNc(nc.status) : false;
   const timing = getNcTiming(nc?.data_nova_verif);
   const loading = detailQuery.isLoading;
@@ -396,7 +397,7 @@ export default function NcDetailScreen() {
           {evidence.length ? (
             <PhotoGrid
               photos={evidence}
-              onPress={index => openViewer(evidence, index)}
+              onPress={index => openViewer(evidenceKeys, index)}
             />
           ) : (
             <Text style={styles.emptyText}>Nenhuma foto foi anexada à ocorrência.</Text>

@@ -43,7 +43,10 @@ export interface FvsReportData extends FvsPrintableReport {
 
 function resolveR2(key: string | null | undefined, signed: Map<string, string>): string | null {
   if (!key) return null;
-  if (key.startsWith('http') || key.startsWith('data:')) return key;
+  // Media references are object keys, never caller-controlled URLs. Accepting a
+  // URL here would let a database write turn into a server-side request during
+  // PDF generation.
+  if (key.startsWith('http') || key.startsWith('data:')) return null;
   if (key.startsWith('pending:') || key.startsWith('blob:')) return null;
   return signed.get(key) ?? null;
 }

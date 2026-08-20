@@ -276,17 +276,18 @@ export default function VerificationDetailScreen() {
     [nonConformityPhotosQuery.data],
   );
   const generalPhotos = useMemo(
-    () => verificationPhotosQuery.data.map(photo => photo.r2_key),
+    () => verificationPhotosQuery.data.map(photo => ({ key: photo.r2_key, thumbnailKey: photo.r2_thumb_key })),
     [verificationPhotosQuery.data],
   );
+  const generalPhotoKeys = useMemo(() => generalPhotos.map(photo => photo.key), [generalPhotos]);
   const pendingMediaCount = useMemo(() => {
     const photoKeys = [
-      ...generalPhotos,
+      ...generalPhotoKeys,
       ...nonConformityPhotosQuery.data.map(photo => photo.r2_key),
     ];
     if (verification?.assinatura_url) photoKeys.push(verification.assinatura_url);
     return photoKeys.filter(isPendingMediaKey).length;
-  }, [generalPhotos, nonConformityPhotosQuery.data, verification?.assinatura_url]);
+  }, [generalPhotoKeys, nonConformityPhotosQuery.data, verification?.assinatura_url]);
 
   const queries = [
     headerQuery,
@@ -626,7 +627,7 @@ export default function VerificationDetailScreen() {
           {generalPhotos.length > 0 ? (
             <PhotoGrid
               photos={generalPhotos}
-              onPress={index => openViewer(generalPhotos, index)}
+              onPress={index => openViewer(generalPhotoKeys, index)}
             />
           ) : (
             <Text style={styles.emptyInline}>Nenhuma foto geral registrada.</Text>

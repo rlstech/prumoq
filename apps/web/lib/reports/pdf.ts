@@ -4,6 +4,8 @@ import puppeteer, { type Browser } from 'puppeteer-core';
 import sharp from 'sharp';
 
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_IMAGE_DATA_URL_CHARS = Math.ceil(MAX_IMAGE_BYTES * 1.4);
+const MAX_IMAGE_PIXELS = 40_000_000;
 const IMAGE_CONCURRENCY = 4;
 const REMOTE_IMAGE_TIMEOUT_MS = 8_000;
 
@@ -31,7 +33,13 @@ function dataUrlAsBuffer(source: string): Buffer {
   const match = /^data:([^;,]+)?((?:;[^,]+)*?),([\s\S]*)$/.exec(source);
   if (!match) throw new Error('Data URL inválida.');
 
-  const [, , attributes = '', payload] = match;
+  const [, mime = '', attributes = '', payload] = match;
+  if (payload.length > MAX_IMAGE_DATA_URL_CHARS) {
+    throw new Error('Image exceeds the 20 MB limit.');
+  }
+  if (!mime.toLowerCase().startsWith('image/')) {
+    throw new Error('Data URL must contain an image.');
+  }
   const buffer = attributes.includes(';base64')
     ? Buffer.from(payload, 'base64')
     : Buffer.from(decodeURIComponent(payload), 'utf8');
@@ -42,12 +50,41 @@ function dataUrlAsBuffer(source: string): Buffer {
   return buffer;
 }
 
+function allowedMediaHosts(): Set<string> {
+  return new Set(
+    (process.env.R2_ALLOWED_MEDIA_HOSTS ?? '')
+      .split(',')
+      .map(host => host.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+function isAllowedRemoteMediaUrl(source: string): boolean {
+  try {
+    const url = new URL(source.replaceAll('&amp;', '&'));
+    return url.protocol === 'https:' && allowedMediaHosts().has(url.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 async function remoteImageAsBuffer(source: string): Promise<Buffer> {
+  if (!isAllowedRemoteMediaUrl(source)) {
+    throw new Error('Unauthorized image host.');
+  }
   const response = await fetch(source.replaceAll('&amp;', '&'), {
     signal: AbortSignal.timeout(REMOTE_IMAGE_TIMEOUT_MS),
     cache: 'force-cache',
+    redirect: 'error',
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.headers.get('content-type')?.toLowerCase().startsWith('image/')) {
+    throw new Error('Remote response is not an image.');
+  }
+  const contentLength = Number(response.headers.get('content-length'));
+  if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES) {
+    throw new Error('Image exceeds the 20 MB limit.');
+  }
 
   const buffer = Buffer.from(await response.arrayBuffer());
   if (buffer.byteLength > MAX_IMAGE_BYTES) {
@@ -72,7 +109,7 @@ export async function normalizePdfImageSource(
     const input = await imageSourceAsBuffer(source);
 
     if (kind === 'signature') {
-      const normalized = await sharp(input, { failOn: 'none' })
+      const normalized = await sharp(input, { failOn: 'none', limitInputPixels: MAX_IMAGE_PIXELS })
         .rotate()
         .resize({
           width: 1000,
@@ -85,7 +122,7 @@ export async function normalizePdfImageSource(
       return `data:image/png;base64,${normalized.toString('base64')}`;
     }
 
-    const normalized = await sharp(input, { failOn: 'none' })
+    const normalized = await sharp(input, { failOn: 'none', limitInputPixels: MAX_IMAGE_PIXELS })
       .rotate()
       .flatten({ background: '#FFFFFF' })
       .resize({

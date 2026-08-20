@@ -5,12 +5,13 @@ import {
   UpdateType,
 } from '@powersync/react-native';
 import * as FileSystem from 'expo-file-system';
+import { createEvidenceThumbnail } from './image-normalizer';
 import { supabase } from './supabase';
 
 const PENDING_PREFIX = 'pending:';
 const MEDIA_FIELDS: Record<string, string[]> = {
-  verificacao_fotos: ['r2_key'],
-  nc_fotos: ['r2_key'],
+  verificacao_fotos: ['r2_key', 'r2_thumb_key'],
+  nc_fotos: ['r2_key', 'r2_thumb_key'],
   verificacoes: ['assinatura_url'],
   fvs_conclusoes: ['assinatura_url'],
   nc_reinspecoes: ['foto_url'],
@@ -59,6 +60,7 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     const data = { ...(op.opData ?? {}) };
 
     // Resolve pending photo uploads before writing to Supabase
+    await this.ensureThumbnail(table, data);
     for (const field of MEDIA_FIELDS[table] ?? []) {
       await this.resolvePendingMedia(data, field);
     }
@@ -76,6 +78,14 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     }
   }
 
+  private async ensureThumbnail(table: string, data: Record<string, unknown>): Promise<void> {
+    if (table !== 'verificacao_fotos' && table !== 'nc_fotos') return;
+    const source = data.r2_key as string | undefined;
+    if (!source?.startsWith(PENDING_PREFIX) || data.r2_thumb_key) return;
+    const thumbnailPath = await createEvidenceThumbnail(source.slice(PENDING_PREFIX.length));
+    data.r2_thumb_key = `${PENDING_PREFIX}${thumbnailPath}`;
+  }
+
   /**
    * If r2_key starts with 'pending:', uploads the local file to R2
    * via presigned URL and replaces r2_key with the final cloud key.
@@ -90,8 +100,13 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       data[field] = cachedKey;
       return;
     }
-    const filename = localPath.split('/').pop() ?? 'photo.jpg';
-    const mimeType = (data['mime_type'] as string | undefined) ?? 'image/jpeg';
+    const isSignature = field === 'assinatura_url';
+    const filename = localPath.split('/').pop() ?? (isSignature ? 'signature.png' : 'photo.jpg');
+    const mimeType = (data['mime_type'] as string | undefined) ?? (isSignature ? 'image/png' : 'image/jpeg');
+    const fileInfo = await FileSystem.getInfoAsync(localPath, { size: true });
+    if (!fileInfo.exists || !fileInfo.size) {
+      throw new Error('Pending media file is unavailable or empty');
+    }
 
     // Get presigned URL from Edge Function
     const { data: { session } } = await supabase.auth.getSession();
@@ -103,7 +118,7 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ filename, contentType: mimeType }),
+        body: JSON.stringify({ filename, contentType: mimeType, contentLength: fileInfo.size }),
       }
     );
 

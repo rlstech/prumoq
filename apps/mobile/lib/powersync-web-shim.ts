@@ -4,6 +4,7 @@
  * Exports the same interface used by all screens, backed by Supabase REST.
  */
 import { createContext, useContext, useEffect, useState } from 'react';
+import { createEvidenceThumbnail } from './image-normalizer';
 import { supabase } from './supabase';
 
 interface DynamicResult {
@@ -361,7 +362,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   if (s.includes('from nao_conformidades n') && s.includes('join verificacao_itens vi') && s.includes('order by n.data_nova_verif asc') && s.includes('limit 3')) {
     const [{ data }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
     const filtered = filterByObraId((data ?? []) as any[], 'obra_id', ids)
-      .filter((n: any) => n.status === 'aberta')
+      .filter((n: any) => n.status === 'aberta' || n.status === 'em_correcao')
       .sort((a: any, b: any) => (a.data_nova_verif ?? '').localeCompare(b.data_nova_verif ?? ''))
       .slice(0, 3);
     return filtered as T[];
@@ -998,6 +999,19 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
     const cols = colsMatch[1].split(',').map(c => c.trim().replace(/[`'"]/g, ''));
     const row: Record<string, unknown> = {};
 
+    // Generate and upload the small preview beside the original evidence.
+    // Signatures and other media remain on their own PNG path.
+    if ((table === 'verificacao_fotos' || table === 'nc_fotos') && !cols.includes('r2_thumb_key')) {
+      const source = params[cols.indexOf('r2_key')];
+      if (typeof source === 'string' && source.startsWith('pending:')) {
+        const localPath = source.slice('pending:'.length);
+        if (localPath.startsWith('blob:') || localPath.startsWith('data:')) {
+          const thumb = await createEvidenceThumbnail(localPath);
+          row.r2_thumb_key = await uploadToR2(thumb, `thumb_${Date.now()}.jpg`, 'image/jpeg');
+        }
+      }
+    }
+
     for (let i = 0; i < cols.length && i < params.length; i++) {
       let val = params[i];
       // Resolve pending: photo paths on web
@@ -1050,7 +1064,7 @@ async function uploadToR2(blob: Blob, filename: string, mimeType: string): Promi
   const presignRes = await fetch(`${supabaseUrl}/functions/v1/r2-presign`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ filename, mimeType }),
+    body: JSON.stringify({ filename, mimeType, contentLength: blob.size }),
   });
 
   if (!presignRes.ok) throw new Error(`presign failed: ${presignRes.status}`);

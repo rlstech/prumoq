@@ -12,9 +12,19 @@ type RequestBody = {
   filename?: string;
   contentType?: string;
   mimeType?: string;
+  contentLength?: number;
   key?: string;
   keys?: string[];
 };
+
+// Evidence is normalized on-device before upload; keep a server-side ceiling
+// so stale or tampered clients cannot consume R2 with camera originals.
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const ALLOWED_UPLOAD_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -60,12 +70,23 @@ Deno.serve(async (req: Request) => {
 
     if ((body.operation ?? 'upload') === 'upload') {
       if (!body.filename) return json({ error: 'filename is required' }, 400);
+      const contentType = (body.contentType ?? body.mimeType ?? '').toLowerCase();
+      if (!ALLOWED_UPLOAD_TYPES.has(contentType)) {
+        return json({ error: 'Unsupported media type' }, 400);
+      }
+      if (!Number.isInteger(body.contentLength) || body.contentLength < 1 || body.contentLength > MAX_UPLOAD_BYTES) {
+        return json({ error: 'Invalid content length' }, 400);
+      }
       const now = new Date();
       const safe = body.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
       const random = crypto.randomUUID();
       const key = `fotos/${profile.cliente_id}/${user.id}/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${random}_${safe}`;
-      const contentType = body.contentType ?? body.mimeType ?? 'application/octet-stream';
-      const uploadUrl = await getSignedUrl(r2, new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }), { expiresIn: 900 });
+      const uploadUrl = await getSignedUrl(r2, new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        ContentType: contentType,
+        ContentLength: body.contentLength,
+      }), { expiresIn: 900 });
       return json({ uploadUrl, key, expiresAt: new Date(Date.now() + 900_000).toISOString() });
     }
 

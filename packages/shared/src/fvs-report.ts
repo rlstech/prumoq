@@ -125,8 +125,13 @@ export function resolveFvsReportPhotoSource(
   r2Base: string,
 ): FvsResolvedPhotoSource | null {
   if (!source) return null;
+  // Persisted media is an R2 object key. Protocol URLs are legacy/untrusted
+  // references and must not become browser or server-side requests.
   if (source.startsWith('data:') || source.startsWith('http')) {
-    return { url: source, availability: 'available' };
+    return {
+      url: fvsPhotoPlaceholderDataUrl('expired'),
+      availability: 'expired',
+    };
   }
   if (source.startsWith('pending:')) {
     return {

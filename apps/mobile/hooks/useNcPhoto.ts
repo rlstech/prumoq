@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
+import { normalizeEvidencePhoto } from '../lib/image-normalizer';
 
 function uuid(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -15,7 +16,8 @@ export async function captureNcPhoto(): Promise<string | null> {
   });
   if (result.canceled || !result.assets[0]) return null;
 
-  const src = result.assets[0].uri;
+  const asset = result.assets[0];
+  const src = await normalizeEvidencePhoto(asset.uri, asset.width, asset.height);
   const dest = `${FileSystem.cacheDirectory}nc_${uuid()}.jpg`;
   await FileSystem.copyAsync({ from: src, to: dest });
   return dest;

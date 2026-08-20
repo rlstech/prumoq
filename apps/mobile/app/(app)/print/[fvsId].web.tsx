@@ -34,7 +34,9 @@ const IMAGE_READY_TIMEOUT_MS = 3_000;
 
 function resolveR2(key: string | null | undefined, signed: Record<string, string>): string | null {
   if (!key) return null;
-  if (key.startsWith('http') || key.startsWith('data:')) return key;
+  // Persisted values are media keys. Protocol URLs are legacy/untrusted values
+  // and must not be rendered directly in the printable report.
+  if (key.startsWith('http') || key.startsWith('data:')) return null;
   if (key.startsWith('blob:') || key.startsWith('pending:')) return null;
   return signed[key] ?? null;
 }

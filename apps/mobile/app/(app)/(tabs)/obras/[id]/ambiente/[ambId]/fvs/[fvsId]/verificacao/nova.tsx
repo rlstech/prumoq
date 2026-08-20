@@ -517,7 +517,7 @@ export default function NovaVerificacaoScreen() {
     });
     if (Platform.OS === 'web') {
       supabase.functions.invoke('r2-presign', {
-        body: { filename: '_warmup.jpg', mimeType: 'image/jpeg' },
+        body: { filename: '_warmup.jpg', mimeType: 'image/jpeg', contentLength: 1 },
       }).catch(() => {});
     }
   }, []);

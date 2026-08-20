@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { normalizeEvidencePhoto } from '../lib/image-normalizer';
 
 export interface UsePhotoCaptureReturn {
   photos: string[];
@@ -22,7 +23,13 @@ function pickFile(capture?: 'environment' | 'user'): Promise<string | null> {
     input.onchange = () => {
       const file = input.files?.[0];
       if (file) {
-        resolve(URL.createObjectURL(file));
+        const sourceUrl = URL.createObjectURL(file);
+        void normalizeEvidencePhoto(sourceUrl)
+          .then((normalized) => {
+            URL.revokeObjectURL(sourceUrl);
+            resolve(normalized);
+          })
+          .catch(() => resolve(null));
       } else {
         resolve(null);
       }

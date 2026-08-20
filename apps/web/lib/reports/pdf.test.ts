@@ -77,3 +77,23 @@ test('substitui origens blob por imagem de indisponibilidade', async () => {
 
   assert.match(normalized, /^data:image\/svg\+xml;base64,/);
 });
+
+test('não faz requisições para URLs remotas fora da allowlist de R2', async () => {
+  const originalFetch = globalThis.fetch;
+  let called = false;
+  globalThis.fetch = async () => {
+    called = true;
+    throw new Error('fetch não deveria ser chamado');
+  };
+
+  try {
+    const normalized = await normalizePdfImageSource(
+      'http://127.0.0.1:5432/internal',
+      'photo',
+    );
+    assert.match(normalized, /^data:image\/svg\+xml;base64,/);
+    assert.equal(called, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

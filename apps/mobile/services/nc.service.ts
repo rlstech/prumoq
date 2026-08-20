@@ -145,12 +145,6 @@ export async function approveReinspecao(
     ],
   );
 
-  await db.execute(
-    `UPDATE nao_conformidades SET
-       status = ?, resolvida_em = ?, verificacao_reinsp_id = ?, foto_reinspecao_url = ?, updated_at = ?
-     WHERE id = ?`,
-    ['resolvida', now, params.verificacaoId, params.fotoUrl ?? null, now, params.ncId],
-  );
 }
 
 // ─── RN-NC-05 ────────────────────────────────────────────────────────────────
@@ -186,11 +180,6 @@ export async function reprovarReinspecao(
       params.fotoUrl ?? null,
       now,
     ],
-  );
-
-  await db.execute(
-    `UPDATE nao_conformidades SET status = ?, updated_at = ? WHERE id = ?`,
-    ['encerrada_sem_resolucao', now, params.ncId],
   );
 
   return { proximaOcorrencia };

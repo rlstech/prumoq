@@ -302,3 +302,13 @@ test('preserva anexos antigos como avisos em vez de omiti-los', () => {
   assert.match(html, /Foto aguardando sincronização/);
   assert.match(html, /Imagem não sincronizada - referência local expirada/);
 });
+
+test('trata URLs persistidas como referências legadas indisponíveis', () => {
+  const source = resolveFvsReportPhotoSource(
+    'https://attacker.example/internal.png',
+    'https://fotos.example.com',
+  );
+
+  assert.equal(source?.availability, 'expired');
+  assert.match(decodeURIComponent(source?.url ?? ''), /Imagem não sincronizada/);
+});
