@@ -8,9 +8,9 @@ import { BrandMark } from '@/components/ui/BrandMark';
 import { createClient } from '@/lib/supabase/client';
 import {
   AlertTriangle,
-  BarChart2,
   Building2,
   ClipboardList,
+  ClipboardCheck,
   HardHat,
   KeyRound,
   Landmark,
@@ -30,7 +30,7 @@ const NAV = [
   { href: '/verificacoes', icon: ScanLine, title: 'Vistorias', group: 'Operação' },
   { href: '/nc', icon: AlertTriangle, title: 'NC', group: 'Operação', alert: true },
   { href: '/medicoes', icon: Ruler, title: 'Medições', group: 'Operação' },
-  { href: '/relatorios', icon: BarChart2, title: 'Dados', group: 'Análise' },
+  { href: '/avaliacoes', icon: ClipboardCheck, title: 'Avaliações', group: 'Operação' },
   { href: '/empresas', icon: Landmark, title: 'Empresas', group: 'Cadastros' },
   { href: '/equipes', icon: HardHat, title: 'Equipes', group: 'Cadastros' },
   { href: '/usuarios', icon: Users, title: 'Pessoas', group: 'Cadastros' },

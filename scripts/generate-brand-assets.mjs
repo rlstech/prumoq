@@ -5,8 +5,8 @@ import sharp from 'sharp';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const brand = '#163B50';
-const masterPath = join(root, 'packages/design-system/assets/prumoq-symbol.svg');
-const smallPath = join(root, 'packages/design-system/assets/prumoq-symbol-small.svg');
+const masterPath = join(root, 'apps/mobile/assets/pq-monogram-on-brand.png');
+const smallPath = masterPath;
 const mobileAssets = join(root, 'apps/mobile/assets');
 const mobilePublic = join(root, 'apps/mobile/public');
 
@@ -69,17 +69,12 @@ await Promise.all([
   }),
 ]);
 
-const masterSvg = await readFile(masterPath, 'utf8');
-const symbolBody = masterSvg
-  .replace(/^[\s\S]*?<svg[^>]*>/, '')
-  .replace(/<\/svg>\s*$/, '')
-  .replace(/<title>[\s\S]*?<\/title>/, '');
+const masterPng = await readFile(masterPath);
+const symbolDataUrl = `data:image/png;base64,${masterPng.toString('base64')}`;
 
 const splashSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2732" viewBox="0 0 2048 2732">
   <rect width="2048" height="2732" fill="${brand}"/>
-  <g transform="translate(664 850) scale(11.25)">
-    ${symbolBody.trim()}
-  </g>
+  <image href="${symbolDataUrl}" x="664" y="850" width="720" height="720"/>
   <text x="1024" y="1765" fill="#FFFEFB" font-family="IBM Plex Sans, Arial, sans-serif" font-size="132" font-weight="700" text-anchor="middle" letter-spacing="-4">PrumoQ</text>
   <text x="1024" y="1860" fill="#D8E568" font-family="IBM Plex Sans, Arial, sans-serif" font-size="44" font-weight="600" text-anchor="middle" letter-spacing="8">QUALIDADE EM CAMPO</text>
 </svg>

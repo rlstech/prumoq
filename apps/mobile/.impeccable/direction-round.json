@@ -1,0 +1,92 @@
+{
+  "title": "Nova direção para o PrumoQ PWA",
+  "question": "Escolha a linguagem que deve guiar a nova marca, a navegação e o fluxo de verificação.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Linha de Controle",
+      "kicker": "THE ROLL",
+      "lineage": "marcação de obra, mapas de locação e instrumentos de nível",
+      "thesis": "A verificação deixa de ser uma lista de formulários e vira uma rota visual, onde cada decisão fixa um ponto de controle no serviço.",
+      "palette": ["#163B50", "#D8E568", "#F4F1E8", "#142522"],
+      "materials": ["camadas de papel mineral", "linhas de referência precisas", "números monoespaçados"],
+      "viewport": "Uma barra de percurso fixa conduz a vistoria; o item atual ocupa o centro e o estado da obra permanece legível na periferia.",
+      "risk": "Exige disciplina para não transformar toda informação em um diagrama técnico.",
+      "raised": [
+        {"from": "Drum machine step row", "raise": "Um ritmo de avanço explícito: cada item respondido ganha uma marca compacta e a sequência nunca perde seu ponto atual."},
+        {"from": "Monochrome product marketing", "raise": "Contraste e respiro editorial: Cal Viva aparece apenas para foco, seleção e avanço real."}
+      ],
+      "comp": ".impeccable/mocks/decision/linha-de-controle.png"
+    },
+    {
+      "id": "model-pick",
+      "label": "Instrumento de Campo",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "cadernos de campo de engenharia, etiquetas de inspeção e instrumentos ópticos",
+      "thesis": "Um sistema tátil e concentrado em leitura rápida, no qual a marca nasce do prumo como instrumento de precisão — não como ícone decorativo.",
+      "palette": ["#163B50", "#D8E568", "#FFFEFB", "#52615B"],
+      "materials": ["fichas perfuradas", "grade de medição", "datum vertical"],
+      "viewport": "Cabeçalho-calibrador, ficha de serviço protagonista e controles de decisão grandes, no alcance do polegar.",
+      "risk": "É a direção mais imediatamente familiar para software operacional, então depende de tipografia e detalhes excelentes para ser inesquecível.",
+      "comp": ".impeccable/mocks/decision/instrumento-de-campo.webp"
+    },
+    {
+      "id": "challenger-drum-machine",
+      "label": "Sequência de Vistoria",
+      "verdict": "competitive",
+      "lineage": "painéis de instrumentos e sequenciadores de ritmo",
+      "thesis": "Cada item da FVS vira uma etapa visível em uma sequência que responde ao toque e torna o progresso impossível de perder.",
+      "palette": ["#142522", "#D8E568", "#F4F1E8", "#B23A3A"],
+      "materials": ["marcas sequenciais", "luzes de estado sem brilho excessivo", "painel fosco"],
+      "viewport": "Uma faixa de etapas persistente mostra pendentes, conformes e NCs; o item ativo se abre como um painel de decisão focado.",
+      "case": "Identificação forte para quem opera por sequência; perde em clareza se a metáfora de ritmo for mais importante que a gravidade de uma NC.",
+      "risk": "Pode parecer gamificado em uma situação de qualidade crítica se o movimento for exagerado.",
+      "comp": ".impeccable/mocks/decision/sequencia-de-vistoria.webp",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-drum-machine-step-row-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/signals-instruments-drum-machine-step-row.webp"
+    },
+    {
+      "id": "challenger-monochrome",
+      "label": "Sala de Controle Silenciosa",
+      "verdict": "declined",
+      "lineage": "interfaces de produto editoriais e monocromáticas",
+      "thesis": "Uma interface de alta calma visual, quase toda em neutros, com a Cal Viva reservada a uma única ação de cada vez.",
+      "palette": ["#FFFEFB", "#142522", "#163B50", "#D8E568"],
+      "materials": ["linhas capilares", "espaço editorial", "métricas discretas"],
+      "viewport": "Uma única decisão domina a tela, acompanhada por contexto mínimo e prova fotográfica quando necessária.",
+      "case": "Excelente disciplina de atenção, mas pouco ligada ao cenário físico do inspetor.",
+      "kept": "Uso radicalmente econômico da cor e um espaço visual mais respirado.",
+      "risk": "Pode diluir o caráter de campo e reduzir a sinalização em ambiente de sol.",
+      "comp": ".impeccable/mocks/decision/sala-de-controle.webp",
+      "hero": "https://impeccable.style/worlds/cards/digital-design-canon-monochrome-product-marketing-hero.webp"
+    },
+    {
+      "id": "challenger-ascii",
+      "label": "Terminal de Obra",
+      "verdict": "declined",
+      "lineage": "terminais de fósforo e desenhos ASCII",
+      "thesis": "O serviço é resumido por uma matriz textual viva, em que densidade de caracteres representa estado e evidência.",
+      "palette": ["#163B50", "#D8E568", "#142522", "#F4F1E8"],
+      "materials": ["malha monoespaçada", "texto como imagem", "sinais compactos"],
+      "viewport": "Um mapa tipográfico do ambiente acompanha a inspeção e mostra as pendências como coordenadas.",
+      "case": "Tem potência de marca, mas compromete legibilidade e captura de foto em uso real.",
+      "kept": "A coragem de transformar dados de campo em uma assinatura visual própria.",
+      "risk": "Exige leitura demais em um contexto onde o toque e a visão são imperfeitos.",
+      "comp": ".impeccable/mocks/decision/terminal-de-obra.webp",
+      "hero": "https://impeccable.style/worlds/cards/medium-native-ascii-live-scene-render-hero.webp"
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "comp", "toggle": true},
+  "canon": true,
+  "canonCard": {
+    "label": "PWA operacional padrão",
+    "thesis": "Uma interface de inspeção limpa, com cards convencionais e uma aba inferior familiar.",
+    "palette": ["#F4F1E8", "#163B50", "#D8E568", "#FFFEFB"],
+    "materials": ["cards suaves", "ícones lineares", "layout conhecido"],
+    "viewport": "Dashboard com cards de métricas e checklist vertical com botões de status.",
+    "risk": "Funciona, mas não cria uma marca memorável para o PrumoQ.",
+    "comp": ".impeccable/mocks/decision/padrao-operacional.webp"
+  },
+  "steer": true
+}

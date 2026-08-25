@@ -14,6 +14,7 @@ const MEDIA_FIELDS: Record<string, string[]> = {
   nc_fotos: ['r2_key', 'r2_thumb_key'],
   verificacoes: ['assinatura_url'],
   fvs_conclusoes: ['assinatura_url'],
+  avaliacoes_empreiteiro: ['assinatura_url'],
   nc_reinspecoes: ['foto_url'],
   nao_conformidades: ['foto_reinspecao_url'],
 };

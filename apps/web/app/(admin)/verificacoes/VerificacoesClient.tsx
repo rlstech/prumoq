@@ -17,6 +17,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { Download, Loader2, Printer } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { getVerificacaoDetalhe } from './actions';
+import Pagination from '@/components/ui/Pagination';
 
 function resolveR2Url(key: string): string | null {
   if (!key) return null;
@@ -25,7 +26,7 @@ function resolveR2Url(key: string): string | null {
   return null;
 }
 
-export default function VerificacoesClient({ initialData }: { initialData: any[] }) {
+export default function VerificacoesClient({ initialData, page, hasNextPage }: { initialData: any[]; page: number; hasNextPage: boolean }) {
   const [filters, setFilters] = useState({
     obra: 'Todas', ambiente: 'Todos', fvs: 'Todos', status: 'Todos', inspetor: 'Todos'
   });
@@ -204,6 +205,7 @@ export default function VerificacoesClient({ initialData }: { initialData: any[]
           </table>
         </div>
       </div>
+      <Pagination page={page} hasNextPage={hasNextPage} pathname="/verificacoes" />
 
       {/* Modal Detalhe */}
       <Modal isOpen={!!selectedVerif} onClose={closeModal} title={`Verificação ${selectedVerif?.fvs_planejadas?.subservico || ''}`} size="xl">

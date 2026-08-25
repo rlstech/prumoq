@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-20T00:00:00.000Z",
+  "title": "Design System: PrumoQ Mobile",
+  "extensions": {
+    "colorMeta": {
+      "plumb": { "role": "primary", "displayName": "Azul Prumo", "canonical": "#163B50", "tonalRamp": ["#0C2533", "#0F2C3C", "#163B50", "#2D5266", "#6E8995", "#B5C4C9", "#E3EAEB", "#F4F1E8"] },
+      "lime": { "role": "secondary", "displayName": "Cal Viva", "canonical": "#D8E568", "tonalRamp": ["#455000", "#657900", "#8FA900", "#B9CB32", "#D8E568", "#E6EE91", "#F3F7D5", "#FBFCEB"] }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 2px 8px rgba(20, 37, 34, 0.06)", "purpose": "Separar cards protagonistas do canvas mineral." },
+      { "name": "floating", "value": "0 8px 20px rgba(20, 37, 34, 0.14)", "purpose": "Fixar a barra de ação acima do conteúdo." }
+    ],
+    "motion": [
+      { "name": "quick", "value": "120ms", "purpose": "Feedback de toque." },
+      { "name": "standard", "value": "180ms", "purpose": "Mudanças de estado e navegação local." }
+    ],
+    "breakpoints": [
+      { "name": "tablet", "value": "768px" },
+      { "name": "desktop", "value": "1200px" }
+    ]
+  },
+  "narrative": {
+    "northStar": "Linha de Controle",
+    "keyCharacteristics": ["Superfícies minerais claras", "Rota operacional derivada do checklist", "Cal Viva reservado a foco e precisão"],
+    "dos": ["Use o monograma PQ apenas no mobile/PWA.", "Mantenha alvos de toque de no mínimo 44px."],
+    "donts": ["Não use cor como único indicador.", "Não altere a lógica offline para mudanças visuais."]
+  }
+}

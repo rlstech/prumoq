@@ -249,7 +249,7 @@ export default function NcScreen() {
       >
         <View style={styles.summary}>
           <View style={styles.summaryPrimary}>
-            <Text style={styles.summaryEyebrow}>AÇÃO NECESSÁRIA</Text>
+            <Text style={styles.summaryTitle}>Pendências em campo</Text>
             <Text style={styles.summaryValue}>{summary.actionable}</Text>
             <Text style={styles.summaryLabel}>
               {summary.actionable === 1 ? 'ocorrência em acompanhamento' : 'ocorrências em acompanhamento'}
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   summaryPrimary: { flex: 1.5, justifyContent: 'center' },
-  summaryEyebrow: { ...Typography.overline, color: Colors.textTertiary },
+  summaryTitle: { ...Typography.label, color: Colors.textSecondary },
   summaryValue: {
     marginTop: 2,
     color: Colors.brand,
@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     lineHeight: 39,
   },
-  summaryLabel: { ...Typography.caption, color: Colors.textSecondary },
+  summaryLabel: { ...Typography.caption, color: Colors.textSecondary, marginBottom: Spacing.sm },
   summaryDivider: {
     width: 1,
     marginHorizontal: Spacing.lg,

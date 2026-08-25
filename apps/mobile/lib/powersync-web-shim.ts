@@ -893,7 +893,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
     if (!itemIds.length) return [];
     const { data: ncs } = await supabase
       .from('nao_conformidades')
-      .select('id, verificacao_item_id, descricao, numero_ocorrencia, data_nova_verif, responsavel_id')
+      .select('id, verificacao_item_id, descricao, numero_ocorrencia, data_nova_verif, responsavel_id, financeiro_requerido, situacao_financeira')
       .in('verificacao_item_id', itemIds)
       .in('status', ['aberta', 'em_correcao']);
     return ((ncs ?? []).map((nc: any) => {
@@ -909,8 +909,64 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
         responsavel_id: nc.responsavel_id ?? null,
         numero_verif: v?.numero_verif ?? 1,
         nc_data_criacao: v?.data_verif ?? null,
+        financeiro_requerido: nc.financeiro_requerido ? 1 : 0,
+        situacao_financeira: nc.situacao_financeira ?? null,
       };
     }) as unknown) as T[];
+  }
+
+  // Avaliações de empreiteiros: histórico no app/PWA.
+  if (s.includes('from avaliacoes_empreiteiro a') && s.includes('join obras o') && s.includes('join equipes e')) {
+    const { data, error } = await supabase
+      .from('avaliacoes_empreiteiro')
+      .select('id, obra_id, equipe_id, medicao_id, data_avaliacao, status, percentual, obras!avaliacoes_empreiteiro_obra_id_fkey(nome), equipes!avaliacoes_empreiteiro_equipe_id_fkey(nome), medicoes_servico!avaliacoes_empreiteiro_medicao_id_fkey(referencia)')
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(`Erro ao carregar avaliações: ${error.message}`);
+    return ((data ?? []).map((row: any) => ({ ...row, obra_nome: row.obras?.nome ?? '', equipe_nome: row.equipes?.nome ?? '', referencia: row.medicoes_servico?.referencia ?? null })) as unknown) as T[];
+  }
+
+  // Medições de terceiros aguardando a avaliação obrigatória.
+  if (s.includes('from medicoes_servico m') && s.includes('left join avaliacoes_empreiteiro a') && s.includes("e.tipo='terceirizado'")) {
+    const { data: measurements, error } = await supabase
+      .from('medicoes_servico')
+      .select('id, referencia, obra_id, equipe_id, data_medicao, obras!medicoes_servico_obra_id_fkey(nome), equipes!medicoes_servico_equipe_id_fkey(nome, tipo)')
+      .eq('status', 'rascunho')
+      .order('data_medicao', { ascending: false });
+    if (error) throw new Error(`Erro ao carregar medições: ${error.message}`);
+    const thirdParty = (measurements ?? []).filter((row: any) => row.equipes?.tipo === 'terceirizado');
+    const ids = thirdParty.map((row: any) => row.id);
+    if (!ids.length) return [];
+    const { data: finished } = await supabase.from('avaliacoes_empreiteiro').select('medicao_id').in('medicao_id', ids).eq('status', 'concluida');
+    const evaluated = new Set((finished ?? []).map(row => row.medicao_id));
+    return (thirdParty.filter((row: any) => !evaluated.has(row.id)).map((row: any) => ({ id: row.id, referencia: row.referencia, obra_nome: row.obras?.nome ?? '', equipe_nome: row.equipes?.nome ?? '' })) as unknown) as T[];
+  }
+
+  // Contexto de uma medição selecionada para iniciar a avaliação.
+  if (s.includes('from medicoes_servico m') && s.includes('where m.id=?') && params[0]) {
+    const { data, error } = await supabase.from('medicoes_servico').select('id, obra_id, equipe_id, referencia, obras!medicoes_servico_obra_id_fkey(nome), equipes!medicoes_servico_equipe_id_fkey(nome)').eq('id', params[0] as string);
+    if (error) throw new Error(`Erro ao carregar medição: ${error.message}`);
+    return ((data ?? []).map((row: any) => ({ medicao_id: row.id, obra_id: row.obra_id, equipe_id: row.equipe_id, referencia: row.referencia, obra_nome: row.obras?.nome ?? '', equipe_nome: row.equipes?.nome ?? '' })) as unknown) as T[];
+  }
+
+  if (s.includes('select id,nome,empresa_id from obras')) {
+    const { data } = await supabase.from('obras').select('id, nome, empresa_id').in('status', ['em_andamento', 'concluida', 'nao_iniciada', 'paralisada']).order('nome');
+    return (data ?? []) as T[];
+  }
+
+  if (s.includes('from equipes e join obra_equipes oe') && s.includes("e.tipo='terceirizado'")) {
+    const { data } = await supabase.from('obra_equipes').select('obra_id, equipes!obra_equipes_equipe_id_fkey(id, nome, tipo, ativo)').order('created_at');
+    return ((data ?? []).filter((row: any) => row.equipes?.tipo === 'terceirizado' && row.equipes?.ativo).map((row: any) => ({ id: row.equipes.id, nome: row.equipes.nome, obra_id: row.obra_id })) as unknown) as T[];
+  }
+
+  if (s.includes('from modelos_avaliacao_empreiteiro m') && s.includes('modelo_avaliacao_empreiteiro_revisoes')) {
+    const { data, error } = await supabase.from('modelos_avaliacao_empreiteiro').select('id, empresa_id, nome, revisao_atual, modelo_avaliacao_empreiteiro_revisoes!modelo_avaliacao_empreiteiro_revisoes_modelo_id_fkey(id, numero_revisao)').eq('ativo', true).order('nome');
+    if (error) throw new Error(`Erro ao carregar modelos: ${error.message}`);
+    return ((data ?? []).map((row: any) => { const revision=(row.modelo_avaliacao_empreiteiro_revisoes ?? []).find((r: any)=>r.numero_revisao===row.revisao_atual); return revision?{model_id:row.id,empresa_id:row.empresa_id,nome:row.nome,revisao_id:revision.id,numero_revisao:revision.numero_revisao}:null; }).filter(Boolean) as unknown) as T[];
+  }
+
+  if (s.includes('from modelo_avaliacao_empreiteiro_criterios where revisao_id=?') && params[0]) {
+    const { data } = await supabase.from('modelo_avaliacao_empreiteiro_criterios').select('id, titulo, peso, ordem').eq('revisao_id', params[0] as string).order('ordem');
+    return (data ?? []) as T[];
   }
 
   console.warn('[powersync-web-shim] unmatched query:', sql.slice(0, 120));

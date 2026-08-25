@@ -11,6 +11,7 @@ import {
   Spacing,
 } from '../lib/constants';
 import { BrandMark } from './BrandMark';
+import { BrandWordmark } from './BrandWordmark';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 
 type AppHeaderTone = 'light' | 'brand';
@@ -58,7 +59,7 @@ export function AppHeader({
             ) : (
               <BrandMark size={32} variant={isBrand ? 'onBrand' : 'default'} />
             )}
-            <Text style={[styles.appName, isBrand && styles.appNameBrand]}>PrumoQ</Text>
+            <BrandWordmark fontSize={FontSizes.base} variant={isBrand ? 'onBrand' : 'default'} />
           </View>
           <View style={styles.headerActions}>
             <SyncStatusIndicator />
@@ -127,13 +128,6 @@ const styles = StyleSheet.create({
   iconButtonBrand: { backgroundColor: 'rgba(255,255,255,0.1)' },
   iconButtonBrandPressed: { backgroundColor: 'rgba(255,255,255,0.18)' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  appName: {
-    color: Colors.text,
-    fontSize: FontSizes.base,
-    fontFamily: FontFamily.bold,
-    letterSpacing: -0.25,
-  },
-  appNameBrand: { color: Palette.white },
   content: {
     paddingTop: Spacing.xs,
     gap: 4,

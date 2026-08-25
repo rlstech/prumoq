@@ -7,6 +7,7 @@ import {
   isVerificationDraftCompatible,
   mediaSourcesFromVerificationState,
   nextVerificationStep,
+  normalizeVerificationStep,
   patchVerificationState,
   previousVerificationStep,
   setVerificationItemResult,
@@ -19,6 +20,7 @@ import type {
   DraftStore,
   NcDraftDetail,
   VerificationDraftV1,
+  VerificationFlowStep,
   VerificationFormState,
   VerificationResult,
   VerificationStep,
@@ -27,6 +29,18 @@ import type { VerificationValidationInput } from '../lib/verification/validation
 import { draftStore as defaultDraftStore } from '../lib/verification/draftStore';
 
 export type DraftSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+/** Maps an NC draft field to the error key `validateVerificationStep` emits for
+ * it, so editing a field can retire its own stale error. Keys must match the
+ * ones the checklist screen reads (`nc_desc_<id>`, `nc_foto_<id>`, …). */
+const NC_ERROR_PREFIX: Record<keyof NcDraftDetail, string> = {
+  descricao: 'nc_desc_',
+  foto: 'nc_foto_',
+  solucao_proposta: 'nc_sol_',
+  data_nova_verif: 'nc_data_',
+  responsavel_id: 'nc_resp_',
+  financeiro: 'nc_fin_',
+};
 
 export interface UseVerificationFlowOptions {
   context: VerificationDraftContext | null;
@@ -42,7 +56,7 @@ export interface UseVerificationFlowOptions {
 
 export interface VerificationFlowApi {
   state: VerificationFormState;
-  currentStep: VerificationStep;
+  currentStep: VerificationFlowStep;
   steps: typeof VERIFICATION_STEPS;
   errors: Record<string, string>;
   draftCandidate: VerificationDraftV1 | null;
@@ -58,7 +72,7 @@ export interface VerificationFlowApi {
   goToStep: (step: VerificationStep) => boolean;
   nextStep: () => boolean;
   previousStep: () => boolean;
-  stepForError: (errorKey: string) => VerificationStep;
+  stepForError: (errorKey: string) => VerificationFlowStep;
   persistDraft: () => Promise<void>;
   restoreDraft: () => boolean;
   /** Remove o rascunho do storage sem tocar no state — usado após salvar a verificação. */
@@ -72,7 +86,7 @@ export interface VerificationFlowApi {
 }
 
 /**
- * Presentation-agnostic state machine for the four-step verification flow.
+ * Presentation-agnostic state machine for the two-step verification flow.
  *
  * Screens only render `state` and call the methods returned here.  The hook
  * owns draft compatibility, debounced persistence and the background flush so
@@ -85,13 +99,13 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
     openNcItemIds = [],
     isReinspection = openNcItemIds.length > 0,
     initialState,
-    initialStep = 'context',
+    initialStep = 'checklist',
     store = defaultDraftStore,
     validation: validationDefaults,
   } = options;
 
   const [state, setState] = useState<VerificationFormState>(initialState ?? emptyVerificationFormState());
-  const [currentStep, setCurrentStep] = useState<VerificationStep>(initialStep);
+  const [currentStep, setCurrentStep] = useState<VerificationFlowStep>(normalizeVerificationStep(initialStep));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [draftCandidate, setDraftCandidate] = useState<VerificationDraftV1 | null>(null);
   const [draftConflict, setDraftConflict] = useState(false);
@@ -120,12 +134,33 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
     setDraftStatus('idle');
   }, []);
 
-  const setItemResult = useCallback((itemId: string, result: VerificationResult) => {
-    setState(previous => setVerificationItemResult(previous, itemId, result));
-    setDraftStatus('idle');
+  // Errors are only recomputed on validate(), i.e. when the user hits the
+  // primary action. Without this, a field stays flagged in red after it has
+  // already been answered — worst on the NC form, which has five required
+  // fields open at once.
+  const clearErrors = useCallback((keys: readonly string[]) => {
+    setErrors(previous => {
+      const stale = keys.filter(key => key in previous);
+      if (stale.length === 0) return previous;
+      const next = { ...previous };
+      for (const key of stale) delete next[key];
+      return next;
+    });
   }, []);
 
+  const setItemResult = useCallback((itemId: string, result: VerificationResult) => {
+    setState(previous => setVerificationItemResult(previous, itemId, result));
+    clearErrors([`item_${itemId}`]);
+    setDraftStatus('idle');
+  }, [clearErrors]);
+
   const updateNc = useCallback((itemId: string, patch: Partial<NcDraftDetail>) => {
+    clearErrors(
+      Object.keys(patch)
+        .map(field => NC_ERROR_PREFIX[field as keyof NcDraftDetail])
+        .filter((prefix): prefix is string => !!prefix)
+        .map(prefix => `${prefix}${itemId}`),
+    );
     setState(previous => {
       const detail = previous.ncDetails[itemId] ?? {
         descricao: '',
@@ -138,7 +173,7 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
       return patchVerificationState(previous, { ncDetails: { ...previous.ncDetails, [itemId]: { ...detail, ...patch } } });
     });
     setDraftStatus('idle');
-  }, []);
+  }, [clearErrors]);
 
   const validationInput = useCallback((value = latestRef.current.state): VerificationValidationInput => ({
     selectedEquipeId: value.selectedEquipeId,
@@ -254,15 +289,16 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
   }, [draftCandidate, draftChecked, draftConflict, persistDraft]);
 
   const goToStep = useCallback((step: VerificationStep): boolean => {
-    if (step === currentStep) return true;
+    const target = normalizeVerificationStep(step);
+    if (target === currentStep) return true;
     const currentIndex = VERIFICATION_STEPS.findIndex(candidate => candidate.key === currentStep);
-    const targetIndex = VERIFICATION_STEPS.findIndex(candidate => candidate.key === step);
+    const targetIndex = VERIFICATION_STEPS.findIndex(candidate => candidate.key === target);
     if (targetIndex < 0) return false;
     // Moving forward validates only the current stage. Backward navigation is
     // always allowed so a failed validation can be corrected.
     if (targetIndex > currentIndex && Object.keys(validate(currentStep)).length > 0) return false;
-    latestRef.current.currentStep = step;
-    setCurrentStep(step);
+    latestRef.current.currentStep = target;
+    setCurrentStep(target);
     setErrors({});
     void persistDraft();
     return true;
@@ -282,7 +318,10 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
     const candidate = draftCandidate;
     if (!candidate || draftConflict || !context || !isVerificationDraftCompatible(candidate, context)) return false;
     setState(candidate.state);
-    setCurrentStep(candidate.currentStep);
+    // candidate.currentStep pode ser um valor legado ('context'/'evidence')
+    // gravado por um build de 4 etapas anterior — normaliza para nunca
+    // restaurar num step inexistente (o ponto crítico deste refactor).
+    setCurrentStep(normalizeVerificationStep(candidate.currentStep));
     setDraftCandidate(null);
     setDraftConflict(false);
     setDraftStatus('saved');
@@ -304,7 +343,7 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
   const discardDraftAndReset = useCallback(async (): Promise<void> => {
     await discardDraft();
     setState(emptyVerificationFormState());
-    setCurrentStep('context');
+    setCurrentStep('checklist');
     setErrors({});
     // O componente é desmontado pela navegação logo após este call — não é
     // necessário limpar discardingRef.current.

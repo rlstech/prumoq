@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Camera,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   ClipboardCheck,
   Clock3,
@@ -175,6 +176,7 @@ export default function NcDetailScreen() {
   const { ncId } = useLocalSearchParams<{ ncId: string }>();
   const router = useRouter();
   const [viewer, setViewer] = useState<ViewerState | null>(null);
+  const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({});
 
   const detailQuery = useQuery<NcDetailRow>(NC_DETAIL_QUERY, [ncId]);
   const photoQuery = useQuery<NcPhotoRow>(`
@@ -240,6 +242,10 @@ export default function NcDetailScreen() {
     );
   }
 
+  function toggleDetails(section: string) {
+    setExpandedDetails(current => ({ ...current, [section]: !current[section] }));
+  }
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -289,7 +295,6 @@ export default function NcDetailScreen() {
         <Card style={styles.hero}>
           <View style={styles.heroTop}>
             <View style={styles.heroText}>
-              <Text style={styles.eyebrow}>ITEM NÃO CONFORME</Text>
               <Text style={styles.title}>{nc.item_titulo}</Text>
               <Text style={styles.service}>{nc.subservico}</Text>
             </View>
@@ -299,6 +304,7 @@ export default function NcDetailScreen() {
               Icon={nc.status === 'resolvida' ? CheckCircle2 : AlertTriangle}
             />
           </View>
+          <Text style={styles.heroDescription}>{nc.descricao}</Text>
           <View style={styles.heroMeta}>
             <MetaPill
               Icon={CalendarDays}
@@ -311,20 +317,10 @@ export default function NcDetailScreen() {
               }
               tone={deadlineColor(timing.bucket, actionable)}
             />
-            <MetaPill
-              Icon={ShieldCheck}
-              label={`Prioridade ${ncPriorityLabel(nc.prioridade).toLocaleLowerCase('pt-BR')}`}
-              tone={priorityColor(nc.prioridade)}
-            />
           </View>
         </Card>
 
-        <Section
-          eyebrow="OCORRÊNCIA"
-          title="Problema e encaminhamento"
-          Icon={AlertTriangle}
-        >
-          <DetailBlock label="Descrição" value={nc.descricao} emphasized />
+        <Section title="Correção programada" Icon={Wrench}>
           <DetailBlock label="Solução proposta" value={nc.solucao_proposta} />
           <View style={styles.fieldGrid}>
             <DetailField
@@ -337,11 +333,24 @@ export default function NcDetailScreen() {
               value={formatDateOnly(nc.data_nova_verif)}
               Icon={CalendarDays}
             />
+            <DetailField
+              label="Prioridade"
+              value={ncPriorityLabel(nc.prioridade)}
+              Icon={ShieldCheck}
+            />
           </View>
         </Section>
 
+        <Section title="Evidências da abertura" Icon={Camera}>
+          {evidence.length ? (
+            <PhotoGrid photos={evidence} onPress={index => openViewer(evidenceKeys, index)} />
+          ) : (
+            <Text style={styles.emptyText}>Nenhuma foto foi anexada à ocorrência.</Text>
+          )}
+        </Section>
+
         {nc.financeiro_requerido ? (
-          <Section eyebrow="IMPACTO" title="Impacto financeiro e medição" Icon={CircleDollarSign}>
+          <CollapsibleSection title="Impacto financeiro e medição" Icon={CircleDollarSign} expanded={Boolean(expandedDetails.financial)} onPress={() => toggleDetails('financial')}>
             <DetailBlock label="Situação financeira" value={financialStatusLabel(nc.situacao_financeira)} emphasized />
             {nc.justificativa_sem_impacto ? <DetailBlock label="Justificativa" value={nc.justificativa_sem_impacto} /> : null}
             {nc.prazo_avaliacao ? <DetailBlock label="Prazo da avaliação" value={formatDateOnly(nc.prazo_avaliacao)} /> : null}
@@ -353,10 +362,10 @@ export default function NcDetailScreen() {
             {nc.valor_bloqueado !== null && nc.valor_bloqueado > 0 ? <DetailBlock label="Valor bloqueado" value={formatMoney(nc.valor_bloqueado)} /> : null}
             {nc.observacao_financeira ? <DetailBlock label="Observação financeira" value={nc.observacao_financeira} /> : null}
             {nc.documento_financeiro_r2_key ? <DetailBlock label="Documento de suporte" value={nc.documento_financeiro_r2_key} /> : null}
-          </Section>
+          </CollapsibleSection>
         ) : null}
 
-        <Section eyebrow="CONTEXTO" title="Origem da ocorrência" Icon={ClipboardCheck}>
+        <CollapsibleSection title="Contexto técnico" Icon={ClipboardCheck} expanded={Boolean(expandedDetails.context)} onPress={() => toggleDetails('context')}>
           <View style={styles.contextList}>
             <ContextRow Icon={HardHat} label="Obra" value={nc.obra_nome} />
             <ContextRow Icon={MapPin} label="Ambiente" value={nc.ambiente_nome} />
@@ -391,20 +400,9 @@ export default function NcDetailScreen() {
             variant="secondary"
             onPress={() => openVerification(nc.verificacao_id)}
           />
-        </Section>
+        </CollapsibleSection>
 
-        <Section eyebrow="EVIDÊNCIAS" title="Registro fotográfico" Icon={Camera}>
-          {evidence.length ? (
-            <PhotoGrid
-              photos={evidence}
-              onPress={index => openViewer(evidenceKeys, index)}
-            />
-          ) : (
-            <Text style={styles.emptyText}>Nenhuma foto foi anexada à ocorrência.</Text>
-          )}
-        </Section>
-
-        <Section eyebrow="HISTÓRICO" title="Ciclo da não conformidade" Icon={History}>
+        <Section title="Acompanhamento" Icon={History}>
           <View style={styles.timeline}>
             {lifecycle.map((event, index) => (
               <View key={event.id} style={styles.timelineItem}>
@@ -454,7 +452,7 @@ export default function NcDetailScreen() {
         </Section>
 
         {(nc.resolvida_em || nc.observacao_resolucao || nc.foto_reinspecao_url) ? (
-          <Section eyebrow="ENCERRAMENTO" title="Resultado da resolução" Icon={CheckCircle2}>
+          <Section title="Resultado da resolução" Icon={CheckCircle2}>
             <DetailBlock
               label="Resolvida em"
               value={formatDateTime(nc.resolvida_em) ?? 'Data não informada'}
@@ -482,7 +480,7 @@ export default function NcDetailScreen() {
         ) : null}
 
         {(previousQuery.data[0] || nextQuery.data.length) ? (
-          <Section eyebrow="RECORRÊNCIA" title="Ocorrências relacionadas" Icon={RotateCcw}>
+          <CollapsibleSection title="Ocorrências relacionadas" Icon={RotateCcw} expanded={Boolean(expandedDetails.related)} onPress={() => toggleDetails('related')}>
             {previousQuery.data[0] ? (
               <RelatedNc
                 prefix="Ocorrência anterior"
@@ -498,7 +496,7 @@ export default function NcDetailScreen() {
                 onPress={() => router.push(`/nc/${related.id}` as never)}
               />
             ))}
-          </Section>
+          </CollapsibleSection>
         ) : null}
 
         <View style={styles.audit}>
@@ -526,12 +524,10 @@ export default function NcDetailScreen() {
 }
 
 function Section({
-  eyebrow,
   title,
   Icon,
   children,
 }: {
-  eyebrow: string;
   title: string;
   Icon: typeof AlertTriangle;
   children: React.ReactNode;
@@ -542,12 +538,42 @@ function Section({
         <View style={styles.sectionIcon}>
           <Icon size={18} color={Colors.brand} />
         </View>
-        <View>
-          <Text style={styles.sectionEyebrow}>{eyebrow}</Text>
-          <Text style={styles.sectionTitle}>{title}</Text>
-        </View>
+        <Text style={styles.sectionTitle}>{title}</Text>
       </View>
       <View style={styles.sectionContent}>{children}</View>
+    </Card>
+  );
+}
+
+function CollapsibleSection({
+  title,
+  Icon,
+  expanded,
+  onPress,
+  children,
+}: {
+  title: string;
+  Icon: typeof AlertTriangle;
+  expanded: boolean;
+  onPress: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card style={[styles.section, styles.collapsibleSection]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={`${expanded ? 'Recolher' : 'Expandir'} ${title}`}
+        onPress={onPress}
+        style={({ pressed }) => [styles.collapsibleHeader, pressed && styles.collapsibleHeaderPressed]}
+      >
+        <View style={styles.sectionIcon}>
+          <Icon size={18} color={Colors.brand} />
+        </View>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <ChevronDown size={20} color={Colors.textSecondary} style={expanded ? styles.chevronOpen : undefined} />
+      </Pressable>
+      {expanded ? <View style={styles.sectionContent}>{children}</View> : null}
     </Card>
   );
 }
@@ -719,12 +745,6 @@ function statusTone(status: string): BadgeTone {
   return 'neutral';
 }
 
-function priorityColor(priority: string): string {
-  if (priority === 'alta') return Colors.nok;
-  if (priority === 'media') return Colors.warn;
-  return Colors.textSecondary;
-}
-
 function deadlineColor(bucket: string, actionable: boolean): string {
   if (!actionable) return Colors.ok;
   if (bucket === 'overdue' || bucket === 'today') return Colors.nok;
@@ -775,13 +795,17 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   heroText: { flex: 1, gap: 3 },
-  eyebrow: { ...Typography.overline, color: Colors.nok },
   title: {
     ...Typography.heading,
     color: Colors.text,
     marginTop: 3,
   },
   service: { ...Typography.caption, color: Colors.textSecondary },
+  heroDescription: {
+    ...Typography.body,
+    color: Colors.text,
+    paddingVertical: Spacing.sm,
+  },
   heroMeta: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -805,6 +829,15 @@ const styles = StyleSheet.create({
   },
   section: { gap: Spacing.lg },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  collapsibleSection: { gap: 0 },
+  collapsibleHeader: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  collapsibleHeaderPressed: { opacity: 0.72 },
+  chevronOpen: { transform: [{ rotate: '180deg' }] },
   sectionIcon: {
     width: 38,
     height: 38,

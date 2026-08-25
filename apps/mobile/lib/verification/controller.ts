@@ -1,10 +1,12 @@
 import {
   DRAFT_SCHEMA_VERSION,
+  normalizeVerificationStep,
 } from './draft.types';
 import type {
   DraftMediaSource,
   NcDraftDetail,
   VerificationDraftV1,
+  VerificationFlowStep,
   VerificationFormState,
   VerificationMode,
   VerificationResult,
@@ -13,38 +15,41 @@ import type {
 import { collectVerificationErrors } from './validation';
 import type { VerificationValidationInput } from './validation';
 
+export { normalizeVerificationStep };
+
 /**
  * The order is deliberately kept outside the screen.  This makes navigation,
  * validation and deep-linking behave identically on native and on the PWA.
+ *
+ * Only two steps are navigable. 'context' and 'evidence' remain valid values
+ * of VerificationStep purely so that verification drafts saved by the old
+ * four-step build (schema v4) keep parsing — see normalizeVerificationStep.
  */
-export const VERIFICATION_STEPS: readonly { key: VerificationStep; label: string }[] = [
-  { key: 'context', label: 'Contexto' },
-  { key: 'checklist', label: 'Checklist' },
-  { key: 'evidence', label: 'Evidências' },
-  { key: 'review', label: 'Revisão' },
+export const VERIFICATION_STEPS: readonly { key: VerificationFlowStep; label: string }[] = [
+  { key: 'checklist', label: 'Vistoria' },
+  { key: 'review', label: 'Fechamento' },
 ] as const;
 
 export const verificationStepIndex = (step: VerificationStep): number =>
-  VERIFICATION_STEPS.findIndex(candidate => candidate.key === step);
+  VERIFICATION_STEPS.findIndex(candidate => candidate.key === normalizeVerificationStep(step));
 
-export function nextVerificationStep(step: VerificationStep): VerificationStep | null {
+export function nextVerificationStep(step: VerificationStep): VerificationFlowStep | null {
   const index = verificationStepIndex(step);
   if (index < 0) return null;
   const next = VERIFICATION_STEPS[index + 1];
   return next?.key ?? null;
 }
 
-export function previousVerificationStep(step: VerificationStep): VerificationStep | null {
+export function previousVerificationStep(step: VerificationStep): VerificationFlowStep | null {
   const index = verificationStepIndex(step);
   if (index < 0) return null;
   const previous = VERIFICATION_STEPS[index - 1];
   return previous?.key ?? null;
 }
 
-export function stepForVerificationError(key: string): VerificationStep {
-  if (key === 'equipe') return 'context';
-  if (key === 'conclusao' || key === 'reinspFoto') return 'evidence';
-  if (key === 'assinatura') return 'review';
+export function stepForVerificationError(key: string): VerificationFlowStep {
+  if (key === 'assinatura' || key === 'reinspFoto' || key === 'conclusao') return 'review';
+  // equipe, item_*, nc_desc_*, nc_foto_*, nc_sol_*, nc_data_*, nc_resp_*, nc_fin_*
   return 'checklist';
 }
 
@@ -177,7 +182,9 @@ export function createVerificationDraft(
     schemaVersion: DRAFT_SCHEMA_VERSION,
     ...context,
     updatedAt,
-    currentStep,
+    // Normalizado na gravação: cada auto-save migra rascunhos legados
+    // ('context'/'evidence') para o wizard de 2 etapas, sem bump de schema.
+    currentStep: normalizeVerificationStep(currentStep),
     state,
     // Media is intentionally persisted by DraftStore after copying blobs.
     media: [],

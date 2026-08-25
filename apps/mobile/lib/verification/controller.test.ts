@@ -9,6 +9,7 @@ import {
   isVerificationDraftCompatible,
   mediaSourcesFromVerificationState,
   nextVerificationStep,
+  normalizeVerificationStep,
   previousVerificationStep,
   setVerificationItemResult,
   stepForVerificationError,
@@ -29,15 +30,35 @@ const context = {
   itemFingerprint: '2:item-1:Piso acabado',
 };
 
-test('navega pelas quatro etapas e não ultrapassa os limites', () => {
-  assert.deepEqual(VERIFICATION_STEPS.map(step => step.key), ['context', 'checklist', 'evidence', 'review']);
-  assert.equal(nextVerificationStep('context'), 'checklist');
+test('navega pelas duas etapas e não ultrapassa os limites', () => {
+  assert.deepEqual(VERIFICATION_STEPS.map(step => step.key), ['checklist', 'review']);
+  assert.equal(nextVerificationStep('checklist'), 'review');
   assert.equal(nextVerificationStep('review'), null);
-  assert.equal(previousVerificationStep('review'), 'evidence');
-  assert.equal(previousVerificationStep('context'), null);
-  assert.equal(stepForVerificationError('equipe'), 'context');
+  assert.equal(previousVerificationStep('review'), 'checklist');
+  assert.equal(previousVerificationStep('checklist'), null);
+  assert.equal(stepForVerificationError('equipe'), 'checklist');
   assert.equal(stepForVerificationError('nc_desc_item-1'), 'checklist');
+  assert.equal(stepForVerificationError('reinspFoto'), 'review');
   assert.equal(stepForVerificationError('assinatura'), 'review');
+});
+
+test('rascunho v4 legado (4 etapas) é normalizado para o wizard de 2 etapas', () => {
+  assert.equal(normalizeVerificationStep('context'), 'checklist');
+  assert.equal(normalizeVerificationStep('checklist'), 'checklist');
+  assert.equal(normalizeVerificationStep('evidence'), 'review');
+  assert.equal(normalizeVerificationStep('review'), 'review');
+  // Entrada corrompida ou ausente nunca deve deixar a tela em branco.
+  assert.equal(normalizeVerificationStep(undefined), 'checklist');
+  assert.equal(normalizeVerificationStep('lixo'), 'checklist');
+
+  // nextVerificationStep/previousVerificationStep também toleram legado.
+  assert.equal(nextVerificationStep('context'), 'review');
+  assert.equal(previousVerificationStep('evidence'), 'checklist');
+
+  const draft = createVerificationDraft(context, emptyVerificationFormState(), 'evidence');
+  assert.equal(draft.currentStep, 'review');
+  const draftFromContext = createVerificationDraft(context, emptyVerificationFormState(), 'context');
+  assert.equal(draftFromContext.currentStep, 'checklist');
 });
 
 test('cria e atualiza itens mantendo painel de NC sincronizado', () => {

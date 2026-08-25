@@ -1,7 +1,6 @@
 // All admin pages require auth and live DB access — never pre-render at build time
 export const dynamic = 'force-dynamic';
 
-import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAuthContext } from '@/lib/auth/context';
 import Sidebar from '@/components/layout/Sidebar';
@@ -9,11 +8,9 @@ import QueryProvider from '@/lib/query-provider';
 import { ToastProvider } from '@/components/ui/Toast';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const context = user ? await getAuthContext() : null;
+  const context = await getAuthContext();
 
-  if (!user || !context) {
+  if (!context) {
     redirect('/login');
   }
   if (context.perfil === 'superadmin') redirect('/clientes');

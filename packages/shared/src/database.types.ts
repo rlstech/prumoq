@@ -1359,6 +1359,36 @@ export type Database = {
         Update: { id?: string; cliente_id?: string; medicao_item_id?: string; avanco_id?: string; quantidade_utilizada?: number; ativa?: boolean; created_at?: string }
         Relationships: []
       }
+      modelos_avaliacao_empreiteiro: {
+        Row: { id: string; cliente_id: string; empresa_id: string | null; nome: string; descricao: string | null; revisao_atual: number; ativo: boolean; criado_por: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; cliente_id: string; empresa_id?: string | null; nome: string; descricao?: string | null; revisao_atual?: number; ativo?: boolean; criado_por?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; cliente_id?: string; empresa_id?: string | null; nome?: string; descricao?: string | null; revisao_atual?: number; ativo?: boolean; criado_por?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      modelo_avaliacao_empreiteiro_revisoes: {
+        Row: { id: string; cliente_id: string; modelo_id: string; numero_revisao: number; descricao_alteracoes: string; publicado_por: string; created_at: string }
+        Insert: { id?: string; cliente_id: string; modelo_id: string; numero_revisao: number; descricao_alteracoes: string; publicado_por: string; created_at?: string }
+        Update: { id?: string; cliente_id?: string; modelo_id?: string; numero_revisao?: number; descricao_alteracoes?: string; publicado_por?: string; created_at?: string }
+        Relationships: []
+      }
+      modelo_avaliacao_empreiteiro_criterios: {
+        Row: { id: string; cliente_id: string; revisao_id: string; ordem: number; titulo: string; peso: number; created_at: string }
+        Insert: { id?: string; cliente_id: string; revisao_id: string; ordem: number; titulo: string; peso: number; created_at?: string }
+        Update: { id?: string; cliente_id?: string; revisao_id?: string; ordem?: number; titulo?: string; peso?: number; created_at?: string }
+        Relationships: []
+      }
+      avaliacoes_empreiteiro: {
+        Row: { id: string; cliente_id: string; obra_id: string; equipe_id: string; medicao_id: string | null; modelo_revisao_id: string; data_avaliacao: string; notificacoes_ocorridas: string | null; providencias_tomadas: string | null; pontos_obtidos: number; pontos_possiveis: number; percentual: number; status: Database["public"]["Enums"]["status_avaliacao_empreiteiro"]; avaliador_id: string; assinatura_url: string | null; assinada_em: string | null; concluida_em: string | null; invalidada_por: string | null; invalidada_em: string | null; motivo_invalidacao: string | null; created_offline: boolean; created_at: string; updated_at: string }
+        Insert: { id?: string; cliente_id: string; obra_id: string; equipe_id: string; medicao_id?: string | null; modelo_revisao_id: string; data_avaliacao?: string; notificacoes_ocorridas?: string | null; providencias_tomadas?: string | null; pontos_obtidos?: number; pontos_possiveis?: number; percentual?: number; status?: Database["public"]["Enums"]["status_avaliacao_empreiteiro"]; avaliador_id: string; assinatura_url?: string | null; assinada_em?: string | null; concluida_em?: string | null; invalidada_por?: string | null; invalidada_em?: string | null; motivo_invalidacao?: string | null; created_offline?: boolean; created_at?: string; updated_at?: string }
+        Update: { id?: string; cliente_id?: string; obra_id?: string; equipe_id?: string; medicao_id?: string | null; modelo_revisao_id?: string; data_avaliacao?: string; notificacoes_ocorridas?: string | null; providencias_tomadas?: string | null; pontos_obtidos?: number; pontos_possiveis?: number; percentual?: number; status?: Database["public"]["Enums"]["status_avaliacao_empreiteiro"]; avaliador_id?: string; assinatura_url?: string | null; assinada_em?: string | null; concluida_em?: string | null; invalidada_por?: string | null; invalidada_em?: string | null; motivo_invalidacao?: string | null; created_offline?: boolean; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      avaliacao_empreiteiro_itens: {
+        Row: { id: string; cliente_id: string; avaliacao_id: string; criterio_origem_id: string | null; ordem: number; titulo: string; peso: number; resultado: Database["public"]["Enums"]["resultado_criterio_avaliacao"] | null; comentario_nao_atende: string | null; created_at: string }
+        Insert: { id?: string; cliente_id: string; avaliacao_id: string; criterio_origem_id?: string | null; ordem: number; titulo: string; peso: number; resultado?: Database["public"]["Enums"]["resultado_criterio_avaliacao"] | null; comentario_nao_atende?: string | null; created_at?: string }
+        Update: { id?: string; cliente_id?: string; avaliacao_id?: string; criterio_origem_id?: string | null; ordem?: number; titulo?: string; peso?: number; resultado?: Database["public"]["Enums"]["resultado_criterio_avaliacao"] | null; comentario_nao_atende?: string | null; created_at?: string }
+        Relationships: []
+      }
       auditoria_operacional: {
         Row: { id: string; cliente_id: string; obra_id: string | null; entidade: string; entidade_id: string; acao: string; dados: Json; usuario_id: string | null; created_at: string }
         Insert: { id?: string; cliente_id: string; obra_id?: string | null; entidade: string; entidade_id: string; acao: string; dados?: Json; usuario_id?: string | null; created_at?: string }
@@ -1414,11 +1444,11 @@ export type Database = {
         Relationships: []
       }
       vw_saldos_medicao_servico: {
-        Row: { vinculacao_id: string | null; cliente_id: string | null; obra_id: string | null; fvs_planejada_id: string | null; etapa_id: string | null; equipe_id: string | null; escopo_atribuido: number | null; aprovado: number | null; medido: number | null; bloqueado: number | null; disponivel: number | null; unidade: string | null; preco_unitario: number | null; valor_disponivel: number | null }
+        Row: { vinculacao_id: string | null; cliente_id: string | null; obra_id: string | null; fvs_planejada_id: string | null; etapa_id: string | null; equipe_id: string | null; escopo_atribuido: number | null; aprovado: number | null; medido: number | null; bloqueado: number | null; disponivel: number | null; unidade: string | null; preco_unitario: number | null; valor_disponivel: number | null; valor_medido: number | null; valor_bloqueado: number | null }
         Relationships: []
       }
       vw_indicadores_medicoes: {
-        Row: { obra_id: string | null; quantidade_disponivel: number | null; valor_disponivel: number | null; quantidade_medida: number | null; quantidade_bloqueada: number | null; custo_estimado_retrabalho: number | null; custo_confirmado_retrabalho: number | null }
+        Row: { obra_id: string | null; quantidade_disponivel: number | null; valor_disponivel: number | null; quantidade_medida: number | null; quantidade_bloqueada: number | null; custo_estimado_retrabalho: number | null; custo_confirmado_retrabalho: number | null; valor_medido: number | null; valor_bloqueado: number | null }
         Relationships: []
       }
     }
@@ -1431,8 +1461,10 @@ export type Database = {
       descartar_medicao_rascunho: { Args: { p_medicao_id: string }; Returns: undefined }
       aprovar_medicao_servico: { Args: { p_medicao_id: string }; Returns: undefined }
       cancelar_medicao_servico: { Args: { p_medicao_id: string; p_motivo: string }; Returns: undefined }
+      publicar_modelo_avaliacao_empreiteiro: { Args: { p_modelo_id: string | null; p_empresa_id: string | null; p_nome: string; p_descricao: string | null; p_ativo: boolean; p_descricao_alteracoes: string; p_criterios: Json }; Returns: string }
+      invalidar_avaliacao_empreiteiro: { Args: { p_avaliacao_id: string; p_motivo: string }; Returns: undefined }
       trocar_empreiteiro_servico: { Args: { p_vinculo_id: string; p_nova_equipe_id: string; p_data: string; p_motivo: string }; Returns: string }
-      atualizar_impacto_financeiro_nc: { Args: { p_nc_id: string; p_situacao: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]; p_bloqueio: Database["public"]["Enums"]["bloqueio_medicao_nc"]; p_justificativa: string | null; p_responsavel_avaliacao: string | null; p_prazo: string | null; p_valor_estimado: number | null; p_valor_confirmado: number | null; p_responsavel_financeiro: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null; p_categoria: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null; p_quantidade_bloqueada: number | null; p_percentual_bloqueado: number | null; p_observacao: string | null; p_documento: string | null }; Returns: undefined }
+      atualizar_impacto_financeiro_nc: { Args: { p_nc_id: string; p_situacao: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]; p_bloqueio: Database["public"]["Enums"]["bloqueio_medicao_nc"]; p_justificativa: string | null; p_responsavel_avaliacao: string | null; p_prazo: string | null; p_valor_estimado: number | null; p_valor_confirmado: number | null; p_responsavel_financeiro: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null; p_categoria: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null; p_valor_bloqueado: number | null; p_observacao: string | null; p_documento: string | null }; Returns: undefined }
       get_accessible_media_keys: { Args: { p_keys: string[] }; Returns: string[] }
       get_ambientes_obra: {
         Args: { p_obra_id: string }
@@ -1722,6 +1754,8 @@ export type Database = {
       status_etapa_medicao: "nao_iniciada" | "em_execucao" | "concluida" | "aprovada" | "bloqueada_nc"
       status_vinculo_execucao: "ativo" | "concluido" | "substituido"
       status_medicao_servico: "rascunho" | "aprovada" | "cancelada"
+      status_avaliacao_empreiteiro: "rascunho" | "concluida" | "invalidada"
+      resultado_criterio_avaliacao: "atende" | "nao_atende"
       tipo_item_medicao: "avanco" | "retrabalho"
       perfil_usuario: "superadmin" | "admin" | "gestor" | "inspetor"
       resultado_item: "conforme" | "nao_conforme" | "na"
@@ -1895,6 +1929,8 @@ export const Constants = {
       status_etapa_medicao: ["nao_iniciada", "em_execucao", "concluida", "aprovada", "bloqueada_nc"],
       status_vinculo_execucao: ["ativo", "concluido", "substituido"],
       status_medicao_servico: ["rascunho", "aprovada", "cancelada"],
+      status_avaliacao_empreiteiro: ["rascunho", "concluida", "invalidada"],
+      resultado_criterio_avaliacao: ["atende", "nao_atende"],
       tipo_item_medicao: ["avanco", "retrabalho"],
       situacao_impacto_financeiro_nc: ["sem_impacto", "em_avaliacao", "estimado", "confirmado"],
       responsavel_financeiro_nc: ["construtora", "empreiteiro", "fornecedor", "projetista", "em_analise"],

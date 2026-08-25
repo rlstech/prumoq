@@ -4,49 +4,65 @@ import { goBack } from '../../../../../../../../../../lib/navigation';
 import {
   AlertCircle,
   ArrowLeft,
-  Camera,
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  Circle,
   ClipboardCheck,
-  Image as ImageIcon,
   LockKeyhole,
-  Minus,
-  PenLine,
   Save,
-  X,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Image,
   KeyboardAvoidingView,
-  Modal,
   Platform,
-  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { AppHeader } from '../../../../../../../../../../components/AppHeader';
-import { NCReinspectionBanner } from '../../../../../../../../../../components/NCReinspectionBanner';
 import { NCReprovadaPanel } from '../../../../../../../../../../components/NCReprovadaPanel';
 import { NCResolvedScreen } from '../../../../../../../../../../components/NCResolvedScreen';
-import { PhotoGrid } from '../../../../../../../../../../components/PhotoGrid';
 import { SignatureField } from '../../../../../../../../../../components/SignatureField';
 import {
   BottomActionBar,
   Button,
   Card,
-  Chip,
+  DataRow,
+  DatumCard,
+  EmptyState,
   ErrorBanner,
-  SectionTitle,
-  SegmentedControl,
+  ListSurface,
+  ModalSheet,
   Stepper,
+  Toast,
 } from '../../../../../../../../../../components/ui';
+import { ChecklistItemRow } from '../../../../../../../../../../components/verification/ChecklistItemRow';
+import { EvidenceSection } from '../../../../../../../../../../components/verification/EvidenceSection';
+import { ChecklistRouteRail } from '../../../../../../../../../../components/verification/ChecklistRouteRail';
+import { MeasurementAdvanceSection } from '../../../../../../../../../../components/verification/MeasurementAdvanceSection';
+import { FinancialNcTarget, NcFinancialResolutionSheet } from '../../../../../../../../../../components/verification/NcFinancialResolutionSheet';
+import { ReviewOutcome } from '../../../../../../../../../../components/verification/ReviewOutcome';
+import { SignatureSection } from '../../../../../../../../../../components/verification/SignatureSection';
+import {
+  SaveOutcome,
+  VerificationSaveOutcome,
+} from '../../../../../../../../../../components/verification/VerificationSaveOutcome';
+import { VerificationContextStrip } from '../../../../../../../../../../components/verification/VerificationContextStrip';
+import {
+  CountRow,
+  EquipeRow,
+  FeatureRow,
+  FvsRow,
+  ItemRow,
+  ManagerRow,
+  MeasurementLinkRow,
+  NcAbertaRow,
+  ReinspResult,
+  Resultado,
+  UltimaVerifItemRow,
+  UsuarioRow,
+  getRoutePriorityId,
+  measurementTotal,
+} from '../../../../../../../../../../components/verification/types';
 import { captureNcPhoto } from '../../../../../../../../../../hooks/useNcPhoto';
 import { usePhotoCapture } from '../../../../../../../../../../hooks/usePhotoCapture';
 import { useResponsiveLayout } from '../../../../../../../../../../hooks/useResponsiveLayout';
@@ -55,19 +71,17 @@ import {
   Breakpoints,
   Colors,
   FontFamily,
-  FontSizes,
   Radius,
   Spacing,
   Typography,
+  ZIndex,
 } from '../../../../../../../../../../lib/constants';
 import { db } from '../../../../../../../../../../lib/powersync';
-import { confirmDialog, alertInfo } from '../../../../../../../../../../lib/platform-alert';
+import { alertInfo } from '../../../../../../../../../../lib/platform-alert';
 import { supabase } from '../../../../../../../../../../lib/supabase';
 import {
   makeDraftId,
-  NcDraftDetail,
   VerificationMode,
-  VerificationResult,
   VerificationStep,
 } from '../../../../../../../../../../lib/verification/draft.types';
 import {
@@ -75,8 +89,8 @@ import {
   verificationStatusFromResults,
 } from '../../../../../../../../../../lib/verification/controller';
 import { approveReinspecao, createNc, reprovarReinspecao } from '../../../../../../../../../../services/nc.service';
+import { resolveNcFinancialImpact } from '../../../../../../../../../../services/nc-finance.service';
 import { recordApprovedAdvances } from '../../../../../../../../../../services/measurement.service';
-import type { NcFinancialDeclaration, NcFinancialSituation, NcMeasurementBlock } from '../../../../../../../../../../lib/nc-finance';
 
 function uuid(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -84,289 +98,6 @@ function uuid(): string {
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
 }
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map(w => w[0] ?? '')
-    .join('')
-    .toUpperCase();
-}
-
-type Resultado = VerificationResult;
-
-interface ItemRow { id: string; ordem: number; titulo: string; metodo_verif: string; tolerancia: string }
-interface EquipeRow { id: string; nome: string; tipo: string }
-interface ManagerRow { id: string; nome: string }
-interface FeatureRow { controle_medicoes_efetivo: number; controle_financeiro_nc_efetivo: number }
-interface MeasurementLinkRow { id: string; etapa_id: string | null; equipe_id: string; equipe_nome: string; etapa_nome: string | null; escopo_atribuido: string; unidade: string; permite_avanco_parcial: number; executado_atual: string; aprovado_atual: string }
-interface FvsRow { id: string; subservico: string; revisao_associada: number; status: string }
-interface UsuarioRow { id: string; cliente_id: string; nome: string; cargo: string }
-interface CountRow { count: number }
-interface NcAbertaRow {
-  nc_id: string;
-  fvs_padrao_item_id: string;
-  titulo: string;
-  descricao: string;
-  numero_ocorrencia: number;
-  data_nova_verif: string | null;
-  responsavel_id: string | null;
-  numero_verif: number;
-  nc_data_criacao: string;
-}
-
-type ReinspResult =
-  | { type: 'idle' }
-  | { type: 'aprovada'; itemTitle: string; abertoEm: string | null; resolvidoEm: string; responsavelNome: string | null; fotoUri: string | null }
-  | { type: 'reprovada'; ocorrencia: number; ncAnteriorId: string; ncAnteriorDescricao: string; ncAnteriorVerifNum: number; ncAnteriorDataCriacao: string; verificacaoId: string; verificacaoItemId: string };
-
-interface UltimaVerifItemRow {
-  fvs_padrao_item_id: string;
-  resultado: string;
-}
-
-type NcDetail = NcDraftDetail;
-
-type ChecklistFilter = 'pending' | 'all' | 'nc';
-
-// ── NC Panel ─────────────────────────────────────────────────────────────────
-function NcPanel({
-  visible,
-  detail,
-  onChange,
-  onAddPhoto,
-  equipes,
-  responsibleError,
-  financialRequired,
-  managers,
-  financialError,
-}: {
-  visible: boolean;
-  detail: NcDetail;
-  onChange: (d: Partial<NcDetail>) => void;
-  onAddPhoto: () => void;
-  equipes: EquipeRow[];
-  responsibleError?: string;
-  financialRequired: boolean;
-  managers: ManagerRow[];
-  financialError?: string;
-}) {
-  const [showRespPicker, setShowRespPicker] = useState(false);
-  const [showManagerPicker, setShowManagerPicker] = useState(false);
-  if (!visible) return null;
-
-  const selectedResp = equipes.find(e => e.id === detail.responsavel_id);
-  const photoUri = detail.foto
-    ? (detail.foto.startsWith('pending:') ? detail.foto.slice(8) : detail.foto)
-    : null;
-  const financial = detail.financeiro;
-  const patchFinancial = (patch: Partial<NcFinancialDeclaration>) => onChange({
-    financeiro: {
-      situacao: financial?.situacao ?? 'em_avaliacao',
-      bloqueio: financial?.bloqueio ?? 'nao',
-      ...financial,
-      ...patch,
-    },
-  });
-
-  return (
-    <View style={ncSt.panel}>
-      {/* Picker de responsável */}
-      <Modal visible={showRespPicker} transparent animationType="fade">
-        <Pressable style={ncSt.overlay} onPress={() => setShowRespPicker(false)}>
-          <View style={ncSt.pickerBox}>
-            <Text style={ncSt.pickerTitle}>Responsável pela correção</Text>
-            <ScrollView>
-              {equipes.map(eq => (
-                <Pressable
-                  key={eq.id}
-                  style={[ncSt.pickerItem, detail.responsavel_id === eq.id && ncSt.pickerItemActive]}
-                  onPress={() => { onChange({ responsavel_id: eq.id }); setShowRespPicker(false); }}
-                >
-                  <Text style={[ncSt.pickerItemText, detail.responsavel_id === eq.id && ncSt.pickerItemTextActive]}>
-                    {eq.nome}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-        </Pressable>
-      </Modal>
-
-      <View style={ncSt.header}>
-        <Text style={ncSt.title}>Registro de não conformidade</Text>
-        <View style={ncSt.badge}><Text style={ncSt.badgeText}>Obrigatório</Text></View>
-      </View>
-
-      {financialRequired ? (
-        <View style={ncSt.financeBox}>
-          <View style={ncSt.header}><Text style={ncSt.financeTitle}>Impacto financeiro *</Text><View style={ncSt.badge}><Text style={ncSt.badgeText}>Obrigatório</Text></View></View>
-          {financialError ? <Text style={ncSt.errorText}>{financialError}</Text> : null}
-          <Text style={ncSt.label}>Situação financeira</Text>
-          <View style={ncSt.optionWrap}>{([
-            ['sem_impacto','Sem impacto'],['em_avaliacao','Em avaliação'],['estimado','Estimado'],['confirmado','Confirmado'],
-          ] as [NcFinancialSituation,string][]).map(([value,label])=><Pressable key={value} onPress={()=>patchFinancial({situacao:value,valorConfirmado:value==='sem_impacto'?'0':financial?.valorConfirmado})} style={[ncSt.option,financial?.situacao===value&&ncSt.optionActive]}><Text style={[ncSt.optionText,financial?.situacao===value&&ncSt.optionTextActive]}>{label}</Text></Pressable>)}</View>
-          {financial?.situacao === 'sem_impacto' ? <><Text style={ncSt.label}>Justificativa *</Text><TextInput style={ncSt.input} value={financial.justificativaSemImpacto??''} onChangeText={value=>patchFinancial({justificativaSemImpacto:value,valorConfirmado:'0'})} placeholder="Por que não existe impacto?" placeholderTextColor={Colors.textTertiary}/></> : null}
-          {financial?.situacao === 'em_avaliacao' ? <><Modal visible={showManagerPicker} transparent animationType="fade"><Pressable style={ncSt.overlay} onPress={()=>setShowManagerPicker(false)}><View style={ncSt.pickerBox}><Text style={ncSt.pickerTitle}>Responsável pela avaliação</Text><ScrollView>{managers.map(manager=><Pressable key={manager.id} style={ncSt.pickerItem} onPress={()=>{patchFinancial({responsavelAvaliacaoId:manager.id});setShowManagerPicker(false)}}><Text style={ncSt.pickerItemText}>{manager.nome}</Text></Pressable>)}</ScrollView></View></Pressable></Modal><Text style={ncSt.label}>Responsável pela avaliação *</Text><Pressable style={ncSt.selectBtn} onPress={()=>setShowManagerPicker(true)}><Text style={ncSt.selectText}>{managers.find(m=>m.id===financial.responsavelAvaliacaoId)?.nome??'Selecionar gestor'}</Text><ChevronDown size={12} color={Colors.textSecondary}/></Pressable><Text style={ncSt.label}>Prazo para definição *</Text><TextInput style={ncSt.input} value={financial.prazoAvaliacao??''} onChangeText={value=>patchFinancial({prazoAvaliacao:value})} placeholder="AAAA-MM-DD" placeholderTextColor={Colors.textTertiary}/></> : null}
-          {financial && (financial.situacao === 'estimado' || financial.situacao === 'confirmado') ? <><Text style={ncSt.label}>{financial.situacao==='estimado'?'Valor estimado *':'Valor confirmado *'}</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" value={(financial.situacao==='estimado'?financial.valorEstimado:financial.valorConfirmado)??''} onChangeText={value=>patchFinancial(financial.situacao==='estimado'?{valorEstimado:value}:{valorConfirmado:value})} placeholder="0,00" placeholderTextColor={Colors.textTertiary}/><Text style={ncSt.label}>Responsável financeiro *</Text><View style={ncSt.optionWrap}>{(['construtora','empreiteiro','fornecedor','projetista','em_analise'] as const).map(value=><Pressable key={value} style={[ncSt.option,financial.responsavelFinanceiro===value&&ncSt.optionActive]} onPress={()=>patchFinancial({responsavelFinanceiro:value})}><Text style={[ncSt.optionText,financial.responsavelFinanceiro===value&&ncSt.optionTextActive]}>{value.replaceAll('_',' ')}</Text></Pressable>)}</View><Text style={ncSt.label}>Categoria *</Text><View style={ncSt.optionWrap}>{(['mao_obra_retrabalho','perda_material','equipamento_mobilizacao','atraso','glosa_retencao','desconto_empreiteiro','outro'] as const).map(value=><Pressable key={value} style={[ncSt.option,financial.categoria===value&&ncSt.optionActive]} onPress={()=>patchFinancial({categoria:value})}><Text style={[ncSt.optionText,financial.categoria===value&&ncSt.optionTextActive]}>{value.replaceAll('_',' ')}</Text></Pressable>)}</View></> : null}
-          <Text style={ncSt.label}>Esta NC bloqueia a medição?</Text><View style={ncSt.optionWrap}>{([['nao','Não'],['total','Totalmente'],['parcial','Parcialmente']] as [NcMeasurementBlock,string][]).map(([value,label])=><Pressable key={value} style={[ncSt.option,financial?.bloqueio===value&&ncSt.optionActive]} onPress={()=>patchFinancial({bloqueio:value})}><Text style={[ncSt.optionText,financial?.bloqueio===value&&ncSt.optionTextActive]}>{label}</Text></Pressable>)}</View>
-          {financial?.bloqueio==='parcial'?<><Text style={ncSt.label}>Valor bloqueado *</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" placeholder="0,00" placeholderTextColor={Colors.textTertiary} value={financial.valorBloqueado??''} onChangeText={value=>patchFinancial({valorBloqueado:value})}/><Text style={st.helperText}>Descontado da medição quando o responsável financeiro é o empreiteiro executor do serviço.</Text></>:null}
-        </View>
-      ) : null}
-
-      <Text style={ncSt.label}>Descrição da não conformidade *</Text>
-      <TextInput
-        style={ncSt.input}
-        multiline
-        numberOfLines={2}
-        placeholder="Descreva o problema encontrado..."
-        placeholderTextColor={Colors.textTertiary}
-        value={detail.descricao}
-        onChangeText={t => onChange({ descricao: t })}
-      />
-
-      <Text style={ncSt.label}>Foto da evidência *</Text>
-      {photoUri ? (
-        <View style={ncSt.photoRow}>
-          <Image source={{ uri: photoUri }} style={ncSt.photoThumb} />
-          <Text style={ncSt.photoOk}>✓ Foto adicionada</Text>
-          <Pressable onPress={() => onChange({ foto: null })}>
-            <Text style={ncSt.photoRemove}>Remover</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <Pressable style={ncSt.photoBtn} onPress={onAddPhoto}>
-          <Camera size={14} color={Colors.nok} />
-          <Text style={ncSt.photoBtnText}>Tirar foto da evidência</Text>
-        </Pressable>
-      )}
-
-      <Text style={ncSt.label}>Solução proposta *</Text>
-      <TextInput
-        style={ncSt.input}
-        multiline
-        numberOfLines={2}
-        placeholder="Descreva a ação corretiva..."
-        placeholderTextColor={Colors.textTertiary}
-        value={detail.solucao_proposta}
-        onChangeText={t => onChange({ solucao_proposta: t })}
-      />
-
-      {/* Date + Responsável em 2 colunas */}
-      <View style={ncSt.twoCol}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={ncSt.label}>Nova data de verif. *</Text>
-          {Platform.OS === 'web' ? (
-            <input
-              type="date"
-              value={detail.data_nova_verif}
-              onChange={(event: { target: { value: string } }) => onChange({ data_nova_verif: event.target.value })}
-              style={{
-                backgroundColor: Colors.surface,
-                borderRadius: 6,
-                border: '0.5px solid rgba(0,0,0,0.12)',
-                padding: '7px 10px',
-                fontSize: FontSizes.tiny,
-                color: Colors.text,
-                width: '100%',
-                boxSizing: 'border-box',
-                outline: 'none',
-                fontFamily: 'inherit',
-              }}
-            />
-          ) : (
-            <TextInput
-              style={ncSt.input}
-              placeholder="AAAA-MM-DD"
-              placeholderTextColor={Colors.textTertiary}
-              value={detail.data_nova_verif}
-              onChangeText={t => onChange({ data_nova_verif: t })}
-              keyboardType="numbers-and-punctuation"
-              maxLength={10}
-            />
-          )}
-        </View>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={ncSt.label}>Responsável *</Text>
-          <Pressable style={[ncSt.selectBtn, responsibleError && ncSt.selectError]} onPress={() => setShowRespPicker(true)}>
-            <Text style={ncSt.selectText} numberOfLines={1}>
-              {selectedResp ? selectedResp.nome : 'Selecionar...'}
-            </Text>
-            <ChevronDown size={11} color={Colors.textSecondary} />
-          </Pressable>
-          {responsibleError ? <Text style={ncSt.errorText}>{responsibleError}</Text> : null}
-        </View>
-      </View>
-    </View>
-  );
-}
-
-const ncSt = StyleSheet.create({
-  panel: {
-    backgroundColor: Colors.nokBg,
-    borderRadius: Radius.md,
-    borderWidth: 0.5,
-    borderColor: Colors.nok,
-    padding: Spacing.md,
-    gap: Spacing.sm,
-    marginTop: Spacing.xs,
-  },
-  header:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  title:     { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.nok },
-  badge:     { backgroundColor: Colors.nok, borderRadius: Radius.full, paddingHorizontal: 7, paddingVertical: 2 },
-  badgeText: { fontSize: FontSizes.tiny, color: Colors.surface, fontWeight: '600' },
-  label:     { fontSize: FontSizes.xs, fontWeight: '500', color: Colors.nok },
-  input: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.sm,
-    borderWidth: 0.5,
-    borderColor: Colors.nok,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    fontSize: FontSizes.sm,
-    color: Colors.text,
-    textAlignVertical: 'top',
-  },
-  photoRow:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  photoThumb:  { width: 52, height: 52, borderRadius: 6, borderWidth: 0.5, borderColor: Colors.nok },
-  photoOk:     { flex: 1, fontSize: FontSizes.xs, color: Colors.ok, fontWeight: '500' },
-  photoRemove: { fontSize: FontSizes.xs, color: Colors.nok },
-  photoBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: Spacing.xs,
-    paddingVertical: 9,
-    borderWidth: 0.5, borderStyle: 'dashed', borderColor: Colors.nok,
-    borderRadius: Radius.sm, backgroundColor: Colors.surface,
-  },
-  photoBtnText: { fontSize: FontSizes.sm, color: Colors.nok, fontWeight: '500' },
-  twoCol:    { flexDirection: 'row', gap: Spacing.sm },
-  selectBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.sm, borderWidth: 0.5, borderColor: Colors.nok,
-    paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs,
-    minHeight: 34,
-  },
-  selectError: { borderColor: Colors.nok, borderWidth: 1.5 },
-  selectText: { flex: 1, fontSize: FontSizes.sm, color: Colors.text },
-  errorText: { fontSize: FontSizes.tiny, color: Colors.nok, fontFamily: FontFamily.semibold },
-  financeBox: { backgroundColor: Colors.surface, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.warn, padding: Spacing.sm, gap: Spacing.xs },
-  financeTitle: { fontSize: FontSizes.sm, color: Colors.text, fontFamily: FontFamily.semibold },
-  optionWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  option: { borderWidth: 1, borderColor: Colors.borderNormal, borderRadius: Radius.full, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: Colors.surface2 },
-  optionActive: { borderColor: Colors.progress, backgroundColor: Colors.progressBg },
-  optionText: { fontSize: FontSizes.tiny, color: Colors.textSecondary },
-  optionTextActive: { color: Colors.progress, fontFamily: FontFamily.semibold },
-  // picker modal
-  overlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
-  pickerBox:     { width: '90%', maxHeight: 280, backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md },
-  pickerTitle:   { fontSize: FontSizes.base, fontWeight: '600', color: Colors.text, marginBottom: Spacing.sm },
-  pickerItem:    { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm },
-  pickerItemActive:     { backgroundColor: Colors.progressBg },
-  pickerItemText:       { fontSize: FontSizes.base, color: Colors.text },
-  pickerItemTextActive: { color: Colors.progress, fontWeight: '500' },
-});
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function NovaVerificacaoScreen() {
@@ -382,7 +113,7 @@ export default function NovaVerificacaoScreen() {
     error: usuarioError,
   } = useQuery<UsuarioRow>(
     userId
-      ? `SELECT id, cliente_id, nome, cargo FROM usuarios WHERE id = ? LIMIT 1`
+      ? `SELECT id, cliente_id, nome, cargo, perfil FROM usuarios WHERE id = ? LIMIT 1`
       : `SELECT 1 WHERE 0`,
     userId ? [userId] : [],
   );
@@ -455,6 +186,7 @@ export default function NovaVerificacaoScreen() {
   const { data: ncsAbertas } = useQuery<NcAbertaRow>(`
     SELECT nc.id as nc_id, nc.descricao, nc.numero_ocorrencia,
            nc.data_nova_verif, nc.responsavel_id,
+           nc.financeiro_requerido, nc.situacao_financeira,
            vi.fvs_padrao_item_id, vi.titulo,
            v.numero_verif, v.data_verif as nc_data_criacao
     FROM nao_conformidades nc
@@ -495,12 +227,14 @@ export default function NovaVerificacaoScreen() {
 
   // Presentation-only state. Form data, validation and drafts live in
   // useVerificationFlow so native and PWA follow the same state machine.
-  const [showEquipePicker, setShowEquipePicker] = useState(false);
   const [showSignature, setShowSignature] = useState(false);
+  const [showConclusionConfirm, setShowConclusionConfirm] = useState(false);
+  const [saveOutcome, setSaveOutcome] = useState<SaveOutcome>('continue');
   const [isSaving, setIsSaving] = useState(false);
   const [reinspResult, setReinspResult] = useState<ReinspResult>({ type: 'idle' });
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [checklistFilter, setChecklistFilter] = useState<ChecklistFilter>('pending');
+  const [resolvedFinancialNcIds, setResolvedFinancialNcIds] = useState<string[]>([]);
+  const [showFinancialResolution, setShowFinancialResolution] = useState(false);
 
   function showToast(msg: string, type: 'success' | 'error', onDone?: () => void) {
     setToast({ msg, type });
@@ -611,12 +345,29 @@ export default function NovaVerificacaoScreen() {
       },
     } });
   }
-  // Soma em 6 casas decimais para evitar artefatos de ponto flutuante
-  // (numeric(18,6) no banco).
-  function measurementTotal(previous: string, delta: string): number {
-    return Math.round(((Number(previous) || 0) + (Number(delta) || 0)) * 1e6) / 1e6;
-  }
   const algumNaoConforme = Object.values(itemResults).some(r => r === 'nao_conforme');
+  const canManageFinancialImpact = usuario?.perfil === 'admin' || usuario?.perfil === 'gestor';
+  const closingNcs = useMemo(
+    () => ncsAbertas.filter(nc => {
+      const result = itemResults[nc.fvs_padrao_item_id];
+      return result === 'conforme' || result === 'nao_conforme';
+    }),
+    [itemResults, ncsAbertas],
+  );
+  const pendingFinancialNcs = useMemo(
+    () => closingNcs.filter(nc => (
+      financialRequired
+      && Boolean(nc.financeiro_requerido)
+      && nc.situacao_financeira !== 'sem_impacto'
+      && nc.situacao_financeira !== 'confirmado'
+      && !resolvedFinancialNcIds.includes(nc.nc_id)
+    )),
+    [closingNcs, financialRequired, resolvedFinancialNcIds],
+  );
+  const financialResolutionTarget = useMemo<FinancialNcTarget | null>(() => {
+    const nc = pendingFinancialNcs[0];
+    return nc ? { ncId: nc.nc_id, descricao: nc.descricao } : null;
+  }, [pendingFinancialNcs]);
   const canConcludeCurrentFvs = canConcludeFvs(
     {
       dataVerif,
@@ -636,6 +387,12 @@ export default function NovaVerificacaoScreen() {
       hasUnresolvedNc: hasOpenNCs,
     },
   );
+
+  useEffect(() => {
+    if (canConcludeCurrentFvs) return;
+    setSaveOutcome('continue');
+    setShowConclusionConfirm(false);
+  }, [canConcludeCurrentFvs]);
 
   // Pré-preenche a equipe: quando o serviço tem medição ativa com equipe
   // executora vinculada (vínculo ativo), a equipe fica fixa — não é possível
@@ -738,6 +495,17 @@ export default function NovaVerificacaoScreen() {
     }
 
     if (!validate()) return;
+    if (pendingFinancialNcs.length > 0) {
+      if (canManageFinancialImpact) {
+        setShowFinancialResolution(true);
+      } else {
+        showToast(
+          'Esta NC precisa de uma decisão financeira de um administrador ou gestor antes de ser encerrada.',
+          'error',
+        );
+      }
+      return;
+    }
     if (measurementEnabled && registrarAvanco) {
       for (const link of selectedMeasurementLinks) {
         const draft = currentMeasurementAdvances[link.id];
@@ -932,7 +700,11 @@ export default function NovaVerificacaoScreen() {
         setReinspResult(pendingResult);
       } else {
         showToast(
-          shouldConclude ? 'Verificação salva e FVS concluída!' : 'Verificação salva com sucesso!',
+          shouldConclude
+            ? 'Verificação salva. A FVS foi concluída.'
+            : hasOpenNCs
+              ? 'Reinspeção salva com sucesso.'
+              : 'Verificação salva. A FVS permanece aberta.',
           'success',
           () => goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}/fvs/${fvsId}`),
         );
@@ -948,28 +720,35 @@ export default function NovaVerificacaoScreen() {
 
   function handleConclude() {
     if (!validate()) return;
-    confirmDialog({
-      title: 'Concluir esta FVS?',
-      message: 'A FVS será bloqueada. Para registrar outra verificação depois, será necessário reabri-la com justificativa.',
-      confirmText: 'Salvar e concluir',
-      onConfirm: () => { void handleSave(true); },
-    });
+    setShowConclusionConfirm(true);
   }
 
-  const inspectorInitials = usuario?.nome ? getInitials(usuario.nome) : 'IN';
-  const answeredCount = itens.filter(item => itemResults[item.id]).length;
+  async function handleFinancialResolution(
+    target: FinancialNcTarget,
+    declaration: Parameters<typeof resolveNcFinancialImpact>[1],
+  ) {
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && !navigator.onLine) {
+      throw new Error('A decisão financeira precisa de conexão. O rascunho da reinspeção foi preservado.');
+    }
+    const nativeConnection = (db as unknown as { currentStatus?: { connected?: boolean } }).currentStatus?.connected;
+    if (Platform.OS !== 'web' && nativeConnection === false) {
+      throw new Error('A decisão financeira precisa de conexão. O rascunho da reinspeção foi preservado.');
+    }
+    await resolveNcFinancialImpact(target.ncId, declaration);
+    setResolvedFinancialNcIds(previous => [...previous, target.ncId]);
+    setShowFinancialResolution(false);
+    showToast(
+      pendingFinancialNcs.length > 1
+        ? 'Impacto financeiro resolvido. Conclua a decisão das demais NCs antes de salvar.'
+        : 'Impacto financeiro resolvido. Agora você pode salvar a reinspeção.',
+      'success',
+    );
+  }
+
   const conformCount = Object.values(itemResults).filter(result => result === 'conforme').length;
   const ncCount = Object.values(itemResults).filter(result => result === 'nao_conforme').length;
   const naCount = Object.values(itemResults).filter(result => result === 'na').length;
-  const filteredChecklistItems = sortedItens.filter(item => {
-    if (checklistFilter === 'pending') {
-      return !itemResults[item.id] || !!ncAbertoByItemId[item.id];
-    }
-    if (checklistFilter === 'nc') {
-      return itemResults[item.id] === 'nao_conforme' || !!ncAbertoByItemId[item.id];
-    }
-    return true;
-  });
+  const routePriorityId = getRoutePriorityId(sortedItens, itemResults, ncsAbertas);
   const reviewErrors = getValidationErrors();
   const draftHelper = {
     idle: hasMeaningfulProgress ? 'Rascunho local ativo' : 'O rascunho começa ao preencher',
@@ -977,7 +756,6 @@ export default function NovaVerificacaoScreen() {
     saved: 'Rascunho salvo neste dispositivo',
     error: 'Não foi possível atualizar o rascunho',
   }[draftStatus];
-
   // Guard: FVS concluída bloqueia nova verificação (RN-FVS-01)
   if (fvs && (fvs.status === 'conforme' || fvs.status === 'concluida' || fvs.status === 'concluida_ressalva')) {
     return (
@@ -1074,570 +852,186 @@ export default function NovaVerificacaoScreen() {
 
           <View style={[st.flowColumns, isTablet && st.flowColumnsTablet]}>
             <View style={st.flowMain}>
-              {currentStep === 'context' ? (
-                <>
-                  <SectionTitle
-                    eyebrow="ETAPA 1 DE 4"
-                    title="Contexto do serviço"
-                    description="Confirme a data e quem está executando o serviço nesta verificação."
-                  />
-
-                  {hasOpenNCs ? (
-                    <NCReinspectionBanner
-                      itemTitle={ncsAbertas[0]?.titulo ?? ''}
-                      ncId={ncsAbertas[0]?.nc_id ?? ''}
-                    />
-                  ) : null}
-
-                  <Card style={st.inspectorCard}>
-                    <View style={st.inspectorAvatar}>
-                      <Text style={st.inspectorAvatarText}>{inspectorInitials}</Text>
-                    </View>
-                    <View style={st.flex}>
-                      <Text style={st.inspectorName}>{usuario?.nome ?? 'Inspetor'}</Text>
-                      <Text style={st.inspectorRole}>{usuario?.cargo ?? 'Inspetor de Campo'}</Text>
-                    </View>
-                    <Chip label="Inspetor logado" selected />
-                  </Card>
-
-                  <Card style={st.formCard}>
-                    <View style={st.section}>
-                      <Text style={st.sectionTitle}>Data da verificação</Text>
-                      {Platform.OS === 'web' ? (
-                        <input
-                          aria-label="Data da verificação"
-                          type="date"
-                          value={dataVerif}
-                          onChange={(event: { target: { value: string } }) => updateState({ dataVerif: event.target.value })}
-                          style={{
-                            backgroundColor: Colors.surface,
-                            borderRadius: Radius.md,
-                            border: `1px solid ${Colors.borderNormal}`,
-                            minHeight: 48,
-                            padding: '10px 12px',
-                            fontSize: FontSizes.md,
-                            color: Colors.text,
-                            width: '100%',
-                            boxSizing: 'border-box',
-                            outline: 'none',
-                            fontFamily: FontFamily.regular,
-                          }}
-                        />
-                      ) : (
-                        <TextInput
-                          accessibilityLabel="Data da verificação"
-                          style={st.input}
-                          value={dataVerif}
-                          onChangeText={value => updateState({ dataVerif: value })}
-                          placeholder="AAAA-MM-DD"
-                          placeholderTextColor={Colors.textTertiary}
-                          keyboardType="numbers-and-punctuation"
-                          maxLength={10}
-                        />
-                      )}
-                    </View>
-
-                    <View style={st.section}>
-                      <Text style={st.sectionTitle}>Equipe executora</Text>
-                      {errors.equipe ? <Text style={st.errorText}>{errors.equipe}</Text> : null}
-                      {equipeLockedSingle ? (
-                        <View style={st.lockedEquipeBox}>
-                          <LockKeyhole size={14} color={Colors.ok} />
-                          <Text style={st.lockedEquipeHint}>Equipe fixa · vinculada à medição deste serviço</Text>
-                        </View>
-                      ) : (
-                        <>
-                          <Modal visible={showEquipePicker} transparent animationType="fade">
-                            <Pressable style={ncSt.overlay} onPress={() => setShowEquipePicker(false)}>
-                              <View style={ncSt.pickerBox}>
-                                <Text style={ncSt.pickerTitle}>Equipe executora</Text>
-                                <ScrollView>
-                                  {pickerEquipes.map(team => (
-                                    <Pressable
-                                      accessibilityRole="radio"
-                                      accessibilityState={{ checked: selectedEquipeId === team.id }}
-                                      key={team.id}
-                                      style={[ncSt.pickerItem, selectedEquipeId === team.id && ncSt.pickerItemActive]}
-                                      onPress={() => {
-                                        updateState({ selectedEquipeId: team.id });
-                                        setShowEquipePicker(false);
-                                      }}
-                                    >
-                                      <Text style={[ncSt.pickerItemText, selectedEquipeId === team.id && ncSt.pickerItemTextActive]}>
-                                        {team.nome}
-                                      </Text>
-                                      <Text style={st.equipePickerTipo}>{team.tipo}</Text>
-                                    </Pressable>
-                                  ))}
-                                </ScrollView>
-                              </View>
-                            </Pressable>
-                          </Modal>
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel="Selecionar equipe executora"
-                            style={[st.teamSelectBtn, errors.equipe && st.inputError]}
-                            onPress={() => setShowEquipePicker(true)}
-                          >
-                            <View style={st.flex}>
-                              <Text style={st.teamSelectLabel}>Responsável técnico e equipe</Text>
-                              <Text style={st.teamSelectBtnText} numberOfLines={1}>
-                                {selectedEquipe ? selectedEquipe.nome : 'Selecionar equipe'}
-                              </Text>
-                            </View>
-                            <ChevronDown size={18} color={Colors.textSecondary} />
-                          </Pressable>
-                        </>
-                      )}
-                      {selectedEquipe ? (
-                        <View style={st.teamSelected}>
-                          <View style={st.teamAvatar}>
-                            <Text style={st.teamAvatarText}>{getInitials(selectedEquipe.nome)}</Text>
-                          </View>
-                          <View style={st.flex}>
-                            <Text style={st.teamName}>{selectedEquipe.nome}</Text>
-                            <Text style={st.teamType}>{selectedEquipe.tipo ?? 'Equipe própria'}</Text>
-                          </View>
-                          <CheckCircle2 size={18} color={Colors.ok} />
-                        </View>
-                      ) : null}
-                    </View>
-
-                  </Card>
-                </>
-              ) : null}
-
               {currentStep === 'checklist' ? (
-                <>
-                  <SectionTitle
-                    eyebrow="ETAPA 2 DE 4"
-                    title="Checklist de qualidade"
-                    description={`${answeredCount} de ${itens.length} itens classificados.`}
-                  />
-                  <View style={st.progressSummary}>
-                    <View style={st.progressSummaryBar}>
-                      <View
-                        style={[
-                          st.progressSummaryFill,
-                          { width: `${itens.length ? (answeredCount / itens.length) * 100 : 0}%` as `${number}%` },
-                        ]}
-                      />
-                    </View>
-                    <Text style={st.progressSummaryText}>
-                      {itens.length ? Math.round((answeredCount / itens.length) * 100) : 0}%
-                    </Text>
-                  </View>
-                  <SegmentedControl
-                    accessibilityLabel="Filtro do checklist"
-                    value={checklistFilter}
-                    onChange={setChecklistFilter}
-                    options={[
-                      { value: 'pending', label: `Pendentes (${itens.length - answeredCount})`, Icon: Circle },
-                      { value: 'all', label: `Todos (${itens.length})`, Icon: ClipboardCheck },
-                      { value: 'nc', label: `NC (${ncCount})`, Icon: AlertCircle },
-                    ]}
+                <View style={[st.checklistWorkspace, isTablet && st.checklistWorkspaceTablet]}>
+                  {isTablet ? (
+                    <ChecklistRouteRail
+                      items={sortedItens}
+                      itemResults={itemResults}
+                      openNcs={ncsAbertas}
+                      mode="rail"
+                    />
+                  ) : null}
+                  <View style={st.checklistContent}>
+                  <VerificationContextStrip
+                    inspectorName={usuario?.nome ?? 'Inspetor'}
+                    dataVerif={dataVerif}
+                    onDataVerifChange={value => updateState({ dataVerif: value })}
+                    pickerEquipes={pickerEquipes}
+                    selectedEquipe={selectedEquipe}
+                    onSelectEquipe={equipeId => updateState({ selectedEquipeId: equipeId })}
+                    equipeLockedSingle={equipeLockedSingle}
+                    equipeLocked={equipeLocked}
+                    equipeError={errors.equipe}
                   />
 
-                  {filteredChecklistItems.length === 0 ? (
-                    <Card tone="success" style={st.completedCard}>
-                      <CheckCircle2 size={26} color={Colors.ok} />
-                      <View style={st.flex}>
-                        <Text style={st.completedTitle}>Todos os itens foram classificados</Text>
-                        <Text style={st.completedText}>Revise em “Todos” ou avance para as evidências.</Text>
-                      </View>
-                      <Button label="Ver todos" onPress={() => setChecklistFilter('all')} variant="ghost" />
-                    </Card>
+                  {!isTablet ? (
+                    <ChecklistRouteRail
+                      items={sortedItens}
+                      itemResults={itemResults}
+                      openNcs={ncsAbertas}
+                      mode="compact"
+                    />
                   ) : null}
 
-                  {filteredChecklistItems.map(item => {
-                    const result = itemResults[item.id];
-                    const isNok = result === 'nao_conforme';
-                    const openNc = ncAbertoByItemId[item.id];
-                    const isNcItem = !!openNc;
-                    const isLocked = hasOpenNCs && !isNcItem;
-                    return (
-                      <Card
-                        key={item.id}
-                        style={[
-                          st.checklistCard,
-                          isNok && st.checklistCardNok,
-                          isNcItem && !isNok && st.checklistCardOpenNc,
-                        ]}
-                      >
-                        <View style={st.checklistHeader}>
-                          <View style={[st.itemNum, (isNok || isNcItem) && st.itemNumNok]}>
-                            <Text style={[st.itemNumText, (isNok || isNcItem) && st.itemNumTextNok]}>
-                              {item.ordem}
-                            </Text>
-                          </View>
-                          <View style={st.flex}>
-                            <Text style={st.itemTitulo}>{item.titulo}</Text>
-                            {isNcItem ? <Text style={st.openNcLabel}>NC aberta · avaliar agora</Text> : null}
-                          </View>
-                          {result ? (
-                            <Chip
-                              label={result === 'conforme' ? 'Conforme' : result === 'nao_conforme' ? 'NC' : 'N/A'}
-                              selected
-                            />
-                          ) : null}
-                        </View>
-
-                        {(item.metodo_verif || item.tolerancia) ? (
-                          <View style={st.itemMethod}>
-                            {item.metodo_verif ? (
-                              <View style={st.flex}>
-                                <Text style={st.itemMethodLabel}>MÉTODO</Text>
-                                <Text style={st.itemMethodText}>{item.metodo_verif}</Text>
-                              </View>
-                            ) : null}
-                            {item.tolerancia ? (
-                              <View style={st.toleranciaBadge}>
-                                <Text style={st.toleranciaLabel}>TOLERÂNCIA</Text>
-                                <Text style={st.toleranciaText}>{item.tolerancia}</Text>
-                              </View>
-                            ) : null}
-                          </View>
-                        ) : null}
-
-                        <View style={st.itemActions}>
-                          {errors[`item_${item.id}`] ? (
-                            <Text style={st.errorText}>{errors[`item_${item.id}`]}</Text>
-                          ) : null}
-                          <View style={[st.resultRow, isLocked && st.locked]} pointerEvents={isLocked ? 'none' : 'auto'}>
-                            {([
-                              { key: 'conforme' as Resultado, label: 'Conforme', Icon: Check },
-                              { key: 'nao_conforme' as Resultado, label: 'Não conforme', Icon: X },
-                              { key: 'na' as Resultado, label: 'N/A', Icon: Minus },
-                            ]).map(option => {
-                              const active = result === option.key;
-                              const ResultIcon = option.Icon;
-                              const activeStyle = active ? resultBtnActive(option.key) : undefined;
-                              return (
-                                <Pressable
-                                  accessibilityRole="radio"
-                                  accessibilityState={{ checked: active, disabled: isLocked }}
-                                  key={option.key}
-                                  style={({ pressed }) => [
-                                    st.resultBtn,
-                                    activeStyle,
-                                    pressed && !active && st.resultBtnPressed,
-                                  ]}
-                                  onPress={() => setItemResult(item.id, option.key)}
-                                >
-                                  <ResultIcon size={16} color={active ? Colors.surface : Colors.textSecondary} />
-                                  <Text style={[st.resultBtnText, active && resultBtnTextActive()]}>
-                                    {option.label}
-                                  </Text>
-                                </Pressable>
-                              );
-                            })}
-                          </View>
-                          {isNok && !isNcItem ? (
-                            <NcPanel
-                              visible
-                              detail={ncDetails[item.id] ?? {
-                                descricao: '',
-                                solucao_proposta: '',
-                                data_nova_verif: '',
-                                responsavel_id: '',
-                                foto: null,
-                                financeiro: financialRequired ? { situacao: 'em_avaliacao', bloqueio: 'nao' } : null,
-                              }}
-                              onChange={patch => updateNc(item.id, patch)}
-                              onAddPhoto={() => addNcPhoto(item.id)}
-                              equipes={equipes}
-                              responsibleError={errors[`nc_resp_${item.id}`]}
-                              financialRequired={financialRequired}
-                              managers={managers}
-                              financialError={errors[`nc_fin_${item.id}`]}
-                            />
-                          ) : null}
-                        </View>
-                      </Card>
-                    );
-                  })}
-                </>
-              ) : null}
-
-              {currentStep === 'evidence' ? (
-                <>
-                  <SectionTitle
-                    eyebrow="ETAPA 3 DE 4"
-                    title="Evidências e resultado"
-                    description="Registre o que sustenta sua decisão antes da assinatura."
-                  />
-                  <Card style={st.formCard}>
-                    {hasOpenNCs ? (
-                      <View style={st.section}>
-                        <Text style={st.sectionTitle}>Foto da reinspeção *</Text>
-                        <Text style={st.fieldHint}>Mostre claramente a condição atual do item corrigido.</Text>
-                        {errors.reinspFoto ? <Text style={st.errorText}>{errors.reinspFoto}</Text> : null}
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={reinspFoto ? 'Substituir foto da reinspeção' : 'Adicionar foto da reinspeção'}
-                          style={[
-                            st.reinspPhotoBtn,
-                            reinspFoto && st.reinspPhotoFilled,
-                            errors.reinspFoto && st.inputError,
-                          ]}
-                          onPress={async () => {
-                            const path = await captureNcPhoto();
-                            if (path) updateState({ reinspFoto: path });
-                          }}
-                        >
-                          {reinspFoto ? (
-                            <Image source={{ uri: reinspFoto }} style={st.reinspPhotoThumb} resizeMode="cover" />
-                          ) : (
-                            <View style={st.photoPlaceholder}>
-                              <Camera size={24} color={Colors.brand} />
-                              <Text style={st.reinspPhotoBtnText}>Adicionar foto obrigatória</Text>
-                            </View>
-                          )}
-                        </Pressable>
-                      </View>
-                    ) : (
-                      <View style={st.section}>
-                        <View style={st.labelRow}>
-                          <View>
-                            <Text style={st.sectionTitle}>Fotos de evidência</Text>
-                            <Text style={st.fieldHint}>Até 10 imagens do serviço executado.</Text>
-                          </View>
-                          <Text style={st.photoCount}>{generalPhotos.length}/10</Text>
-                        </View>
-                        <View style={st.photoBtns}>
-                          <Button label="Usar câmera" onPress={() => { void addFromCamera(); }} Icon={Camera} variant="secondary" />
-                          <Button label="Galeria" onPress={() => { void addFromGallery(); }} Icon={ImageIcon} variant="secondary" />
-                        </View>
-                        {generalPhotos.length > 0 ? (
-                          <PhotoGrid photos={generalPhotos} max={10} onRemove={removePhoto} />
-                        ) : null}
-                      </View>
-                    )}
-
-                    <View style={st.sectionDivider} />
-
-                    <View style={st.section}>
-                      <Text style={st.sectionTitle}>Observações gerais</Text>
-                      <TextInput
-                        accessibilityLabel="Observações gerais"
-                        style={[st.input, st.observationsInput]}
-                        multiline
-                        placeholder="Ocorrências, condições do ambiente e informações úteis…"
-                        placeholderTextColor={Colors.textTertiary}
-                        value={observacoes}
-                        onChangeText={value => updateState({ observacoes: value })}
-                        textAlignVertical="top"
-                      />
-                    </View>
-
-                    <View style={st.sectionDivider} />
-                    <View style={st.section}>
-                      <Text style={st.sectionTitle}>Resultado desta verificação</Text>
-                      <View style={[
-                        st.resultSummary,
-                        algumNaoConforme ? st.resultSummaryDanger : st.resultSummarySuccess,
-                      ]}>
-                        {algumNaoConforme
-                          ? <X size={20} color={Colors.nok} />
-                          : <CheckCircle2 size={20} color={Colors.ok} />
-                        }
-                        <View style={st.flex}>
-                          <Text style={[
-                            st.resultSummaryTitle,
-                            { color: algumNaoConforme ? Colors.nok : Colors.ok },
-                          ]}>
-                            {algumNaoConforme ? 'Não conforme' : 'Conforme'}
-                          </Text>
-                          <Text style={st.resultSummaryText}>
-                            Resultado calculado automaticamente a partir dos itens do checklist.
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </Card>
-                </>
-              ) : null}
-
-              {currentStep === 'review' ? (
-                <>
-                  <SectionTitle
-                    eyebrow="ETAPA 4 DE 4"
-                    title="Revisão e assinatura"
-                    description="Confira o resumo. O registro será salvo localmente e sincronizado quando houver conexão."
-                  />
-
-                  <View style={st.reviewMetrics}>
-                    <ReviewMetric label="Conformes" value={conformCount} color={Colors.ok} background={Colors.okBg} />
-                    <ReviewMetric label="Não conformes" value={ncCount} color={Colors.nok} background={Colors.nokBg} />
-                    <ReviewMetric label="N/A" value={naCount} color={Colors.textSecondary} background={Colors.surface2} />
-                  </View>
-
-                  <Card style={st.reviewCard}>
-                    <Text style={st.reviewCardTitle}>Resumo do registro</Text>
-                    <ReviewRow label="Serviço" value={fvs?.subservico ?? '—'} />
-                    <ReviewRow label="Ambiente" value={ambienteNome || '—'} />
-                    <ReviewRow label="Equipe" value={selectedEquipe?.nome ?? 'Não selecionada'} />
-                    <ReviewRow
-                      label="Resultado"
-                      value={algumNaoConforme ? 'Não conforme' : 'Conforme'}
+                  {sortedItens.length === 0 ? (
+                    <EmptyState
+                      Icon={ClipboardCheck}
+                      title="Esta revisão da FVS não tem itens"
+                      description="Peça ao gestor para publicar uma revisão com itens antes de inspecionar."
                     />
-                    <ReviewRow
-                      label="Evidências"
-                      value={`${generalPhotos.length + (reinspFoto ? 1 : 0)} foto${generalPhotos.length + (reinspFoto ? 1 : 0) === 1 ? '' : 's'}`}
-                    />
-                  </Card>
-
-                  {Object.keys(reviewErrors).length > 0 ? (
-                    <View style={st.section}>
-                      <ErrorBanner message="Existem informações obrigatórias pendentes antes do salvamento." />
-                      <Card style={st.issueCard}>
-                        {Object.entries(reviewErrors).map(([key, message], index, entries) => (
-                          <Pressable
-                            accessibilityRole="button"
-                            key={key}
-                            onPress={() => changeStep(stepForError(key))}
-                            style={[
-                              st.issueRow,
-                              index < entries.length - 1 && st.issueRowBorder,
-                            ]}
-                          >
-                            <AlertCircle size={18} color={Colors.nok} />
-                            <Text style={st.issueText}>{message}</Text>
-                            <Text style={st.issueAction}>Corrigir</Text>
-                          </Pressable>
-                        ))}
-                      </Card>
-                    </View>
                   ) : (
-                    <Card tone="success" style={st.readyCard}>
-                      <CheckCircle2 size={23} color={Colors.ok} />
-                      <View style={st.flex}>
-                        <Text style={st.readyTitle}>Preenchimento completo</Text>
-                        <Text style={st.readyText}>Revise e registre a assinatura para finalizar.</Text>
-                      </View>
-                    </Card>
+                    <ListSurface>
+                      {sortedItens.map((item, index) => {
+                        const result = itemResults[item.id];
+                        const openNc = ncAbertoByItemId[item.id];
+                        const isNcItem = !!openNc;
+                        const isLocked = hasOpenNCs && !isNcItem;
+                        return (
+                          <ChecklistItemRow
+                            key={item.id}
+                            item={item}
+                            result={result}
+                            onResultChange={value => setItemResult(item.id, value)}
+                            locked={isLocked}
+                            isNcItem={isNcItem}
+                            isPriority={item.id === routePriorityId}
+                            itemError={errors[`item_${item.id}`]}
+                            last={index === sortedItens.length - 1}
+                            nc={ncDetails[item.id]}
+                            onNcChange={patch => updateNc(item.id, patch)}
+                            onNcPhoto={() => addNcPhoto(item.id)}
+                            ncErrors={{
+                              descricao: errors[`nc_desc_${item.id}`],
+                              foto: errors[`nc_foto_${item.id}`],
+                              solucao: errors[`nc_sol_${item.id}`],
+                              data: errors[`nc_data_${item.id}`],
+                              responsavel: errors[`nc_resp_${item.id}`],
+                              financeiro: errors[`nc_fin_${item.id}`],
+                            }}
+                            equipes={equipes}
+                            managers={managers}
+                            financialRequired={financialRequired}
+                          />
+                        );
+                      })}
+                    </ListSurface>
                   )}
-
-                  {measurementEnabled && measurementLinks.length > 0 ? (
-                    <Card style={st.formCard}>
-                      <View style={st.section}>
-                        <Text style={st.sectionTitle}>Avanço físico (opcional)</Text>
-                        <Text style={st.helperText}>Esta verificação teve acompanhamento físico? Se sim, informe apenas o que foi executado e aprovado nesta verificação. O sistema soma ao acumulado e libera apenas essa diferença para a medição.</Text>
-                        <SegmentedControl
-                          accessibilityLabel="Registrar avanço físico nesta verificação"
-                          value={registrarAvanco ? 'registrar' : 'sem_avanco'}
-                          onChange={value => updateState({ registrarAvanco: value === 'registrar' })}
-                          options={[
-                            { value: 'sem_avanco', label: 'Sem avanço' },
-                            { value: 'registrar', label: 'Registrar avanço' },
-                          ]}
-                        />
-                        {registrarAvanco ? (
-                          <>
-                            {selectedMeasurementLinks.length === 0 ? <ErrorBanner message="A equipe selecionada não é a responsável ativa por este serviço. Nenhum avanço poderá ser atribuído a ela." /> : null}
-                            {selectedMeasurementLinks.map(link => {
-                              const draft = currentMeasurementAdvances[link.id];
-                              return <View key={link.id} style={ncSt.financeBox}>
-                                <Text style={st.teamName}>{link.etapa_nome ?? fvs?.subservico ?? 'Serviço'}</Text>
-                                <Text style={st.helperText}>Empreiteiro: {link.equipe_nome} · escopo {link.escopo_atribuido} {link.unidade}</Text>
-                                <Text style={st.helperText}>Acumulado anterior: executado {link.executado_atual} {link.unidade} · aprovado {link.aprovado_atual} {link.unidade}</Text>
-                                <View style={ncSt.twoCol}>
-                                  <View style={{ flex: 1 }}><Text style={ncSt.label}>Executado nesta verificação</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={Colors.textTertiary} value={draft?.executadoDelta ?? ''} onChangeText={value => updateMeasurementAdvance(link.id, 'executadoDelta', value)} /></View>
-                                  <View style={{ flex: 1 }}><Text style={ncSt.label}>Aprovado nesta verificação</Text><TextInput style={ncSt.input} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={Colors.textTertiary} value={draft?.aprovadoDelta ?? ''} onChangeText={value => updateMeasurementAdvance(link.id, 'aprovadoDelta', value)} /></View>
-                                </View>
-                                <Text style={st.helperText}>Novo acumulado: executado {measurementTotal(link.executado_atual, draft?.executadoDelta ?? '')} · aprovado {measurementTotal(link.aprovado_atual, draft?.aprovadoDelta ?? '')} {link.unidade}</Text>
-                              </View>;
-                            })}
-                          </>
-                        ) : null}
+                  </View>
+                </View>
+              ) : (
+                <>
+                  {hasOpenNCs ? (
+                    <DatumCard tone="info" style={st.reinspectionClosure}>
+                      <Text style={st.reinspectionClosureTitle}>Fechamento da reinspeção</Text>
+                      <Text style={st.reinspectionClosureText}>
+                        Adicione a nova evidência, confira o resultado e assine para registrar a decisão no histórico da NC.
+                      </Text>
+                      <View style={st.reinspectionStages}>
+                        <Text style={st.reinspectionStage}>1 · Evidência</Text>
+                        <Text style={st.reinspectionStage}>2 · Resultado</Text>
+                        <Text style={st.reinspectionStage}>3 · Assinatura</Text>
                       </View>
-                    </Card>
+                    </DatumCard>
                   ) : null}
 
-                  <Card style={st.formCard}>
-                    <View style={st.section}>
-                      <Text style={st.sectionTitle}>Assinatura digital *</Text>
-                      <Text style={st.signatureResponsavel}>
-                        Responsável: <Text style={st.signatureName}>{usuario?.nome ?? '—'}</Text>
+                  <EvidenceSection
+                    isReinspection={hasOpenNCs}
+                    reinspFoto={reinspFoto}
+                    onCaptureReinsp={() => {
+                      void (async () => {
+                        const path = await captureNcPhoto();
+                        if (path) updateState({ reinspFoto: path });
+                      })();
+                    }}
+                    reinspError={errors.reinspFoto}
+                    photos={generalPhotos}
+                    onAddCamera={() => { void addFromCamera(); }}
+                    onAddGallery={() => { void addFromGallery(); }}
+                    onRemovePhoto={removePhoto}
+                    observacoes={observacoes}
+                    onObservacoesChange={value => updateState({ observacoes: value })}
+                  />
+
+                  <ReviewOutcome
+                    conformCount={conformCount}
+                    ncCount={ncCount}
+                    naCount={naCount}
+                    hasNonConformity={algumNaoConforme}
+                    errors={reviewErrors}
+                    onFixError={key => changeStep(stepForError(key))}
+                  />
+
+                  <MeasurementAdvanceSection
+                    enabled={measurementEnabled && measurementLinks.length > 0}
+                    links={selectedMeasurementLinks}
+                    values={currentMeasurementAdvances}
+                    onChange={updateMeasurementAdvance}
+                    registrarAvanco={registrarAvanco}
+                    onRegistrarAvancoChange={value => updateState({ registrarAvanco: value })}
+                    fallbackName={fvs?.subservico}
+                  />
+
+                  <SignatureSection
+                    signerName={usuario?.nome ?? '—'}
+                    signaturePath={signaturePath}
+                    error={errors.assinatura}
+                    onSign={path => updateState({ signaturePath: path })}
+                    onRefazer={() => {
+                      updateState({ signaturePath: null });
+                      if (Platform.OS !== 'web') setShowSignature(true);
+                    }}
+                    onOpenModal={() => setShowSignature(true)}
+                  />
+
+                  {pendingFinancialNcs.length > 0 ? (
+                    <DatumCard tone="warning" style={st.financialBlocker}>
+                      <Text style={st.financialBlockerTitle}>Decisão financeira pendente</Text>
+                      <Text style={st.financialBlockerText}>
+                        {canManageFinancialImpact
+                          ? 'Conclua o impacto financeiro antes de salvar esta reinspeção e encerrar a NC.'
+                          : 'Um administrador ou gestor precisa concluir o impacto financeiro no painel antes que esta NC possa ser encerrada.'}
                       </Text>
-                      {errors.assinatura ? <Text style={st.errorText}>{errors.assinatura}</Text> : null}
-                      {signaturePath ? (
-                        <View style={st.signedConfirm}>
-                          <CheckCircle2 size={18} color={Colors.ok} />
-                          <Text style={st.signedText}>Assinatura registrada</Text>
-                          <Pressable
-                            accessibilityRole="button"
-                            onPress={() => {
-                              updateState({ signaturePath: null });
-                              if (Platform.OS !== 'web') setShowSignature(true);
-                            }}
-                          >
-                            <Text style={st.refazerText}>Refazer</Text>
-                          </Pressable>
-                        </View>
-                      ) : Platform.OS === 'web' ? (
-                        <SignatureField
-                          visible
-                          inline
-                          onSign={path => updateState({ signaturePath: path })}
-                          onCancel={() => {}}
+                      {canManageFinancialImpact ? (
+                        <Button
+                          label="Resolver impacto financeiro"
+                          variant="secondary"
+                          onPress={() => setShowFinancialResolution(true)}
+                          disabled={isSaving}
                         />
-                      ) : (
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel="Abrir área de assinatura"
-                          style={[st.signatureArea, errors.assinatura && st.inputError]}
-                          onPress={() => setShowSignature(true)}
-                        >
-                          <PenLine size={24} color={errors.assinatura ? Colors.nok : Colors.brand} />
-                          <Text style={[st.signatureHint, errors.assinatura && { color: Colors.nok }]}>
-                            Toque para assinar
-                          </Text>
-                        </Pressable>
-                      )}
-                    </View>
-                  </Card>
+                      ) : null}
+                    </DatumCard>
+                  ) : null}
 
                   {canConcludeCurrentFvs ? (
-                    <Card tone="accent" style={st.conclusionChoice}>
-                      <View style={st.conclusionChoiceCopy}>
-                        <Text style={st.conclusionChoiceTitle}>O acompanhamento termina aqui?</Text>
-                        <Text style={st.conclusionChoiceText}>
-                          Salve normalmente para continuar verificando este serviço em outros dias.
-                          Conclua somente quando não houver mais inspeções previstas.
-                        </Text>
-                      </View>
-                      <Button
-                        label="Salvar e concluir FVS"
-                        Icon={LockKeyhole}
-                        variant="secondary"
-                        onPress={handleConclude}
-                        disabled={isSaving || !!toast || !!draftCandidate || !identityReady}
-                        fullWidth
-                      />
-                    </Card>
+                    <VerificationSaveOutcome
+                      value={saveOutcome}
+                      onChange={setSaveOutcome}
+                      disabled={isSaving || !!toast || !!draftCandidate || !identityReady}
+                    />
                   ) : null}
                 </>
-              ) : null}
+              )}
             </View>
 
             {isTablet ? (
               <View style={st.summaryRail}>
                 <Card style={st.summaryCard}>
-                  <Text style={st.summaryEyebrow}>PROGRESSO</Text>
-                  <Text style={st.summaryTitle}>{answeredCount}/{itens.length} itens</Text>
-                  <View style={st.progressSummaryBar}>
-                    <View
-                      style={[
-                        st.progressSummaryFill,
-                        { width: `${itens.length ? (answeredCount / itens.length) * 100 : 0}%` as `${number}%` },
-                      ]}
-                    />
-                  </View>
+                  <Text style={st.summaryHeading}>Resumo</Text>
                   <View style={st.summaryDivider} />
-                  <SummaryItem label="Equipe" value={selectedEquipe?.nome ?? 'Pendente'} />
-                  <SummaryItem label="Resultado" value={algumNaoConforme ? 'Não conforme' : 'Conforme'} />
-                  <SummaryItem label="NCs" value={`${ncCount}`} />
+                  <DataRow label="Equipe" value={selectedEquipe?.nome ?? 'Pendente'} align="stack" style={st.summaryRow} />
+                  <DataRow label="Resultado" value={algumNaoConforme ? 'Não conforme' : 'Conforme'} align="stack" style={st.summaryRow} />
+                  <DataRow label="NCs" value={`${ncCount}`} align="stack" last style={st.summaryRow} />
                   <View style={st.summaryDivider} />
                   <Text style={[st.draftStatus, draftStatus === 'error' && st.draftStatusError]}>
                     {draftHelper}
@@ -1652,12 +1046,18 @@ export default function NovaVerificacaoScreen() {
       <BottomActionBar
         primaryLabel={
           currentStep === 'review'
-            ? (hasOpenNCs ? 'Salvar reinspeção' : 'Salvar e continuar acompanhando')
+            ? (hasOpenNCs
+              ? 'Salvar reinspeção'
+              : canConcludeCurrentFvs
+                ? (saveOutcome === 'conclude' ? 'Salvar e concluir FVS' : 'Salvar e continuar')
+                : 'Salvar verificação')
             : 'Continuar'
         }
         onPrimary={
           currentStep === 'review'
-            ? () => { void handleSave(false); }
+            ? (saveOutcome === 'conclude' && canConcludeCurrentFvs
+              ? handleConclude
+              : () => { void handleSave(false); })
             : handleNextStep
         }
         primaryLoading={currentStep === 'review' && isSaving}
@@ -1665,10 +1065,61 @@ export default function NovaVerificacaoScreen() {
           !!toast
           || !!draftCandidate
           || (currentStep === 'review' && !identityReady)
+          || (currentStep === 'review' && pendingFinancialNcs.length > 0 && !canManageFinancialImpact)
         }
-        secondaryLabel={currentStep !== 'context' ? 'Voltar' : undefined}
-        onSecondary={currentStep !== 'context' ? handlePreviousStep : undefined}
-        helper={!isTablet ? draftHelper : undefined}
+        secondaryLabel={currentStep !== 'checklist' ? 'Voltar' : undefined}
+        onSecondary={currentStep !== 'checklist' ? handlePreviousStep : undefined}
+        helper={!isTablet
+          ? (currentStep === 'review'
+            ? (hasOpenNCs
+              ? draftHelper
+              : canConcludeCurrentFvs
+                ? undefined
+                : 'A FVS permanecerá aberta para acompanhamento das NCs.')
+            : draftHelper)
+          : undefined}
+      />
+
+      <ModalSheet
+        visible={showConclusionConfirm}
+        onClose={() => setShowConclusionConfirm(false)}
+        title="Concluir FVS?"
+        actions={(
+          <>
+            <Button
+              label="Salvar e concluir FVS"
+              Icon={LockKeyhole}
+              fullWidth
+              loading={isSaving}
+              disabled={!!toast || !!draftCandidate || !identityReady}
+              onPress={() => {
+                setShowConclusionConfirm(false);
+                void handleSave(true);
+              }}
+            />
+            <Button
+              label="Continuar acompanhando"
+              variant="secondary"
+              fullWidth
+              disabled={isSaving}
+              onPress={() => {
+                setSaveOutcome('continue');
+                setShowConclusionConfirm(false);
+              }}
+            />
+          </>
+        )}
+      >
+        <Text style={st.conclusionModalText}>
+          Esta verificação será salva e a FVS ficará bloqueada para novas verificações. Para registrar outra, será necessário reabrir a FVS com justificativa.
+        </Text>
+      </ModalSheet>
+
+      <NcFinancialResolutionSheet
+        visible={showFinancialResolution}
+        target={financialResolutionTarget}
+        onClose={() => setShowFinancialResolution(false)}
+        onResolve={handleFinancialResolution}
       />
 
       {/* Modal de assinatura — apenas nativo */}
@@ -1712,63 +1163,22 @@ export default function NovaVerificacaoScreen() {
       />
 
       {/* Toast feedback */}
-      {toast && (
-        <View style={[st.toast, toast.type === 'success' ? st.toastSuccess : st.toastError]}>
-          <Text style={st.toastText}>{toast.msg}</Text>
+      {toast ? (
+        <View style={st.toastWrap}>
+          <Toast
+            message={toast.msg}
+            tone={toast.type === 'success' ? 'success' : 'danger'}
+            onDismiss={() => setToast(null)}
+          />
         </View>
-      )}
+      ) : null}
     </SafeAreaView>
   );
 }
 
-function ReviewMetric({
-  label,
-  value,
-  color,
-  background,
-}: {
-  label: string;
-  value: number;
-  color: string;
-  background: string;
-}) {
-  return (
-    <View style={[st.reviewMetric, { backgroundColor: background }]}>
-      <Text style={[st.reviewMetricValue, { color }]}>{value}</Text>
-      <Text style={st.reviewMetricLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function ReviewRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={st.reviewRow}>
-      <Text style={st.reviewLabel}>{label}</Text>
-      <Text style={st.reviewValue}>{value}</Text>
-    </View>
-  );
-}
-
-function SummaryItem({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={st.summaryItem}>
-      <Text style={st.summaryItemLabel}>{label}</Text>
-      <Text style={st.summaryItemValue} numberOfLines={2}>{value}</Text>
-    </View>
-  );
-}
-
-function resultBtnActive(r: Resultado): object {
-  if (r === 'conforme')     return { backgroundColor: Colors.ok,       borderColor: Colors.ok };
-  if (r === 'nao_conforme') return { backgroundColor: Colors.nok,      borderColor: Colors.nok };
-  return                           { backgroundColor: Colors.na,       borderColor: Colors.na };
-}
-function resultBtnTextActive(): object {
-  return { color: Colors.surface };
-}
-
 const st = StyleSheet.create({
   flex: { flex: 1 },
+  safe: { flex: 1, backgroundColor: Colors.bg },
   lockedScreen: {
     flex: 1,
     alignItems: 'center',
@@ -1802,386 +1212,41 @@ const st = StyleSheet.create({
   },
   flowColumns: { width: '100%', gap: Spacing.xxl },
   flowColumnsTablet: { flexDirection: 'row', alignItems: 'flex-start' },
-  flowMain: { flex: 1, maxWidth: Breakpoints.maxForm, gap: Spacing.xl },
-  formCard: { gap: Spacing.xl },
+  flowMain: { flex: 1, maxWidth: Breakpoints.maxForm, gap: Spacing.lg },
+  checklistWorkspace: { gap: Spacing.lg },
+  checklistWorkspaceTablet: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.xxl },
+  checklistContent: { flex: 1, minWidth: 0, gap: Spacing.lg },
   draftBanner: { gap: Spacing.md },
   draftBannerHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md },
   draftBannerCopy: { flex: 1, gap: 3 },
   draftBannerTitle: { ...Typography.bodyMedium, color: Colors.text, fontFamily: FontFamily.semibold },
   draftBannerText: { ...Typography.caption, color: Colors.textSecondary },
   draftBannerActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: Spacing.sm },
-  inputError: { borderColor: Colors.nok, borderWidth: 1.5 },
-  fieldHint: { ...Typography.caption, color: Colors.textSecondary },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
-  },
-  progressSummary: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  progressSummaryBar: {
-    flex: 1,
-    height: 8,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.surface2,
-    overflow: 'hidden',
-  },
-  progressSummaryFill: { height: '100%', borderRadius: Radius.full, backgroundColor: Colors.brand },
-  progressSummaryText: {
-    minWidth: 40,
-    textAlign: 'right',
-    ...Typography.label,
-    color: Colors.textSecondary,
-  },
-  completedCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  completedTitle: { ...Typography.bodyMedium, color: Colors.ok, fontFamily: FontFamily.semibold },
-  completedText: { ...Typography.caption, color: Colors.textSecondary },
-  checklistCard: { padding: 0, overflow: 'hidden' },
-  checklistCardNok: { borderColor: Colors.nok, borderWidth: 1.5 },
-  checklistCardOpenNc: { borderColor: Colors.nok, borderWidth: 1.5 },
-  checklistHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.md,
-    padding: Spacing.lg,
-  },
-  openNcLabel: { ...Typography.caption, color: Colors.nok, fontFamily: FontFamily.semibold, marginTop: 3 },
-  locked: { opacity: 0.45 },
-  resultBtnPressed: { backgroundColor: Colors.border },
-  sectionDivider: { height: 1, backgroundColor: Colors.border },
-  observationsInput: { minHeight: 120, textAlignVertical: 'top' },
-  photoPlaceholder: { alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
-  reinspPhotoFilled: { borderStyle: 'solid', borderColor: Colors.border },
-  reviewMetrics: { flexDirection: 'row', gap: Spacing.sm },
-  reviewMetric: { flex: 1, borderRadius: Radius.lg, padding: Spacing.md, minHeight: 96 },
-  reviewMetricValue: { fontFamily: FontFamily.bold, fontSize: FontSizes.xxl, lineHeight: 32 },
-  reviewMetricLabel: { ...Typography.caption, color: Colors.textSecondary, marginTop: 3 },
-  reviewCard: { gap: 0 },
-  reviewCardTitle: {
-    ...Typography.bodyMedium,
-    color: Colors.text,
-    fontFamily: FontFamily.semibold,
-    marginBottom: Spacing.sm,
-  },
-  reviewRow: {
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  reviewLabel: { ...Typography.caption, color: Colors.textSecondary },
-  reviewValue: { ...Typography.caption, color: Colors.text, fontFamily: FontFamily.semibold, flex: 1, textAlign: 'right' },
-  issueCard: { padding: 0, overflow: 'hidden' },
-  issueRow: {
-    minHeight: 52,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  issueRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
-  issueText: { ...Typography.caption, color: Colors.text, flex: 1 },
-  issueAction: { ...Typography.label, color: Colors.brand },
-  readyCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  readyTitle: { ...Typography.bodyMedium, color: Colors.ok, fontFamily: FontFamily.semibold },
-  readyText: { ...Typography.caption, color: Colors.textSecondary },
-  signatureName: { color: Colors.text, fontFamily: FontFamily.semibold },
+  reinspectionClosure: { gap: Spacing.sm },
+  reinspectionClosureTitle: { ...Typography.bodyMedium, color: Colors.text, fontFamily: FontFamily.semibold },
+  reinspectionClosureText: { ...Typography.caption, color: Colors.textSecondary },
+  reinspectionStages: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  reinspectionStage: { ...Typography.caption, color: Colors.info, fontFamily: FontFamily.semibold },
+  financialBlocker: { gap: Spacing.sm },
+  financialBlockerTitle: { ...Typography.bodyMedium, color: Colors.text, fontFamily: FontFamily.semibold },
+  financialBlockerText: { ...Typography.caption, color: Colors.textSecondary },
+  conclusionModalText: { ...Typography.body, color: Colors.textSecondary },
   summaryRail: { width: 310 },
   summaryCard: { gap: Spacing.md },
-  summaryEyebrow: {
-    ...Typography.caption,
+  summaryHeading: {
+    ...Typography.bodyMedium,
     color: Colors.brand,
-    fontFamily: FontFamily.bold,
-    letterSpacing: 0.9,
+    fontFamily: FontFamily.semibold,
   },
-  summaryTitle: { ...Typography.heading, color: Colors.text },
   summaryDivider: { height: 1, backgroundColor: Colors.border },
-  summaryItem: { gap: 2 },
-  summaryItemLabel: { ...Typography.caption, color: Colors.textTertiary },
-  summaryItemValue: { ...Typography.bodyMedium, color: Colors.text },
+  summaryRow: { paddingHorizontal: 0 },
   draftStatus: { ...Typography.caption, color: Colors.ok, fontFamily: FontFamily.medium },
   draftStatusError: { color: Colors.nok },
-  teamType: { ...Typography.caption, color: Colors.textSecondary },
-  safe:    { flex: 1, backgroundColor: Colors.bg },
-  toast: {
-    position: 'absolute', bottom: 90, left: 16, right: 16,
-    paddingVertical: 14, paddingHorizontal: 20,
-    borderRadius: 12, zIndex: 999,
-    shadowColor: Colors.text, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18, shadowRadius: 8, elevation: 8,
+  toastWrap: {
+    position: 'absolute',
+    bottom: 96,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    zIndex: ZIndex.toast,
   },
-  toastSuccess: { backgroundColor: Colors.ok },
-  toastError:   { backgroundColor: Colors.nok },
-  toastText:    { color: Colors.surface, fontSize: FontSizes.md, fontWeight: '500', textAlign: 'center' },
-  content:    { padding: Spacing.lg, gap: Spacing.lg },
-  section: { gap: Spacing.sm },
-  sectionTitle: { ...Typography.label, color: Colors.text },
-  helperText: { ...Typography.caption, color: Colors.textSecondary },
-
-  // Inspector card
-  inspectorCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  inspectorAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.brandLight,
-    borderWidth: 1,
-    borderColor: Colors.brandSignature,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inspectorAvatarText: { color: Colors.brand, fontSize: FontSizes.base, fontFamily: FontFamily.bold },
-  inspectorName: { ...Typography.bodyMedium, color: Colors.text, fontFamily: FontFamily.semibold },
-  inspectorRole: { ...Typography.caption, color: Colors.textSecondary, marginTop: 1 },
-  logadoBadge: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.full,
-    paddingHorizontal: 8, paddingVertical: 3,
-    borderWidth: 0.5, borderColor: Colors.borderNormal,
-  },
-  logadoText: { fontSize: FontSizes.tiny, color: Colors.textSecondary, fontWeight: '500' },
-
-  // Input
-  input: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    minHeight: 48,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontFamily: FontFamily.regular,
-    fontSize: FontSizes.md,
-    color: Colors.text,
-  },
-
-  // Equipe
-  teamCard: {
-    backgroundColor: Colors.surface2,
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-  },
-  teamSelect: { padding: Spacing.md, gap: 6 },
-  teamSelectLabel: { ...Typography.caption, color: Colors.textSecondary },
-  teamSelectBtn: {
-    minHeight: 58,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-  },
-  teamSelectBtnText: { ...Typography.bodyMedium, color: Colors.text },
-  lockedEquipeBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.okBg,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.ok,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    alignSelf: 'flex-start',
-  },
-  lockedEquipeHint: { ...Typography.caption, color: Colors.ok, fontFamily: FontFamily.semibold },
-  teamDivider: { height: 0.5, backgroundColor: 'rgba(0,0,0,0.08)', marginHorizontal: Spacing.md },
-  teamSelected: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.md,
-    gap: Spacing.sm,
-    backgroundColor: Colors.okBg,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.ok,
-  },
-  teamAvatar: {
-    width: 28, height: 28, borderRadius: Radius.full,
-    backgroundColor: Colors.ok,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  teamAvatarText: { color: Colors.surface, fontSize: FontSizes.xs, fontFamily: FontFamily.bold },
-  teamName: { ...Typography.bodyMedium, color: Colors.text, fontFamily: FontFamily.semibold },
-  tipoBadge:       { borderRadius: Radius.full, paddingHorizontal: 8, paddingVertical: 2 },
-  tipoBadgeGreen:  { backgroundColor: Colors.okBg },
-  tipoBadgeBlue:   { backgroundColor: Colors.progressBg },
-  tipoBadgeText:       { fontSize: FontSizes.tiny, fontWeight: '500' },
-  tipoBadgeTextGreen:  { color: Colors.ok },
-  tipoBadgeTextBlue:   { color: Colors.progress },
-  equipePickerTipo: { ...Typography.caption, color: Colors.textTertiary, marginTop: 2 },
-
-  // Checklist item — 3 camadas
-  itemWrapper: {
-    borderRadius: Radius.lg,
-    borderWidth: 0.5,
-    borderColor: Colors.borderNormal,
-    overflow: 'hidden',
-    marginBottom: Spacing.sm,
-  },
-  itemWrapperNok: { borderColor: Colors.nok },
-
-  itemHeader: {
-    backgroundColor: Colors.surface2,
-    flexDirection: 'row', alignItems: 'flex-start',
-    paddingHorizontal: 13, paddingVertical: 11,
-    gap: Spacing.sm,
-  },
-  itemHeaderNok: { backgroundColor: Colors.nokBg },
-
-  itemNum: {
-    width: 28,
-    height: 28,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.surface2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  itemNumNok: { backgroundColor: Colors.nokBg, borderWidth: 1, borderColor: Colors.nok },
-  itemNumText: { fontSize: FontSizes.xs, fontFamily: FontFamily.semibold, color: Colors.textSecondary },
-  itemNumTextNok: { color: Colors.nok },
-  itemTitulo: { ...Typography.bodyMedium, color: Colors.text, fontFamily: FontFamily.semibold },
-
-  itemMethod: {
-    backgroundColor: Colors.surface2,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    gap: Spacing.lg,
-  },
-  itemMethodLabel: { fontSize: FontSizes.tiny, fontFamily: FontFamily.semibold, color: Colors.textTertiary, letterSpacing: 0.5, marginBottom: 3 },
-  itemMethodText: { ...Typography.caption, color: Colors.textSecondary },
-
-  toleranciaBadge: { alignItems: 'flex-end' },
-  toleranciaLabel: { fontSize: FontSizes.tiny, fontFamily: FontFamily.semibold, color: Colors.textTertiary, letterSpacing: 0.5, marginBottom: 3 },
-  toleranciaText: { ...Typography.caption, fontFamily: FontFamily.semibold, color: Colors.progress },
-
-  itemActions: {
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    padding: Spacing.lg,
-    gap: Spacing.md,
-  },
-
-  resultRow: { flexDirection: 'row', gap: Spacing.sm },
-  resultBtn: {
-    flex: 1,
-    minHeight: 46,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    backgroundColor: Colors.surface,
-  },
-  resultBtnText: { fontSize: FontSizes.xs, fontFamily: FontFamily.medium, color: Colors.textSecondary, textAlign: 'center' },
-
-  // Photos
-  photoBtns:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  photoActionBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.progressBg,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
-  },
-  photoActionText: { fontSize: FontSizes.base, color: Colors.progress, fontWeight: '500' },
-  photoCount: { ...Typography.label, color: Colors.textSecondary, marginLeft: 'auto' },
-
-  resultSummary: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
-    padding: Spacing.md,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-  },
-  resultSummarySuccess: { backgroundColor: Colors.okBg, borderColor: Colors.ok },
-  resultSummaryDanger: { backgroundColor: Colors.nokBg, borderColor: Colors.nok },
-  resultSummaryTitle: { ...Typography.label, fontFamily: FontFamily.semibold },
-  resultSummaryText: { ...Typography.caption, color: Colors.textSecondary, marginTop: 2 },
-  conclusionChoice: { gap: Spacing.md },
-  conclusionChoiceCopy: { gap: 4 },
-  conclusionChoiceTitle: { ...Typography.bodyMedium, color: Colors.text, fontFamily: FontFamily.semibold },
-  conclusionChoiceText: { ...Typography.caption, color: Colors.textSecondary },
-
-  // Assinatura
-  signatureResponsavel: { ...Typography.caption, color: Colors.textSecondary, marginBottom: 2 },
-  signedConfirm: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.okBg,
-    borderRadius: Radius.md,
-    borderWidth: 0.5, borderColor: Colors.ok,
-    padding: Spacing.md, gap: Spacing.sm,
-  },
-  signedText: { flex: 1, ...Typography.caption, color: Colors.ok, fontFamily: FontFamily.semibold },
-  refazerText: { ...Typography.label, color: Colors.brand },
-  signatureArea: {
-    height: 100,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    borderStyle: 'dashed',
-    alignItems: 'center', justifyContent: 'center',
-    gap: Spacing.xs,
-  },
-  signatureHint: { ...Typography.label, color: Colors.brand },
-
-  // Save bar
-  saveBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: Spacing.lg, paddingBottom: Spacing.xl,
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1, borderTopColor: Colors.border,
-  },
-  saveBtn:         { backgroundColor: Colors.brand, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
-  saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText:     { color: Colors.surface, fontSize: FontSizes.md, fontWeight: '600' },
-
-  errorText: { ...Typography.caption, color: Colors.nok, fontFamily: FontFamily.semibold },
-
-  // Re-inspeção
-  reinspSectionHeader: { fontSize: 10, fontWeight: '600', color: Colors.textTertiary, letterSpacing: 0.5, marginBottom: 6, marginTop: 4 },
-  itemWrapperReinsp:   { borderColor: Colors.nok, borderWidth: 1.5 },
-  itemHeaderReinsp:    { backgroundColor: Colors.nokBg },
-  itemNumReinsp:       { backgroundColor: Colors.nokBg, borderWidth: 0.5, borderColor: Colors.nok },
-  itemNumTextReinsp:   { color: Colors.nok },
-  ncAbertaBadge:       { backgroundColor: Colors.nok, borderRadius: Radius.full, paddingHorizontal: 6, paddingVertical: 2 },
-  ncAbertaBadgeText:   { fontSize: 9, color: Colors.surface, fontWeight: '700' },
-  reinspPhotoBtn: {
-    height: 180,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.brandSignature,
-    borderStyle: 'dashed',
-    backgroundColor: Colors.brandLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  reinspPhotoBtnText: { ...Typography.label, color: Colors.brand },
-  reinspPhotoThumb: { width: '100%', height: '100%' },
-
 });

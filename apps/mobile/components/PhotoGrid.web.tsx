@@ -8,8 +8,13 @@ function isPending(key: string): boolean {
   return key.startsWith('blob:') || key.startsWith('data:');
 }
 
+export interface PhotoGridItem {
+  key: string;
+  thumbnailKey?: string | null;
+}
+
 interface Props {
-  photos: string[];
+  photos: Array<string | PhotoGridItem>;
   max?: number;
   onAdd?: () => void;
   onRemove?: (index: number) => void;
@@ -20,23 +25,31 @@ interface Props {
 export function PhotoGrid({ photos, max, onAdd, onRemove, onPress, addLabel = 'Adicionar foto' }: Props) {
   const displayPhotos = max !== undefined ? photos.slice(0, max) : photos;
   const canAdd = onAdd && (max === undefined || photos.length < max);
-  const resolveUri = usePrivateMediaUris(displayPhotos);
+  const displayKeys = displayPhotos.map(photo =>
+    typeof photo === 'string' ? photo : photo.thumbnailKey ?? photo.key,
+  );
+  const resolveUri = usePrivateMediaUris(displayKeys);
 
   return (
     <View style={styles.grid}>
-      {displayPhotos.map((key, index) => (
-        <View key={key + index} style={styles.cell}>
-          <Pressable accessibilityRole="button" accessibilityLabel={`Abrir foto ${index + 1}`} onPress={() => onPress?.(index)}>
-            <Image source={{ uri: resolveUri(key) }} style={styles.thumb} resizeMode="cover" />
-          </Pressable>
-          {onRemove && (
-            <Pressable accessibilityRole="button" accessibilityLabel={`Remover foto ${index + 1}`} style={styles.remove} onPress={() => onRemove(index)} hitSlop={8}>
-              <X size={13} color={Colors.surface} strokeWidth={2.6} />
+      {displayPhotos.map((photo, index) => {
+        const key = typeof photo === 'string' ? photo : photo.key;
+        const displayKey = typeof photo === 'string' ? photo : photo.thumbnailKey ?? photo.key;
+
+        return (
+          <View key={key + index} style={styles.cell}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Abrir foto ${index + 1}`} onPress={() => onPress?.(index)}>
+              <Image source={{ uri: resolveUri(displayKey) }} style={styles.thumb} resizeMode="cover" />
             </Pressable>
-          )}
-          {isPending(key) && <View style={styles.pendingDot} />}
-        </View>
-      ))}
+            {onRemove && (
+              <Pressable accessibilityRole="button" accessibilityLabel={`Remover foto ${index + 1}`} style={styles.remove} onPress={() => onRemove(index)} hitSlop={8}>
+                <X size={13} color={Colors.surface} strokeWidth={2.6} />
+              </Pressable>
+            )}
+            {isPending(key) && <View style={styles.pendingDot} />}
+          </View>
+        );
+      })}
       {canAdd && (
         <Pressable
           style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}

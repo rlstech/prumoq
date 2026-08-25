@@ -80,7 +80,7 @@ test('hidrata cada tipo de mídia no campo correto', () => {
   assert.equal(hydrated.signaturePath, 'blob:signature-restored');
 });
 
-test('valida as quatro etapas de forma independente', () => {
+test('valida as duas etapas de forma independente (com tolerância a steps legados)', () => {
   const input = validationInput();
   assert.deepEqual(collectVerificationErrors(input, 'context'), {});
   assert.deepEqual(collectVerificationErrors(input, 'checklist'), {});

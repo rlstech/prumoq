@@ -1,7 +1,8 @@
-import { AlertCircle, Check, CheckCircle2, LucideIcon, RefreshCw, WifiOff, X } from 'lucide-react-native';
-import { ReactNode, useState } from 'react';
+import { AlertCircle, CalendarDays, Camera, Check, CheckCircle2, ChevronLeft, ChevronRight, LucideIcon, RefreshCw, WifiOff, X } from 'lucide-react-native';
+import { ReactNode, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Modal as NativeModal,
   Pressable,
   ScrollView,
@@ -24,6 +25,18 @@ import {
   Spacing,
   Typography,
 } from '../../lib/constants';
+import {
+  formatDate,
+  formatDateAccessibility,
+  formatMonth,
+  getMonthDays,
+  getTodayIso,
+  isDateWithinRange,
+  isIsoDate,
+  monthFromIso,
+  shiftMonth,
+  WEEKDAY_LABELS,
+} from '../../lib/calendar';
 
 export function Screen({
   children,
@@ -172,6 +185,99 @@ export function OperationalRow({
       <View style={styles.operationalBody}>{children}</View>
       {trailing ? <View style={styles.operationalTrailing}>{trailing}</View> : null}
       {!last ? <View style={styles.operationalSeparator} /> : null}
+    </Pressable>
+  );
+}
+
+/**
+ * Dense label/value row shared by summary and detail screens. Lives inside a
+ * ListSurface or a Card. Replaces the ad-hoc ReviewRow/SummaryItem/ContextRow
+ * pairs that used to be redeclared per screen.
+ */
+export function DataRow({
+  label,
+  value,
+  leading,
+  trailing,
+  onPress,
+  accessibilityLabel,
+  align = 'row',
+  emphasis = 'default',
+  tone,
+  last = false,
+  style,
+}: {
+  label: string;
+  value?: ReactNode;
+  leading?: ReactNode;
+  trailing?: ReactNode;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  /** 'row' = label left / value right (dense, 44px) · 'stack' = overline label above value */
+  align?: 'row' | 'stack';
+  /** 'strong' = semibold value · 'mono' = IBM Plex Mono value */
+  emphasis?: 'default' | 'strong' | 'mono';
+  tone?: BadgeTone;
+  /** Suppresses the bottom hairline — set on the last row of a group. */
+  last?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const [focused, setFocused] = useState(false);
+  const stacked = align === 'stack';
+  const isPrimitiveValue = typeof value === 'string' || typeof value === 'number';
+
+  const inner = (
+    <>
+      {leading ? <View style={styles.dataRowLeading}>{leading}</View> : null}
+      <View style={[styles.dataRowBody, stacked && styles.dataRowBodyStack]}>
+        <Text style={stacked ? styles.dataRowLabelStack : styles.dataRowLabelRow} numberOfLines={1}>
+          {label}
+        </Text>
+        {value === undefined ? null : isPrimitiveValue ? (
+          <Text
+            numberOfLines={stacked ? 2 : 1}
+            style={[
+              stacked ? styles.dataRowValueStack : styles.dataRowValueRow,
+              emphasis === 'strong' && styles.dataRowValueStrong,
+              emphasis === 'mono' && styles.dataRowValueMono,
+              tone ? { color: metricPalette[tone] } : null,
+            ]}
+          >
+            {value}
+          </Text>
+        ) : (
+          <View style={stacked ? styles.dataRowValueNodeStack : styles.dataRowValueNodeRow}>{value}</View>
+        )}
+      </View>
+      {trailing ? <View style={styles.dataRowTrailing}>{trailing}</View> : null}
+    </>
+  );
+
+  const rowStyle: StyleProp<ViewStyle> = [
+    styles.dataRow,
+    stacked && styles.dataRowStack,
+    !last && styles.dataRowBordered,
+    style,
+  ];
+
+  if (!onPress) {
+    return <View style={rowStyle}>{inner}</View>;
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      onPress={onPress}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={({ pressed }) => [
+        rowStyle,
+        focused && styles.focusVisible,
+        pressed && styles.dataRowPressed,
+      ]}
+    >
+      {inner}
     </Pressable>
   );
 }
@@ -350,6 +456,206 @@ export function Field({
   );
 }
 
+/**
+ * Date field with matching behaviour on native and web: a native TextInput
+ * with a masked placeholder, and a real `<input type="date">` on the PWA so
+ * the browser's native date picker is available. Never rejects a partial
+ * value — required-ness is validated elsewhere (lib/verification/validation).
+ */
+export function InlineDateField({
+  label,
+  value,
+  onChange,
+  error,
+  hint,
+  min,
+  max,
+  disabled = false,
+  accessibilityLabel,
+  testID,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  hint?: string;
+  min?: string;
+  max?: string;
+  disabled?: boolean;
+  accessibilityLabel?: string;
+  testID?: string;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [displayMonth, setDisplayMonth] = useState(() => monthFromIso(value));
+  const today = getTodayIso();
+
+  useEffect(() => {
+    if (calendarVisible) setDisplayMonth(monthFromIso(value));
+  }, [calendarVisible, value]);
+
+  const selectDate = (nextValue: string) => {
+    onChange(nextValue);
+    setCalendarVisible(false);
+  };
+
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityHint="Abre o calendário para selecionar uma data"
+        accessibilityState={{ disabled }}
+        testID={testID}
+        disabled={disabled}
+        onPress={() => setCalendarVisible(true)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={({ pressed }) => [
+          styles.dateTrigger,
+          error && styles.inputError,
+          focused && !error && styles.inputFocused,
+          pressed && styles.dateTriggerPressed,
+          disabled && styles.dateTriggerDisabled,
+        ]}
+      >
+        <Text style={[styles.dateTriggerText, !isIsoDate(value) && styles.dateTriggerPlaceholder]}>
+          {formatDate(value)}
+        </Text>
+        <CalendarDays size={18} color={disabled ? Colors.textTertiary : Colors.brand} strokeWidth={2} />
+      </Pressable>
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+      {!error && hint ? <Text style={styles.fieldHint}>{hint}</Text> : null}
+      <ModalSheet visible={calendarVisible} onClose={() => setCalendarVisible(false)} title={label}>
+        <View style={styles.calendar}>
+          <View style={styles.calendarMonthHeader}>
+            <IconButton
+              label="Mês anterior"
+              onPress={() => setDisplayMonth(current => shiftMonth(current, -1))}
+              Icon={ChevronLeft}
+            />
+            <Text accessibilityRole="header" style={styles.calendarMonthTitle}>{formatMonth(displayMonth)}</Text>
+            <IconButton
+              label="Próximo mês"
+              onPress={() => setDisplayMonth(current => shiftMonth(current, 1))}
+              Icon={ChevronRight}
+            />
+          </View>
+          <View style={styles.calendarWeek}>
+            {WEEKDAY_LABELS.map((weekday, index) => <Text key={`${weekday}-${index}`} style={styles.calendarWeekday}>{weekday}</Text>)}
+          </View>
+          <View style={styles.calendarGrid}>
+            {getMonthDays(displayMonth).map((cell, index) => {
+              if (!cell) return <View key={`empty-${index}`} style={styles.calendarDay} />;
+              const selected = cell.iso === value;
+              const isToday = cell.iso === today;
+              const available = isDateWithinRange(cell.iso, min, max);
+              return (
+                <Pressable
+                  key={cell.iso}
+                  accessibilityRole="button"
+                  accessibilityLabel={formatDateAccessibility(cell.iso)}
+                  accessibilityState={{ selected, disabled: !available }}
+                  disabled={!available}
+                  onPress={() => selectDate(cell.iso)}
+                  style={({ pressed }) => [
+                    styles.calendarDay,
+                    isToday && !selected && styles.calendarDayToday,
+                    selected && styles.calendarDaySelected,
+                    pressed && available && styles.calendarDayPressed,
+                    !available && styles.calendarDayDisabled,
+                  ]}
+                >
+                  <Text style={[styles.calendarDayText, selected && styles.calendarDayTextSelected, !available && styles.calendarDayTextDisabled]}>{cell.day}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View style={styles.calendarActions}>
+            <Button
+              label="Hoje"
+              variant="secondary"
+              onPress={() => selectDate(today)}
+              disabled={!isDateWithinRange(today, min, max)}
+              style={styles.calendarAction}
+            />
+            <Button label="Limpar" variant="ghost" onPress={() => selectDate('')} style={styles.calendarAction} />
+          </View>
+        </View>
+      </ModalSheet>
+    </View>
+  );
+}
+
+/**
+ * Single evidence photo slot (reinspection photo, NC photo). Receives an
+ * already-resolved URI — callers stay responsible for private-media
+ * resolution (usePrivateMediaUris) and stripping the 'pending:' prefix, so
+ * media handling does not shift when screens adopt this primitive.
+ */
+export function PhotoSlot({
+  uri,
+  onPress,
+  onRemove,
+  label,
+  height = 140,
+  required = false,
+  error,
+  pending = false,
+  accessibilityLabel,
+}: {
+  uri?: string | null;
+  onPress: () => void;
+  onRemove?: () => void;
+  label: string;
+  height?: number;
+  required?: boolean;
+  error?: string;
+  pending?: boolean;
+  accessibilityLabel: string;
+}) {
+  if (uri) {
+    return (
+      <View style={[styles.photoSlotFilled, { height }]}>
+        <Image source={{ uri }} style={styles.photoSlotImage} resizeMode="cover" />
+        {pending ? <View style={styles.photoSlotPendingDot} /> : null}
+        {onRemove ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Remover foto"
+            onPress={onRemove}
+            hitSlop={8}
+            style={styles.photoSlotRemove}
+          >
+            <X size={14} color={Colors.surface} strokeWidth={2.4} />
+          </Pressable>
+        ) : null}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.photoSlotEmpty,
+        { height },
+        error && styles.photoSlotError,
+        pressed && styles.photoSlotEmptyPressed,
+      ]}
+    >
+      <Camera size={22} color={error ? Colors.nok : Colors.brand} strokeWidth={2.2} />
+      <Text style={[styles.photoSlotLabel, error && styles.photoSlotLabelError]}>
+        {label}{required ? ' *' : ''}
+      </Text>
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+    </Pressable>
+  );
+}
+
 export function SegmentedControl<T extends string>({
   value,
   options,
@@ -383,12 +689,114 @@ export function SegmentedControl<T extends string>({
             ]}
           >
             {Icon ? <Icon size={16} color={selected ? Colors.brand : Colors.textSecondary} /> : null}
-            <Text style={[styles.segmentText, selected && styles.segmentTextSelected]}>
+            <Text numberOfLines={1} style={[styles.segmentText, selected && styles.segmentTextSelected]}>
               {option.label}
             </Text>
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+export type ResultToggleValue = 'conforme' | 'nao_conforme' | 'na';
+
+const resultToggleOptions: readonly {
+  value: ResultToggleValue;
+  label: string;
+  accessibilityLabel: string;
+  Icon?: LucideIcon;
+}[] = [
+  { value: 'conforme', label: 'Conforme', accessibilityLabel: 'Conforme', Icon: Check },
+  { value: 'nao_conforme', label: 'Não conforme', accessibilityLabel: 'Não conforme', Icon: X },
+  { value: 'na', label: 'N/A', accessibilityLabel: 'Não aplicável' },
+];
+
+const resultToggleWidth: Record<ResultToggleValue, ViewStyle> = {
+  conforme: { flex: 1.55 },
+  nao_conforme: { flex: 1.15 },
+  na: { width: 64 },
+};
+
+/**
+ * Tri-state checklist result control (conforme/não conforme/N/A). One joined
+ * control with three positions rather than three equal buttons: Conforme takes
+ * the most width because it is the dominant field answer, and N/A collapses to
+ * a compact mono token. The selection is marked by a soft tint plus a semantic
+ * datum along the bottom edge — never a saturated fill — per design-system.md,
+ * and the unchosen positions recede once an answer exists so the decision reads
+ * at arm's length in the sun. `locked` covers reinspection items kept from the
+ * previous verification: disabled visually and for a11y, but still announced as
+ * radios so screen readers say why it can't be changed.
+ */
+export function ResultToggle({
+  value,
+  onChange,
+  locked = false,
+  error,
+  accessibilityLabel,
+  style,
+}: {
+  value?: ResultToggleValue;
+  onChange: (value: ResultToggleValue) => void;
+  locked?: boolean;
+  error?: string;
+  accessibilityLabel: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const answered = !!value;
+  return (
+    <View style={style}>
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+      <View
+        style={[styles.resultToggle, locked && styles.resultToggleLocked]}
+        accessibilityRole="radiogroup"
+        accessibilityLabel={accessibilityLabel}
+        pointerEvents={locked ? 'none' : 'auto'}
+      >
+        {resultToggleOptions.map((option, index) => {
+          const selected = value === option.value;
+          const palette = resultTogglePalette[option.value];
+          const Icon = option.Icon;
+          const tint = selected
+            ? palette.text
+            : answered
+              ? Colors.textTertiary
+              : Colors.textSecondary;
+          return (
+            <Pressable
+              key={option.value}
+              accessibilityRole="radio"
+              accessibilityLabel={option.accessibilityLabel}
+              accessibilityState={{ checked: selected, disabled: locked }}
+              disabled={locked}
+              onPress={() => onChange(option.value)}
+              style={({ pressed }) => [
+                styles.resultToggleOption,
+                resultToggleWidth[option.value],
+                index > 0 && !selected && styles.resultToggleDivider,
+                selected && { backgroundColor: palette.background },
+                pressed && !selected && styles.resultToggleOptionPressed,
+              ]}
+            >
+              {Icon ? <Icon size={17} color={tint} strokeWidth={selected ? 2.6 : 2.2} /> : null}
+              <Text
+                numberOfLines={1}
+                style={[
+                  option.value === 'na' ? styles.resultToggleToken : styles.resultToggleText,
+                  { color: tint },
+                  selected && option.value !== 'na' && { fontFamily: FontFamily.semibold },
+                ]}
+              >
+                {option.label}
+              </Text>
+              {selected ? (
+                <View style={[styles.resultToggleMark, { backgroundColor: palette.border }]} />
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -728,6 +1136,12 @@ const badgePalette: Record<BadgeTone, { background: string; border: string; text
   info: { background: Colors.infoBg, border: Colors.info, text: Colors.info },
 };
 
+const resultTogglePalette: Record<ResultToggleValue, { background: string; border: string; text: string }> = {
+  conforme: { background: Colors.okBg, border: Colors.ok, text: Colors.ok },
+  nao_conforme: { background: Colors.nokBg, border: Colors.nok, text: Colors.nok },
+  na: { background: Colors.naBg, border: Colors.na, text: Colors.na },
+};
+
 const progressPalette: Record<BadgeTone, string> = {
   neutral: Colors.na,
   brand: Colors.brand,
@@ -965,6 +1379,45 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 0 },
   },
+  dateTrigger: {
+    minHeight: ComponentSize.input,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.borderNormal,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
+  },
+  dateTriggerPressed: { backgroundColor: Colors.surface2 },
+  dateTriggerDisabled: { opacity: 0.55 },
+  dateTriggerText: { ...Typography.body, color: Colors.text, fontFamily: FontFamily.mono },
+  dateTriggerPlaceholder: { color: Colors.textTertiary, fontFamily: FontFamily.regular },
+  calendar: { gap: Spacing.md },
+  calendarMonthHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  calendarMonthTitle: { ...Typography.label, color: Colors.text, textTransform: 'capitalize' },
+  calendarWeek: { flexDirection: 'row' },
+  calendarWeekday: { width: `${100 / 7}%`, textAlign: 'center', ...Typography.caption, color: Colors.textTertiary, fontFamily: FontFamily.semibold },
+  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: Spacing.xs },
+  calendarDay: {
+    width: `${100 / 7}%`,
+    aspectRatio: 1,
+    maxHeight: ComponentSize.touch,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.md,
+  },
+  calendarDayToday: { borderWidth: 1, borderColor: Colors.brandSignature },
+  calendarDaySelected: { backgroundColor: Colors.brand },
+  calendarDayPressed: { backgroundColor: Colors.brandLight },
+  calendarDayDisabled: { opacity: 0.35 },
+  calendarDayText: { ...Typography.caption, color: Colors.text, fontFamily: FontFamily.medium },
+  calendarDayTextSelected: { color: Colors.surface, fontFamily: FontFamily.semibold },
+  calendarDayTextDisabled: { color: Colors.textTertiary },
+  calendarActions: { flexDirection: 'row', gap: Spacing.sm, paddingTop: Spacing.xs },
+  calendarAction: { flex: 1 },
   textArea: { minHeight: 112, textAlignVertical: 'top' },
   inputError: { borderColor: Colors.nok, borderWidth: 1.5 },
   fieldError: { ...Typography.caption, color: Colors.nok },
@@ -1124,7 +1577,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface2,
   },
   progressFill: { borderRadius: Radius.full, minWidth: 0 },
-  progressValue: { ...Typography.caption, color: Colors.textSecondary, minWidth: 34, textAlign: 'right' },
+  progressValue: {
+    ...Typography.caption,
+    fontFamily: FontFamily.mono,
+    color: Colors.textSecondary,
+    minWidth: 34,
+    textAlign: 'right',
+  },
   sync: {
     minHeight: 28,
     paddingHorizontal: Spacing.sm,
@@ -1179,4 +1638,115 @@ const styles = StyleSheet.create({
   },
   toastText: { ...Typography.bodyMedium, flex: 1 },
   toastAction: { minHeight: 36, paddingHorizontal: Spacing.sm, borderWidth: 0 },
+  dataRow: {
+    minHeight: ComponentSize.touch,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  dataRowStack: { alignItems: 'flex-start' },
+  dataRowBordered: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
+  },
+  dataRowPressed: { backgroundColor: Colors.surface2 },
+  dataRowLeading: { alignItems: 'center', justifyContent: 'center' },
+  dataRowBody: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
+  },
+  dataRowBodyStack: { flexDirection: 'column', alignItems: 'flex-start', gap: 3 },
+  dataRowLabelRow: { ...Typography.caption, color: Colors.textSecondary },
+  dataRowLabelStack: { ...Typography.overline, color: Colors.textTertiary },
+  dataRowValueRow: { ...Typography.bodyMedium, color: Colors.text, flexShrink: 1, textAlign: 'right' },
+  dataRowValueStack: { ...Typography.bodyMedium, color: Colors.text },
+  dataRowValueStrong: { fontFamily: FontFamily.semibold },
+  dataRowValueMono: { fontFamily: FontFamily.mono },
+  dataRowValueNodeRow: { alignItems: 'flex-end' },
+  dataRowValueNodeStack: { alignItems: 'flex-start', marginTop: 2 },
+  dataRowTrailing: { alignItems: 'center', justifyContent: 'center' },
+  resultToggle: {
+    flexDirection: 'row',
+    minHeight: ComponentSize.button,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Colors.borderNormal,
+    backgroundColor: Colors.surface,
+    overflow: 'hidden',
+  },
+  resultToggleLocked: { opacity: 0.6 },
+  resultToggleOption: {
+    position: 'relative',
+    minHeight: ComponentSize.button - 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: Spacing.sm,
+  },
+  resultToggleDivider: {
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: Colors.borderNormal,
+  },
+  resultToggleOptionPressed: { backgroundColor: Colors.surface2 },
+  resultToggleMark: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3 },
+  resultToggleText: { ...Typography.caption, fontFamily: FontFamily.medium },
+  resultToggleToken: {
+    fontFamily: FontFamily.monoSemibold,
+    fontSize: FontSizes.xs,
+    letterSpacing: 0.3,
+  },
+  // Neutral by default: Cal Viva is reserved for focus, selection and the
+  // signature, and a lime block here would outshout the state of the form it
+  // sits in. The error state below is what earns colour.
+  photoSlotEmpty: {
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Colors.borderNormal,
+    backgroundColor: Colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    padding: Spacing.md,
+  },
+  photoSlotEmptyPressed: { opacity: 0.85 },
+  photoSlotError: { borderColor: Colors.nok, backgroundColor: Colors.nokBg },
+  photoSlotLabel: { ...Typography.label, color: Colors.brand, textAlign: 'center' },
+  photoSlotLabelError: { color: Colors.nok },
+  photoSlotFilled: {
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: Colors.surface2,
+  },
+  photoSlotImage: { width: '100%', height: '100%' },
+  photoSlotRemove: {
+    position: 'absolute',
+    top: Spacing.xs,
+    right: Spacing.xs,
+    width: 26,
+    height: 26,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.overlay,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoSlotPendingDot: {
+    position: 'absolute',
+    bottom: Spacing.xs,
+    left: Spacing.xs,
+    width: 8,
+    height: 8,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.warn,
+    borderWidth: 1,
+    borderColor: Colors.surface,
+  },
 });

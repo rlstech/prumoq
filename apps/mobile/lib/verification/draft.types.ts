@@ -1,4 +1,18 @@
+/** União histórica: rascunhos v4 gravados pelo build de 4 etapas continuam
+ *  parseáveis. Só 'checklist' e 'review' são navegáveis (ver VerificationFlowStep). */
 export type VerificationStep = 'context' | 'checklist' | 'evidence' | 'review';
+
+/** Etapas efetivamente navegáveis no wizard de 2 etapas. */
+export type VerificationFlowStep = Extract<VerificationStep, 'checklist' | 'review'>;
+
+/** Reduz qualquer VerificationStep (incluindo legado 'context'/'evidence' de
+ *  rascunhos v4 antigos, ou entrada corrompida) para uma etapa navegável.
+ *  Nunca retorna algo que não exista mais no wizard — usada em toda leitura
+ *  de currentStep vindo de storage para não deixar a tela em branco. */
+export function normalizeVerificationStep(step: unknown): VerificationFlowStep {
+  return step === 'review' || step === 'evidence' ? 'review' : 'checklist';
+}
+
 export type VerificationMode = 'verification' | 'reinspection';
 export type VerificationResult = 'conforme' | 'nao_conforme' | 'na';
 

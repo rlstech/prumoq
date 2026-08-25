@@ -1,8 +1,4 @@
 
-> prumoq@1.0.0 web C:\Code\prumoq
-> pnpm --filter @prumoq/web dev
-
-
 > @prumoq/web@1.0.0 dev C:\Code\prumoq\apps\web
 > next dev
 
@@ -13,43 +9,58 @@
     · outputFileTracingRoot
 
  ✓ Starting...
- ✓ Ready in 3s
- ✓ Compiled /middleware in 238ms (124 modules)
- ○ Compiling /obras ...
- ✓ Compiled /obras in 4.1s (1036 modules)
- GET /obras 200 in 6433ms
- ✓ Compiled /icon.svg in 357ms (625 modules)
- GET /admin/icon.svg?b73f5aab674add05 200 in 458ms
- POST /obras 200 in 4681ms
- GET /obras 200 in 1979ms
- GET /admin/icon.svg?b73f5aab674add05 200 in 16ms
- GET /obras 200 in 1317ms
- GET /admin/icon.svg?b73f5aab674add05 200 in 7ms
- GET /obras 200 in 1624ms
- GET /admin/icon.svg?b73f5aab674add05 200 in 23ms
- GET /obras 200 in 1465ms
- GET /admin/icon.svg?b73f5aab674add05 200 in 9ms
- GET /obras 200 in 1774ms
- GET /admin/icon.svg?b73f5aab674add05 200 in 13ms
- ✓ Compiled in 623ms (1036 modules)
- ✓ Compiled in 261ms (443 modules)
- ✓ Compiled in 452ms (1037 modules)
- GET /obras 200 in 2336ms
- ✓ Compiled /icon.svg in 189ms (626 modules)
- GET /admin/icon.svg?b73f5aab674add05 200 in 274ms
- GET /obras 200 in 1966ms
- GET /admin/icon.svg?b73f5aab674add05 200 in 8ms
- POST /obras 200 in 3025ms
- POST /obras 200 in 2892ms
- POST /obras 200 in 3302ms
- POST /obras 200 in 2737ms
- ○ Compiling /obras/[id] ...
- ✓ Compiled /obras/[id] in 780ms (1055 modules)
+ ✓ Ready in 11.8s
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 2.2s (487 modules)
+ GET /_next/static/css/app/layout.css 404 in 2373ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 606ms (124 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 846ms (638 modules)
+ GET /login 200 in 968ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 1362ms (973 modules)
+ GET /dashboard 200 in 2162ms
+ ✓ Compiled /icon.svg in 178ms (612 modules)
+ GET /admin/icon.svg?b73f5aab674add05 200 in 256ms
+ GET /dashboard 200 in 12237ms
  ○ Compiling /fvs-padrao ...
- ✓ Compiled /fvs-padrao in 926ms (1089 modules)
- ✓ Compiled in 286ms (461 modules)
- GET /obras 200 in 1497ms
- ✓ Compiled /icon.svg in 241ms (638 modules)
- GET /admin/icon.svg?b73f5aab674add05 200 in 337ms
- ✓ Compiled /dashboard in 479ms (1070 modules)
- ✓ Compiled /obras/[id]/ambiente/[ambId] in 452ms (1054 modules)
+ ✓ Compiled /fvs-padrao in 1180ms (961 modules)
+ GET /dashboard 200 in 661ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 19ms
+ ○ Compiling /medicoes ...
+ ✓ Compiled /medicoes in 1320ms (1148 modules)
+ ✓ Compiled /nc in 292ms (1157 modules)
+ GET /dashboard 200 in 1025ms
+ GET /dashboard 307 in 12088ms
+ GET /dashboard 200 in 664ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 38ms
+ ○ Compiling /avaliacoes ...
+ ✓ Compiled /avaliacoes in 767ms (1164 modules)
+ POST /avaliacoes 200 in 1004ms
+ POST /dashboard 200 in 1238ms
+ GET /avaliacoes 200 in 998ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 17ms
+ GET /dashboard 200 in 709ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 10ms
+ GET /dashboard 200 in 638ms
+ GET /admin/icon.svg?b73f5aab674add05 200 in 9ms
+ ✓ Compiled /relatorio/avaliacoes-empreiteiro/[id]/pdf in 365ms (682 modules)
+ GET /admin/relatorio/avaliacoes-empreiteiro/691463d2-4453-4442-ae07-e051025af0be/pdf 200 in 6723ms
+PDF FVS gerado {
+  browserMs: 312,
+  images: 0,
+  imagesMs: 0,
+  pdfBytes: 70082,
+  renderMs: 329,
+  totalMs: 733
+}
+PDF FVS gerado {
+  browserMs: 324,
+  images: 0,
+  imagesMs: 0,
+  pdfBytes: 70082,
+  renderMs: 355,
+  totalMs: 761
+}
+ GET /admin/relatorio/avaliacoes-empreiteiro/691463d2-4453-4442-ae07-e051025af0be/pdf 200 in 5489ms

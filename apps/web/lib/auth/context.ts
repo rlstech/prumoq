@@ -1,4 +1,5 @@
 import type { PerfilUsuario, StatusCliente } from '@prumoq/shared';
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 
 export interface AuthContext {
@@ -18,7 +19,10 @@ export class AuthorizationError extends Error {
   }
 }
 
-export async function getAuthContext(): Promise<AuthContext | null> {
+// React scopes this cache to the active server render. A layout and its page can
+// therefore share a single verified user/profile lookup without weakening the
+// request-level verification performed by Supabase and the middleware.
+export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -66,7 +70,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
     clienteNome: cliente.nome,
     clienteStatus: cliente.status,
   };
-}
+});
 
 export async function requirePlatformAdmin(): Promise<AuthContext> {
   const context = await getAuthContext();

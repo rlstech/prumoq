@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-function localUri(value: string): string | null {
+function localUri(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
   if (value.startsWith('pending:')) return value.slice('pending:'.length);
   if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
   return null;

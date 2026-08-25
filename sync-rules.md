@@ -20,6 +20,39 @@ admins recebem IDs explícitos das obras ativas do mesmo cliente. `superadmin`
 não possui `cliente_id` e não recebe buckets operacionais. `clientes` e
 `auditoria_plataforma` nunca são sincronizadas para o app de campo.
 
+## Avaliações de empreiteiros (migration 064+)
+
+O módulo de avaliação é offline-first. Inclua nos buckets do usuário autorizado
+as tabelas abaixo, sempre filtradas pelo tenant e, quando aplicável, pelo acesso
+à obra:
+
+```yaml
+bucket_definitions:
+  contractor_evaluations:
+    parameters: [cliente_id, user_id]
+    data:
+      - SELECT * FROM modelos_avaliacao_empreiteiro WHERE cliente_id = :cliente_id
+      - SELECT * FROM modelo_avaliacao_empreiteiro_revisoes WHERE cliente_id = :cliente_id
+      - SELECT * FROM modelo_avaliacao_empreiteiro_criterios WHERE cliente_id = :cliente_id
+      - SELECT a.* FROM avaliacoes_empreiteiro a
+        WHERE a.cliente_id = :cliente_id
+          AND a.obra_id IN (
+            SELECT obra_id FROM obra_usuarios
+            WHERE usuario_id = :user_id AND ativo = true
+          )
+      - SELECT i.* FROM avaliacao_empreiteiro_itens i
+        JOIN avaliacoes_empreiteiro a ON a.id = i.avaliacao_id
+        WHERE i.cliente_id = :cliente_id
+          AND a.obra_id IN (
+            SELECT obra_id FROM obra_usuarios
+            WHERE usuario_id = :user_id AND ativo = true
+          )
+```
+
+`medicoes_servico` também precisa estar disponível para que o app apresente as
+medições de equipes `terceirizado` que aguardam avaliação. A assinatura é enviada
+como `pending:` e o connector a promove para R2 antes de concluir o registro.
+
 ## Visão Geral
 
 O app mobile usa **PowerSync** para manter um banco SQLite local no dispositivo.

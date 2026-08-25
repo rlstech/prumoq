@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import StatusBadge from '@/components/ui/StatusBadge';
+import Pagination from '@/components/ui/Pagination';
 
 export interface NcListRecord {
   id: string;
@@ -41,7 +42,7 @@ function normalize(value: string | null | undefined): string {
     .toLocaleLowerCase('pt-BR');
 }
 
-export default function NcClient({ initialData }: { initialData: NcListRecord[] }) {
+export default function NcClient({ initialData, page, hasNextPage }: { initialData: NcListRecord[]; page: number; hasNextPage: boolean }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todas');
   const [obraFilter, setObraFilter] = useState('Todas');
@@ -195,6 +196,7 @@ export default function NcClient({ initialData }: { initialData: NcListRecord[] 
           </table>
         </div>
       </div>
+      <Pagination page={page} hasNextPage={hasNextPage} pathname="/nc" />
     </>
   );
 }

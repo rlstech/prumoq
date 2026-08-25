@@ -232,21 +232,22 @@ Registros compactos, mais recente primeiro:
 
 **Arquivo:** `app/(app)/(tabs)/obras/[id]/ambiente/[ambId]/fvs/[fvsId]/verificacao/nova.tsx`
 
-Esta é a tela mais complexa do app. Usar ScrollView com seções bem delimitadas.
+Esta é a tela mais complexa do app. Implementação atual: wizard de **duas etapas**
+("Vistoria" e "Fechamento"), com `Stepper` no topo, cada etapa validada e
+persistida em rascunho local (`useVerificationFlow`) antes de avançar.
+As seções abaixo descrevem o conteúdo de cada campo; a divisão em "seções"
+numeradas é conceitual — na implementação, contexto e checklist vivem juntos
+na etapa "Vistoria", e evidências/resultado/assinatura vivem juntos na etapa
+"Fechamento".
 
-### Seção 1: Inspetor (read-only)
-Card laranja com avatar + nome + cargo + cadeado "Logado"
-Não editável. Preenchido automaticamente.
+### Etapa "Vistoria" — Contexto (faixa compacta)
+- Faixa colapsável: avatar do inspetor + nome + data + equipe numa linha;
+  expande para editar data (date picker) e equipe executora
+- Inspetor não é editável (usuário logado)
+- Equipe fixa (com selo) quando há vínculo de medição ativo; senão,
+  selecionável entre as equipes da obra e pré-preenchida pela última verificação
 
-### Seção 2: Data
-- DatePicker nativo, default = hoje
-
-### Seção 3: Equipe executora
-- Dropdown com engenheiro responsável (fixo da obra, read-only)
-- Select de equipe executora (lista de equipes da obra)
-- Card verde/laranja confirmando a equipe selecionada com tipo (Próprio/Terceirizado)
-
-### Seção 4: Itens de Verificação
+### Itens de Verificação
 Para cada item do checklist (da FVS Padrão, revisão atual):
 
 ```
@@ -264,33 +265,35 @@ Para cada item do checklist (da FVS Padrão, revisão atual):
 └─────────────────────────────────────┘
 ```
 
-**Painel de Não Conformidade (expandido quando item = nok):**
-- Borda vermelha no card inteiro
-- Header do card: fundo vermelho claro
+**Painel de Não Conformidade (expandido inline quando item = nok):**
+- Card branco com datum vermelho de 3px à esquerda (nunca fundo colorido)
 - Campo: "Descrição da não conformidade *" (textarea obrigatório)
 - Campo: "Foto da evidência *" (botão câmera → thumbnail após captura)
 - Campo: "Solução proposta *" (textarea obrigatório)
-- Campo: "Nova data de verificação *" (DatePicker obrigatório)
+- Campo: "Nova data de verificação *" (date picker obrigatório)
 - Campo: "Responsável pela correção" (Select de equipes)
 - Badge "Obrigatório" no header do painel
+- Bloco adicional "Impacto financeiro" quando a obra tem controle financeiro de NC ativo
 
-### Seção 5: Fotos de Evidência (geral)
+### Etapa "Fechamento" — Fotos de Evidência (geral)
 - Botões: [📷 Câmera] [🖼 Galeria]
-- Grid 3 colunas de miniaturas com botão X para remover
+- Grid de miniaturas com botão X para remover
 - Contador: "X de 10 fotos"
 - Toque na miniatura: viewer fullscreen
 
-### Seção 6: Observações Gerais
+### Etapa "Fechamento" — Observações Gerais
 - Textarea livre
 - Placeholder: "Ocorrências, condições do ambiente..."
 
-### Seção 7: Resultado
-- Resultado somente leitura, calculado automaticamente pelos itens:
+### Etapa "Fechamento" — Resultado
+- Hero assimétrico: resultado (Conforme/Não conforme) em destaque + contagem
+  de Conformes/NC/N/A secundária, calculado automaticamente pelos itens:
   - qualquer item Não conforme → verificação Não conforme
   - todos os itens Conforme ou N/A → verificação Conforme
 - A FVS permanece Em andamento após salvar uma verificação, mesmo quando conforme
+- Lista de pendências navegáveis quando há campos obrigatórios faltando
 
-### Seção 8: Assinatura Digital
+### Etapa "Fechamento" — Assinatura Digital
 - Label: "Responsável: [nome do inspetor]"
 - Canvas de assinatura (react-native-signature-canvas)
   - Fundo branco, traço #1a1a1a, strokeWidth 2

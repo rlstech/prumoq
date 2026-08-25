@@ -11,15 +11,20 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Modal from '@/components/ui/Modal';
 import FvsImportModal from './FvsImportModal';
 import { FVS_CATEGORIES, getFvsCategoryLabel } from '@/lib/fvs/categories';
+import Pagination from '@/components/ui/Pagination';
 
 export default function FvsPadraoClient({
   initialData,
   empresas,
   loadError,
+  page,
+  hasNextPage,
 }: {
   initialData: any[];
   empresas: Array<{ id: string; nome: string }>;
   loadError?: string;
+  page: number;
+  hasNextPage: boolean;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -255,6 +260,7 @@ export default function FvsPadraoClient({
         data={filtered}
         emptyMessage="Nenhuma FVS Padrão encontrada nessa categoria."
       />
+      <Pagination page={page} hasNextPage={hasNextPage} pathname="/fvs-padrao" />
 
       <ConfirmDialog 
         isOpen={!!confirmToggle}

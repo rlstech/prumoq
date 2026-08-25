@@ -1,6 +1,8 @@
 import Header from '@/components/layout/Header';
 import { createClient } from '@/lib/supabase/server';
 import NcClient, { type NcListRecord } from './NcClient';
+import { pageFromSearchParam, pageRange, pageSlice } from '@/lib/pagination';
+import { getAuthContext } from '@/lib/auth/context';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,8 +20,11 @@ interface NcQueryRecord {
   } | null;
 }
 
-export default async function NcPage() {
+export default async function NcPage({ searchParams }: { searchParams?: { page?: string | string[] } }) {
   const supabase = await createClient();
+  const context = await getAuthContext();
+  const page = pageFromSearchParam(searchParams?.page);
+  const { from, to } = pageRange(page);
   const { data: ncsData } = await supabase
     .from('nao_conformidades')
     .select(`
@@ -30,9 +35,11 @@ export default async function NcPage() {
         usuarios!inspetor_id(nome)
       )
     `)
-    .order('data_nova_verif', { ascending: true, nullsFirst: false });
+    .eq('cliente_id', context?.clienteId ?? '')
+    .order('data_nova_verif', { ascending: true, nullsFirst: false })
+    .range(from, to);
 
-  const rawNcs = (ncsData ?? []) as unknown as NcQueryRecord[];
+  const { rows: rawNcs, hasNextPage } = pageSlice((ncsData ?? []) as unknown as NcQueryRecord[]);
   const ncs: NcListRecord[] = rawNcs.map(nc => ({
     id: nc.id,
     descricao: nc.descricao,
@@ -91,7 +98,7 @@ export default async function NcPage() {
           </div>
         </div>
 
-        <NcClient initialData={ncs} />
+        <NcClient initialData={ncs} page={page} hasNextPage={hasNextPage} />
         </div>
       </div>
     </>

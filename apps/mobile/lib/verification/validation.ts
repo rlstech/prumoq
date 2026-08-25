@@ -1,5 +1,6 @@
 import {
   NcDraftDetail,
+  normalizeVerificationStep,
   VerificationResult,
   VerificationStep,
 } from './draft.types';
@@ -23,12 +24,13 @@ export function collectVerificationErrors(
 ): Record<string, string> {
   const errors: Record<string, string> = {};
   const openNcItems = new Set(input.openNcItemIds);
+  // Rascunhos v4 legados podem passar 'context'/'evidence' aqui — normaliza
+  // para o bloco fundido correto do wizard de 2 etapas.
+  const scope = step ? normalizeVerificationStep(step) : undefined;
 
-  if (!step || step === 'context') {
+  if (!scope || scope === 'checklist') {
     if (!input.selectedEquipeId) errors.equipe = 'Selecione a equipe executora';
-  }
 
-  if (!step || step === 'checklist') {
     for (const itemId of input.itemIds) {
       if (!input.itemResults[itemId]) errors[`item_${itemId}`] = 'Classifique este item';
       if (input.itemResults[itemId] !== 'nao_conforme' || openNcItems.has(itemId)) continue;
@@ -45,13 +47,10 @@ export function collectVerificationErrors(
     }
   }
 
-  if (!step || step === 'evidence') {
+  if (!scope || scope === 'review') {
     if (input.isReinspection && !input.reinspectionPhoto) {
       errors.reinspFoto = 'Foto da re-inspeção obrigatória';
     }
-  }
-
-  if (!step || step === 'review') {
     if (!input.signaturePath) errors.assinatura = 'Assinatura digital obrigatória';
   }
 

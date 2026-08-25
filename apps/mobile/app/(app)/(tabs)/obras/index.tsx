@@ -19,6 +19,7 @@ import {
   ErrorBanner,
   ListSurface,
   OperationalRow,
+  Progress,
   SegmentedControl,
   Skeleton,
   type DatumTone,
@@ -211,9 +212,10 @@ export default function ObrasScreen() {
       >
         <View style={styles.summary}>
           <View style={styles.summaryPrimary}>
-            <Text style={styles.summaryEyebrow}>CARTEIRA EM CAMPO</Text>
+            <Text style={styles.summaryTitle}>Avanço da carteira</Text>
             <Text style={styles.summaryValue}>{Math.round(portfolio.progress)}%</Text>
             <Text style={styles.summaryLabel}>avanço ponderado das FVS</Text>
+            <Progress value={portfolio.progress} height={5} tone={portfolio.openNc > 0 ? 'danger' : 'brand'} />
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryFacts}>
@@ -375,6 +377,7 @@ function ObraRowItem({
         {item.fvs_concluidas ?? 0} de {item.total_fvs ?? 0} FVS concluídas
         {hasNc ? ` · ${item.ncs_abertas} NC abertas` : ''}
       </Text>
+      <Progress value={progress} height={5} tone={hasNc ? 'danger' : progress >= 100 ? 'success' : 'brand'} />
       <View style={styles.rowFooter}>
         <Text style={[styles.footerLabel, { color: hasNc ? Colors.nok : Colors.ok }]}>
           {hasNc ? `${item.ncs_abertas} NC` : 'Sem NC'}
@@ -406,7 +409,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   summaryPrimary: { flex: 1.5, justifyContent: 'center' },
-  summaryEyebrow: { ...Typography.overline, color: Colors.textTertiary },
+  summaryTitle: { ...Typography.label, color: Colors.textSecondary },
   summaryValue: {
     marginTop: 2,
     color: Colors.brand,
@@ -414,7 +417,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     lineHeight: 39,
   },
-  summaryLabel: { ...Typography.caption, color: Colors.textSecondary },
+  summaryLabel: { ...Typography.caption, color: Colors.textSecondary, marginBottom: Spacing.sm },
   summaryDivider: {
     width: 1,
     marginHorizontal: Spacing.lg,
@@ -516,7 +519,7 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
   },
   rowFooter: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,

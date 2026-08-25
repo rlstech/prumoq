@@ -135,7 +135,7 @@ reservados a confirmação, visualização ampla e fluxos concentrados.
 - Canvas Calcário com conteúdo máximo de `1440px` no PWA.
 - Dashboard ordena: Hoje, ações necessárias, obras e atividade.
 - Busca e filtros principais aparecem juntos; filtros avançados usam sheet.
-- Nova Verificação usa quatro etapas: Contexto, Checklist, Evidências e Revisão.
+- Nova Verificação usa duas etapas: Vistoria (contexto + checklist) e Fechamento (evidências, resultado, assinatura).
 - Ações de avanço/salvar ficam fixas no rodapé.
 
 ## Layout admin

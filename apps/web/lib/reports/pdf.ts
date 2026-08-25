@@ -307,7 +307,7 @@ export async function closePdfBrowser(): Promise<void> {
   if (browser.connected) await browser.close();
 }
 
-export async function createPdf(html: string): Promise<Uint8Array> {
+export async function createPdf(html: string, options: { landscape?: boolean } = {}): Promise<Uint8Array> {
   const totalStartedAt = performance.now();
   const imagesStartedAt = performance.now();
   const prepared = await inlineReportImages(html);
@@ -335,7 +335,7 @@ export async function createPdf(html: string): Promise<Uint8Array> {
     const renderStartedAt = performance.now();
     const pdf = await page.pdf({
       format: 'A4',
-      landscape: true,
+      landscape: options.landscape ?? true,
       printBackground: true,
       preferCSSPageSize: true,
       margin: { top: 0, right: 0, bottom: 0, left: 0 },

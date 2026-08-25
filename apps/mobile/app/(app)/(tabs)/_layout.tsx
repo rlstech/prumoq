@@ -1,5 +1,5 @@
-import { Tabs } from 'expo-router';
-import { AlertTriangle, Building2, LayoutGrid, User } from 'lucide-react-native';
+import { router, Tabs } from 'expo-router';
+import { AlertTriangle, Building2, ClipboardCheck, LayoutGrid, User } from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
 import { useResponsiveLayout } from '../../../hooks/useResponsiveLayout';
 import {
@@ -39,6 +39,12 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="obras"
+        listeners={{
+          tabPress: event => {
+            event.preventDefault();
+            router.replace('/(app)/(tabs)/obras');
+          },
+        }}
         options={{
           title: 'Obras',
           tabBarAccessibilityLabel: 'Obras',
@@ -54,6 +60,15 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <AlertTriangle size={21} color={color} strokeWidth={2.1} />,
         }}
       />
+      <Tabs.Screen
+        name="avaliacoes/index"
+        options={{
+          title: 'Avaliações',
+          tabBarAccessibilityLabel: 'Avaliações de empreiteiros',
+          tabBarIcon: ({ color }) => <ClipboardCheck size={21} color={color} strokeWidth={2.1} />,
+        }}
+      />
+      <Tabs.Screen name="avaliacoes/nova" options={{ href: null }} />
       <Tabs.Screen
         name="nc/[ncId]"
         options={{

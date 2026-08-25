@@ -33,6 +33,7 @@ import {
 import { supabase } from '../../../lib/supabase';
 import { VerificationDraftV1 } from '../../../lib/verification/draft.types';
 import { draftStore } from '../../../lib/verification/draftStore';
+import { normalizeVerificationStep, VERIFICATION_STEPS, verificationStepIndex } from '../../../lib/verification/controller';
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -284,7 +285,7 @@ export default function DashboardScreen() {
     );
   }, [discardDraft]);
 
-  const hasActions = drafts.length > 0 || ncsUrgentes.length > 0;
+  const hasDraftsToResume = drafts.length > 0;
 
   return (
     <SafeAreaView style={[styles.safe, styles.safeBrand]}>
@@ -317,11 +318,18 @@ export default function DashboardScreen() {
         </AppHeader>
 
         <View style={styles.content}>
+          {ncsUrgentes.length > 0 ? (
+            <FieldQueue
+              ncs={ncsUrgentes}
+              dueToday={kpis.ncsHoje}
+              onOpenQueue={() => router.push('/(app)/(tabs)/nc' as never)}
+            />
+          ) : null}
+
           <View style={styles.section}>
             <SectionTitle
-              eyebrow="HOJE"
-              title="Panorama de campo"
-              description="O que merece sua atenção antes de entrar em campo."
+              title="Hoje no canteiro"
+              description="Acompanhe a situação geral antes de iniciar a próxima vistoria."
             />
             <OperationalSummary
               activeWorks={kpis.obrasAtivas}
@@ -334,12 +342,11 @@ export default function DashboardScreen() {
             />
           </View>
 
-          {hasActions ? (
+          {hasDraftsToResume ? (
             <View style={styles.section}>
               <SectionTitle
-                eyebrow="PRÓXIMOS PASSOS"
-                title="Ações necessárias"
-                description="Retome preenchimentos e trate primeiro o que tem prazo."
+                title="Retomar vistoria"
+                description="Continue exatamente de onde parou."
               />
               <View style={[styles.actionsGrid, isTablet && styles.actionsGridTablet]}>
                 {drafts.length > 0 ? (
@@ -362,7 +369,7 @@ export default function DashboardScreen() {
                           <View style={styles.draftBody}>
                             <Text style={styles.draftTitle} numberOfLines={1}>{draft.fvsName || 'Verificação em andamento'}</Text>
                             <Text style={styles.draftMeta} numberOfLines={1}>
-                              {draft.ambienteName} · Etapa {stepNumber(draft.currentStep)} de 4
+                              {draft.ambienteName} · Etapa {stepNumber(draft.currentStep)} de {VERIFICATION_STEPS.length}
                             </Text>
                             <Text style={styles.draftTime}>Salvo em {formatDraftTime(draft.updatedAt)}</Text>
                           </View>
@@ -385,43 +392,12 @@ export default function DashboardScreen() {
                   </View>
                 ) : null}
 
-                {ncsUrgentes.length > 0 ? (
-                  <View style={[styles.actionGroup, isTablet && styles.actionGroupTablet]}>
-                    <View style={styles.actionHeadingRow}>
-                      <View style={styles.actionHeading}>
-                        <Text style={styles.actionEyebrow}>PRIORIDADE</Text>
-                        <Text style={styles.actionTitle}>Reinspeções pendentes</Text>
-                      </View>
-                      <Pressable onPress={() => router.push('/(app)/(tabs)/nc' as never)}>
-                        <Text style={styles.sectionLink}>Ver todas</Text>
-                      </Pressable>
-                    </View>
-                    {ncsUrgentes.map(nc => {
-                      const badge = nc.data_nova_verif ? deadline(nc.data_nova_verif) : null;
-                      return (
-                        <Pressable
-                          key={nc.id}
-                          style={({ pressed }) => [styles.ncCard, pressed && styles.pressed]}
-                          onPress={() => router.push('/(app)/(tabs)/nc' as never)}
-                        >
-                          <View style={styles.ncIcon}><AlertTriangle size={19} color={Colors.nok} /></View>
-                          <View style={styles.ncBody}>
-                            <Text style={styles.ncItem} numberOfLines={1}>{nc.item_titulo}</Text>
-                            <Text style={styles.ncMeta} numberOfLines={1}>{nc.obra_nome} · {nc.ambiente_nome}</Text>
-                          </View>
-                          {badge ? <Chip label={badge.label} /> : null}
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                ) : null}
               </View>
             </View>
           ) : null}
 
           <View style={styles.section}>
             <SectionTitle
-              eyebrow="CAMPO"
               title="Obras recentes"
               description="Acesse rapidamente os serviços em acompanhamento."
               action={(
@@ -466,7 +442,7 @@ export default function DashboardScreen() {
 
           {verifsRecentes.length > 0 ? (
             <View style={styles.section}>
-              <SectionTitle eyebrow="HISTÓRICO" title="Atividade recente" />
+              <SectionTitle title="Atividade recente" />
               <Card style={styles.activityCard}>
                 {verifsRecentes.map((verification, index) => (
                   <Pressable
@@ -499,8 +475,63 @@ export default function DashboardScreen() {
   );
 }
 
+function FieldQueue({
+  ncs,
+  dueToday,
+  onOpenQueue,
+}: {
+  ncs: NcUrgentRow[];
+  dueToday: number;
+  onOpenQueue: () => void;
+}) {
+  const priority = ncs[0];
+  const dueLabel = dueToday > 0
+    ? `${dueToday} ${dueToday === 1 ? 'vence hoje' : 'vencem hoje'}`
+    : 'Organize a proxima parada';
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Fila de campo: ${ncs.length} reinspecoes prioritarias. Abrir fila.`}
+      onPress={onOpenQueue}
+      style={({ pressed }) => [styles.fieldQueue, pressed && styles.pressed]}
+    >
+      <View style={styles.fieldQueueTop}>
+        <View>
+          <Text style={styles.fieldQueueEyebrow}>FILA DE CAMPO</Text>
+          <Text style={styles.fieldQueueTitle}>Proxima parada definida</Text>
+        </View>
+        <View style={styles.fieldQueueBadge}>
+          <AlertTriangle size={15} color={Colors.nok} />
+          <Text style={styles.fieldQueueBadgeText}>{ncs.length}</Text>
+        </View>
+      </View>
+
+      <View style={styles.fieldQueueItem}>
+        <View style={styles.fieldQueueMarker} />
+        <View style={styles.fieldQueueCopy}>
+          <Text style={styles.fieldQueueAction}>REINSPECIONAR</Text>
+          <Text style={styles.fieldQueueItemTitle} numberOfLines={2}>{priority.item_titulo}</Text>
+          <Text style={styles.fieldQueueMeta} numberOfLines={1}>{priority.obra_nome} · {priority.ambiente_nome}</Text>
+        </View>
+        <ArrowRight size={20} color={Colors.brand} />
+      </View>
+
+      <View style={styles.fieldQueueFooter}>
+        <View style={styles.fieldQueueStops}>
+          {ncs.map(nc => <View key={nc.id} style={styles.fieldQueueStop} />)}
+          <Text style={styles.fieldQueueStopsText}>{ncs.length === 1 ? '1 parada prioritaria' : `${ncs.length} paradas prioritarias`}</Text>
+        </View>
+        <Text style={styles.fieldQueueDue}>{dueLabel}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 function stepNumber(step: VerificationDraftV1['currentStep']): number {
-  return { context: 1, checklist: 2, evidence: 3, review: 4 }[step];
+  // Rascunhos v4 legados podem trazer 'context'/'evidence' — normaliza antes
+  // de indexar no wizard de 2 etapas atual.
+  return verificationStepIndex(normalizeVerificationStep(step)) + 1;
 }
 
 function OperationalSummary({
@@ -613,6 +644,51 @@ const styles = StyleSheet.create({
     gap: Spacing.xxxl,
   },
   section: { gap: Spacing.md },
+  fieldQueue: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderLeftWidth: 3,
+    borderColor: Colors.border,
+    borderLeftColor: Colors.nok,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    ...Elevation.card,
+  },
+  fieldQueueTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: Spacing.md },
+  fieldQueueEyebrow: { ...Typography.overline, color: Colors.nok },
+  fieldQueueTitle: { ...Typography.heading, color: Colors.text, marginTop: 2 },
+  fieldQueueBadge: {
+    minWidth: 34,
+    height: 30,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.nokBg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  fieldQueueBadgeText: { ...Typography.label, color: Colors.nok },
+  fieldQueueItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: Colors.border,
+  },
+  fieldQueueMarker: { width: 9, height: 9, borderRadius: Radius.full, backgroundColor: Colors.nok },
+  fieldQueueCopy: { flex: 1, minWidth: 0, gap: 2 },
+  fieldQueueAction: { ...Typography.overline, color: Colors.textTertiary },
+  fieldQueueItemTitle: { ...Typography.bodyMedium, color: Colors.text },
+  fieldQueueMeta: { ...Typography.caption, color: Colors.textSecondary },
+  fieldQueueFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
+  fieldQueueStops: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  fieldQueueStop: { width: 7, height: 7, borderRadius: Radius.full, backgroundColor: Colors.nok },
+  fieldQueueStopsText: { ...Typography.caption, color: Colors.textSecondary, marginLeft: 3 },
+  fieldQueueDue: { ...Typography.caption, color: Colors.nok, fontFamily: FontFamily.semibold, textAlign: 'right' },
   actionsGrid: { gap: Spacing.xxl },
   actionsGridTablet: { flexDirection: 'row', alignItems: 'flex-start' },
   actionGroup: { gap: Spacing.md, minWidth: 0 },
