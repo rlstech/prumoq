@@ -190,8 +190,8 @@ export function NcFinancialFields({ financial, onChange, managers, error }: Prop
 }
 
 const styles = StyleSheet.create({
-  // Not a card, for the same reason as NcInlineForm: this already sits inside a
-  // row scoped by its own datum, so a nested surface would just box a box.
+  // Not a card: this sits inside the NC sheet, which is already a surface of
+  // its own, so a nested one would just box a box. A hairline opens the section.
   section: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.border,

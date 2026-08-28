@@ -1,4 +1,4 @@
-import { AlertCircle, CalendarDays, Camera, Check, CheckCircle2, ChevronLeft, ChevronRight, LucideIcon, RefreshCw, WifiOff, X } from 'lucide-react-native';
+import { AlertCircle, CalendarDays, Camera, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ListFilter, LockKeyhole, LucideIcon, MinusCircle, RefreshCw, Search, WifiOff, X, XCircle } from 'lucide-react-native';
 import { ReactNode, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -588,6 +588,185 @@ export function InlineDateField({
   );
 }
 
+export interface SelectOption {
+  id: string;
+  label: string;
+  /** Secondary line under the option — revision number, team type, etc. */
+  meta?: string;
+}
+
+/**
+ * Single-choice field for lists that can grow past a handful of entries.
+ * The trigger states the current choice on one 64px line; the options open in
+ * a `ModalSheet` with a search box and their own scroll, so a tenant with
+ * eighty obras never turns the form into an endless column of radio buttons.
+ *
+ * `locked` is for a value fixed by upstream data (a medição that already names
+ * the obra): the row still reads the value, but as a confirmation rather than
+ * a control.
+ */
+export function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+  Icon = ListFilter,
+  placeholder = 'Selecionar',
+  hint,
+  emptyText = 'Nenhuma opção disponível.',
+  searchThreshold = 6,
+  locked = false,
+  lockedLabel = 'Fixo',
+  disabled = false,
+  error,
+  modalTitle,
+  modalDescription,
+  accessibilityLabel,
+}: {
+  label: string;
+  value: string;
+  options: readonly SelectOption[];
+  onChange: (id: string) => void;
+  Icon?: LucideIcon;
+  placeholder?: string;
+  hint?: string;
+  emptyText?: string;
+  /** Show the search box once the list is at least this long. */
+  searchThreshold?: number;
+  locked?: boolean;
+  lockedLabel?: string;
+  disabled?: boolean;
+  error?: string;
+  modalTitle?: string;
+  modalDescription?: string;
+  accessibilityLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const selected = options.find(option => option.id === value);
+  const inert = locked || disabled || options.length === 0;
+  const normalizedSearch = normalizeText(search);
+  const filtered = normalizedSearch
+    ? options.filter(option => normalizeText(`${option.label} ${option.meta ?? ''}`).includes(normalizedSearch))
+    : options;
+
+  const openPicker = () => {
+    setSearch('');
+    setOpen(true);
+  };
+
+  const choose = (id: string) => {
+    onChange(id);
+    setOpen(false);
+  };
+
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel ?? (selected ? `${label}: ${selected.label}` : `Selecionar ${label.toLowerCase()}`)}
+        accessibilityHint={inert ? undefined : `Abre a lista de opções de ${label.toLowerCase()}`}
+        accessibilityState={{ disabled: inert, expanded: open }}
+        disabled={inert}
+        onPress={openPicker}
+        style={({ pressed }) => [
+          styles.selectTrigger,
+          selected && !locked && styles.selectTriggerSelected,
+          locked && styles.selectTriggerLocked,
+          error && styles.selectTriggerError,
+          pressed && !inert && styles.selectTriggerPressed,
+        ]}
+      >
+        <View style={[styles.selectDatum, locked && styles.selectDatumLocked]} />
+        <View style={styles.selectIcon}>
+          <Icon size={19} color={locked ? Colors.textSecondary : selected ? Colors.brand : Colors.textSecondary} strokeWidth={2} />
+        </View>
+        <View style={styles.selectBody}>
+          <Text numberOfLines={1} style={[styles.selectValue, !selected && styles.selectPlaceholder]}>
+            {selected?.label ?? (options.length ? placeholder : emptyText)}
+          </Text>
+          {selected?.meta || hint ? (
+            <Text numberOfLines={1} style={styles.selectMeta}>{selected?.meta ?? hint}</Text>
+          ) : null}
+        </View>
+        {locked ? (
+          <Badge tone="neutral" size="sm" label={lockedLabel} Icon={LockKeyhole} />
+        ) : (
+          <>
+            {selected ? <Check size={19} color={Colors.ok} strokeWidth={2.4} /> : null}
+            {options.length ? <ChevronDown size={18} color={Colors.textSecondary} /> : null}
+          </>
+        )}
+      </Pressable>
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+
+      <ModalSheet visible={open} onClose={() => setOpen(false)} title={modalTitle ?? label}>
+        <View style={styles.selectSheet}>
+          <Text style={styles.selectSheetDescription}>
+            {modalDescription ?? `${options.length} ${options.length === 1 ? 'opção disponível' : 'opções disponíveis'}.`}
+          </Text>
+          {options.length >= searchThreshold ? (
+            <View style={styles.selectSearch}>
+              <Search size={18} color={Colors.textSecondary} />
+              <TextInput
+                accessibilityLabel={`Buscar ${label.toLowerCase()}`}
+                value={search}
+                onChangeText={setSearch}
+                placeholder={`Buscar ${label.toLowerCase()}`}
+                placeholderTextColor={Colors.textTertiary}
+                style={styles.selectSearchInput}
+              />
+              {search ? <IconButton label="Limpar busca" Icon={X} onPress={() => setSearch('')} /> : null}
+            </View>
+          ) : null}
+          <ScrollView style={styles.selectList} contentContainerStyle={styles.selectListContent} keyboardShouldPersistTaps="handled">
+            {filtered.map(option => {
+              const isSelected = option.id === value;
+              return (
+                <Pressable
+                  key={option.id}
+                  accessibilityRole="radio"
+                  accessibilityLabel={option.label}
+                  accessibilityState={{ checked: isSelected }}
+                  onPress={() => choose(option.id)}
+                  style={({ pressed }) => [
+                    styles.selectOption,
+                    isSelected && styles.selectOptionSelected,
+                    pressed && !isSelected && styles.selectOptionPressed,
+                  ]}
+                >
+                  <View style={styles.selectOptionBody}>
+                    <Text numberOfLines={2} style={styles.selectOptionLabel}>{option.label}</Text>
+                    {option.meta ? <Text numberOfLines={1} style={styles.selectOptionMeta}>{option.meta}</Text> : null}
+                  </View>
+                  {isSelected
+                    ? <Check size={19} color={Colors.ok} strokeWidth={2.4} />
+                    : <ChevronRight size={18} color={Colors.textTertiary} />}
+                </Pressable>
+              );
+            })}
+            {!filtered.length ? (
+              <View style={styles.selectEmpty}>
+                <Text style={styles.selectEmptyTitle}>Nenhum resultado</Text>
+                <Text style={styles.selectEmptyText}>
+                  {options.length ? 'Ajuste a busca para ver outras opções.' : emptyText}
+                </Text>
+              </View>
+            ) : null}
+          </ScrollView>
+        </View>
+      </ModalSheet>
+    </View>
+  );
+}
+
+/** Accent-insensitive comparison key for search boxes. */
+function normalizeText(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 /**
  * Single evidence photo slot (reinspection photo, NC photo). Receives an
  * already-resolved URI — callers stay responsible for private-media
@@ -699,36 +878,123 @@ export function SegmentedControl<T extends string>({
   );
 }
 
-export type ResultToggleValue = 'conforme' | 'nao_conforme' | 'na';
+export type ChoiceToggleTone = 'success' | 'danger' | 'neutral' | 'brand';
 
-const resultToggleOptions: readonly {
-  value: ResultToggleValue;
+export interface ChoiceToggleOption<T extends string> {
+  value: T;
   label: string;
-  accessibilityLabel: string;
+  tone: ChoiceToggleTone;
+  accessibilityLabel?: string;
+  /** Circle glyph: outline while unchosen, solid-filled once chosen. */
   Icon?: LucideIcon;
-}[] = [
-  { value: 'conforme', label: 'Conforme', accessibilityLabel: 'Conforme', Icon: Check },
-  { value: 'nao_conforme', label: 'Não conforme', accessibilityLabel: 'Não conforme', Icon: X },
-  { value: 'na', label: 'N/A', accessibilityLabel: 'Não aplicável' },
-];
-
-const resultToggleWidth: Record<ResultToggleValue, ViewStyle> = {
-  conforme: { flex: 1.55 },
-  nao_conforme: { flex: 1.15 },
-  na: { width: 64 },
-};
+}
 
 /**
- * Tri-state checklist result control (conforme/não conforme/N/A). One joined
- * control with three positions rather than three equal buttons: Conforme takes
- * the most width because it is the dominant field answer, and N/A collapses to
- * a compact mono token. The selection is marked by a soft tint plus a semantic
- * datum along the bottom edge — never a saturated fill — per design-system.md,
- * and the unchosen positions recede once an answer exists so the decision reads
- * at arm's length in the sun. `locked` covers reinspection items kept from the
- * previous verification: disabled visually and for a11y, but still announced as
- * radios so screen readers say why it can't be changed.
+ * Joined 2–3 position answer control. One control with N positions rather than
+ * N separate buttons, and every position takes an equal share of the width so
+ * no answer is harder to hit than another — the previous 1.55 / 1.15 / 64px
+ * split left N/A with less than half the target area of Conforme.
+ *
+ * The chosen position carries three signals at once: the soft tint, a 1.5px
+ * semantic ring, and a solid-filled glyph where the others are outlines. The
+ * fill is what survives direct sunlight and still reads in greyscale; the tint
+ * alone is roughly a 4% luminance step and vanishes on site. Icon over label
+ * buys the height for a 56px target without a second row of controls.
+ *
+ * `locked` is disabled visually and for a11y, but still announced as radios so
+ * screen readers say why it can't be changed.
+ *
+ * `ResultToggle` (FVS checklist) and the contractor evaluation's Atende/Não
+ * atende control are both thin configurations of this component.
  */
+export function ChoiceToggle<T extends string>({
+  value,
+  options,
+  onChange,
+  locked = false,
+  error,
+  accessibilityLabel,
+  style,
+}: {
+  value?: T;
+  options: readonly ChoiceToggleOption<T>[];
+  onChange: (value: T) => void;
+  locked?: boolean;
+  error?: string;
+  accessibilityLabel: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const answered = !!value;
+  return (
+    <View style={style}>
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+      <View
+        style={[styles.resultToggle, locked && styles.resultToggleLocked, error && styles.resultToggleError]}
+        accessibilityRole="radiogroup"
+        accessibilityLabel={accessibilityLabel}
+        pointerEvents={locked ? 'none' : 'auto'}
+      >
+        {options.map((option, index) => {
+          const selected = value === option.value;
+          const palette = choiceTogglePalette[option.tone];
+          const Icon = option.Icon;
+          const tint = selected
+            ? palette.text
+            : answered
+              ? Colors.textTertiary
+              : Colors.textSecondary;
+          return (
+            <Pressable
+              key={option.value}
+              accessibilityRole="radio"
+              accessibilityLabel={option.accessibilityLabel ?? option.label}
+              accessibilityState={{ checked: selected, disabled: locked }}
+              disabled={locked}
+              onPress={() => onChange(option.value)}
+              style={({ pressed }) => [
+                styles.resultToggleOption,
+                index > 0 && !selected && styles.resultToggleDivider,
+                selected && { backgroundColor: palette.background },
+                pressed && !selected && styles.resultToggleOptionPressed,
+              ]}
+            >
+              {Icon ? (
+                <Icon
+                  size={22}
+                  color={selected ? Colors.surface : tint}
+                  fill={selected ? palette.text : 'transparent'}
+                  strokeWidth={selected ? 2.4 : 2}
+                />
+              ) : null}
+              <Text numberOfLines={1} style={[styles.resultToggleText, { color: tint }]}>
+                {option.label}
+              </Text>
+              {selected ? (
+                <View
+                  pointerEvents="none"
+                  style={[styles.resultToggleRing, { borderColor: palette.border }]}
+                />
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+export type ResultToggleValue = 'conforme' | 'nao_conforme' | 'na';
+
+const resultToggleOptions: readonly ChoiceToggleOption<ResultToggleValue>[] = [
+  // Equal thirds. N/A used to be a 64px mono token with no glyph — the smallest
+  // target and the only one without a non-textual cue, which is the worst
+  // combination for a gloved hand.
+  { value: 'conforme', label: 'Conforme', tone: 'success', Icon: CheckCircle2 },
+  { value: 'nao_conforme', label: 'Não conforme', tone: 'danger', Icon: XCircle },
+  { value: 'na', label: 'Não se aplica', tone: 'neutral', accessibilityLabel: 'Não aplicável', Icon: MinusCircle },
+];
+
+/** Tri-state checklist result control (conforme/não conforme/N/A). */
 export function ResultToggle({
   value,
   onChange,
@@ -744,60 +1010,16 @@ export function ResultToggle({
   accessibilityLabel: string;
   style?: StyleProp<ViewStyle>;
 }) {
-  const answered = !!value;
   return (
-    <View style={style}>
-      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
-      <View
-        style={[styles.resultToggle, locked && styles.resultToggleLocked]}
-        accessibilityRole="radiogroup"
-        accessibilityLabel={accessibilityLabel}
-        pointerEvents={locked ? 'none' : 'auto'}
-      >
-        {resultToggleOptions.map((option, index) => {
-          const selected = value === option.value;
-          const palette = resultTogglePalette[option.value];
-          const Icon = option.Icon;
-          const tint = selected
-            ? palette.text
-            : answered
-              ? Colors.textTertiary
-              : Colors.textSecondary;
-          return (
-            <Pressable
-              key={option.value}
-              accessibilityRole="radio"
-              accessibilityLabel={option.accessibilityLabel}
-              accessibilityState={{ checked: selected, disabled: locked }}
-              disabled={locked}
-              onPress={() => onChange(option.value)}
-              style={({ pressed }) => [
-                styles.resultToggleOption,
-                resultToggleWidth[option.value],
-                index > 0 && !selected && styles.resultToggleDivider,
-                selected && { backgroundColor: palette.background },
-                pressed && !selected && styles.resultToggleOptionPressed,
-              ]}
-            >
-              {Icon ? <Icon size={17} color={tint} strokeWidth={selected ? 2.6 : 2.2} /> : null}
-              <Text
-                numberOfLines={1}
-                style={[
-                  option.value === 'na' ? styles.resultToggleToken : styles.resultToggleText,
-                  { color: tint },
-                  selected && option.value !== 'na' && { fontFamily: FontFamily.semibold },
-                ]}
-              >
-                {option.label}
-              </Text>
-              {selected ? (
-                <View style={[styles.resultToggleMark, { backgroundColor: palette.border }]} />
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
+    <ChoiceToggle
+      value={value}
+      options={resultToggleOptions}
+      onChange={onChange}
+      locked={locked}
+      error={error}
+      accessibilityLabel={accessibilityLabel}
+      style={style}
+    />
   );
 }
 
@@ -1136,10 +1358,11 @@ const badgePalette: Record<BadgeTone, { background: string; border: string; text
   info: { background: Colors.infoBg, border: Colors.info, text: Colors.info },
 };
 
-const resultTogglePalette: Record<ResultToggleValue, { background: string; border: string; text: string }> = {
-  conforme: { background: Colors.okBg, border: Colors.ok, text: Colors.ok },
-  nao_conforme: { background: Colors.nokBg, border: Colors.nok, text: Colors.nok },
-  na: { background: Colors.naBg, border: Colors.na, text: Colors.na },
+const choiceTogglePalette: Record<ChoiceToggleTone, { background: string; border: string; text: string }> = {
+  success: { background: Colors.okBg, border: Colors.ok, text: Colors.ok },
+  danger: { background: Colors.nokBg, border: Colors.nok, text: Colors.nok },
+  neutral: { background: Colors.naBg, border: Colors.na, text: Colors.na },
+  brand: { background: Colors.brandLight, border: Colors.brandSignature, text: Colors.brand },
 };
 
 const progressPalette: Record<BadgeTone, string> = {
@@ -1418,6 +1641,94 @@ const styles = StyleSheet.create({
   calendarDayTextDisabled: { color: Colors.textTertiary },
   calendarActions: { flexDirection: 'row', gap: Spacing.sm, paddingTop: Spacing.xs },
   calendarAction: { flex: 1 },
+  selectTrigger: {
+    minHeight: 64,
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.borderNormal,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  selectTriggerSelected: { borderColor: Colors.brandSignature, backgroundColor: Colors.brandLight },
+  // A locked value is data, not a control: it drops the lime datum and the
+  // affordances so it stops competing with the fields the user can still set.
+  selectTriggerLocked: { backgroundColor: Colors.surface2, borderColor: Colors.border },
+  selectTriggerError: { borderColor: Colors.nok, borderWidth: 1.5 },
+  selectTriggerPressed: { backgroundColor: Colors.surface2 },
+  selectDatum: {
+    position: 'absolute',
+    width: 3,
+    left: 0,
+    top: Spacing.sm,
+    bottom: Spacing.sm,
+    backgroundColor: Colors.brandSignature,
+  },
+  selectDatumLocked: { backgroundColor: Colors.borderNormal },
+  selectIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.surface,
+  },
+  selectBody: { flex: 1, minWidth: 0, gap: 1 },
+  selectValue: { ...Typography.label, color: Colors.text },
+  selectPlaceholder: { color: Colors.brand },
+  selectMeta: { ...Typography.caption, color: Colors.textSecondary },
+  selectSheet: { gap: Spacing.md },
+  selectSheetDescription: { ...Typography.caption, color: Colors.textSecondary },
+  selectSearch: {
+    minHeight: ComponentSize.input,
+    borderWidth: 1,
+    borderColor: Colors.borderNormal,
+    borderRadius: Radius.md,
+    paddingLeft: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  selectSearchInput: {
+    flex: 1,
+    minWidth: 0,
+    alignSelf: 'stretch',
+    color: Colors.text,
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.md,
+  },
+  selectList: { maxHeight: 360 },
+  selectListContent: { borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.lg, overflow: 'hidden' },
+  selectOption: {
+    minHeight: 60,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
+  },
+  selectOptionSelected: { backgroundColor: Colors.brandLight },
+  selectOptionPressed: { backgroundColor: Colors.surface2 },
+  selectOptionBody: { flex: 1, minWidth: 0, gap: 1 },
+  selectOptionLabel: { ...Typography.label, color: Colors.text },
+  selectOptionMeta: { ...Typography.caption, color: Colors.textSecondary },
+  selectEmpty: {
+    minHeight: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.xs,
+    backgroundColor: Colors.surface2,
+  },
+  selectEmptyTitle: { ...Typography.label, color: Colors.text },
+  selectEmptyText: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'center' },
   textArea: { minHeight: 112, textAlignVertical: 'top' },
   inputError: { borderColor: Colors.nok, borderWidth: 1.5 },
   fieldError: { ...Typography.caption, color: Colors.nok },
@@ -1673,7 +1984,7 @@ const styles = StyleSheet.create({
   dataRowTrailing: { alignItems: 'center', justifyContent: 'center' },
   resultToggle: {
     flexDirection: 'row',
-    minHeight: ComponentSize.button,
+    minHeight: ComponentSize.choice,
     borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: Colors.borderNormal,
@@ -1681,26 +1992,29 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   resultToggleLocked: { opacity: 0.6 },
+  resultToggleError: { borderColor: Colors.nok, borderWidth: 1.5 },
   resultToggleOption: {
     position: 'relative',
-    minHeight: ComponentSize.button - 2,
-    flexDirection: 'row',
+    flex: 1,
+    minHeight: ComponentSize.choice - 2,
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: Spacing.sm,
+    gap: 3,
+    paddingHorizontal: Spacing.xs,
   },
   resultToggleDivider: {
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: Colors.borderNormal,
   },
   resultToggleOptionPressed: { backgroundColor: Colors.surface2 },
-  resultToggleMark: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3 },
-  resultToggleText: { ...Typography.caption, fontFamily: FontFamily.medium },
-  resultToggleToken: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.xs,
-    letterSpacing: 0.3,
+  // Drawn inside the option rather than as a border on it: the joined control
+  // clips to its own radius, so an inset ring survives at the outer corners.
+  resultToggleRing: { ...StyleSheet.absoluteFillObject, borderWidth: 1.5 },
+  resultToggleText: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.tiny,
+    lineHeight: 16,
   },
   // Neutral by default: Cal Viva is reserved for focus, selection and the
   // signature, and a lime block here would outshout the state of the form it

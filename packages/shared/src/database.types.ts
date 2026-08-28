@@ -14,6 +14,153 @@ export type Database = {
   }
   public: {
     Tables: {
+      ambientes: {
+        Row: {
+          ativo: boolean
+          cliente_id: string
+          created_at: string
+          id: string
+          localizacao: string | null
+          nome: string
+          obra_id: string
+          observacoes: string | null
+          tipo: Database["public"]["Enums"]["tipo_ambiente"]
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cliente_id: string
+          created_at?: string
+          id?: string
+          localizacao?: string | null
+          nome: string
+          obra_id: string
+          observacoes?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_ambiente"]
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          localizacao?: string | null
+          nome?: string
+          obra_id?: string
+          observacoes?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_ambiente"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ambientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ambientes_obra_cliente_fkey"
+            columns: ["obra_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
+            foreignKeyName: "ambientes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ambientes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "v_obras_com_fvs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ambientes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "vw_indicadores_medicoes"
+            referencedColumns: ["obra_id"]
+          },
+        ]
+      }
+      auditoria_operacional: {
+        Row: {
+          acao: string
+          cliente_id: string
+          created_at: string
+          dados: Json
+          entidade: string
+          entidade_id: string
+          id: string
+          obra_id: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          cliente_id: string
+          created_at?: string
+          dados?: Json
+          entidade: string
+          entidade_id: string
+          id?: string
+          obra_id?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          cliente_id?: string
+          created_at?: string
+          dados?: Json
+          entidade?: string
+          entidade_id?: string
+          id?: string
+          obra_id?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_operacional_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_operacional_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_operacional_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "v_obras_com_fvs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_operacional_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "vw_indicadores_medicoes"
+            referencedColumns: ["obra_id"]
+          },
+          {
+            foreignKeyName: "auditoria_operacional_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auditoria_plataforma: {
         Row: {
           acao: string
@@ -39,7 +186,396 @@ export type Database = {
           detalhes?: Json
           id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_plataforma_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_empreiteiro_itens: {
+        Row: {
+          avaliacao_id: string
+          cliente_id: string
+          comentario_nao_atende: string | null
+          created_at: string
+          criterio_origem_id: string | null
+          id: string
+          ordem: number
+          peso: number
+          resultado:
+            | Database["public"]["Enums"]["resultado_criterio_avaliacao"]
+            | null
+          titulo: string
+        }
+        Insert: {
+          avaliacao_id: string
+          cliente_id: string
+          comentario_nao_atende?: string | null
+          created_at?: string
+          criterio_origem_id?: string | null
+          id?: string
+          ordem: number
+          peso: number
+          resultado?:
+            | Database["public"]["Enums"]["resultado_criterio_avaliacao"]
+            | null
+          titulo: string
+        }
+        Update: {
+          avaliacao_id?: string
+          cliente_id?: string
+          comentario_nao_atende?: string | null
+          created_at?: string
+          criterio_origem_id?: string | null
+          id?: string
+          ordem?: number
+          peso?: number
+          resultado?:
+            | Database["public"]["Enums"]["resultado_criterio_avaliacao"]
+            | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_empreiteiro_itens_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes_empreiteiro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_empreiteiro_itens_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_empreiteiro_itens_criterio_origem_id_fkey"
+            columns: ["criterio_origem_id"]
+            isOneToOne: false
+            referencedRelation: "modelo_avaliacao_empreiteiro_criterios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_empreiteiro_reaberturas: {
+        Row: {
+          avaliacao_id: string
+          avaliador_anterior_id: string
+          cliente_id: string
+          created_at: string
+          id: string
+          motivo: string
+          numero_reabertura: number
+          reaberto_por: string
+        }
+        Insert: {
+          avaliacao_id: string
+          avaliador_anterior_id: string
+          cliente_id: string
+          created_at?: string
+          id?: string
+          motivo: string
+          numero_reabertura: number
+          reaberto_por: string
+        }
+        Update: {
+          avaliacao_id?: string
+          avaliador_anterior_id?: string
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          motivo?: string
+          numero_reabertura?: number
+          reaberto_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_empreiteiro_reaberturas_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes_empreiteiro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_empreiteiro_reaberturas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_empreiteiro_reaberturas_avaliador_anterior_id_fkey"
+            columns: ["avaliador_anterior_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_empreiteiro_reaberturas_reaberto_por_fkey"
+            columns: ["reaberto_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacoes_empreiteiro: {
+        Row: {
+          aprovada_em: string | null
+          aprovada_por: string | null
+          assinada_em: string | null
+          assinatura_url: string | null
+          avaliador_id: string
+          cliente_id: string
+          concluida_em: string | null
+          created_at: string
+          created_offline: boolean
+          data_avaliacao: string
+          equipe_id: string
+          id: string
+          invalidada_em: string | null
+          invalidada_por: string | null
+          medicao_id: string | null
+          modelo_revisao_id: string
+          motivo_invalidacao: string | null
+          ultimo_motivo_reabertura: string | null
+          notificacoes_ocorridas: string | null
+          obra_id: string
+          percentual: number
+          pontos_obtidos: number
+          pontos_possiveis: number
+          providencias_tomadas: string | null
+          status: Database["public"]["Enums"]["status_avaliacao_empreiteiro"]
+          updated_at: string
+        }
+        Insert: {
+          aprovada_em?: string | null
+          aprovada_por?: string | null
+          assinada_em?: string | null
+          assinatura_url?: string | null
+          avaliador_id: string
+          cliente_id: string
+          concluida_em?: string | null
+          created_at?: string
+          created_offline?: boolean
+          data_avaliacao?: string
+          equipe_id: string
+          id?: string
+          invalidada_em?: string | null
+          invalidada_por?: string | null
+          medicao_id?: string | null
+          modelo_revisao_id: string
+          motivo_invalidacao?: string | null
+          ultimo_motivo_reabertura?: string | null
+          notificacoes_ocorridas?: string | null
+          obra_id: string
+          percentual?: number
+          pontos_obtidos?: number
+          pontos_possiveis?: number
+          providencias_tomadas?: string | null
+          status?: Database["public"]["Enums"]["status_avaliacao_empreiteiro"]
+          updated_at?: string
+        }
+        Update: {
+          aprovada_em?: string | null
+          aprovada_por?: string | null
+          assinada_em?: string | null
+          assinatura_url?: string | null
+          avaliador_id?: string
+          cliente_id?: string
+          concluida_em?: string | null
+          created_at?: string
+          created_offline?: boolean
+          data_avaliacao?: string
+          equipe_id?: string
+          id?: string
+          invalidada_em?: string | null
+          invalidada_por?: string | null
+          medicao_id?: string | null
+          modelo_revisao_id?: string
+          motivo_invalidacao?: string | null
+          ultimo_motivo_reabertura?: string | null
+          notificacoes_ocorridas?: string | null
+          obra_id?: string
+          percentual?: number
+          pontos_obtidos?: number
+          pontos_possiveis?: number
+          providencias_tomadas?: string | null
+          status?: Database["public"]["Enums"]["status_avaliacao_empreiteiro"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_empreiteiro_aprovada_por_fkey"
+            columns: ["aprovada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_empreiteiro_avaliador_id_fkey"
+            columns: ["avaliador_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_empreiteiro_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_empreiteiro_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_empreiteiro_invalidada_por_fkey"
+            columns: ["invalidada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_empreiteiro_medicao_id_fkey"
+            columns: ["medicao_id"]
+            isOneToOne: false
+            referencedRelation: "medicoes_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_empreiteiro_modelo_revisao_id_fkey"
+            columns: ["modelo_revisao_id"]
+            isOneToOne: false
+            referencedRelation: "modelo_avaliacao_empreiteiro_revisoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_empreiteiro_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_empreiteiro_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "v_obras_com_fvs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_empreiteiro_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "vw_indicadores_medicoes"
+            referencedColumns: ["obra_id"]
+          },
+        ]
+      }
+      avancos_aprovados_servico: {
+        Row: {
+          aprovado_anterior: number
+          aprovado_atual: number
+          aprovado_por: string
+          cliente_id: string
+          created_at: string
+          created_offline: boolean
+          data_aprovacao: string
+          etapa_id: string | null
+          executado_anterior: number
+          executado_atual: number
+          id: string
+          unidade: string
+          verificacao_id: string
+          vinculacao_id: string
+        }
+        Insert: {
+          aprovado_anterior: number
+          aprovado_atual: number
+          aprovado_por: string
+          cliente_id: string
+          created_at?: string
+          created_offline?: boolean
+          data_aprovacao?: string
+          etapa_id?: string | null
+          executado_anterior: number
+          executado_atual: number
+          id?: string
+          unidade: string
+          verificacao_id: string
+          vinculacao_id: string
+        }
+        Update: {
+          aprovado_anterior?: number
+          aprovado_atual?: number
+          aprovado_por?: string
+          cliente_id?: string
+          created_at?: string
+          created_offline?: boolean
+          data_aprovacao?: string
+          etapa_id?: string | null
+          executado_anterior?: number
+          executado_atual?: number
+          id?: string
+          unidade?: string
+          verificacao_id?: string
+          vinculacao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avancos_aprovados_servico_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avancos_aprovados_servico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avancos_aprovados_servico_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_medicao_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avancos_aprovados_servico_verificacao_id_fkey"
+            columns: ["verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "verificacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avancos_aprovados_servico_vinculacao_id_fkey"
+            columns: ["vinculacao_id"]
+            isOneToOne: false
+            referencedRelation: "vinculos_execucao_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avancos_aprovados_servico_vinculacao_id_fkey"
+            columns: ["vinculacao_id"]
+            isOneToOne: false
+            referencedRelation: "vw_saldos_medicao_servico"
+            referencedColumns: ["vinculacao_id"]
+          },
+        ]
       }
       clientes: {
         Row: {
@@ -86,75 +622,15 @@ export type Database = {
         }
         Relationships: []
       }
-      ambientes: {
-        Row: {
-          ativo: boolean
-          cliente_id: string
-          controle_financeiro_nc_habilitado: boolean
-          controle_medicoes_habilitado: boolean
-          created_at: string
-          id: string
-          localizacao: string | null
-          nome: string
-          obra_id: string
-          observacoes: string | null
-          tipo: Database["public"]["Enums"]["tipo_ambiente"]
-          updated_at: string
-        }
-        Insert: {
-          ativo?: boolean
-          cliente_id: string
-          controle_financeiro_nc_habilitado?: boolean
-          controle_medicoes_habilitado?: boolean
-          created_at?: string
-          id?: string
-          localizacao?: string | null
-          nome: string
-          obra_id: string
-          observacoes?: string | null
-          tipo?: Database["public"]["Enums"]["tipo_ambiente"]
-          updated_at?: string
-        }
-        Update: {
-          ativo?: boolean
-          cliente_id?: string
-          controle_financeiro_nc_habilitado?: boolean
-          controle_medicoes_habilitado?: boolean
-          created_at?: string
-          id?: string
-          localizacao?: string | null
-          nome?: string
-          obra_id?: string
-          observacoes?: string | null
-          tipo?: Database["public"]["Enums"]["tipo_ambiente"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ambientes_obra_id_fkey"
-            columns: ["obra_id"]
-            isOneToOne: false
-            referencedRelation: "obras"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ambientes_obra_id_fkey"
-            columns: ["obra_id"]
-            isOneToOne: false
-            referencedRelation: "v_obras_com_fvs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       empresas: {
         Row: {
           ativo: boolean
-          cliente_id: string
-          controle_financeiro_nc_habilitado: boolean
-          controle_medicoes_habilitado: boolean
           cep: string | null
+          cliente_id: string
           cnpj: string
           contato: string | null
+          controle_financeiro_nc_habilitado: boolean
+          controle_medicoes_habilitado: boolean
           created_at: string
           email: string | null
           endereco: string | null
@@ -168,12 +644,12 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
-          cliente_id: string
-          controle_financeiro_nc_habilitado?: boolean
-          controle_medicoes_habilitado?: boolean
           cep?: string | null
+          cliente_id: string
           cnpj: string
           contato?: string | null
+          controle_financeiro_nc_habilitado?: boolean
+          controle_medicoes_habilitado?: boolean
           created_at?: string
           email?: string | null
           endereco?: string | null
@@ -187,12 +663,12 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
-          cliente_id?: string
-          controle_financeiro_nc_habilitado?: boolean
-          controle_medicoes_habilitado?: boolean
           cep?: string | null
+          cliente_id?: string
           cnpj?: string
           contato?: string | null
+          controle_financeiro_nc_habilitado?: boolean
+          controle_medicoes_habilitado?: boolean
           created_at?: string
           email?: string | null
           endereco?: string | null
@@ -204,7 +680,72 @@ export type Database = {
           uf?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "empresas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipe_empresas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          empresa_id: string
+          equipe_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          empresa_id: string
+          equipe_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          empresa_id?: string
+          equipe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipe_empresas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipe_empresas_empresa_cliente_fkey"
+            columns: ["empresa_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
+            foreignKeyName: "equipe_empresas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipe_empresas_equipe_cliente_fkey"
+            columns: ["equipe_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
+            foreignKeyName: "equipe_empresas_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       equipes: {
         Row: {
@@ -249,13 +790,15 @@ export type Database = {
           tipo?: Database["public"]["Enums"]["tipo_equipe"]
           updated_at?: string
         }
-        Relationships: []
-      }
-      equipe_empresas: {
-        Row: { cliente_id: string; created_at: string; empresa_id: string; equipe_id: string }
-        Insert: { cliente_id: string; created_at?: string; empresa_id: string; equipe_id: string }
-        Update: { cliente_id?: string; created_at?: string; empresa_id?: string; equipe_id?: string }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "equipes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fvs_conclusoes: {
         Row: {
@@ -308,6 +851,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fvs_conclusoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fvs_conclusoes_fvs_planejada_id_fkey"
             columns: ["fvs_planejada_id"]
             isOneToOne: false
@@ -322,8 +872,189 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fvs_conclusoes_planejada_cliente_fkey"
+            columns: ["fvs_planejada_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_planejadas"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
             foreignKeyName: "fvs_conclusoes_verificacao_id_fkey"
             columns: ["verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "verificacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fvs_medicao_configuracoes: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          criado_por: string
+          fvs_planejada_id: string
+          id: string
+          metodo: Database["public"]["Enums"]["metodo_medicao_servico"]
+          modelo_origem_id: string | null
+          permite_medicoes_parciais: boolean
+          preco_unitario: number | null
+          quantidade_total: number
+          unidade: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          criado_por: string
+          fvs_planejada_id: string
+          id?: string
+          metodo: Database["public"]["Enums"]["metodo_medicao_servico"]
+          modelo_origem_id?: string | null
+          permite_medicoes_parciais?: boolean
+          preco_unitario?: number | null
+          quantidade_total: number
+          unidade: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          criado_por?: string
+          fvs_planejada_id?: string
+          id?: string
+          metodo?: Database["public"]["Enums"]["metodo_medicao_servico"]
+          modelo_origem_id?: string | null
+          permite_medicoes_parciais?: boolean
+          preco_unitario?: number | null
+          quantidade_total?: number
+          unidade?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fvs_medicao_configuracoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_medicao_configuracoes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_medicao_configuracoes_fvs_planejada_id_fkey"
+            columns: ["fvs_planejada_id"]
+            isOneToOne: true
+            referencedRelation: "fvs_planejadas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_medicao_configuracoes_modelo_origem_id_fkey"
+            columns: ["modelo_origem_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_etapas_medicao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_medicao_configuracoes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fvs_medicao_etapas: {
+        Row: {
+          ativo: boolean
+          cliente_id: string
+          configuracao_id: string
+          created_at: string
+          equipe_responsavel_id: string | null
+          id: string
+          nome: string
+          ordem: number
+          percentual_interno: number | null
+          permite_avanco_parcial: boolean
+          peso_percentual: number
+          status: Database["public"]["Enums"]["status_etapa_medicao"]
+          updated_at: string
+          updated_by: string | null
+          verificacao_evidencia_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          cliente_id: string
+          configuracao_id: string
+          created_at?: string
+          equipe_responsavel_id?: string | null
+          id?: string
+          nome: string
+          ordem: number
+          percentual_interno?: number | null
+          permite_avanco_parcial?: boolean
+          peso_percentual: number
+          status?: Database["public"]["Enums"]["status_etapa_medicao"]
+          updated_at?: string
+          updated_by?: string | null
+          verificacao_evidencia_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          cliente_id?: string
+          configuracao_id?: string
+          created_at?: string
+          equipe_responsavel_id?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          percentual_interno?: number | null
+          permite_avanco_parcial?: boolean
+          peso_percentual?: number
+          status?: Database["public"]["Enums"]["status_etapa_medicao"]
+          updated_at?: string
+          updated_by?: string | null
+          verificacao_evidencia_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fvs_medicao_etapas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_medicao_etapas_configuracao_id_fkey"
+            columns: ["configuracao_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_medicao_configuracoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_medicao_etapas_equipe_responsavel_id_fkey"
+            columns: ["equipe_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_medicao_etapas_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_medicao_etapas_verificacao_evidencia_id_fkey"
+            columns: ["verificacao_evidencia_id"]
             isOneToOne: false
             referencedRelation: "verificacoes"
             referencedColumns: ["id"]
@@ -334,11 +1065,11 @@ export type Database = {
         Row: {
           ativo: boolean
           categoria: Database["public"]["Enums"]["categoria_fvs"]
+          cliente_id: string
           codigo: string | null
           created_at: string
           created_by: string | null
           descricao: string | null
-          cliente_id: string
           escopo: Database["public"]["Enums"]["escopo_cadastro"]
           id: string
           nome: string
@@ -349,11 +1080,11 @@ export type Database = {
         Insert: {
           ativo?: boolean
           categoria?: Database["public"]["Enums"]["categoria_fvs"]
+          cliente_id: string
           codigo?: string | null
           created_at?: string
           created_by?: string | null
           descricao?: string | null
-          cliente_id: string
           escopo?: Database["public"]["Enums"]["escopo_cadastro"]
           id?: string
           nome: string
@@ -364,11 +1095,11 @@ export type Database = {
         Update: {
           ativo?: boolean
           categoria?: Database["public"]["Enums"]["categoria_fvs"]
+          cliente_id?: string
           codigo?: string | null
           created_at?: string
           created_by?: string | null
           descricao?: string | null
-          cliente_id?: string
           escopo?: Database["public"]["Enums"]["escopo_cadastro"]
           id?: string
           nome?: string
@@ -377,6 +1108,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fvs_padrao_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fvs_padrao_created_by_fkey"
             columns: ["created_by"]
@@ -387,10 +1125,61 @@ export type Database = {
         ]
       }
       fvs_padrao_empresas: {
-        Row: { cliente_id: string; created_at: string; empresa_id: string; fvs_padrao_id: string }
-        Insert: { cliente_id: string; created_at?: string; empresa_id: string; fvs_padrao_id: string }
-        Update: { cliente_id?: string; created_at?: string; empresa_id?: string; fvs_padrao_id?: string }
-        Relationships: []
+        Row: {
+          cliente_id: string
+          created_at: string
+          empresa_id: string
+          fvs_padrao_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          empresa_id: string
+          fvs_padrao_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          empresa_id?: string
+          fvs_padrao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fvs_empresas_empresa_cliente_fkey"
+            columns: ["empresa_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
+            foreignKeyName: "fvs_empresas_padrao_cliente_fkey"
+            columns: ["fvs_padrao_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_padrao"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
+            foreignKeyName: "fvs_padrao_empresas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_padrao_empresas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_padrao_empresas_fvs_padrao_id_fkey"
+            columns: ["fvs_padrao_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_padrao"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fvs_padrao_itens: {
         Row: {
@@ -427,6 +1216,20 @@ export type Database = {
           tolerancia?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fvs_itens_padrao_cliente_fkey"
+            columns: ["fvs_padrao_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_padrao"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
+            foreignKeyName: "fvs_padrao_itens_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fvs_padrao_itens_fvs_padrao_id_fkey"
             columns: ["fvs_padrao_id"]
@@ -466,6 +1269,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fvs_padrao_revisoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fvs_padrao_revisoes_fvs_padrao_id_fkey"
             columns: ["fvs_padrao_id"]
             isOneToOne: false
@@ -478,6 +1288,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_revisoes_padrao_cliente_fkey"
+            columns: ["fvs_padrao_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_padrao"
+            referencedColumns: ["id", "cliente_id"]
           },
         ]
       }
@@ -535,10 +1352,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fvs_planejadas_ambiente_cliente_fkey"
+            columns: ["ambiente_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "ambientes"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
             foreignKeyName: "fvs_planejadas_ambiente_id_fkey"
             columns: ["ambiente_id"]
             isOneToOne: false
             referencedRelation: "ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_planejadas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
           {
@@ -547,6 +1378,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "fvs_padrao"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_planejadas_padrao_cliente_fkey"
+            columns: ["fvs_padrao_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_padrao"
+            referencedColumns: ["id", "cliente_id"]
           },
         ]
       }
@@ -593,11 +1431,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fvs_reaberturas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fvs_reaberturas_fvs_planejada_id_fkey"
             columns: ["fvs_planejada_id"]
             isOneToOne: false
             referencedRelation: "fvs_planejadas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fvs_reaberturas_planejada_cliente_fkey"
+            columns: ["fvs_planejada_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_planejadas"
+            referencedColumns: ["id", "cliente_id"]
           },
           {
             foreignKeyName: "fvs_reaberturas_solicitado_por_fkey"
@@ -608,82 +1460,642 @@ export type Database = {
           },
         ]
       }
+      medicao_item_liberacoes: {
+        Row: {
+          ativa: boolean
+          avanco_id: string
+          cliente_id: string
+          created_at: string
+          id: string
+          medicao_item_id: string
+          quantidade_utilizada: number
+        }
+        Insert: {
+          ativa?: boolean
+          avanco_id: string
+          cliente_id: string
+          created_at?: string
+          id?: string
+          medicao_item_id: string
+          quantidade_utilizada: number
+        }
+        Update: {
+          ativa?: boolean
+          avanco_id?: string
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          medicao_item_id?: string
+          quantidade_utilizada?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicao_item_liberacoes_avanco_id_fkey"
+            columns: ["avanco_id"]
+            isOneToOne: false
+            referencedRelation: "avancos_aprovados_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicao_item_liberacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicao_item_liberacoes_medicao_item_id_fkey"
+            columns: ["medicao_item_id"]
+            isOneToOne: false
+            referencedRelation: "medicao_servico_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicao_servico_itens: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          etapa_id: string | null
+          id: string
+          medicao_id: string
+          nc_id: string | null
+          preco_unitario: number | null
+          quantidade_anterior: number
+          quantidade_atual: number
+          quantidade_bloqueada: number
+          quantidade_periodo: number
+          tipo: Database["public"]["Enums"]["tipo_item_medicao"]
+          unidade: string
+          valor_calculado: number
+          verificacao_id: string | null
+          vinculacao_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          etapa_id?: string | null
+          id?: string
+          medicao_id: string
+          nc_id?: string | null
+          preco_unitario?: number | null
+          quantidade_anterior?: number
+          quantidade_atual?: number
+          quantidade_bloqueada?: number
+          quantidade_periodo?: number
+          tipo?: Database["public"]["Enums"]["tipo_item_medicao"]
+          unidade: string
+          valor_calculado?: number
+          verificacao_id?: string | null
+          vinculacao_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          etapa_id?: string | null
+          id?: string
+          medicao_id?: string
+          nc_id?: string | null
+          preco_unitario?: number | null
+          quantidade_anterior?: number
+          quantidade_atual?: number
+          quantidade_bloqueada?: number
+          quantidade_periodo?: number
+          tipo?: Database["public"]["Enums"]["tipo_item_medicao"]
+          unidade?: string
+          valor_calculado?: number
+          verificacao_id?: string | null
+          vinculacao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicao_servico_itens_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicao_servico_itens_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_medicao_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicao_servico_itens_medicao_id_fkey"
+            columns: ["medicao_id"]
+            isOneToOne: false
+            referencedRelation: "medicoes_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicao_servico_itens_nc_id_fkey"
+            columns: ["nc_id"]
+            isOneToOne: false
+            referencedRelation: "nao_conformidades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicao_servico_itens_verificacao_id_fkey"
+            columns: ["verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "verificacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicao_servico_itens_vinculacao_id_fkey"
+            columns: ["vinculacao_id"]
+            isOneToOne: false
+            referencedRelation: "vinculos_execucao_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicao_servico_itens_vinculacao_id_fkey"
+            columns: ["vinculacao_id"]
+            isOneToOne: false
+            referencedRelation: "vw_saldos_medicao_servico"
+            referencedColumns: ["vinculacao_id"]
+          },
+        ]
+      }
+      medicoes_servico: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          cancelado_em: string | null
+          cancelado_por: string | null
+          cliente_id: string
+          created_at: string
+          criado_por: string
+          data_medicao: string
+          equipe_id: string
+          id: string
+          motivo_cancelamento: string | null
+          obra_id: string
+          observacao: string | null
+          periodo_fim: string
+          periodo_inicio: string
+          referencia: string
+          status: Database["public"]["Enums"]["status_medicao_servico"]
+          updated_at: string
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          cancelado_em?: string | null
+          cancelado_por?: string | null
+          cliente_id: string
+          created_at?: string
+          criado_por: string
+          data_medicao?: string
+          equipe_id: string
+          id?: string
+          motivo_cancelamento?: string | null
+          obra_id: string
+          observacao?: string | null
+          periodo_fim: string
+          periodo_inicio: string
+          referencia: string
+          status?: Database["public"]["Enums"]["status_medicao_servico"]
+          updated_at?: string
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          cancelado_em?: string | null
+          cancelado_por?: string | null
+          cliente_id?: string
+          created_at?: string
+          criado_por?: string
+          data_medicao?: string
+          equipe_id?: string
+          id?: string
+          motivo_cancelamento?: string | null
+          obra_id?: string
+          observacao?: string | null
+          periodo_fim?: string
+          periodo_inicio?: string
+          referencia?: string
+          status?: Database["public"]["Enums"]["status_medicao_servico"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_servico_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_servico_cancelado_por_fkey"
+            columns: ["cancelado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_servico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_servico_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_servico_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_servico_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_servico_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "v_obras_com_fvs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_servico_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "vw_indicadores_medicoes"
+            referencedColumns: ["obra_id"]
+          },
+        ]
+      }
+      modelo_avaliacao_empreiteiro_criterios: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          ordem: number
+          peso: number
+          revisao_id: string
+          titulo: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          ordem: number
+          peso: number
+          revisao_id: string
+          titulo: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          ordem?: number
+          peso?: number
+          revisao_id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_avaliacao_empreiteiro_criterios_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_avaliacao_empreiteiro_criterios_revisao_id_fkey"
+            columns: ["revisao_id"]
+            isOneToOne: false
+            referencedRelation: "modelo_avaliacao_empreiteiro_revisoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_avaliacao_empreiteiro_revisoes: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          descricao_alteracoes: string
+          id: string
+          modelo_id: string
+          numero_revisao: number
+          publicado_por: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          descricao_alteracoes: string
+          id?: string
+          modelo_id: string
+          numero_revisao: number
+          publicado_por: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          descricao_alteracoes?: string
+          id?: string
+          modelo_id?: string
+          numero_revisao?: number
+          publicado_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_avaliacao_empreiteiro_revisoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_avaliacao_empreiteiro_revisoes_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_avaliacao_empreiteiro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_avaliacao_empreiteiro_revisoes_publicado_por_fkey"
+            columns: ["publicado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_etapas_medicao_itens: {
+        Row: {
+          ativo: boolean
+          cliente_id: string
+          id: string
+          modelo_id: string
+          nome: string
+          ordem: number
+          permite_avanco_parcial: boolean
+          peso_percentual: number
+        }
+        Insert: {
+          ativo?: boolean
+          cliente_id: string
+          id?: string
+          modelo_id: string
+          nome: string
+          ordem: number
+          permite_avanco_parcial?: boolean
+          peso_percentual: number
+        }
+        Update: {
+          ativo?: boolean
+          cliente_id?: string
+          id?: string
+          modelo_id?: string
+          nome?: string
+          ordem?: number
+          permite_avanco_parcial?: boolean
+          peso_percentual?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_etapas_medicao_itens_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_etapas_medicao_itens_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_etapas_medicao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelos_avaliacao_empreiteiro: {
+        Row: {
+          ativo: boolean
+          cliente_id: string
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          empresa_id: string | null
+          id: string
+          nome: string
+          revisao_atual: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cliente_id: string
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          empresa_id?: string | null
+          id?: string
+          nome: string
+          revisao_atual?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cliente_id?: string
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          empresa_id?: string | null
+          id?: string
+          nome?: string
+          revisao_atual?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelos_avaliacao_empreiteiro_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelos_avaliacao_empreiteiro_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelos_avaliacao_empreiteiro_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelos_etapas_medicao: {
+        Row: {
+          ativo: boolean
+          cliente_id: string
+          created_at: string
+          criado_por: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cliente_id: string
+          created_at?: string
+          criado_por?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cliente_id?: string
+          created_at?: string
+          criado_por?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelos_etapas_medicao_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelos_etapas_medicao_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelos_etapas_medicao_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nao_conformidades: {
         Row: {
-          bloqueio_medicao: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null
-          categoria_financeira: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null
+          bloqueio_medicao:
+            | Database["public"]["Enums"]["bloqueio_medicao_nc"]
+            | null
+          categoria_financeira:
+            | Database["public"]["Enums"]["categoria_impacto_financeiro_nc"]
+            | null
           cliente_id: string
-          documento_financeiro_r2_key: string | null
-          financeiro_requerido: boolean
           created_at: string
           data_nova_verif: string
           descricao: string
+          documento_financeiro_r2_key: string | null
+          financeiro_requerido: boolean
           foto_reinspecao_url: string | null
           id: string
           justificativa_sem_impacto: string | null
           nc_anterior_id: string | null
           numero_ocorrencia: number
-          observacao_resolucao: string | null
           observacao_financeira: string | null
-          prioridade: string
+          observacao_resolucao: string | null
           percentual_bloqueado: number | null
           prazo_avaliacao: string | null
+          prioridade: string
           quantidade_bloqueada: number | null
-          responsavel_avaliacao_id: string | null
-          responsavel_financeiro: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null
           resolvida_em: string | null
           resolvida_na_verif_id: string | null
+          responsavel_avaliacao_id: string | null
+          responsavel_financeiro:
+            | Database["public"]["Enums"]["responsavel_financeiro_nc"]
+            | null
           responsavel_id: string | null
+          situacao_financeira:
+            | Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]
+            | null
           solucao_proposta: string
           status: Database["public"]["Enums"]["status_nc"]
-          situacao_financeira: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null
           updated_at: string
-          valor_confirmado: number | null
           valor_bloqueado: number | null
+          valor_confirmado: number | null
           valor_estimado: number | null
           verificacao_id: string
           verificacao_item_id: string
           verificacao_reinsp_id: string | null
         }
         Insert: {
-          bloqueio_medicao?: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null
-          categoria_financeira?: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null
+          bloqueio_medicao?:
+            | Database["public"]["Enums"]["bloqueio_medicao_nc"]
+            | null
+          categoria_financeira?:
+            | Database["public"]["Enums"]["categoria_impacto_financeiro_nc"]
+            | null
           cliente_id: string
-          documento_financeiro_r2_key?: string | null
-          financeiro_requerido?: boolean
           created_at?: string
           data_nova_verif: string
           descricao: string
+          documento_financeiro_r2_key?: string | null
+          financeiro_requerido?: boolean
           foto_reinspecao_url?: string | null
           id?: string
           justificativa_sem_impacto?: string | null
           nc_anterior_id?: string | null
           numero_ocorrencia?: number
-          observacao_resolucao?: string | null
           observacao_financeira?: string | null
-          prioridade?: string
+          observacao_resolucao?: string | null
           percentual_bloqueado?: number | null
           prazo_avaliacao?: string | null
+          prioridade?: string
           quantidade_bloqueada?: number | null
-          responsavel_avaliacao_id?: string | null
-          responsavel_financeiro?: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null
           resolvida_em?: string | null
           resolvida_na_verif_id?: string | null
+          responsavel_avaliacao_id?: string | null
+          responsavel_financeiro?:
+            | Database["public"]["Enums"]["responsavel_financeiro_nc"]
+            | null
           responsavel_id?: string | null
+          situacao_financeira?:
+            | Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]
+            | null
           solucao_proposta: string
-          situacao_financeira?: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null
-          valor_confirmado?: number | null
-          valor_bloqueado?: number | null
-          valor_estimado?: number | null
           status?: Database["public"]["Enums"]["status_nc"]
           updated_at?: string
+          valor_bloqueado?: number | null
+          valor_confirmado?: number | null
+          valor_estimado?: number | null
           verificacao_id: string
           verificacao_item_id: string
           verificacao_reinsp_id?: string | null
         }
         Update: {
-          bloqueio_medicao?: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null
-          categoria_financeira?: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null
+          bloqueio_medicao?:
+            | Database["public"]["Enums"]["bloqueio_medicao_nc"]
+            | null
+          categoria_financeira?:
+            | Database["public"]["Enums"]["categoria_impacto_financeiro_nc"]
+            | null
           cliente_id?: string
           created_at?: string
           data_nova_verif?: string
@@ -695,29 +2107,40 @@ export type Database = {
           justificativa_sem_impacto?: string | null
           nc_anterior_id?: string | null
           numero_ocorrencia?: number
-          observacao_resolucao?: string | null
           observacao_financeira?: string | null
-          prioridade?: string
+          observacao_resolucao?: string | null
           percentual_bloqueado?: number | null
           prazo_avaliacao?: string | null
+          prioridade?: string
           quantidade_bloqueada?: number | null
-          responsavel_avaliacao_id?: string | null
-          responsavel_financeiro?: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null
           resolvida_em?: string | null
           resolvida_na_verif_id?: string | null
+          responsavel_avaliacao_id?: string | null
+          responsavel_financeiro?:
+            | Database["public"]["Enums"]["responsavel_financeiro_nc"]
+            | null
           responsavel_id?: string | null
+          situacao_financeira?:
+            | Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]
+            | null
           solucao_proposta?: string
-          situacao_financeira?: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null
           status?: Database["public"]["Enums"]["status_nc"]
           updated_at?: string
-          valor_confirmado?: number | null
           valor_bloqueado?: number | null
+          valor_confirmado?: number | null
           valor_estimado?: number | null
           verificacao_id?: string
           verificacao_item_id?: string
           verificacao_reinsp_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "nao_conformidades_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "nao_conformidades_nc_origem_id_fkey"
             columns: ["nc_anterior_id"]
@@ -730,6 +2153,13 @@ export type Database = {
             columns: ["resolvida_na_verif_id"]
             isOneToOne: false
             referencedRelation: "verificacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nao_conformidades_responsavel_avaliacao_id_fkey"
+            columns: ["responsavel_avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -758,6 +2188,81 @@ export type Database = {
             columns: ["verificacao_reinsp_id"]
             isOneToOne: false
             referencedRelation: "verificacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nc_item_cliente_fkey"
+            columns: ["verificacao_item_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "verificacao_itens"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
+            foreignKeyName: "nc_verificacao_cliente_fkey"
+            columns: ["verificacao_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "verificacoes"
+            referencedColumns: ["id", "cliente_id"]
+          },
+        ]
+      }
+      nc_financeiro_historico: {
+        Row: {
+          alterado_por: string | null
+          bloqueio: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null
+          cliente_id: string
+          created_at: string
+          dados: Json
+          id: string
+          nc_id: string
+          situacao:
+            | Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]
+            | null
+        }
+        Insert: {
+          alterado_por?: string | null
+          bloqueio?: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null
+          cliente_id: string
+          created_at?: string
+          dados: Json
+          id?: string
+          nc_id: string
+          situacao?:
+            | Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]
+            | null
+        }
+        Update: {
+          alterado_por?: string | null
+          bloqueio?: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null
+          cliente_id?: string
+          created_at?: string
+          dados?: Json
+          id?: string
+          nc_id?: string
+          situacao?:
+            | Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nc_financeiro_historico_alterado_por_fkey"
+            columns: ["alterado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nc_financeiro_historico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nc_financeiro_historico_nc_id_fkey"
+            columns: ["nc_id"]
+            isOneToOne: false
+            referencedRelation: "nao_conformidades"
             referencedColumns: ["id"]
           },
         ]
@@ -800,6 +2305,20 @@ export type Database = {
           tamanho_bytes?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "nc_fotos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nc_fotos_nc_cliente_fkey"
+            columns: ["nc_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "nao_conformidades"
+            referencedColumns: ["id", "cliente_id"]
+          },
           {
             foreignKeyName: "nc_fotos_nc_id_fkey"
             columns: ["nc_id"]
@@ -848,11 +2367,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "nc_reinspecoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "nc_reinspecoes_inspetor_id_fkey"
             columns: ["inspetor_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nc_reinspecoes_nc_cliente_fkey"
+            columns: ["nc_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "nao_conformidades"
+            referencedColumns: ["id", "cliente_id"]
           },
           {
             foreignKeyName: "nc_reinspecoes_nc_id_fkey"
@@ -867,6 +2400,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nao_conformidades"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nc_reinspecoes_verificacao_cliente_fkey"
+            columns: ["verificacao_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "verificacoes"
+            referencedColumns: ["id", "cliente_id"]
           },
           {
             foreignKeyName: "nc_reinspecoes_verificacao_id_fkey"
@@ -901,11 +2441,32 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "obra_equipes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_equipes_equipe_cliente_fkey"
+            columns: ["equipe_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
             foreignKeyName: "obra_equipes_equipe_id_fkey"
             columns: ["equipe_id"]
             isOneToOne: false
             referencedRelation: "equipes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_equipes_obra_cliente_fkey"
+            columns: ["obra_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id", "cliente_id"]
           },
           {
             foreignKeyName: "obra_equipes_obra_id_fkey"
@@ -920,6 +2481,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_obras_com_fvs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_equipes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "vw_indicadores_medicoes"
+            referencedColumns: ["obra_id"]
           },
         ]
       }
@@ -953,6 +2521,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "obra_usuarios_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_usuarios_obra_cliente_fkey"
+            columns: ["obra_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
             foreignKeyName: "obra_usuarios_obra_id_fkey"
             columns: ["obra_id"]
             isOneToOne: false
@@ -965,6 +2547,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_obras_com_fvs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_usuarios_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "vw_indicadores_medicoes"
+            referencedColumns: ["obra_id"]
+          },
+          {
+            foreignKeyName: "obra_usuarios_usuario_cliente_fkey"
+            columns: ["usuario_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id", "cliente_id"]
           },
           {
             foreignKeyName: "obra_usuarios_usuario_id_fkey"
@@ -1068,6 +2664,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "obras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_empresa_cliente_fkey"
+            columns: ["empresa_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
             foreignKeyName: "obras_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
@@ -1079,10 +2689,12 @@ export type Database = {
       usuarios: {
         Row: {
           ativo: boolean
+          assinatura_padrao_atualizada_em: string | null
+          assinatura_padrao_url: string | null
           avatar_url: string | null
           cargo: string | null
-          created_at: string
           cliente_id: string | null
+          created_at: string
           id: string
           nome: string
           onboarding_concluido_em: string | null
@@ -1092,10 +2704,12 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          assinatura_padrao_atualizada_em?: string | null
+          assinatura_padrao_url?: string | null
           avatar_url?: string | null
           cargo?: string | null
-          created_at?: string
           cliente_id?: string | null
+          created_at?: string
           id: string
           nome: string
           onboarding_concluido_em?: string | null
@@ -1105,10 +2719,12 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          assinatura_padrao_atualizada_em?: string | null
+          assinatura_padrao_url?: string | null
           avatar_url?: string | null
           cargo?: string | null
-          created_at?: string
           cliente_id?: string | null
+          created_at?: string
           id?: string
           nome?: string
           onboarding_concluido_em?: string | null
@@ -1116,7 +2732,15 @@ export type Database = {
           telefone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       verificacao_fotos: {
         Row: {
@@ -1156,6 +2780,20 @@ export type Database = {
           verificacao_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "verificacao_fotos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verificacao_fotos_verificacao_cliente_fkey"
+            columns: ["verificacao_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "verificacoes"
+            referencedColumns: ["id", "cliente_id"]
+          },
           {
             foreignKeyName: "verificacao_fotos_verificacao_id_fkey"
             columns: ["verificacao_id"]
@@ -1204,6 +2842,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "verificacao_itens_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "verificacao_itens_fvs_padrao_item_id_fkey"
             columns: ["fvs_padrao_item_id"]
             isOneToOne: false
@@ -1216,6 +2861,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "fvs_padrao_itens_current"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verificacao_itens_padrao_cliente_fkey"
+            columns: ["fvs_padrao_item_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_padrao_itens"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
+            foreignKeyName: "verificacao_itens_verificacao_cliente_fkey"
+            columns: ["verificacao_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "verificacoes"
+            referencedColumns: ["id", "cliente_id"]
           },
           {
             foreignKeyName: "verificacao_itens_verificacao_id_fkey"
@@ -1283,6 +2942,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "verificacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verificacoes_equipe_cliente_fkey"
+            columns: ["equipe_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
             foreignKeyName: "verificacoes_equipe_id_fkey"
             columns: ["equipe_id"]
             isOneToOne: false
@@ -1290,11 +2963,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "verificacoes_fvs_cliente_fkey"
+            columns: ["fvs_planejada_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_planejadas"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
             foreignKeyName: "verificacoes_fvs_planejada_id_fkey"
             columns: ["fvs_planejada_id"]
             isOneToOne: false
             referencedRelation: "fvs_planejadas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verificacoes_inspetor_cliente_fkey"
+            columns: ["inspetor_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id", "cliente_id"]
           },
           {
             foreignKeyName: "verificacoes_inspetor_id_fkey"
@@ -1305,101 +2992,105 @@ export type Database = {
           },
         ]
       }
-      modelos_etapas_medicao: {
-        Row: { id: string; cliente_id: string; empresa_id: string; nome: string; ativo: boolean; criado_por: string | null; created_at: string; updated_at: string }
-        Insert: { id?: string; cliente_id: string; empresa_id: string; nome: string; ativo?: boolean; criado_por?: string | null; created_at?: string; updated_at?: string }
-        Update: { id?: string; cliente_id?: string; empresa_id?: string; nome?: string; ativo?: boolean; criado_por?: string | null; created_at?: string; updated_at?: string }
-        Relationships: []
-      }
-      modelo_etapas_medicao_itens: {
-        Row: { id: string; cliente_id: string; modelo_id: string; ordem: number; nome: string; peso_percentual: number; permite_avanco_parcial: boolean; ativo: boolean }
-        Insert: { id?: string; cliente_id: string; modelo_id: string; ordem: number; nome: string; peso_percentual: number; permite_avanco_parcial?: boolean; ativo?: boolean }
-        Update: { id?: string; cliente_id?: string; modelo_id?: string; ordem?: number; nome?: string; peso_percentual?: number; permite_avanco_parcial?: boolean; ativo?: boolean }
-        Relationships: []
-      }
-      fvs_medicao_configuracoes: {
-        Row: { id: string; cliente_id: string; fvs_planejada_id: string; metodo: Database["public"]["Enums"]["metodo_medicao_servico"]; unidade: string; quantidade_total: number; preco_unitario: number | null; permite_medicoes_parciais: boolean; modelo_origem_id: string | null; criado_por: string; updated_by: string | null; created_at: string; updated_at: string }
-        Insert: { id?: string; cliente_id: string; fvs_planejada_id: string; metodo: Database["public"]["Enums"]["metodo_medicao_servico"]; unidade: string; quantidade_total: number; preco_unitario?: number | null; permite_medicoes_parciais?: boolean; modelo_origem_id?: string | null; criado_por: string; updated_by?: string | null; created_at?: string; updated_at?: string }
-        Update: { id?: string; cliente_id?: string; fvs_planejada_id?: string; metodo?: Database["public"]["Enums"]["metodo_medicao_servico"]; unidade?: string; quantidade_total?: number; preco_unitario?: number | null; permite_medicoes_parciais?: boolean; modelo_origem_id?: string | null; criado_por?: string; updated_by?: string | null; created_at?: string; updated_at?: string }
-        Relationships: []
-      }
-      fvs_medicao_etapas: {
-        Row: { id: string; cliente_id: string; configuracao_id: string; ordem: number; nome: string; peso_percentual: number; permite_avanco_parcial: boolean; ativo: boolean; status: Database["public"]["Enums"]["status_etapa_medicao"]; percentual_interno: number | null; equipe_responsavel_id: string | null; verificacao_evidencia_id: string | null; updated_by: string | null; created_at: string; updated_at: string }
-        Insert: { id?: string; cliente_id: string; configuracao_id: string; ordem: number; nome: string; peso_percentual: number; permite_avanco_parcial?: boolean; ativo?: boolean; status?: Database["public"]["Enums"]["status_etapa_medicao"]; percentual_interno?: number | null; equipe_responsavel_id?: string | null; verificacao_evidencia_id?: string | null; updated_by?: string | null; created_at?: string; updated_at?: string }
-        Update: { id?: string; cliente_id?: string; configuracao_id?: string; ordem?: number; nome?: string; peso_percentual?: number; permite_avanco_parcial?: boolean; ativo?: boolean; status?: Database["public"]["Enums"]["status_etapa_medicao"]; percentual_interno?: number | null; equipe_responsavel_id?: string | null; verificacao_evidencia_id?: string | null; updated_by?: string | null; created_at?: string; updated_at?: string }
-        Relationships: []
-      }
       vinculos_execucao_servico: {
-        Row: { id: string; cliente_id: string; fvs_planejada_id: string; etapa_id: string | null; equipe_id: string; data_inicio: string; data_termino: string | null; escopo_atribuido: number; aprovado_congelado: number; medido_congelado: number; status: Database["public"]["Enums"]["status_vinculo_execucao"]; motivo_encerramento: string | null; criado_por: string; encerrado_por: string | null; created_at: string; updated_at: string }
-        Insert: { id?: string; cliente_id: string; fvs_planejada_id: string; etapa_id?: string | null; equipe_id: string; data_inicio: string; data_termino?: string | null; escopo_atribuido: number; aprovado_congelado?: number; medido_congelado?: number; status?: Database["public"]["Enums"]["status_vinculo_execucao"]; motivo_encerramento?: string | null; criado_por: string; encerrado_por?: string | null; created_at?: string; updated_at?: string }
-        Update: { id?: string; cliente_id?: string; fvs_planejada_id?: string; etapa_id?: string | null; equipe_id?: string; data_inicio?: string; data_termino?: string | null; escopo_atribuido?: number; aprovado_congelado?: number; medido_congelado?: number; status?: Database["public"]["Enums"]["status_vinculo_execucao"]; motivo_encerramento?: string | null; criado_por?: string; encerrado_por?: string | null; created_at?: string; updated_at?: string }
-        Relationships: []
-      }
-      avancos_aprovados_servico: {
-        Row: { id: string; cliente_id: string; vinculacao_id: string; verificacao_id: string; etapa_id: string | null; executado_anterior: number; executado_atual: number; aprovado_anterior: number; aprovado_atual: number; unidade: string; aprovado_por: string; data_aprovacao: string; created_offline: boolean; created_at: string }
-        Insert: { id?: string; cliente_id: string; vinculacao_id: string; verificacao_id: string; etapa_id?: string | null; executado_anterior: number; executado_atual: number; aprovado_anterior: number; aprovado_atual: number; unidade: string; aprovado_por: string; data_aprovacao?: string; created_offline?: boolean; created_at?: string }
-        Update: { id?: string; cliente_id?: string; vinculacao_id?: string; verificacao_id?: string; etapa_id?: string | null; executado_anterior?: number; executado_atual?: number; aprovado_anterior?: number; aprovado_atual?: number; unidade?: string; aprovado_por?: string; data_aprovacao?: string; created_offline?: boolean; created_at?: string }
-        Relationships: []
-      }
-      medicoes_servico: {
-        Row: { id: string; cliente_id: string; obra_id: string; equipe_id: string; referencia: string; periodo_inicio: string; periodo_fim: string; data_medicao: string; status: Database["public"]["Enums"]["status_medicao_servico"]; observacao: string | null; criado_por: string; aprovado_por: string | null; aprovado_em: string | null; cancelado_por: string | null; cancelado_em: string | null; motivo_cancelamento: string | null; created_at: string; updated_at: string }
-        Insert: { id?: string; cliente_id: string; obra_id: string; equipe_id: string; referencia: string; periodo_inicio: string; periodo_fim: string; data_medicao?: string; status?: Database["public"]["Enums"]["status_medicao_servico"]; observacao?: string | null; criado_por: string; aprovado_por?: string | null; aprovado_em?: string | null; cancelado_por?: string | null; cancelado_em?: string | null; motivo_cancelamento?: string | null; created_at?: string; updated_at?: string }
-        Update: { id?: string; cliente_id?: string; obra_id?: string; equipe_id?: string; referencia?: string; periodo_inicio?: string; periodo_fim?: string; data_medicao?: string; status?: Database["public"]["Enums"]["status_medicao_servico"]; observacao?: string | null; criado_por?: string; aprovado_por?: string | null; aprovado_em?: string | null; cancelado_por?: string | null; cancelado_em?: string | null; motivo_cancelamento?: string | null; created_at?: string; updated_at?: string }
-        Relationships: []
-      }
-      medicao_servico_itens: {
-        Row: { id: string; cliente_id: string; medicao_id: string; vinculacao_id: string; etapa_id: string | null; verificacao_id: string | null; nc_id: string | null; tipo: Database["public"]["Enums"]["tipo_item_medicao"]; quantidade_anterior: number; quantidade_atual: number; quantidade_periodo: number; quantidade_bloqueada: number; unidade: string; preco_unitario: number | null; valor_calculado: number; created_at: string }
-        Insert: { id?: string; cliente_id: string; medicao_id: string; vinculacao_id: string; etapa_id?: string | null; verificacao_id?: string | null; nc_id?: string | null; tipo?: Database["public"]["Enums"]["tipo_item_medicao"]; quantidade_anterior?: number; quantidade_atual?: number; quantidade_periodo?: number; quantidade_bloqueada?: number; unidade: string; preco_unitario?: number | null; valor_calculado?: number; created_at?: string }
-        Update: { id?: string; cliente_id?: string; medicao_id?: string; vinculacao_id?: string; etapa_id?: string | null; verificacao_id?: string | null; nc_id?: string | null; tipo?: Database["public"]["Enums"]["tipo_item_medicao"]; quantidade_anterior?: number; quantidade_atual?: number; quantidade_periodo?: number; quantidade_bloqueada?: number; unidade?: string; preco_unitario?: number | null; valor_calculado?: number; created_at?: string }
-        Relationships: []
-      }
-      medicao_item_liberacoes: {
-        Row: { id: string; cliente_id: string; medicao_item_id: string; avanco_id: string; quantidade_utilizada: number; ativa: boolean; created_at: string }
-        Insert: { id?: string; cliente_id: string; medicao_item_id: string; avanco_id: string; quantidade_utilizada: number; ativa?: boolean; created_at?: string }
-        Update: { id?: string; cliente_id?: string; medicao_item_id?: string; avanco_id?: string; quantidade_utilizada?: number; ativa?: boolean; created_at?: string }
-        Relationships: []
-      }
-      modelos_avaliacao_empreiteiro: {
-        Row: { id: string; cliente_id: string; empresa_id: string | null; nome: string; descricao: string | null; revisao_atual: number; ativo: boolean; criado_por: string | null; created_at: string; updated_at: string }
-        Insert: { id?: string; cliente_id: string; empresa_id?: string | null; nome: string; descricao?: string | null; revisao_atual?: number; ativo?: boolean; criado_por?: string | null; created_at?: string; updated_at?: string }
-        Update: { id?: string; cliente_id?: string; empresa_id?: string | null; nome?: string; descricao?: string | null; revisao_atual?: number; ativo?: boolean; criado_por?: string | null; created_at?: string; updated_at?: string }
-        Relationships: []
-      }
-      modelo_avaliacao_empreiteiro_revisoes: {
-        Row: { id: string; cliente_id: string; modelo_id: string; numero_revisao: number; descricao_alteracoes: string; publicado_por: string; created_at: string }
-        Insert: { id?: string; cliente_id: string; modelo_id: string; numero_revisao: number; descricao_alteracoes: string; publicado_por: string; created_at?: string }
-        Update: { id?: string; cliente_id?: string; modelo_id?: string; numero_revisao?: number; descricao_alteracoes?: string; publicado_por?: string; created_at?: string }
-        Relationships: []
-      }
-      modelo_avaliacao_empreiteiro_criterios: {
-        Row: { id: string; cliente_id: string; revisao_id: string; ordem: number; titulo: string; peso: number; created_at: string }
-        Insert: { id?: string; cliente_id: string; revisao_id: string; ordem: number; titulo: string; peso: number; created_at?: string }
-        Update: { id?: string; cliente_id?: string; revisao_id?: string; ordem?: number; titulo?: string; peso?: number; created_at?: string }
-        Relationships: []
-      }
-      avaliacoes_empreiteiro: {
-        Row: { id: string; cliente_id: string; obra_id: string; equipe_id: string; medicao_id: string | null; modelo_revisao_id: string; data_avaliacao: string; notificacoes_ocorridas: string | null; providencias_tomadas: string | null; pontos_obtidos: number; pontos_possiveis: number; percentual: number; status: Database["public"]["Enums"]["status_avaliacao_empreiteiro"]; avaliador_id: string; assinatura_url: string | null; assinada_em: string | null; concluida_em: string | null; invalidada_por: string | null; invalidada_em: string | null; motivo_invalidacao: string | null; created_offline: boolean; created_at: string; updated_at: string }
-        Insert: { id?: string; cliente_id: string; obra_id: string; equipe_id: string; medicao_id?: string | null; modelo_revisao_id: string; data_avaliacao?: string; notificacoes_ocorridas?: string | null; providencias_tomadas?: string | null; pontos_obtidos?: number; pontos_possiveis?: number; percentual?: number; status?: Database["public"]["Enums"]["status_avaliacao_empreiteiro"]; avaliador_id: string; assinatura_url?: string | null; assinada_em?: string | null; concluida_em?: string | null; invalidada_por?: string | null; invalidada_em?: string | null; motivo_invalidacao?: string | null; created_offline?: boolean; created_at?: string; updated_at?: string }
-        Update: { id?: string; cliente_id?: string; obra_id?: string; equipe_id?: string; medicao_id?: string | null; modelo_revisao_id?: string; data_avaliacao?: string; notificacoes_ocorridas?: string | null; providencias_tomadas?: string | null; pontos_obtidos?: number; pontos_possiveis?: number; percentual?: number; status?: Database["public"]["Enums"]["status_avaliacao_empreiteiro"]; avaliador_id?: string; assinatura_url?: string | null; assinada_em?: string | null; concluida_em?: string | null; invalidada_por?: string | null; invalidada_em?: string | null; motivo_invalidacao?: string | null; created_offline?: boolean; created_at?: string; updated_at?: string }
-        Relationships: []
-      }
-      avaliacao_empreiteiro_itens: {
-        Row: { id: string; cliente_id: string; avaliacao_id: string; criterio_origem_id: string | null; ordem: number; titulo: string; peso: number; resultado: Database["public"]["Enums"]["resultado_criterio_avaliacao"] | null; comentario_nao_atende: string | null; created_at: string }
-        Insert: { id?: string; cliente_id: string; avaliacao_id: string; criterio_origem_id?: string | null; ordem: number; titulo: string; peso: number; resultado?: Database["public"]["Enums"]["resultado_criterio_avaliacao"] | null; comentario_nao_atende?: string | null; created_at?: string }
-        Update: { id?: string; cliente_id?: string; avaliacao_id?: string; criterio_origem_id?: string | null; ordem?: number; titulo?: string; peso?: number; resultado?: Database["public"]["Enums"]["resultado_criterio_avaliacao"] | null; comentario_nao_atende?: string | null; created_at?: string }
-        Relationships: []
-      }
-      auditoria_operacional: {
-        Row: { id: string; cliente_id: string; obra_id: string | null; entidade: string; entidade_id: string; acao: string; dados: Json; usuario_id: string | null; created_at: string }
-        Insert: { id?: string; cliente_id: string; obra_id?: string | null; entidade: string; entidade_id: string; acao: string; dados?: Json; usuario_id?: string | null; created_at?: string }
-        Update: { id?: string; cliente_id?: string; obra_id?: string | null; entidade?: string; entidade_id?: string; acao?: string; dados?: Json; usuario_id?: string | null; created_at?: string }
-        Relationships: []
-      }
-      nc_financeiro_historico: {
-        Row: { id: string; cliente_id: string; nc_id: string; situacao: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null; bloqueio: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null; dados: Json; alterado_por: string | null; created_at: string }
-        Insert: { id?: string; cliente_id: string; nc_id: string; situacao?: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null; bloqueio?: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null; dados: Json; alterado_por?: string | null; created_at?: string }
-        Update: { id?: string; cliente_id?: string; nc_id?: string; situacao?: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"] | null; bloqueio?: Database["public"]["Enums"]["bloqueio_medicao_nc"] | null; dados?: Json; alterado_por?: string | null; created_at?: string }
-        Relationships: []
+        Row: {
+          aprovado_congelado: number
+          cliente_id: string
+          created_at: string
+          criado_por: string
+          data_inicio: string
+          data_termino: string | null
+          encerrado_por: string | null
+          equipe_id: string
+          escopo_atribuido: number
+          etapa_id: string | null
+          fvs_planejada_id: string
+          id: string
+          medido_congelado: number
+          motivo_encerramento: string | null
+          status: Database["public"]["Enums"]["status_vinculo_execucao"]
+          updated_at: string
+        }
+        Insert: {
+          aprovado_congelado?: number
+          cliente_id: string
+          created_at?: string
+          criado_por: string
+          data_inicio: string
+          data_termino?: string | null
+          encerrado_por?: string | null
+          equipe_id: string
+          escopo_atribuido: number
+          etapa_id?: string | null
+          fvs_planejada_id: string
+          id?: string
+          medido_congelado?: number
+          motivo_encerramento?: string | null
+          status?: Database["public"]["Enums"]["status_vinculo_execucao"]
+          updated_at?: string
+        }
+        Update: {
+          aprovado_congelado?: number
+          cliente_id?: string
+          created_at?: string
+          criado_por?: string
+          data_inicio?: string
+          data_termino?: string | null
+          encerrado_por?: string | null
+          equipe_id?: string
+          escopo_atribuido?: number
+          etapa_id?: string | null
+          fvs_planejada_id?: string
+          id?: string
+          medido_congelado?: number
+          motivo_encerramento?: string | null
+          status?: Database["public"]["Enums"]["status_vinculo_execucao"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vinculos_execucao_servico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_execucao_servico_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_execucao_servico_encerrado_por_fkey"
+            columns: ["encerrado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_execucao_servico_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_execucao_servico_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_medicao_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_execucao_servico_fvs_planejada_id_fkey"
+            columns: ["fvs_planejada_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_planejadas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1443,29 +3134,131 @@ export type Database = {
         }
         Relationships: []
       }
-      vw_saldos_medicao_servico: {
-        Row: { vinculacao_id: string | null; cliente_id: string | null; obra_id: string | null; fvs_planejada_id: string | null; etapa_id: string | null; equipe_id: string | null; escopo_atribuido: number | null; aprovado: number | null; medido: number | null; bloqueado: number | null; disponivel: number | null; unidade: string | null; preco_unitario: number | null; valor_disponivel: number | null; valor_medido: number | null; valor_bloqueado: number | null }
+      vw_indicadores_medicoes: {
+        Row: {
+          custo_confirmado_retrabalho: number | null
+          custo_estimado_retrabalho: number | null
+          obra_id: string | null
+          quantidade_bloqueada: number | null
+          quantidade_disponivel: number | null
+          quantidade_medida: number | null
+          valor_bloqueado: number | null
+          valor_disponivel: number | null
+          valor_medido: number | null
+        }
         Relationships: []
       }
-      vw_indicadores_medicoes: {
-        Row: { obra_id: string | null; quantidade_disponivel: number | null; valor_disponivel: number | null; quantidade_medida: number | null; quantidade_bloqueada: number | null; custo_estimado_retrabalho: number | null; custo_confirmado_retrabalho: number | null; valor_medido: number | null; valor_bloqueado: number | null }
-        Relationships: []
+      vw_saldos_medicao_servico: {
+        Row: {
+          aprovado: number | null
+          bloqueado: number | null
+          cliente_id: string | null
+          disponivel: number | null
+          equipe_id: string | null
+          escopo_atribuido: number | null
+          etapa_id: string | null
+          fvs_planejada_id: string | null
+          medido: number | null
+          obra_id: string | null
+          preco_unitario: number | null
+          unidade: string | null
+          valor_bloqueado: number | null
+          valor_disponivel: number | null
+          valor_medido: number | null
+          vinculacao_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vinculos_execucao_servico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_execucao_servico_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_execucao_servico_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_medicao_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_execucao_servico_fvs_planejada_id_fkey"
+            columns: ["fvs_planejada_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_planejadas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
-      set_obra_feature_overrides: { Args: { p_obra_id: string; p_medicoes_override: boolean | null; p_financeiro_override: boolean | null }; Returns: undefined }
-      salvar_modelo_etapas_medicao: { Args: { p_modelo_id: string | null; p_empresa_id: string; p_nome: string; p_ativo: boolean; p_etapas: Json }; Returns: string }
-      salvar_configuracao_medicao_fvs: { Args: { p_fvs_id: string; p_metodo: Database["public"]["Enums"]["metodo_medicao_servico"]; p_unidade: string; p_quantidade_total: number; p_preco_unitario: number | null; p_permite_parciais: boolean; p_modelo_id: string | null; p_etapas: Json; p_equipe_inicial_id: string; p_data_inicio: string }; Returns: string }
-      registrar_avanco_aprovado: { Args: { p_id: string | null; p_vinculo_id: string; p_verificacao_id: string; p_executado_atual: number; p_aprovado_atual: number; p_created_offline?: boolean }; Returns: string }
-      salvar_medicao_rascunho: { Args: { p_medicao_id: string | null; p_obra_id: string; p_equipe_id: string; p_referencia: string; p_periodo_inicio: string; p_periodo_fim: string; p_data_medicao: string; p_observacao: string | null; p_itens: Json }; Returns: string }
-      descartar_medicao_rascunho: { Args: { p_medicao_id: string }; Returns: undefined }
-      aprovar_medicao_servico: { Args: { p_medicao_id: string }; Returns: undefined }
-      cancelar_medicao_servico: { Args: { p_medicao_id: string; p_motivo: string }; Returns: undefined }
-      publicar_modelo_avaliacao_empreiteiro: { Args: { p_modelo_id: string | null; p_empresa_id: string | null; p_nome: string; p_descricao: string | null; p_ativo: boolean; p_descricao_alteracoes: string; p_criterios: Json }; Returns: string }
-      invalidar_avaliacao_empreiteiro: { Args: { p_avaliacao_id: string; p_motivo: string }; Returns: undefined }
-      trocar_empreiteiro_servico: { Args: { p_vinculo_id: string; p_nova_equipe_id: string; p_data: string; p_motivo: string }; Returns: string }
-      atualizar_impacto_financeiro_nc: { Args: { p_nc_id: string; p_situacao: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]; p_bloqueio: Database["public"]["Enums"]["bloqueio_medicao_nc"]; p_justificativa: string | null; p_responsavel_avaliacao: string | null; p_prazo: string | null; p_valor_estimado: number | null; p_valor_confirmado: number | null; p_responsavel_financeiro: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null; p_categoria: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null; p_valor_bloqueado: number | null; p_observacao: string | null; p_documento: string | null }; Returns: undefined }
-      get_accessible_media_keys: { Args: { p_keys: string[] }; Returns: string[] }
+      aprovar_avaliacao_empreiteiro: {
+        Args: { p_avaliacao_id: string }
+        Returns: undefined
+      }
+      aprovar_medicao_servico: {
+        Args: { p_medicao_id: string }
+        Returns: undefined
+      }
+      atualizar_impacto_financeiro_nc: {
+        Args: {
+          p_bloqueio: Database["public"]["Enums"]["bloqueio_medicao_nc"]
+          // NOTE: the live DB reports these as NOT NULL as of the last `supabase gen
+          // types` run, but apps/mobile/services/nc-finance.service.ts (pre-existing,
+          // unrelated to this change) legitimately calls this RPC with several of
+          // these as null — a real drift between the deployed function and its
+          // migration history that predates this change and is out of scope here.
+          // Kept nullable so that pre-existing, working code keeps typechecking;
+          // narrow this back once the drift is investigated and resolved.
+          p_categoria: Database["public"]["Enums"]["categoria_impacto_financeiro_nc"] | null
+          p_documento: string | null
+          p_justificativa: string | null
+          p_nc_id: string
+          p_observacao: string | null
+          p_prazo: string | null
+          p_responsavel_avaliacao: string | null
+          p_responsavel_financeiro: Database["public"]["Enums"]["responsavel_financeiro_nc"] | null
+          p_situacao: Database["public"]["Enums"]["situacao_impacto_financeiro_nc"]
+          p_valor_bloqueado: number | null
+          p_valor_confirmado: number | null
+          p_valor_estimado: number | null
+        }
+        Returns: undefined
+      }
+      avaliacao_empreiteiro_pode_editar: {
+        Args: { p_avaliacao_id: string }
+        Returns: boolean
+      }
+      can_edit_verificacao: {
+        Args: { p_verificacao_id: string }
+        Returns: boolean
+      }
+      cancelar_medicao_servico: {
+        Args: { p_medicao_id: string; p_motivo: string }
+        Returns: undefined
+      }
+      concluir_onboarding: { Args: never; Returns: string }
+      criar_modelos_medicao_empresa: {
+        Args: { p_cliente: string; p_empresa: string; p_usuario?: string }
+        Returns: undefined
+      }
+      descartar_medicao_rascunho: {
+        Args: { p_medicao_id: string }
+        Returns: undefined
+      }
+      fvs_medicao_obra: { Args: { p_fvs: string }; Returns: string }
+      get_accessible_media_keys: {
+        Args: { p_keys: string[] }
+        Returns: string[]
+      }
       get_ambientes_obra: {
         Args: { p_obra_id: string }
         Returns: {
@@ -1479,39 +3272,27 @@ export type Database = {
           total_fvs: number
         }[]
       }
-      get_cliente_id: { Args: never; Returns: string | null }
-      concluir_onboarding: { Args: never; Returns: string }
+      get_cliente_id: { Args: never; Returns: string }
       get_clientes_resumo: {
         Args: never
         Returns: {
-          admin_convite_enviado_em: string | null
-          admin_onboarding_concluido_em: string | null
+          admin_convite_enviado_em: string
+          admin_onboarding_concluido_em: string
           admin_onboarding_status: string
-          contato_email: string | null
-          contato_nome: string | null
-          contato_telefone: string | null
+          contato_email: string
+          contato_nome: string
+          contato_telefone: string
           created_at: string
           empresas_ativas: number
           id: string
-          limite_empresas: number | null
-          limite_obras: number | null
-          limite_usuarios: number | null
+          limite_empresas: number
+          limite_obras: number
+          limite_usuarios: number
           nome: string
           obras_ativas: number
           slug: string
           status: Database["public"]["Enums"]["status_cliente"]
           usuarios_ativos: number
-        }[]
-      }
-      get_fvs_attachments: {
-        Args: { p_fvs_id: string }
-        Returns: {
-          id: string
-          kind: string
-          label: string
-          ordem: number
-          r2_key: string
-          verificacao_id: string
         }[]
       }
       get_fotos_fvs: {
@@ -1521,25 +3302,6 @@ export type Database = {
           ordem: number
           r2_key: string
           verificacao_id: string
-        }[]
-      }
-      get_fvs_header: {
-        Args: { p_fvs_id: string }
-        Returns: {
-          ambiente_localizacao: string | null
-          ambiente_nome: string
-          ambiente_tipo: string
-          empresa_nome: string | null
-          fvs_concluida_em: string | null
-          fvs_revisao: string | null
-          fvs_status: string
-          fvs_subservico: string
-          obra_crea_cau: string | null
-          obra_endereco: string | null
-          obra_eng_responsavel: string | null
-          obra_municipio: string | null
-          obra_nome: string
-          obra_uf: string | null
         }[]
       }
       get_fvs_ambiente: {
@@ -1553,6 +3315,17 @@ export type Database = {
           ultima_verif: string
         }[]
       }
+      get_fvs_attachments: {
+        Args: { p_fvs_id: string }
+        Returns: {
+          id: string
+          kind: string
+          label: string
+          ordem: number
+          r2_key: string
+          verificacao_id: string
+        }[]
+      }
       get_fvs_detalhe: {
         Args: { p_fvs_id: string }
         Returns: {
@@ -1561,6 +3334,25 @@ export type Database = {
           obra_nome: string
           status: string
           subservico: string
+        }[]
+      }
+      get_fvs_header: {
+        Args: { p_fvs_id: string }
+        Returns: {
+          ambiente_localizacao: string
+          ambiente_nome: string
+          ambiente_tipo: string
+          empresa_nome: string
+          fvs_concluida_em: string
+          fvs_revisao: string
+          fvs_status: string
+          fvs_subservico: string
+          obra_crea_cau: string
+          obra_endereco: string
+          obra_eng_responsavel: string
+          obra_municipio: string
+          obra_nome: string
+          obra_uf: string
         }[]
       }
       get_itens_checklist: {
@@ -1717,9 +3509,110 @@ export type Database = {
           status: string
         }[]
       }
+      has_ambiente_access: { Args: { p_ambiente_id: string }; Returns: boolean }
+      has_cliente_access: { Args: { p_cliente_id: string }; Returns: boolean }
+      has_fvs_access: { Args: { p_fvs_id: string }; Returns: boolean }
+      has_nc_access: { Args: { p_nc_id: string }; Returns: boolean }
+      has_obra_access: { Args: { p_obra_id: string }; Returns: boolean }
+      has_verificacao_access: {
+        Args: { p_verificacao_id: string }
+        Returns: boolean
+      }
+      invalidar_avaliacao_empreiteiro: {
+        Args: { p_avaliacao_id: string; p_motivo: string }
+        Returns: undefined
+      }
+      is_platform_admin: { Args: never; Returns: boolean }
+      is_tenant_media_key: {
+        Args: { p_cliente_id: string; p_key: string }
+        Returns: boolean
+      }
+      measurement_actor_can_manage: {
+        Args: { p_obra_id: string }
+        Returns: boolean
+      }
+      nc_obra: { Args: { p_nc: string }; Returns: string }
       next_numero_verif: {
         Args: { p_fvs_planejada_id: string }
         Returns: number
+      }
+      publicar_modelo_avaliacao_empreiteiro: {
+        Args: {
+          p_ativo: boolean
+          p_criterios: Json
+          // Nullable to match pre-existing, working call sites — see the note on
+          // atualizar_impacto_financeiro_nc below for why these need to stay
+          // nullable even though the live DB currently reports them as NOT NULL.
+          p_descricao: string | null
+          p_descricao_alteracoes: string
+          p_empresa_id: string | null
+          p_modelo_id: string | null
+          p_nome: string
+        }
+        Returns: string
+      }
+      reabrir_avaliacao_empreiteiro: {
+        Args: { p_avaliacao_id: string; p_motivo: string }
+        Returns: undefined
+      }
+      registrar_avanco_aprovado: {
+        Args: {
+          p_aprovado_atual: number
+          p_created_offline?: boolean
+          p_executado_atual: number
+          p_id: string
+          p_verificacao_id: string
+          p_vinculo_id: string
+        }
+        Returns: string
+      }
+      saldo_vinculo_execucao: {
+        Args: { p_vinculo: string }
+        Returns: {
+          aprovado: number
+          bloqueado: number
+          disponivel: number
+          medido: number
+        }[]
+      }
+      salvar_configuracao_medicao_fvs: {
+        Args: {
+          p_data_inicio: string
+          p_equipe_inicial_id: string
+          p_etapas: Json
+          p_fvs_id: string
+          p_metodo: Database["public"]["Enums"]["metodo_medicao_servico"]
+          p_modelo_id: string | null
+          p_permite_parciais: boolean
+          p_preco_unitario: number | null
+          p_quantidade_total: number
+          p_unidade: string
+        }
+        Returns: string
+      }
+      salvar_medicao_rascunho: {
+        Args: {
+          p_data_medicao: string
+          p_equipe_id: string
+          p_itens: Json
+          p_medicao_id: string | null
+          p_obra_id: string
+          p_observacao: string | null
+          p_periodo_fim: string
+          p_periodo_inicio: string
+          p_referencia: string
+        }
+        Returns: string
+      }
+      salvar_modelo_etapas_medicao: {
+        Args: {
+          p_ativo: boolean
+          p_empresa_id: string
+          p_etapas: Json
+          p_modelo_id: string | null
+          p_nome: string
+        }
+        Returns: string
       }
       set_fvs_lifecycle_status: {
         Args: {
@@ -1730,8 +3623,31 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_obra_feature_overrides: {
+        Args: {
+          p_financeiro_override: boolean
+          p_medicoes_override: boolean
+          p_obra_id: string
+        }
+        Returns: undefined
+      }
+      sync_obra_status_from_fvs: {
+        Args: { p_obra_id: string }
+        Returns: undefined
+      }
+      trocar_empreiteiro_servico: {
+        Args: {
+          p_data: string
+          p_motivo: string
+          p_nova_equipe_id: string
+          p_vinculo_id: string
+        }
+        Returns: string
+      }
+      uuid_generate_v4: { Args: never; Returns: string }
     }
     Enums: {
+      bloqueio_medicao_nc: "nao" | "total" | "parcial"
       categoria_fvs:
         | "estrutura"
         | "vedacao"
@@ -1741,24 +3657,52 @@ export type Database = {
         | "acabamento"
         | "fundacao"
         | "terraplanagem"
+        | "outro"
         | "servicos_preliminares"
         | "impermeabilizacao"
         | "esquadrias_vidros"
         | "urbanizacao_pavimentacao"
         | "comunicacao_visual"
+      categoria_impacto_financeiro_nc:
+        | "mao_obra_retrabalho"
+        | "perda_material"
+        | "equipamento_mobilizacao"
+        | "atraso"
+        | "glosa_retencao"
+        | "desconto_empreiteiro"
         | "outro"
       escopo_cadastro: "global" | "restrito"
-      bloqueio_medicao_nc: "nao" | "total" | "parcial"
-      categoria_impacto_financeiro_nc: "mao_obra_retrabalho" | "perda_material" | "equipamento_mobilizacao" | "atraso" | "glosa_retencao" | "desconto_empreiteiro" | "outro"
-      metodo_medicao_servico: "quantidade" | "unidade_concluida" | "etapas_ponderadas"
-      status_etapa_medicao: "nao_iniciada" | "em_execucao" | "concluida" | "aprovada" | "bloqueada_nc"
-      status_vinculo_execucao: "ativo" | "concluido" | "substituido"
-      status_medicao_servico: "rascunho" | "aprovada" | "cancelada"
-      status_avaliacao_empreiteiro: "rascunho" | "concluida" | "invalidada"
-      resultado_criterio_avaliacao: "atende" | "nao_atende"
-      tipo_item_medicao: "avanco" | "retrabalho"
+      metodo_medicao_servico:
+        | "quantidade"
+        | "unidade_concluida"
+        | "etapas_ponderadas"
       perfil_usuario: "superadmin" | "admin" | "gestor" | "inspetor"
+      responsavel_financeiro_nc:
+        | "construtora"
+        | "empreiteiro"
+        | "fornecedor"
+        | "projetista"
+        | "em_analise"
+      resultado_criterio_avaliacao: "atende" | "nao_atende"
       resultado_item: "conforme" | "nao_conforme" | "na"
+      situacao_impacto_financeiro_nc:
+        | "sem_impacto"
+        | "em_avaliacao"
+        | "estimado"
+        | "confirmado"
+      status_avaliacao_empreiteiro:
+        | "rascunho"
+        | "concluida"
+        | "invalidada"
+        | "aguardando_aprovacao"
+        | "aprovada"
+      status_cliente: "ativo" | "suspenso"
+      status_etapa_medicao:
+        | "nao_iniciada"
+        | "em_execucao"
+        | "concluida"
+        | "aprovada"
+        | "bloqueada_nc"
       status_fvs:
         | "pendente"
         | "em_andamento"
@@ -1767,18 +3711,18 @@ export type Database = {
         | "concluida"
         | "em_revisao"
         | "concluida_ressalva"
+      status_medicao_servico: "rascunho" | "aprovada" | "cancelada"
       status_nc:
         | "aberta"
         | "em_correcao"
         | "resolvida"
         | "cancelada"
         | "encerrada_sem_resolucao"
-      situacao_impacto_financeiro_nc: "sem_impacto" | "em_avaliacao" | "estimado" | "confirmado"
-      responsavel_financeiro_nc: "construtora" | "empreiteiro" | "fornecedor" | "projetista" | "em_analise"
-      status_cliente: "ativo" | "suspenso"
       status_obra: "nao_iniciada" | "em_andamento" | "paralisada" | "concluida"
+      status_vinculo_execucao: "ativo" | "concluido" | "substituido"
       tipo_ambiente: "interno" | "externo"
       tipo_equipe: "proprio" | "terceirizado"
+      tipo_item_medicao: "avanco" | "retrabalho"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1811,13 +3755,13 @@ export type Tables<
     : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
         DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-      DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-    ? R
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
     : never
-  : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
@@ -1837,12 +3781,12 @@ export type TablesInsert<
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-      Insert: infer I
-    }
-    ? I
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
     : never
-  : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
@@ -1862,12 +3806,12 @@ export type TablesUpdate<
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-      Update: infer U
-    }
-    ? U
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
     : never
-  : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
@@ -1883,8 +3827,8 @@ export type Enums<
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
@@ -1900,12 +3844,13 @@ export type CompositeTypes<
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
     Enums: {
+      bloqueio_medicao_nc: ["nao", "total", "parcial"],
       categoria_fvs: [
         "estrutura",
         "vedacao",
@@ -1915,27 +3860,59 @@ export const Constants = {
         "acabamento",
         "fundacao",
         "terraplanagem",
+        "outro",
         "servicos_preliminares",
         "impermeabilizacao",
         "esquadrias_vidros",
         "urbanizacao_pavimentacao",
         "comunicacao_visual",
+      ],
+      categoria_impacto_financeiro_nc: [
+        "mao_obra_retrabalho",
+        "perda_material",
+        "equipamento_mobilizacao",
+        "atraso",
+        "glosa_retencao",
+        "desconto_empreiteiro",
         "outro",
       ],
       escopo_cadastro: ["global", "restrito"],
-      bloqueio_medicao_nc: ["nao", "total", "parcial"],
-      categoria_impacto_financeiro_nc: ["mao_obra_retrabalho", "perda_material", "equipamento_mobilizacao", "atraso", "glosa_retencao", "desconto_empreiteiro", "outro"],
-      metodo_medicao_servico: ["quantidade", "unidade_concluida", "etapas_ponderadas"],
-      status_etapa_medicao: ["nao_iniciada", "em_execucao", "concluida", "aprovada", "bloqueada_nc"],
-      status_vinculo_execucao: ["ativo", "concluido", "substituido"],
-      status_medicao_servico: ["rascunho", "aprovada", "cancelada"],
-      status_avaliacao_empreiteiro: ["rascunho", "concluida", "invalidada"],
-      resultado_criterio_avaliacao: ["atende", "nao_atende"],
-      tipo_item_medicao: ["avanco", "retrabalho"],
-      situacao_impacto_financeiro_nc: ["sem_impacto", "em_avaliacao", "estimado", "confirmado"],
-      responsavel_financeiro_nc: ["construtora", "empreiteiro", "fornecedor", "projetista", "em_analise"],
+      metodo_medicao_servico: [
+        "quantidade",
+        "unidade_concluida",
+        "etapas_ponderadas",
+      ],
       perfil_usuario: ["superadmin", "admin", "gestor", "inspetor"],
+      responsavel_financeiro_nc: [
+        "construtora",
+        "empreiteiro",
+        "fornecedor",
+        "projetista",
+        "em_analise",
+      ],
+      resultado_criterio_avaliacao: ["atende", "nao_atende"],
       resultado_item: ["conforme", "nao_conforme", "na"],
+      situacao_impacto_financeiro_nc: [
+        "sem_impacto",
+        "em_avaliacao",
+        "estimado",
+        "confirmado",
+      ],
+      status_avaliacao_empreiteiro: [
+        "rascunho",
+        "concluida",
+        "invalidada",
+        "aguardando_aprovacao",
+        "aprovada",
+      ],
+      status_cliente: ["ativo", "suspenso"],
+      status_etapa_medicao: [
+        "nao_iniciada",
+        "em_execucao",
+        "concluida",
+        "aprovada",
+        "bloqueada_nc",
+      ],
       status_fvs: [
         "pendente",
         "em_andamento",
@@ -1945,6 +3922,7 @@ export const Constants = {
         "em_revisao",
         "concluida_ressalva",
       ],
+      status_medicao_servico: ["rascunho", "aprovada", "cancelada"],
       status_nc: [
         "aberta",
         "em_correcao",
@@ -1952,10 +3930,11 @@ export const Constants = {
         "cancelada",
         "encerrada_sem_resolucao",
       ],
-      status_cliente: ["ativo", "suspenso"],
       status_obra: ["nao_iniciada", "em_andamento", "paralisada", "concluida"],
+      status_vinculo_execucao: ["ativo", "concluido", "substituido"],
       tipo_ambiente: ["interno", "externo"],
       tipo_equipe: ["proprio", "terceirizado"],
+      tipo_item_medicao: ["avanco", "retrabalho"],
     },
   },
 } as const

@@ -248,6 +248,7 @@ const equipes = new Table({
   tipo:          column.text,
   responsavel:   column.text,
   especialidade: column.text,
+  cnpj_terceiro: column.text,
   ativo:         column.integer,
 });
 
@@ -257,6 +258,8 @@ const usuarios = new Table({
   cargo:                   column.text,
   perfil:                  column.text,
   avatar_url:              column.text,
+  assinatura_padrao_url:   column.text,
+  assinatura_padrao_atualizada_em: column.text,
   onboarding_concluido_em: column.text,
 });
 
@@ -304,12 +307,16 @@ const avaliacoes_empreiteiro = new Table({
   modelo_revisao_id: column.text, data_avaliacao: column.text, notificacoes_ocorridas: column.text,
   providencias_tomadas: column.text, pontos_obtidos: column.text, pontos_possiveis: column.text,
   percentual: column.text, status: column.text, avaliador_id: column.text, assinatura_url: column.text,
-  assinada_em: column.text, concluida_em: column.text, invalidada_por: column.text, invalidada_em: column.text,
-  motivo_invalidacao: column.text, created_offline: column.integer, created_at: column.text, updated_at: column.text,
+  assinada_em: column.text, concluida_em: column.text, aprovada_por: column.text, aprovada_em: column.text, invalidada_por: column.text, invalidada_em: column.text,
+  motivo_invalidacao: column.text, ultimo_motivo_reabertura: column.text, created_offline: column.integer, created_at: column.text, updated_at: column.text,
 }, { indexes: { obra: ['obra_id'], medicao: ['medicao_id'] } });
 const avaliacao_empreiteiro_itens = new Table({
   cliente_id: column.text, avaliacao_id: column.text, criterio_origem_id: column.text, ordem: column.integer,
   titulo: column.text, peso: column.integer, resultado: column.text, comentario_nao_atende: column.text,
+}, { indexes: { avaliacao: ['avaliacao_id'] } });
+const avaliacao_empreiteiro_reaberturas = new Table({
+  cliente_id: column.text, avaliacao_id: column.text, avaliador_anterior_id: column.text,
+  reaberto_por: column.text, motivo: column.text, numero_reabertura: column.integer, created_at: column.text,
 }, { indexes: { avaliacao: ['avaliacao_id'] } });
 
 export const AppSchema = new Schema({
@@ -341,6 +348,7 @@ export const AppSchema = new Schema({
   modelo_avaliacao_empreiteiro_criterios,
   avaliacoes_empreiteiro,
   avaliacao_empreiteiro_itens,
+  avaliacao_empreiteiro_reaberturas,
 });
 
 // Row types — manual interfaces matching the SQLite columns above
@@ -372,8 +380,9 @@ export interface MedicaoServicoRow extends TenantRow { id:string; obra_id:string
 export interface ModeloAvaliacaoEmpreiteiroRow extends TenantRow { id:string; empresa_id:string|null; nome:string; descricao:string|null; revisao_atual:number; ativo:number }
 export interface ModeloAvaliacaoRevisaoRow extends TenantRow { id:string; modelo_id:string; numero_revisao:number; descricao_alteracoes:string }
 export interface ModeloAvaliacaoCriterioRow extends TenantRow { id:string; revisao_id:string; ordem:number; titulo:string; peso:number }
-export interface AvaliacaoEmpreiteiroRow extends TenantRow { id:string; obra_id:string; equipe_id:string; medicao_id:string|null; modelo_revisao_id:string; data_avaliacao:string; status:string; avaliador_id:string; assinatura_url:string|null; percentual:string; pontos_obtidos:string; pontos_possiveis:string; notificacoes_ocorridas:string|null; providencias_tomadas:string|null }
+export interface AvaliacaoEmpreiteiroRow extends TenantRow { id:string; obra_id:string; equipe_id:string; medicao_id:string|null; modelo_revisao_id:string; data_avaliacao:string; status:string; avaliador_id:string; assinatura_url:string|null; percentual:string; pontos_obtidos:string; pontos_possiveis:string; notificacoes_ocorridas:string|null; providencias_tomadas:string|null; ultimo_motivo_reabertura:string|null }
 export interface AvaliacaoEmpreiteiroItemRow extends TenantRow { id:string; avaliacao_id:string; criterio_origem_id:string|null; ordem:number; titulo:string; peso:number; resultado:string|null; comentario_nao_atende:string|null }
+export interface AvaliacaoEmpreiteiroReaberturaRow extends TenantRow { id:string; avaliacao_id:string; avaliador_anterior_id:string; reaberto_por:string; motivo:string; numero_reabertura:number; created_at:string }
 export interface NcFotosRow { id: string; nc_id: string; r2_key: string; r2_thumb_key: string | null; nome_arquivo: string | null; mime_type: string | null; ordem: number }
 export interface NcReinspecoesRow { id: string; nc_id: string; verificacao_id: string; inspetor_id: string; resultado: 'aprovada' | 'reprovada'; observacao: string | null; foto_url: string | null; nova_nc_id: string | null; created_at: string }
 export interface EquipesRow extends TenantRow { id: string; escopo: string; nome: string; tipo: string; responsavel: string; especialidade: string; ativo: number }

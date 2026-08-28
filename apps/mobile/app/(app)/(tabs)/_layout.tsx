@@ -69,6 +69,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen name="avaliacoes/nova" options={{ href: null }} />
+      <Tabs.Screen name="avaliacoes/[id]/pdf" options={{ href: null }} />
       <Tabs.Screen
         name="nc/[ncId]"
         options={{

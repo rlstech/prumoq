@@ -71,7 +71,7 @@ function report(verifications: FvsPrintableVerification[]): FvsPrintableReport {
   };
 }
 
-test('agrupa todas as verificações em páginas horizontais de quatro colunas', () => {
+test('agrupa todas as verificações em páginas horizontais de oito colunas', () => {
   const verifications = Array.from({ length: 9 }, (_, index) =>
     verification(index + 1),
   );
@@ -79,7 +79,7 @@ test('agrupa todas as verificações em páginas horizontais de quatro colunas',
 
   assert.deepEqual(
     matrix.verificationGroups.map((group) => group.length),
-    [4, 4, 1],
+    [8, 1],
   );
   assert.equal(matrix.rows.length, 2);
   assert.equal(matrix.rows[0].resultados['verification-9'], 'conforme');
@@ -110,11 +110,9 @@ test('renderiza todas as verificações, grupos e fotos sem cortes lógicos', ()
   const html = renderFvsReportsHtml([report(verifications)]);
 
   for (const current of verifications) {
-    assert.match(html, new RegExp(`V\\. ${current.numero_verif}`));
-    assert.match(html, new RegExp(`Verificação #${current.numero_verif}`));
+    assert.match(html, new RegExp(`<strong>V${current.numero_verif}</strong>`));
   }
-  assert.match(html, /Verificações 1-4 de 5/);
-  assert.match(html, /Verificações 5-5 de 5/);
+  assert.match(html, /Verificações 1-5 de 5/);
   assert.equal(
     (html.match(/alt="Evidência da verificação"/g) ?? []).length,
     8,
@@ -155,6 +153,14 @@ test('remove somente anexos fotográficos quando a opção é desativada', () =>
       responsavel_nome: 'Equipe A',
     },
   ];
+  currentReport.conclusao = {
+    numero_conclusao: 1,
+    percentual_final: 100,
+    resultado: 'aprovado',
+    observacao_final: null,
+    assinatura_url: 'https://example.com/encerramento.png',
+    inspetor_nome: 'Engenheira responsável',
+  };
 
   const html = renderFvsReportsHtml([currentReport], {
     includeAttachments: false,
@@ -163,7 +169,8 @@ test('remove somente anexos fotográficos quando a opção é desativada', () =>
   assert.doesNotMatch(html, /<section class="photo-annex-page">/);
   assert.doesNotMatch(html, /photo-1\.jpg/);
   assert.match(html, /Fissura/);
-  assert.match(html, /Assinatura digital/);
+  assert.match(html, /Responsável pelo encerramento/);
+  assert.match(html, /encerramento\.png/);
 });
 
 test('divide matrizes extensas em páginas explícitas sem perder itens', () => {
@@ -209,18 +216,18 @@ test('permite que uma verificação extensa continue na página seguinte', () =>
 
   assert.match(
     html,
-    /\.verification-detail \{[^}]*break-inside: auto;/,
+    /\.nc-section \{[^}]*break-inside: auto;/,
   );
   assert.match(html, /\.nc tbody tr \{[^}]*break-inside: auto;/);
   assert.doesNotMatch(
     html,
-    /\.verification-detail \{[^}]*break-inside: avoid;/,
+    /\.nc-section \{[^}]*break-inside: avoid;/,
   );
   assert.match(html, />Item 1</);
   assert.match(html, />Item 30</);
 });
 
-test('imprime 17 verificações em cinco matrizes mesmo sob o reset do Expo', () => {
+test('imprime 17 verificações em três matrizes mesmo sob o reset do Expo', () => {
   const verifications = Array.from({ length: 17 }, (_, index) => {
     const current = verification(index + 1);
     current.items = Array.from({ length: 4 }, (_, itemIndex) =>
@@ -231,11 +238,11 @@ test('imprime 17 verificações em cinco matrizes mesmo sob o reset do Expo', ()
 
   const html = renderFvsReportsHtml([report(verifications)]);
 
-  assert.equal((html.match(/class="matrix-sheet/g) ?? []).length, 5);
-  assert.match(html, /Verificações 1-4 de 17/);
-  assert.match(html, /Verificações 9-12 de 17/);
+  assert.equal((html.match(/class="matrix-sheet/g) ?? []).length, 3);
+  assert.match(html, /Verificações 1-8 de 17/);
+  assert.match(html, /Verificações 9-16 de 17/);
   assert.match(html, /Verificações 17-17 de 17/);
-  assert.equal((html.match(/>Item 4</g) ?? []).length, 5);
+  assert.equal((html.match(/>Item 4</g) ?? []).length, 3);
   assert.match(
     html,
     /\.matrix-sheet \{[^}]*page-break-after: always;/,
@@ -254,7 +261,7 @@ test('imprime 17 verificações em cinco matrizes mesmo sob o reset do Expo', ()
   );
   assert.match(
     html,
-    /#root > \*, \.report-preview, \.report, \.details \{[^}]*overflow: visible !important;/,
+    /#root > \*, \.report-preview, \.report \{[^}]*overflow: visible !important;/,
   );
 });
 

@@ -29,11 +29,40 @@ export async function saveEvaluationModel(raw: z.infer<typeof modelSchema>) {
 
 export async function invalidateEvaluation(id: string, reason: string) {
   try {
-    await requireTenantRole(['admin']);
+    z.string().uuid().parse(id);
+    z.string().trim().min(3).parse(reason);
+    await requireTenantRole(['admin', 'gestor']);
     const supabase = await createClient();
     const { error } = await supabase.rpc('invalidar_avaliacao_empreiteiro', { p_avaliacao_id: id, p_motivo: reason });
     if (error) throw error;
     revalidatePath('/avaliacoes');
+    return { success: true };
+  } catch (error) { return { success: false, error: message(error) }; }
+}
+
+export async function approveEvaluation(id: string) {
+  try {
+    z.string().uuid().parse(id);
+    await requireTenantRole(['admin', 'gestor']);
+    const supabase = await createClient();
+    const { error } = await supabase.rpc('aprovar_avaliacao_empreiteiro', { p_avaliacao_id: id });
+    if (error) throw error;
+    revalidatePath('/avaliacoes');
+    revalidatePath('/medicoes');
+    return { success: true };
+  } catch (error) { return { success: false, error: message(error) }; }
+}
+
+export async function reopenEvaluation(id: string, reason: string) {
+  try {
+    z.string().uuid().parse(id);
+    z.string().trim().min(3).parse(reason);
+    await requireTenantRole(['admin', 'gestor']);
+    const supabase = await createClient();
+    const { error } = await supabase.rpc('reabrir_avaliacao_empreiteiro', { p_avaliacao_id: id, p_motivo: reason });
+    if (error) throw error;
+    revalidatePath('/avaliacoes');
+    revalidatePath('/medicoes');
     return { success: true };
   } catch (error) { return { success: false, error: message(error) }; }
 }

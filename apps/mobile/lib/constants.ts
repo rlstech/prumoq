@@ -206,6 +206,9 @@ export const ComponentSize = {
   touch: 44,
   input: 48,
   button: 48,
+  /** Joined answer control (ChoiceToggle): icon over label needs the extra
+   * height, and it buys an equal-thirds target of ~118×56 on a 390pt screen. */
+  choice: 56,
   tabBar: 72,
   navigationRail: 92,
 } as const;

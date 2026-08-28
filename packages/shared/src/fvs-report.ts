@@ -1,4 +1,4 @@
-export const FVS_MATRIX_VERIFICATIONS_PER_PAGE = 4;
+export const FVS_MATRIX_VERIFICATIONS_PER_PAGE = 8;
 export const FVS_MATRIX_ROWS_PER_PAGE = 14;
 export const FVS_PHOTOS_PER_PAGE = 6;
 
@@ -80,6 +80,7 @@ export interface FvsPrintableConclusion {
   observacao_final: string | null;
   assinatura_url?: string | null;
   inspetor_id?: string;
+  inspetor_nome?: string | null;
   created_at?: string;
 }
 
@@ -213,7 +214,17 @@ const STATUS_LABELS: Record<string, string> = {
   concluida: 'Concluída',
   concluida_ressalva: 'Concluída com ressalva',
   em_revisao: 'Em revisão',
+  // Status de não conformidade (enum status_nc).
+  aberta: 'Aberta',
+  em_correcao: 'Em correção',
+  resolvida: 'Resolvida',
+  cancelada: 'Cancelada',
 };
+
+const CLOSED_FVS_STATUS = new Set(['concluida', 'concluida_ressalva']);
+const CLOSED_NC_STATUS = new Set(['resolvida', 'cancelada']);
+
+const BRAND_MARK = `<svg class="mark" viewBox="0 0 32 34" aria-hidden="true"><path d="M16 2v9" fill="none" stroke="#163B50" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="18" r="10.5" fill="none" stroke="#163B50" stroke-width="2.6"/><path d="M16 11l5 6-5 6-5-6z" fill="#D8E568" stroke="#163B50" stroke-width="1.4" stroke-linejoin="round"/><path d="M20 24l5 7" fill="none" stroke="#163B50" stroke-width="2.6" stroke-linecap="round"/></svg>`;
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -224,19 +235,48 @@ function escapeHtml(value: unknown): string {
     .replace(/'/g, '&#039;');
 }
 
+function asDate(value: string): Date {
+  return new Date(value.length === 10 ? `${value}T12:00:00-03:00` : value);
+}
+
 function localDate(value: string | null): string {
   if (!value) return '—';
   return new Intl.DateTimeFormat('pt-BR', {
     timeZone: 'America/Sao_Paulo',
-  }).format(new Date(value.length === 10 ? `${value}T12:00:00-03:00` : value));
+  }).format(asDate(value));
+}
+
+// A matriz tem colunas estreitas: a data curta (dd/mm) é a que cabe no
+// cabeçalho da coluna sem quebrar, como na FVS em papel.
+function shortDate(value: string | null): string {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+  }).format(asDate(value));
+}
+
+// "Data de abertura da FVS" no formulário em papel: a primeira verificação
+// registrada. As listas chegam da mais recente para a mais antiga.
+function openingDate(report: FvsPrintableReport): string {
+  const dates = report.verificacoes
+    .map((verification) => verification.data_verif)
+    .filter((value): value is string => Boolean(value))
+    .sort();
+  return dates.length ? localDate(dates[0]) : '—';
 }
 
 function statusLabel(status: string): string {
   return STATUS_LABELS[status] || status;
 }
 
-function info(label: string, value: unknown): string {
-  return `<div class="info"><b>${escapeHtml(label)}:</b> ${escapeHtml(value || '—')}</div>`;
+function identityField(
+  label: string,
+  value: unknown,
+  mono = false,
+): string {
+  return `<div class="field"><b>${escapeHtml(label)}</b><span${mono ? ' class="mono"' : ''}>${escapeHtml(value || '—')}</span></div>`;
 }
 
 function resultBadge(result: string | null | undefined): string {
@@ -256,34 +296,45 @@ function reportIdentity(report: FvsPrintableReport, compact = false): string {
   const { header } = report;
   const environment = `${header.ambiente_nome} (${header.ambiente_tipo === 'interno' ? 'Interno' : 'Externo'}${header.ambiente_localizacao ? ` - ${header.ambiente_localizacao}` : ''})`;
 
+  const location = [header.obra_municipio, header.obra_uf]
+    .filter(Boolean)
+    .join('/');
+  const revision = header.fvs_revisao
+    ? `<span class="mono">Rev. ${escapeHtml(header.fvs_revisao)}</span>`
+    : '';
+
   if (compact) {
     return `
       <div class="compact-identity">
-        <strong>${escapeHtml(header.fvs_subservico)}</strong>
-        <span>${escapeHtml(header.obra_nome)} · ${escapeHtml(environment)}${header.fvs_revisao ? ` · Rev. ${escapeHtml(header.fvs_revisao)}` : ''}</span>
+        <div class="compact-brand">${BRAND_MARK}<div><strong>${escapeHtml(header.fvs_subservico)}</strong><span>${escapeHtml(header.obra_nome)} · ${escapeHtml(environment)}${revision ? ' · ' : ''}${revision}</span></div></div>
       </div>`;
   }
 
+  const closed = CLOSED_FVS_STATUS.has(header.fvs_status);
+
   return `
-    <div class="brand-row">
-      <div><div class="brand">PrumoQ</div><small>Qualidade em Obras</small></div>
-      <div class="document-title"><strong>Ficha de Verificação de Serviço</strong><small>Emitido em ${escapeHtml(report.emitidoEm)}</small></div>
-    </div>
-    <div class="brand-rule"></div>
-    <div class="grid neutral">
-      ${info('Obra', header.obra_nome)}
-      ${info('Empresa', header.empresa_nome)}
-      ${info('Município/UF', [header.obra_municipio, header.obra_uf].filter(Boolean).join('/'))}
-      ${info('Endereço', header.obra_endereco)}
-      ${info('Engenheiro responsável', header.obra_eng_responsavel)}
-      ${info('CREA/CAU', header.obra_crea_cau)}
-    </div>
-    <div class="grid fvs">
-      ${info('Serviço (FVS)', header.fvs_subservico)}
-      ${info('Status', statusLabel(header.fvs_status))}
-      ${info('Ambiente', environment)}
-      ${info('Revisão', header.fvs_revisao ? `Rev. ${header.fvs_revisao}` : '—')}
-      ${header.fvs_concluida_em ? info('Concluída em', localDate(header.fvs_concluida_em)) : ''}
+    <header class="masthead">
+      <div class="masthead-brand">
+        ${BRAND_MARK}
+        <div><strong>PrumoQ</strong><span>Sistema da Qualidade</span></div>
+      </div>
+      <div class="masthead-title">
+        <strong>FVS — Ficha de Verificação de Serviço</strong>
+        <span>${escapeHtml(header.fvs_subservico)}${revision ? ' · ' : ''}${revision}</span>
+      </div>
+      <div class="masthead-obra">
+        <b>Obra</b>
+        <strong>${escapeHtml(header.obra_nome)}</strong>
+        <span>${escapeHtml([header.empresa_nome, location].filter(Boolean).join(' · ') || '—')}</span>
+      </div>
+    </header>
+    <div class="identity">
+      ${identityField('Local / ambiente da inspeção', environment)}
+      ${identityField('Serviço verificado', header.fvs_subservico)}
+      ${identityField('Eng. responsável', [header.obra_eng_responsavel, header.obra_crea_cau].filter(Boolean).join(' · '))}
+      ${identityField('Abertura', openingDate(report), true)}
+      ${identityField('Fechamento', localDate(header.fvs_concluida_em), true)}
+      <div class="field${closed ? ' field-done' : ''}"><b>Situação</b><span>${escapeHtml(statusLabel(header.fvs_status))}</span></div>
     </div>`;
 }
 
@@ -295,6 +346,7 @@ function matrixTable(
   rowPageIndex: number,
   totalRowPages: number,
   totalRows: number,
+  isLastSheet: boolean,
 ): string {
   const first = groupIndex * FVS_MATRIX_VERIFICATIONS_PER_PAGE + 1;
   const last = first + group.length - 1;
@@ -308,14 +360,19 @@ function matrixTable(
     totalRowPages > 1
       ? ` · Itens ${rowFirst}-${rowLast} de ${totalRows}`
       : '';
+  const sheetClasses = ['matrix-sheet'];
+  if (!isFirstSheet) sheetClasses.push('matrix-continuation');
+  // Só a última folha da matriz pode fluir para o conteúdo seguinte na
+  // mesma página — as demais precisam da quebra forçada para não misturar
+  // colunas de verificações diferentes.
+  if (isLastSheet) sheetClasses.push('matrix-sheet-flow');
 
   const verificationHeaders = group
     .map(
       (verification) => `
         <th class="verification-column">
-          <strong>V. ${verification.numero_verif}</strong>
-          <span>${escapeHtml(localDate(verification.data_verif))}</span>
-          <span>${escapeHtml(statusLabel(verification.status))}</span>
+          <strong>V${verification.numero_verif}</strong>
+          <span class="mono">${escapeHtml(shortDate(verification.data_verif))}</span>
         </th>`,
     )
     .join('');
@@ -327,27 +384,43 @@ function matrixTable(
     { length: placeholderCount },
     () => '<td class="result-cell verification-placeholder"></td>',
   ).join('');
+  const placeholderSignatureCells = Array.from(
+    { length: placeholderCount },
+    () => '<td class="verification-placeholder"></td>',
+  ).join('');
 
   const body = rows
     .map(
       (row) => `
         <tr>
-          <td class="order">${row.ordem}</td>
+          <td class="order mono">${row.ordem}</td>
           <td class="item-title">${escapeHtml(row.titulo)}</td>
-          <td>${escapeHtml(row.metodo_verif || '—')}</td>
-          <td>${escapeHtml(row.tolerancia || '—')}</td>
+          <td class="meth">${escapeHtml(row.metodo_verif || '—')}</td>
+          <td class="tol">${escapeHtml(row.tolerancia || '—')}</td>
           ${group.map((verification) => `<td class="result-cell">${resultBadge(row.resultados[verification.id])}</td>`).join('')}
           ${placeholderCells}
         </tr>`,
     )
     .join('');
 
+  const signatureNames = group
+    .map(
+      (verification) =>
+        `<td>${escapeHtml(verification.inspetor_nome || '—')}</td>`,
+    )
+    .join('');
+
   return `
-    <section class="matrix-sheet${isFirstSheet ? '' : ' matrix-continuation'}">
+    <section class="${sheetClasses.join(' ')}">
       ${continuedHeader}
       <div class="section-heading">
-        <div><strong>Matriz de verificações</strong><span>Verificações ${first}-${last} de ${report.verificacoes.length}${continuationLabel}</span></div>
-        <div class="legend"><span class="result result-ok">C</span> Conforme <span class="result result-nok">NC</span> Não conforme <span class="result result-na">N/A</span> Não aplicável</div>
+        <div><strong>Matriz de verificação</strong><span>Verificações ${first}-${last} de ${report.verificacoes.length}${continuationLabel}</span></div>
+        <div class="legend">
+          <span><i class="result result-ok">C</i>Conforme</span>
+          <span><i class="result result-nok">NC</i>Não conforme</span>
+          <span><i class="result result-na">N/A</i>Não aplicável</span>
+          <span><i class="result result-empty">–</i>Não avaliado</span>
+        </div>
       </div>
       <table class="matrix">
         <colgroup>
@@ -360,61 +433,173 @@ function matrixTable(
         </colgroup>
         <thead>
           <tr>
-            <th>#</th>
-            <th>Item de verificação</th>
-            <th>Método</th>
+            <th class="c">#</th>
+            <th>Item de inspeção</th>
+            <th>Método de verificação</th>
             <th>Tolerância</th>
             ${verificationHeaders}
             ${placeholderHeaders}
           </tr>
         </thead>
         <tbody>${body}</tbody>
+        <tfoot>
+          <tr>
+            <td class="siglabel" colspan="4">Inspecionado por</td>
+            ${signatureNames}
+            ${placeholderSignatureCells}
+          </tr>
+        </tfoot>
       </table>
     </section>`;
 }
 
-function verificationDetails(
-  verification: FvsPrintableVerification,
-  ncs: FvsPrintableNc[],
+function observationsStrip(
+  verifications: readonly FvsPrintableVerification[],
 ): string {
-  const ncRows = ncs
+  const withNotes = verifications.filter(
+    (verification) =>
+      verification.observacoes && verification.observacoes.trim().length > 0,
+  );
+  if (!withNotes.length) return '';
+
+  const items = withNotes
     .map(
-      (nc) => `
+      (verification) =>
+        `<b>V${verification.numero_verif}</b> ${escapeHtml(verification.observacoes)}`,
+    )
+    .join(' <span class="obs-sep">·</span> ');
+
+  return `
+    <div class="obs-strip">
+      <div class="obs-strip-label">Observações</div>
+      <div class="obs-strip-body">${items}</div>
+    </div>`;
+}
+
+function ncsSection(
+  ncs: readonly FvsPrintableNc[],
+  verifications: readonly FvsPrintableVerification[],
+): string {
+  if (!ncs.length) return '';
+
+  const verificationNumberById = new Map(
+    verifications.map((verification) => [
+      verification.id,
+      verification.numero_verif,
+    ]),
+  );
+
+  const rows = ncs
+    .map(
+      (nc, index) => `
         <tr>
+          <td class="c">${index + 1}</td>
+          <td class="c">V${verificationNumberById.get(nc.verificacao_id) ?? '—'}</td>
           <td>${escapeHtml(nc.item_titulo)}</td>
           <td>${escapeHtml(nc.descricao)}</td>
           <td>${escapeHtml(nc.solucao_proposta || '—')}</td>
-          <td>${escapeHtml(localDate(nc.data_nova_verif))}</td>
           <td>${escapeHtml(nc.responsavel_nome || '—')}</td>
-          <td>${escapeHtml(statusLabel(nc.status))}</td>
+          <td class="c mono">${escapeHtml(localDate(nc.data_nova_verif))}</td>
+          <td class="c"><span class="pill ${CLOSED_NC_STATUS.has(nc.status) ? 'pill-done' : 'pill-open'}">${escapeHtml(statusLabel(nc.status))}</span></td>
         </tr>`,
     )
     .join('');
 
   return `
-    <section class="verification-detail">
-      <header>
-        <strong>Verificação #${verification.numero_verif} - ${escapeHtml(localDate(verification.data_verif))}</strong>
-        <span>${escapeHtml(verification.inspetor_nome || '—')} · ${escapeHtml(statusLabel(verification.status))}</span>
-      </header>
-      <div class="verification-detail-body">
-        ${
-          verification.observacoes
-            ? `<p class="note"><strong>Observações:</strong> ${escapeHtml(verification.observacoes)}</p>`
-            : '<p class="note muted-note">Sem observações registradas.</p>'
-        }
-        ${
-          ncRows
-            ? `<h3>Não conformidades (${ncs.length})</h3><table class="nc"><thead><tr><th>Item</th><th>Descrição</th><th>Solução</th><th>Prazo</th><th>Responsável</th><th>Status</th></tr></thead><tbody>${ncRows}</tbody></table>`
-            : ''
-        }
-        ${
-          verification.assinatura_url
-            ? `<div class="signature"><strong>Assinatura digital</strong><img data-pdf-kind="signature" loading="eager" decoding="async" src="${escapeHtml(verification.assinatura_url)}" alt="Assinatura"><span>${escapeHtml(verification.inspetor_nome || '')}</span></div>`
-            : ''
-        }
+    <section class="nc-section">
+      <div class="section-heading nc-heading">
+        <div><strong>Ocorrência de não conformidade e tratamento</strong><span>${ncs.length} ocorrência(s)</span></div>
       </div>
+      <table class="nc">
+        <colgroup>
+          <col class="col-nc-num">
+          <col class="col-nc-verif">
+          <col class="col-nc-item">
+          <col>
+          <col>
+          <col class="col-nc-resp">
+          <col class="col-nc-date">
+          <col class="col-nc-status">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="c">Nº</th>
+            <th class="c">Verif.</th>
+            <th>Item</th>
+            <th>Descrição do problema</th>
+            <th>Solução proposta (disposição)</th>
+            <th>Responsável</th>
+            <th class="c">Reinsp.</th>
+            <th>Situação</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
     </section>`;
+}
+
+function conclusionSection(report: FvsPrintableReport): string {
+  const { conclusao } = report;
+  const totalAttachments = report.verificacoes.reduce(
+    (total, verification) => total + verification.fotos.length,
+    0,
+  );
+
+  const summary = `
+    <div class="closing-field closing-field-wide">
+      <b>Conclusão da FVS</b>
+      <span>${
+        conclusao
+          ? escapeHtml(
+              conclusao.resultado === 'aprovado'
+                ? 'Aprovada'
+                : 'Aprovada com ressalva',
+            )
+          : 'Em andamento'
+      }</span>
+    </div>
+    <div class="closing-field">
+      <b>Execução</b>
+      <span>${conclusao ? `${Math.round(conclusao.percentual_final)}%` : '—'}</span>
+    </div>
+    <div class="closing-field">
+      <b>Verificações</b>
+      <span>${report.verificacoes.length}</span>
+    </div>
+    <div class="closing-field">
+      <b>Anexos</b>
+      <span>${totalAttachments ? `${totalAttachments} foto${totalAttachments === 1 ? '' : 's'}` : '—'}</span>
+    </div>`;
+
+  const signature = conclusao?.assinatura_url
+    ? `
+    <div class="closing-signature">
+      <img data-pdf-kind="signature" loading="eager" decoding="async" src="${escapeHtml(conclusao.assinatura_url)}" alt="Assinatura de encerramento da FVS">
+      <div>
+        <b>Responsável pelo encerramento</b>
+        <span>${escapeHtml(conclusao.inspetor_nome || '—')}</span>
+      </div>
+    </div>`
+    : '';
+
+  const observation = conclusao?.observacao_final
+    ? `
+    <div class="obs-strip">
+      <div class="obs-strip-label">Observação de encerramento</div>
+      <div class="obs-strip-body">${escapeHtml(conclusao.observacao_final)}</div>
+    </div>`
+    : '';
+
+  return `
+    <section class="closing">
+      ${summary}
+      ${signature}
+      <div class="closing-meta">
+        <span>Emitido em <i class="mono">${escapeHtml(report.emitidoEm)}</i></span>
+        <span>PrumoQ · Sistema da Qualidade</span>
+      </div>
+    </section>
+    ${observation}`;
 }
 
 function photoKindLabel(photo: FvsPrintablePhoto): string {
@@ -432,26 +617,32 @@ function photoAvailabilityLabel(photo: FvsPrintablePhoto): string {
   return '';
 }
 
-function photoAnnexes(
-  report: FvsPrintableReport,
-  verification: FvsPrintableVerification,
-): string {
-  const pages: FvsPrintablePhoto[][] = [];
-  for (
-    let index = 0;
-    index < verification.fotos.length;
-    index += FVS_PHOTOS_PER_PAGE
-  ) {
-    pages.push(verification.fotos.slice(index, index + FVS_PHOTOS_PER_PAGE));
+interface FvsFlatPhoto {
+  photo: FvsPrintablePhoto;
+  verification: FvsPrintableVerification;
+}
+
+// Anexo fotográfico único e cronológico da FVS inteira, em vez de um bloco
+// de páginas por verificação — só é chamada quando existe ao menos uma
+// foto, então o PDF nunca ganha essa página à toa.
+function photoAnnexes(report: FvsPrintableReport): string {
+  const flatPhotos: FvsFlatPhoto[] = report.verificacoes.flatMap(
+    (verification) =>
+      verification.fotos.map((photo) => ({ photo, verification })),
+  );
+  if (!flatPhotos.length) return '';
+
+  const pages: FvsFlatPhoto[][] = [];
+  for (let index = 0; index < flatPhotos.length; index += FVS_PHOTOS_PER_PAGE) {
+    pages.push(flatPhotos.slice(index, index + FVS_PHOTOS_PER_PAGE));
   }
 
   return pages
-    .map((photos, pageIndex) => {
-      const figures = photos
-        .map(
-          (photo, photoIndex) => {
-            const availabilityLabel = photoAvailabilityLabel(photo);
-            return `
+    .map((pagePhotos, pageIndex) => {
+      const figures = pagePhotos
+        .map(({ photo, verification }, photoIndex) => {
+          const availabilityLabel = photoAvailabilityLabel(photo);
+          return `
             <figure${availabilityLabel ? ' class="photo-unavailable"' : ''}>
               <div class="photo-frame">
                 <img data-pdf-kind="photo" loading="eager" decoding="async" src="${escapeHtml(photo.r2_url)}" alt="${escapeHtml(photoKindLabel(photo))}">
@@ -459,20 +650,23 @@ function photoAnnexes(
               <figcaption>
                 <div>
                   <strong>${escapeHtml(photoKindLabel(photo))}</strong>
-                  ${availabilityLabel ? `<em>${escapeHtml(availabilityLabel)}</em>` : ''}
+                  ${
+                    availabilityLabel
+                      ? `<em>${escapeHtml(availabilityLabel)}</em>`
+                      : `<span class="fig-meta">V${verification.numero_verif} · ${escapeHtml(localDate(verification.data_verif))}</span>`
+                  }
                 </div>
-                <span>Foto ${pageIndex * FVS_PHOTOS_PER_PAGE + photoIndex + 1} de ${verification.fotos.length}</span>
+                <span>Foto ${pageIndex * FVS_PHOTOS_PER_PAGE + photoIndex + 1} de ${flatPhotos.length}</span>
               </figcaption>
             </figure>`;
-          },
-        )
+        })
         .join('');
 
       return `
         <section class="photo-annex-page">
           ${reportIdentity(report, true)}
           <div class="section-heading attachment-heading">
-            <div><strong>Anexos fotográficos</strong><span>Verificação #${verification.numero_verif} · ${escapeHtml(localDate(verification.data_verif))}</span></div>
+            <div><strong>Anexo fotográfico</strong><span>${flatPhotos.length} foto(s) registradas na FVS</span></div>
             <span>Página ${pageIndex + 1} de ${pages.length}</span>
           </div>
           <div class="photos">${figures}</div>
@@ -487,12 +681,6 @@ export function renderFvsReportBody(
 ): string {
   const includeAttachments = options.includeAttachments ?? true;
   const matrix = buildFvsVerificationMatrix(report.verificacoes);
-  const ncsByVerification = new Map<string, FvsPrintableNc[]>();
-  for (const nc of report.ncs) {
-    const rows = ncsByVerification.get(nc.verificacao_id) ?? [];
-    rows.push(nc);
-    ncsByVerification.set(nc.verificacao_id, rows);
-  }
 
   const rowPages: FvsMatrixRow[][] = [];
   for (
@@ -504,60 +692,44 @@ export function renderFvsReportBody(
   }
   if (!rowPages.length) rowPages.push([]);
 
-  const matrixHtml = matrix.verificationGroups.length
-    ? matrix.verificationGroups
-        .flatMap((group, groupIndex) =>
-          rowPages.map((rows, rowPageIndex) =>
-            matrixTable(
-              report,
-              rows,
-              group,
-              groupIndex,
-              rowPageIndex,
-              rowPages.length,
-              matrix.rows.length,
-            ),
+  const sheets = matrix.verificationGroups.flatMap((group, groupIndex) =>
+    rowPages.map((rows, rowPageIndex) => ({
+      group,
+      groupIndex,
+      rows,
+      rowPageIndex,
+    })),
+  );
+
+  const matrixHtml = sheets.length
+    ? sheets
+        .map((sheet, sheetIndex) =>
+          matrixTable(
+            report,
+            sheet.rows,
+            sheet.group,
+            sheet.groupIndex,
+            sheet.rowPageIndex,
+            rowPages.length,
+            matrix.rows.length,
+            sheetIndex === sheets.length - 1,
           ),
         )
         .join('')
     : '<p class="empty">Nenhuma verificação registrada para esta FVS no período selecionado.</p>';
 
-  const details =
-    report.verificacoes.length || report.conclusao
-    ? `
-      <section class="details">
-        <div class="compact-identity">
-          <strong>Registros complementares</strong>
-          <span>${escapeHtml(report.header.fvs_subservico)} · ${report.verificacoes.length} registro(s)</span>
-        </div>
-        ${report.verificacoes
-          .map((verification) =>
-            verificationDetails(
-              verification,
-              ncsByVerification.get(verification.id) ?? [],
-            ),
-          )
-          .join('')}
-        ${
-          report.conclusao
-            ? `<section class="conclusion"><strong>Conclusão da FVS</strong><div class="grid">${info('Resultado', report.conclusao.resultado === 'aprovado' ? 'Aprovado' : 'Com ressalva')}${report.conclusao.observacao_final ? info('Observação', report.conclusao.observacao_final) : ''}</div></section>`
-            : ''
-        }
-      </section>`
-    : '';
-
-  const photoPages = includeAttachments
-    ? report.verificacoes
-        .filter((verification) => verification.fotos.length > 0)
-        .map((verification) => photoAnnexes(report, verification))
-        .join('')
-    : '';
+  const observationsHtml = observationsStrip(report.verificacoes);
+  const ncsHtml = ncsSection(report.ncs, report.verificacoes);
+  const closingHtml = conclusionSection(report);
+  const photoPages = includeAttachments ? photoAnnexes(report) : '';
 
   return `
     <article class="report">
       ${reportIdentity(report)}
       ${matrixHtml}
-      ${details}
+      ${observationsHtml}
+      ${ncsHtml}
+      ${closingHtml}
       ${photoPages}
     </article>`;
 }
@@ -566,60 +738,102 @@ export const FVS_REPORT_CSS = `
   @page { size: A4 landscape; margin: 1.2cm; }
   * { box-sizing: border-box; }
   body { margin: 0; color: #142522; font-family: "IBM Plex Sans", Arial, Helvetica, sans-serif; font-size: 9px; }
+  .mono { font-family: "IBM Plex Mono", "Courier New", monospace; }
   .report + .report { break-before: page; }
-  .brand-row { display: flex; align-items: flex-start; justify-content: space-between; }
-  .brand { color: #163B50; font-size: 22px; font-weight: 900; letter-spacing: -1px; }
-  small { display: block; color: #6E7A75; margin-top: 2px; }
-  .document-title { text-align: right; text-transform: uppercase; font-size: 12px; letter-spacing: .4px; }
-  .document-title small { text-transform: none; font-size: 9px; font-weight: 400; }
-  .brand-rule { border-top: 3px solid #D8E568; margin: 9px 0 10px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px 18px; }
-  .neutral, .fvs { border-radius: 7px; padding: 7px 10px; margin-bottom: 8px; }
-  .neutral { background: #F4F1E8; }
-  .fvs { background: #F3F7D5; border-left: 3px solid #163B50; }
-  .info b { color: #6E7A75; font-size: 7px; letter-spacing: .3px; text-transform: uppercase; }
-  .compact-identity { border-bottom: 2px solid #D8E568; display: flex; justify-content: space-between; gap: 18px; margin-bottom: 8px; padding-bottom: 6px; }
-  .compact-identity strong { color: #163B50; font-size: 13px; }
-  .compact-identity span { color: #52615B; }
+  .mark { display: block; flex: 0 0 auto; height: 28px; width: 26px; }
+  .masthead { align-items: stretch; border: 1px solid #163B50; border-radius: 4px; display: flex; overflow: hidden; }
+  .masthead-brand { align-items: center; border-right: 1px solid #C9D0CA; display: flex; gap: 9px; padding: 8px 14px; width: 232px; }
+  .masthead-brand strong { color: #163B50; display: block; font-size: 17px; font-weight: 700; letter-spacing: -.02em; line-height: 19px; }
+  .masthead-brand span { color: #6E7A75; display: block; font-size: 6.6px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+  .masthead-title { align-items: center; background: #F4F1E8; border-right: 1px solid #C9D0CA; display: flex; flex-direction: column; flex-grow: 1; justify-content: center; padding: 8px 16px; text-align: center; }
+  .masthead-title strong { color: #142522; font-size: 13px; font-weight: 700; letter-spacing: -.01em; }
+  .masthead-title span { color: #52615B; font-size: 7.6px; margin-top: 2px; }
+  .masthead-obra { display: flex; flex-direction: column; gap: 2px; justify-content: center; padding: 7px 14px; width: 300px; }
+  .masthead-obra b { color: #6E7A75; font-size: 6.4px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+  .masthead-obra strong { color: #142522; font-size: 11px; font-weight: 600; line-height: 13px; }
+  .masthead-obra span { color: #52615B; font-size: 7.2px; }
+  .identity { display: grid; gap: 6px; grid-template-columns: 1.5fr 1.15fr 1fr .72fr .72fr .8fr; margin-top: 8px; }
+  .field { border: 1px solid #C9D0CA; border-radius: 3px; min-width: 0; padding: 4px 7px; }
+  .field b { color: #6E7A75; display: block; font-size: 6.4px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+  .field span { display: block; font-size: 10px; font-weight: 600; line-height: 14px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .field-done { background: #E8F4EC; border-color: #2D7A4B; }
+  .field-done b, .field-done span { color: #2D7A4B; }
+  .compact-identity { border-bottom: 2px solid #D8E568; margin-bottom: 8px; padding-bottom: 6px; }
+  .compact-brand { align-items: center; display: flex; gap: 9px; }
+  .compact-brand .mark { height: 22px; width: 21px; }
+  .compact-identity strong { color: #163B50; display: block; font-size: 12px; line-height: 14px; }
+  .compact-identity span { color: #52615B; display: block; font-size: 7.4px; }
   .matrix-sheet { break-after: page; page-break-after: always; }
+  .matrix-sheet-flow { break-after: auto; page-break-after: auto; }
   .section-heading { align-items: end; display: flex; justify-content: space-between; gap: 16px; margin: 8px 0 5px; }
   .section-heading > div:first-child { display: flex; align-items: baseline; gap: 8px; }
   .section-heading strong { color: #163B50; font-size: 11px; text-transform: uppercase; }
   .section-heading span { color: #6E7A75; font-size: 8px; }
-  .legend { align-items: center; color: #52615B; display: flex; gap: 4px; white-space: nowrap; }
+  .nc-heading strong { color: #B23A3A; }
+  .legend { align-items: center; color: #52615B; display: flex; gap: 12px; white-space: nowrap; }
+  .legend span { align-items: center; display: flex; font-size: 6.8px; gap: 4px; }
   table { width: 100%; border-collapse: collapse; font-size: 7px; }
   thead { display: table-header-group; }
   .matrix tr { break-inside: avoid; page-break-inside: avoid; }
+  /* Grade fina em todas as células, como na FVS em papel. */
+  th, td { border: 1px solid #C9D0CA; }
   th { background: #E4E7E1; color: #52615B; font-size: 6.6px; letter-spacing: .2px; padding: 3px 4px; text-align: left; text-transform: uppercase; }
-  td { border-top: 1px solid #E4E7E1; line-height: 1.25; padding: 3px 4px; vertical-align: top; overflow-wrap: anywhere; }
-  tbody tr:nth-child(even) { background: #FAFAF8; }
+  th.c { text-align: center; }
+  td { line-height: 1.25; padding: 3px 4px; vertical-align: top; overflow-wrap: anywhere; }
+  tbody tr:nth-child(even) td { background: #FAFAF8; }
   .matrix { table-layout: fixed; }
   .col-order { width: 8mm; }
   .col-item { width: 50mm; }
-  .col-method { width: 80mm; }
-  .col-tolerance { width: 30mm; }
+  .col-method { width: 55mm; }
+  .col-tolerance { width: 25mm; }
+  .matrix tbody td { vertical-align: middle; }
   .order { color: #6E7A75; text-align: center; }
   .item-title { font-weight: 600; }
+  .matrix .meth, .matrix .tol { color: #52615B; }
   .verification-column { background: #163B50; color: #fff; text-align: center; }
   .verification-column strong, .verification-column span { color: inherit; display: block; font-size: 7px; line-height: 1.35; }
   .verification-column strong { font-size: 8px; }
   .verification-placeholder { background: #F4F1E8; border-color: #E4E7E1; }
   .result-cell { text-align: center; vertical-align: middle; }
-  .result { align-items: center; border: 1px solid transparent; border-radius: 3px; display: inline-flex; font-size: 7px; font-weight: 800; justify-content: center; min-height: 15px; min-width: 21px; padding: 1px 3px; }
-  .result-ok { background: #E8F4EC; border-color: #B9D9C4; color: #2D7A4B; }
-  .result-nok { background: #FAEAEA; border-color: #E9BDBD; color: #B23A3A; }
-  .result-na { background: #EEF0EC; border-color: #D8DDD7; color: #52615B; }
-  .result-empty { color: #9C9A93; }
-  .details { break-before: page; break-after: page; page-break-before: always; page-break-after: always; }
-  .verification-detail { border: 1px solid #D9DDD9; border-radius: 7px; break-inside: auto; box-decoration-break: clone; -webkit-box-decoration-break: clone; margin: 0 0 10px; overflow: visible; page-break-inside: auto; }
-  .verification-detail > header { background: #163B50; color: #fff; display: flex; justify-content: space-between; gap: 12px; padding: 6px 10px; break-after: avoid-page; page-break-after: avoid; }
-  .verification-detail-body { break-inside: auto; page-break-inside: auto; padding: 7px 10px 9px; }
-  .note { background: #F4F1E8; border-left: 3px solid #6E7A75; border-radius: 4px; margin: 0 0 7px; padding: 5px 7px; }
-  .muted-note { color: #6E7A75; }
-  h3 { color: #52615B; font-size: 8px; letter-spacing: .4px; margin: 7px 0 4px; text-transform: uppercase; break-after: avoid; }
-  .nc { break-inside: auto; margin-bottom: 7px; page-break-inside: auto; }
+  .result { align-items: center; border: 1.4px solid transparent; border-radius: 50%; display: inline-flex; font-size: 6.2px; font-style: normal; font-weight: 700; height: 15px; justify-content: center; line-height: 1; width: 15px; }
+  .result-ok { background: #E8F4EC; border-color: #2D7A4B; color: #2D7A4B; font-size: 7px; }
+  .result-nok { background: #FAEAEA; border-color: #B23A3A; border-radius: 3px; color: #B23A3A; }
+  .result-na { background: #EEF0EC; border-color: #C9D0CA; color: #6E7A75; }
+  .result-empty { color: #C9D0CA; font-size: 8px; font-weight: 400; }
+  .matrix tfoot td { background: #F4F1E8; color: #52615B; font-size: 6.8px; padding: 4px 5px; text-align: center; vertical-align: middle; }
+  .matrix tfoot td.siglabel { color: #163B50; font-size: 6.6px; font-weight: 600; letter-spacing: .09em; padding: 4px 6px; text-align: left; text-transform: uppercase; }
+  .obs-strip { align-items: baseline; background: #FFFEFB; border: 1px solid #E4E7E1; border-left: 3px solid #D8E568; border-radius: 4px; break-inside: avoid; display: flex; gap: 10px; margin: 6px 0; padding: 5px 8px; }
+  .obs-strip-label { color: #6E7A75; font-size: 6.6px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+  .obs-strip-body { color: #142522; font-size: 7.4px; line-height: 10.5px; }
+  .obs-strip-body b { color: #163B50; }
+  .obs-sep { color: #C9D0CA; }
+  .nc-section { break-inside: auto; margin: 6px 0; page-break-inside: auto; }
+  .nc { break-inside: auto; margin-bottom: 7px; page-break-inside: auto; table-layout: fixed; }
   .nc th { background: #FAEAEA; color: #B23A3A; }
+  .nc td.c { text-align: center; }
+  .col-nc-num { width: 9mm; }
+  .col-nc-verif { width: 12mm; }
+  .col-nc-item { width: 38mm; }
+  .col-nc-resp { width: 25mm; }
+  .col-nc-date { width: 17mm; }
+  .col-nc-status { width: 20mm; }
   .nc tbody tr { break-inside: auto; page-break-inside: auto; }
+  .pill { border: 1px solid; border-radius: 2px; display: inline-block; font-size: 6.2px; font-weight: 600; letter-spacing: .04em; padding: 2px 4px; text-transform: uppercase; white-space: nowrap; }
+  .pill-open { background: #FBF1DD; border-color: #E0C48B; color: #986014; }
+  .pill-done { background: #E8F4EC; border-color: #B9D9C4; color: #2D7A4B; }
+  .closing { align-items: stretch; break-inside: avoid; display: flex; gap: 6px; margin-top: 8px; }
+  .closing-field { border: 1px solid #C9D0CA; border-radius: 3px; flex: 1 1 0; padding: 4px 8px; }
+  .closing-field-wide { flex-grow: 2; }
+  .closing-field b { color: #6E7A75; display: block; font-size: 6.4px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+  .closing-field span { display: block; font-size: 9px; font-weight: 600; line-height: 12px; margin-top: 2px; }
+  .closing-signature { align-items: center; border: 1px solid #163B50; border-left: 3px solid #D8E568; border-radius: 3px; display: flex; flex: 0 0 auto; gap: 8px; padding: 4px 10px; }
+  .closing-signature img { background: white; border: 1px solid #D9DDD9; max-height: 34px; max-width: 96px; object-fit: contain; }
+  .closing-signature div { border-left: 1px solid #C9D0CA; padding-left: 8px; }
+  .closing-signature b { color: #6E7A75; display: block; font-size: 6.4px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+  .closing-signature span { display: block; font-size: 9px; font-weight: 600; line-height: 12px; margin-top: 1px; }
+  .closing-meta { display: flex; flex: 0 0 auto; flex-direction: column; justify-content: flex-end; padding-bottom: 2px; text-align: right; }
+  .closing-meta span { color: #6E7A75; font-size: 6.6px; line-height: 9px; }
+  .closing-meta i { font-style: normal; }
   .photo-annex-page { break-after: page; page-break-after: always; }
   .attachment-heading { margin-bottom: 8px; }
   .photos { display: grid; gap: 7px; grid-template-columns: repeat(3, 1fr); }
@@ -630,11 +844,8 @@ export const FVS_REPORT_CSS = `
   figcaption strong { color: #163B50; }
   figcaption div { display: flex; flex-direction: column; gap: 2px; }
   figcaption em { color: #B23A3A; font-size: 6.5px; font-style: normal; font-weight: 600; }
+  figcaption .fig-meta { color: #6E7A75; font-size: 6.5px; }
   .photo-unavailable { border-color: #E9BDBD; }
-  .signature { border-top: 1px solid #E4E7E1; display: flex; align-items: end; gap: 10px; margin-top: 7px; padding-top: 6px; break-inside: avoid; }
-  .signature img { background: white; border: 1px solid #D9DDD9; max-height: 50px; max-width: 160px; object-fit: contain; }
-  .conclusion { background: #E8F4EC; border: 1px solid #B9D9C4; border-radius: 7px; color: #2D7A4B; margin-top: 10px; padding: 7px 10px; break-inside: avoid; }
-  .conclusion .grid { color: #142522; margin-top: 5px; }
   .empty { color: #6E7A75; padding: 24px 0; text-align: center; }
   .report > :last-child { break-after: auto; page-break-after: auto; }
   @media print {
@@ -646,7 +857,7 @@ export const FVS_REPORT_CSS = `
       overflow: visible !important;
       position: static !important;
     }
-    #root > *, .report-preview, .report, .details {
+    #root > *, .report-preview, .report {
       height: auto !important;
       max-height: none !important;
       min-height: 0 !important;

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   canConcludeFvs,
+  clearVerificationItemResult,
   createVerificationDraft,
   emptyVerificationFormState,
   hasMeaningfulVerificationProgress,
@@ -68,6 +69,22 @@ test('cria e atualiza itens mantendo painel de NC sincronizado', () => {
   assert.ok(nc.ncDetails['item-1']);
   const ok = setVerificationItemResult(nc, 'item-1', 'conforme');
   assert.equal(ok.ncDetails['item-1'], undefined);
+});
+
+test('limpar a resposta remove item e rascunho de NC, preservando o toque', () => {
+  const initial = emptyVerificationFormState('2026-07-23');
+  const nc = setVerificationItemResult(initial, 'item-1', 'nao_conforme');
+  const other = setVerificationItemResult(nc, 'item-2', 'conforme');
+
+  const cleared = clearVerificationItemResult(other, 'item-1');
+  assert.equal(cleared.itemResults['item-1'], undefined);
+  assert.equal(cleared.ncDetails['item-1'], undefined);
+  // O item vizinho não é afetado.
+  assert.equal(cleared.itemResults['item-2'], 'conforme');
+  // O toque continua registrado: o rascunho já existe e não deve sumir porque
+  // o inspetor voltou atrás em uma resposta.
+  assert.ok(cleared.userTouchedItemIds.includes('item-1'));
+  assert.equal(hasMeaningfulVerificationProgress(cleared, 'context'), true);
 });
 
 test('detecta progresso, serializa mídia e verifica compatibilidade de revisão', () => {

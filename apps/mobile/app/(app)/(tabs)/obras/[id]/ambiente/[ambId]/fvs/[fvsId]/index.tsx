@@ -213,7 +213,11 @@ export default function FvsHistoryScreen() {
             <SectionTitle
               eyebrow="Registros"
               title="Histórico de verificações"
-              description="Mais recentes primeiro. Toque em um registro para consultar todos os detalhes."
+              description={
+                isLocked
+                  ? undefined
+                  : 'Mais recentes primeiro. Toque em um registro para consultar todos os detalhes.'
+              }
             />
           </View>
         }

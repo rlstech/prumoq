@@ -77,6 +77,9 @@ export default function ResetPasswordScreen() {
       } else {
         setStatus(current => current === 'ready' ? current : 'invalid');
       }
+    }).catch(err => {
+      if (!mounted) return;
+      console.warn('[RedefinirSenha] getSession failed', err);
     });
 
     return () => {

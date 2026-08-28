@@ -18,6 +18,8 @@ export default function AppLayout() {
         await supabase.auth.signOut();
         router.replace('/(auth)/login');
       }
+    }).catch(err => {
+      console.warn('[AppLayout] getSession failed', err);
     });
   }, []);
 

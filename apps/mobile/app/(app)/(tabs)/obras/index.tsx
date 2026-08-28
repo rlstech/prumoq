@@ -127,6 +127,8 @@ export default function ObrasScreen() {
         .eq('id', data.user.id)
         .single();
       if (usuario) setPerfil((usuario as { perfil: string }).perfil);
+    }).catch(err => {
+      console.warn('[Obras] getUser failed', err);
     });
   }, []);
 

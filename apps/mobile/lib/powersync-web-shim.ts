@@ -180,7 +180,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 
     const { data, error } = await supabase
       .from('usuarios')
-      .select('id, nome, cargo, perfil, cliente_id')
+      .select('id, nome, cargo, perfil, cliente_id, assinatura_padrao_url, assinatura_padrao_atualizada_em')
       .eq('id', userId)
       .limit(1);
 
@@ -369,9 +369,9 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── obras com progresso (dashboard) ───────────────────
-  if (s.includes('progresso_percentual') && s.includes('from obras o') && s.includes('where o.ativo = 1') && s.includes('limit 5')) {
+  if (s.includes('progresso_percentual') && s.includes('from obras o') && s.includes('where o.ativo = 1') && s.includes('limit 3')) {
     const [{ data }, ids] = await Promise.all([supabase.rpc('get_obras_com_fvs'), getAllowedObraIds()]);
-    return filterByObraId((data ?? []) as T[], 'id' as keyof T, ids).slice(0, 5);
+    return filterByObraId((data ?? []) as T[], 'id' as keyof T, ids).slice(0, 3);
   }
 
   // ── verificações recentes (dashboard) ─────────────────
@@ -916,6 +916,23 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // Avaliações de empreiteiros: histórico no app/PWA.
+  if (s.includes('e.cnpj_terceiro') && s.includes('u.nome avaliador_nome') && s.includes('from avaliacoes_empreiteiro a')) {
+    const { data: evaluation, error } = await supabase.from('avaliacoes_empreiteiro').select('id,status,obra_id,equipe_id,medicao_id,modelo_revisao_id,avaliador_id,data_avaliacao,assinada_em,assinatura_url,pontos_obtidos,pontos_possiveis,percentual,notificacoes_ocorridas,providencias_tomadas,motivo_invalidacao').eq('id', params[0] as string).maybeSingle();
+    if (error) throw new Error(`Erro ao carregar documento da avaliação: ${error.message}`);
+    if (!evaluation) return [];
+    const [workRes, teamRes, measurementRes, revisionRes, userRes] = await Promise.all([
+      supabase.from('obras').select('nome').eq('id', evaluation.obra_id).maybeSingle(),
+      supabase.from('equipes').select('nome,cnpj_terceiro').eq('id', evaluation.equipe_id).maybeSingle(),
+      evaluation.medicao_id ? supabase.from('medicoes_servico').select('referencia').eq('id', evaluation.medicao_id).maybeSingle() : Promise.resolve({ data: null, error: null }),
+      supabase.from('modelo_avaliacao_empreiteiro_revisoes').select('modelo_id,numero_revisao').eq('id', evaluation.modelo_revisao_id).maybeSingle(),
+      supabase.from('usuarios').select('nome').eq('id', evaluation.avaliador_id).maybeSingle(),
+    ]);
+    if (workRes.error || teamRes.error || measurementRes.error || revisionRes.error || userRes.error) throw new Error('Erro ao montar o documento da avaliação.');
+    const { data: model, error: modelError } = revisionRes.data ? await supabase.from('modelos_avaliacao_empreiteiro').select('nome').eq('id', revisionRes.data.modelo_id).maybeSingle() : { data: null, error: null };
+    if (modelError) throw new Error(`Erro ao carregar modelo da avaliação: ${modelError.message}`);
+    return ([{ ...evaluation, obra_nome: workRes.data?.nome ?? '', equipe_nome: teamRes.data?.nome ?? '', cnpj_terceiro: teamRes.data?.cnpj_terceiro ?? null, referencia: measurementRes.data?.referencia ?? null, modelo_nome: model?.nome ?? 'Modelo de avaliação', numero_revisao: revisionRes.data?.numero_revisao ?? 0, avaliador_nome: userRes.data?.nome ?? null }] as unknown) as T[];
+  }
+
   if (s.includes('from avaliacoes_empreiteiro a') && s.includes('join obras o') && s.includes('join equipes e')) {
     const { data, error } = await supabase
       .from('avaliacoes_empreiteiro')
@@ -923,6 +940,38 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
       .order('created_at', { ascending: false });
     if (error) throw new Error(`Erro ao carregar avaliações: ${error.message}`);
     return ((data ?? []).map((row: any) => ({ ...row, obra_nome: row.obras?.nome ?? '', equipe_nome: row.equipes?.nome ?? '', referencia: row.medicoes_servico?.referencia ?? null })) as unknown) as T[];
+  }
+
+  // Avaliação de empreiteiro existente, para retomar/editar: traz a revisão exata
+  // gravada na avaliação (não a revisão atual do modelo, que pode já ter mudado).
+  if (s.includes('from avaliacoes_empreiteiro a join modelo_avaliacao_empreiteiro_revisoes r')) {
+    const { data, error } = await supabase
+      .from('avaliacoes_empreiteiro')
+      .select('obra_id, equipe_id, medicao_id, modelo_revisao_id, data_avaliacao, status, avaliador_id, notificacoes_ocorridas, providencias_tomadas, modelo_avaliacao_empreiteiro_revisoes!avaliacoes_empreiteiro_modelo_revisao_id_fkey(numero_revisao, modelo_id, modelos_avaliacao_empreiteiro!modelo_avaliacao_empreiteiro_revisoes_modelo_id_fkey(nome, empresa_id))')
+      .eq('id', params[0] as string)
+      .maybeSingle();
+    if (error) throw new Error(`Erro ao carregar avaliação: ${error.message}`);
+    if (!data) return [];
+    const revision = (data as any).modelo_avaliacao_empreiteiro_revisoes;
+    const model = revision?.modelos_avaliacao_empreiteiro;
+    return ([{
+      obra_id: data.obra_id, equipe_id: data.equipe_id, medicao_id: data.medicao_id,
+      modelo_revisao_id: data.modelo_revisao_id, data_avaliacao: data.data_avaliacao, status: data.status, avaliador_id: data.avaliador_id,
+      notificacoes_ocorridas: data.notificacoes_ocorridas, providencias_tomadas: data.providencias_tomadas,
+      numero_revisao: revision?.numero_revisao ?? 0, modelo_id: revision?.modelo_id ?? '',
+      modelo_nome: model?.nome ?? '', modelo_empresa_id: model?.empresa_id ?? null,
+    }] as unknown) as T[];
+  }
+
+  // Itens já respondidos de uma avaliação existente, para pré-popular a edição.
+  if (s.includes('from avaliacao_empreiteiro_itens where avaliacao_id=?') && params[0]) {
+    const { data, error } = await supabase
+      .from('avaliacao_empreiteiro_itens')
+      .select('id, criterio_origem_id, ordem, titulo, peso, resultado, comentario_nao_atende')
+      .eq('avaliacao_id', params[0] as string)
+      .order('ordem');
+    if (error) throw new Error(`Erro ao carregar itens da avaliação: ${error.message}`);
+    return (data ?? []) as T[];
   }
 
   // Medições de terceiros aguardando a avaliação obrigatória.
@@ -936,7 +985,7 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
     const thirdParty = (measurements ?? []).filter((row: any) => row.equipes?.tipo === 'terceirizado');
     const ids = thirdParty.map((row: any) => row.id);
     if (!ids.length) return [];
-    const { data: finished } = await supabase.from('avaliacoes_empreiteiro').select('medicao_id').in('medicao_id', ids).eq('status', 'concluida');
+    const { data: finished } = await supabase.from('avaliacoes_empreiteiro').select('medicao_id').in('medicao_id', ids).in('status', ['rascunho', 'concluida', 'aprovada']);
     const evaluated = new Set((finished ?? []).map(row => row.medicao_id));
     return (thirdParty.filter((row: any) => !evaluated.has(row.id)).map((row: any) => ({ id: row.id, referencia: row.referencia, obra_nome: row.obras?.nome ?? '', equipe_nome: row.equipes?.nome ?? '' })) as unknown) as T[];
   }
@@ -984,6 +1033,13 @@ async function resolvePendingWebMedia(value: unknown, filename: string): Promise
   throw new Error('Formato de mídia pendente inválido no PWA.');
 }
 
+async function resolvePendingSignatureWebMedia(value: unknown, filename: string): Promise<unknown> {
+  if (typeof value !== 'string' || !value.startsWith('pending:')) return value;
+  const localValue = value.slice('pending:'.length);
+  const blob = await fetch(localValue).then(response => response.blob());
+  return uploadToR2(blob, filename, 'image/png');
+}
+
 async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> {
   const s = sql.trim().toLowerCase().replace(/\s+/g, ' ');
 
@@ -997,9 +1053,9 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
     // then upload the data URL to R2.
     let finalUrl = assinaturaUrl;
     const rawSig = assinaturaUrl.startsWith('pending:') ? assinaturaUrl.slice('pending:'.length) : assinaturaUrl;
-    if (rawSig.startsWith('data:')) {
+    if (rawSig.startsWith('data:') || rawSig.startsWith('blob:')) {
       try {
-        finalUrl = await uploadDataUrlToR2(rawSig, `sig_${id}.png`);
+        finalUrl = await resolvePendingSignatureWebMedia(assinaturaUrl, `sig_${id}.png`) as string;
       } catch (e) {
         console.error('[web shim] signature upload failed:', e);
         throw e;
@@ -1028,10 +1084,10 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
     const idParam = params[params.length - 1] as string;
     const updateData: Record<string, unknown> = {};
     for (let i = 0; i < setFields.length; i++) {
-      updateData[setFields[i]] = await resolvePendingWebMedia(
-        params[i],
-        `${table}_${setFields[i]}_${Date.now()}.jpg`,
-      );
+      const field = setFields[i];
+      updateData[field] = field.includes('assinatura')
+        ? await resolvePendingSignatureWebMedia(params[i], `${table}_${field}_${Date.now()}.png`)
+        : await resolvePendingWebMedia(params[i], `${table}_${field}_${Date.now()}.jpg`);
     }
 
     const { error } = await dynamicTable(table).update(updateData).eq('id', idParam);
@@ -1073,7 +1129,9 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
       // Resolve pending: photo paths on web
       if (typeof val === 'string' && val.startsWith('pending:')) {
         const localPath = val.slice('pending:'.length);
-        if (localPath.startsWith('blob:')) {
+        if (cols[i].includes('assinatura')) {
+          val = await resolvePendingSignatureWebMedia(val, `${table}_${cols[i]}_${Date.now()}.png`);
+        } else if (localPath.startsWith('blob:')) {
           try {
             val = await uploadBlobToR2(localPath, `photo_${Date.now()}.jpg`);
           } catch (e) {
@@ -1095,7 +1153,15 @@ async function executeOnSupabase(sql: string, params: unknown[]): Promise<void> 
       console.error(`[web shim] INSERT ${table} error:`, error.message, row);
       throw new Error(`Erro ao salvar ${table}: ${error.message}`);
     }
+    return;
   }
+
+  // Nothing above matched — this write silently did nothing on web. A previous
+  // instance of this (an UPDATE whose WHERE clause didn't spell 'where id = ?'
+  // exactly) left signed avaliações stuck in rascunho with no error anywhere.
+  // Surface it loudly instead of returning quietly.
+  console.error('[web shim] unmatched write, nothing was saved:', sql.slice(0, 160));
+  throw new Error('Esta operação não é suportada na versão web (grave localmente e reporte).');
 }
 
 // ─────────────────────────────────────────────────────────

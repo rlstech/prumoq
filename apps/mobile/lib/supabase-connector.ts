@@ -15,6 +15,7 @@ const MEDIA_FIELDS: Record<string, string[]> = {
   verificacoes: ['assinatura_url'],
   fvs_conclusoes: ['assinatura_url'],
   avaliacoes_empreiteiro: ['assinatura_url'],
+  usuarios: ['assinatura_padrao_url'],
   nc_reinspecoes: ['foto_url'],
   nao_conformidades: ['foto_reinspecao_url'],
 };
@@ -47,7 +48,11 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       }
       await transaction.complete();
       for (const localPath of this.uploadedMedia.keys()) {
-        await FileSystem.deleteAsync(localPath, { idempotent: true });
+        // The reusable source must survive sync; document snapshots can be
+        // discarded because their R2 key is already persisted remotely.
+        if (!localPath.includes('/prumoq-signatures/') || localPath.includes('/snapshots/')) {
+          await FileSystem.deleteAsync(localPath, { idempotent: true });
+        }
       }
       this.uploadedMedia.clear();
     } catch (error) {
@@ -101,7 +106,7 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       data[field] = cachedKey;
       return;
     }
-    const isSignature = field === 'assinatura_url';
+    const isSignature = field.includes('assinatura');
     const filename = localPath.split('/').pop() ?? (isSignature ? 'signature.png' : 'photo.jpg');
     const mimeType = (data['mime_type'] as string | undefined) ?? (isSignature ? 'image/png' : 'image/jpeg');
     const fileInfo = await FileSystem.getInfoAsync(localPath, { size: true });

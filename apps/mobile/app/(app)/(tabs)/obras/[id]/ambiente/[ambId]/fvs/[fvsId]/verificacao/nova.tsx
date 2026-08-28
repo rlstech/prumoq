@@ -40,6 +40,7 @@ import { EvidenceSection } from '../../../../../../../../../../components/verifi
 import { ChecklistRouteRail } from '../../../../../../../../../../components/verification/ChecklistRouteRail';
 import { MeasurementAdvanceSection } from '../../../../../../../../../../components/verification/MeasurementAdvanceSection';
 import { FinancialNcTarget, NcFinancialResolutionSheet } from '../../../../../../../../../../components/verification/NcFinancialResolutionSheet';
+import { NcSheet } from '../../../../../../../../../../components/verification/NcSheet';
 import { ReviewOutcome } from '../../../../../../../../../../components/verification/ReviewOutcome';
 import { SignatureSection } from '../../../../../../../../../../components/verification/SignatureSection';
 import {
@@ -60,10 +61,11 @@ import {
   Resultado,
   UltimaVerifItemRow,
   UsuarioRow,
+  emptyNcDetail,
   getRoutePriorityId,
   measurementTotal,
 } from '../../../../../../../../../../components/verification/types';
-import { captureNcPhoto } from '../../../../../../../../../../hooks/useNcPhoto';
+import { captureNcPhoto, pickNcPhoto } from '../../../../../../../../../../hooks/useNcPhoto';
 import { usePhotoCapture } from '../../../../../../../../../../hooks/usePhotoCapture';
 import { useResponsiveLayout } from '../../../../../../../../../../hooks/useResponsiveLayout';
 import { useVerificationFlow } from '../../../../../../../../../../hooks/useVerificationFlow';
@@ -91,13 +93,8 @@ import {
 import { approveReinspecao, createNc, reprovarReinspecao } from '../../../../../../../../../../services/nc.service';
 import { resolveNcFinancialImpact } from '../../../../../../../../../../services/nc-finance.service';
 import { recordApprovedAdvances } from '../../../../../../../../../../services/measurement.service';
-
-function uuid(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = (Math.random() * 16) | 0;
-    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-  });
-}
+import { uuid } from '../../../../../../../../../../lib/uuid';
+import { signatureStore } from '../../../../../../../../../../lib/signature-store';
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function NovaVerificacaoScreen() {
@@ -235,6 +232,8 @@ export default function NovaVerificacaoScreen() {
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [resolvedFinancialNcIds, setResolvedFinancialNcIds] = useState<string[]>([]);
   const [showFinancialResolution, setShowFinancialResolution] = useState(false);
+  /** Checklist item whose NC sheet is open, or null. */
+  const [ncSheetItemId, setNcSheetItemId] = useState<string | null>(null);
 
   function showToast(msg: string, type: 'success' | 'error', onDone?: () => void) {
     setToast({ msg, type });
@@ -247,6 +246,9 @@ export default function NovaVerificacaoScreen() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user.id ?? null);
+      setAuthResolved(true);
+    }).catch(err => {
+      console.warn('[NovaVerificacao] getSession failed', err);
       setAuthResolved(true);
     });
     if (Platform.OS === 'web') {
@@ -311,6 +313,7 @@ export default function NovaVerificacaoScreen() {
     hasMeaningfulProgress,
     updateState,
     setItemResult,
+    clearItemResult,
     updateNc,
     getValidationErrors,
     validate: validateFlow,
@@ -322,6 +325,15 @@ export default function NovaVerificacaoScreen() {
     discardDraft,
     discardDraftAndReset,
   } = flow;
+
+  // A captured default is kept locally so the verification remains completable
+  // offline. It is cloned at save time; this value is only the form preview.
+  useEffect(() => {
+    if (!userId || signaturePath) return;
+    void signatureStore.get(userId).then(path => {
+      if (path) updateState({ signaturePath: path });
+    }).catch(() => {});
+  }, [signaturePath, updateState, userId]);
 
   const {
     addFromCamera,
@@ -447,6 +459,34 @@ export default function NovaVerificacaoScreen() {
   async function addNcPhoto(itemId: string) {
     const path = await captureNcPhoto();
     if (path) updateNc(itemId, { foto: path });
+  }
+
+  async function chooseNcPhoto(itemId: string) {
+    const path = await pickNcPhoto();
+    if (path) updateNc(itemId, { foto: path });
+  }
+
+  /** Marking an item não conforme opens its NC sheet straight away — the five
+   * required fields are the reason the answer was given, so asking for them is
+   * not an interruption. Every other answer just collapses the row. */
+  function handleItemResult(itemId: string, value: Resultado) {
+    setItemResult(itemId, value);
+    if (value === 'nao_conforme' && !ncAbertoByItemId[itemId]) {
+      setNcSheetItemId(itemId);
+    }
+  }
+
+  /** The five RN-01 fields. The financial declaration, when required, is folded
+   * in through its own validation error rather than restated here. */
+  function isNcComplete(itemId: string): boolean {
+    const nc = ncDetails[itemId];
+    if (!nc) return false;
+    const core = !!nc.descricao.trim()
+      && !!nc.foto
+      && !!nc.solucao_proposta.trim()
+      && !!nc.data_nova_verif
+      && !!nc.responsavel_id;
+    return core && !errors[`nc_fin_${itemId}`];
   }
 
   function validate(step?: VerificationStep): boolean {
@@ -646,6 +686,9 @@ export default function NovaVerificacaoScreen() {
         }));
       }
 
+      const verificationSignature = await signatureStore.snapshot(inspectorId, verificacaoId);
+      if (!verificationSignature) throw new Error('Cadastre sua assinatura padrão no Perfil antes de concluir.');
+
       await Promise.all([
         ...generalPhotos.map((localPath, i) =>
           db.execute(`
@@ -654,10 +697,10 @@ export default function NovaVerificacaoScreen() {
             VALUES (?, ?, ?, ?, ?, ?, ?)
           `, [uuid(), clienteId, verificacaoId, `pending:${localPath}`, localPath.split('/').pop() ?? 'photo.jpg', 'image/jpeg', i])
         ),
-        ...(signaturePath ? [db.execute(
+        db.execute(
           `UPDATE verificacoes SET assinatura_url = ?, assinada_em = ? WHERE id = ?`,
-          [`pending:${signaturePath}`, now, verificacaoId]
-        )] : []),
+          [`pending:${verificationSignature.uri}`, now, verificacaoId]
+        ),
       ]);
 
       if (Platform.OS !== 'web' && !shouldConclude && fvs?.status !== 'em_revisao') {
@@ -671,14 +714,17 @@ export default function NovaVerificacaoScreen() {
 
       if (shouldConclude) {
         const conclusionNumber = (conclusionCountRows[0]?.count ?? 0) + 1;
+        const conclusionId = uuid();
+        const conclusionSignature = await signatureStore.snapshot(inspectorId, conclusionId);
+        if (!conclusionSignature) throw new Error('A assinatura padrão não está disponível neste dispositivo.');
         await db.execute(
           `INSERT INTO fvs_conclusoes
             (id, cliente_id, fvs_planejada_id, verificacao_id, inspetor_id, numero_conclusao,
-             percentual_final, resultado, observacao_final, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             percentual_final, resultado, observacao_final, assinatura_url, assinada_em, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            uuid(), clienteId, fvsId, verificacaoId, inspectorId, conclusionNumber,
-            100, 'aprovado', observacoes || null, now,
+            conclusionId, clienteId, fvsId, verificacaoId, inspectorId, conclusionNumber,
+            100, 'aprovado', observacoes || null, `pending:${conclusionSignature.uri}`, now, now,
           ],
         );
 
@@ -902,26 +948,15 @@ export default function NovaVerificacaoScreen() {
                             key={item.id}
                             item={item}
                             result={result}
-                            onResultChange={value => setItemResult(item.id, value)}
+                            onResultChange={value => handleItemResult(item.id, value)}
                             locked={isLocked}
                             isNcItem={isNcItem}
                             isPriority={item.id === routePriorityId}
                             itemError={errors[`item_${item.id}`]}
                             last={index === sortedItens.length - 1}
-                            nc={ncDetails[item.id]}
-                            onNcChange={patch => updateNc(item.id, patch)}
-                            onNcPhoto={() => addNcPhoto(item.id)}
-                            ncErrors={{
-                              descricao: errors[`nc_desc_${item.id}`],
-                              foto: errors[`nc_foto_${item.id}`],
-                              solucao: errors[`nc_sol_${item.id}`],
-                              data: errors[`nc_data_${item.id}`],
-                              responsavel: errors[`nc_resp_${item.id}`],
-                              financeiro: errors[`nc_fin_${item.id}`],
-                            }}
-                            equipes={equipes}
-                            managers={managers}
-                            financialRequired={financialRequired}
+                            onOpenNc={() => setNcSheetItemId(item.id)}
+                            ncComplete={isNcComplete(item.id)}
+                            ncError={errors[`nc_desc_${item.id}`] ? 'Complete o registro da não conformidade' : undefined}
                           />
                         );
                       })}
@@ -985,6 +1020,7 @@ export default function NovaVerificacaoScreen() {
                   <SignatureSection
                     signerName={usuario?.nome ?? '—'}
                     signaturePath={signaturePath}
+                    standard
                     error={errors.assinatura}
                     onSign={path => updateState({ signaturePath: path })}
                     onRefazer={() => {
@@ -1114,6 +1150,31 @@ export default function NovaVerificacaoScreen() {
           Esta verificação será salva e a FVS ficará bloqueada para novas verificações. Para registrar outra, será necessário reabrir a FVS com justificativa.
         </Text>
       </ModalSheet>
+
+      <NcSheet
+        visible={!!ncSheetItemId}
+        onClose={() => setNcSheetItemId(null)}
+        item={sortedItens.find(item => item.id === ncSheetItemId) ?? null}
+        detail={ncDetails[ncSheetItemId ?? ''] ?? emptyNcDetail}
+        onChange={patch => { if (ncSheetItemId) updateNc(ncSheetItemId, patch); }}
+        onAddPhoto={() => { if (ncSheetItemId) void addNcPhoto(ncSheetItemId); }}
+        onPickPhoto={() => { if (ncSheetItemId) void chooseNcPhoto(ncSheetItemId); }}
+        onClearResult={() => {
+          if (ncSheetItemId) clearItemResult(ncSheetItemId);
+          setNcSheetItemId(null);
+        }}
+        equipes={equipes}
+        errors={{
+          descricao: errors[`nc_desc_${ncSheetItemId}`],
+          foto: errors[`nc_foto_${ncSheetItemId}`],
+          solucao: errors[`nc_sol_${ncSheetItemId}`],
+          data: errors[`nc_data_${ncSheetItemId}`],
+          responsavel: errors[`nc_resp_${ncSheetItemId}`],
+          financeiro: errors[`nc_fin_${ncSheetItemId}`],
+        }}
+        financialRequired={financialRequired}
+        managers={managers}
+      />
 
       <NcFinancialResolutionSheet
         visible={showFinancialResolution}

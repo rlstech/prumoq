@@ -14,11 +14,13 @@ interface Props {
   onRefazer: () => void;
   /** Native only: opens the signature modal for a first-time signature. */
   onOpenModal: () => void;
+  /** Uses the user's reusable signature instead of accepting a per-document drawing. */
+  standard?: boolean;
 }
 
 /** Digital signature block. Web renders the canvas inline; native opens a
  * modal (owned by the screen, since it must sit outside the scroll tree). */
-export function SignatureSection({ signerName, signaturePath, error, onSign, onRefazer, onOpenModal }: Props) {
+export function SignatureSection({ signerName, signaturePath, error, onSign, onRefazer, onOpenModal, standard = false }: Props) {
   return (
     <View style={styles.section}>
       <Text style={styles.overline}>ASSINATURA DIGITAL *</Text>
@@ -27,7 +29,15 @@ export function SignatureSection({ signerName, signaturePath, error, onSign, onR
       </Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      {signaturePath ? (
+      {standard ? (
+        <DataRow
+          label="Assinatura padrão"
+          value={signaturePath ? 'Será aplicada automaticamente' : 'Cadastre-a no Perfil para concluir'}
+          leading={<PenLine size={18} color={signaturePath ? Colors.ok : Colors.brand} />}
+          last
+          style={signaturePath ? styles.signedRow : undefined}
+        />
+      ) : signaturePath ? (
         <DataRow
           label="Assinatura"
           value="Registrada"

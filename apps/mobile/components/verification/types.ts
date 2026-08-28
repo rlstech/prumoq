@@ -83,8 +83,20 @@ export interface UltimaVerifItemRow {
 
 export type NcDetail = NcDraftDetail;
 
+/** A NC draft with nothing filled in yet. Lets the sheet render while its item
+ * has no entry in `ncDetails` — reading is safe, every write goes through
+ * `updateNc`. */
+export const emptyNcDetail: NcDetail = {
+  descricao: '',
+  solucao_proposta: '',
+  data_nova_verif: '',
+  responsavel_id: '',
+  foto: null,
+  financeiro: null,
+};
+
 /** Per-item NC field errors, already resolved from the flat `nc_*_<itemId>`
- * error map so ChecklistItemRow/NcInlineForm don't reach into raw keys. */
+ * error map so NcSheet doesn't reach into raw keys. */
 export interface NcFieldErrors {
   descricao?: string;
   foto?: string;

@@ -112,6 +112,26 @@ export function setVerificationItemResult(
   return { ...state, itemResults, ncDetails, userTouchedItemIds };
 }
 
+/**
+ * Removes an item's answer entirely, dropping any NC draft it opened.
+ *
+ * This is the way back out of a "não conforme" marked by mistake: an answered
+ * row collapses and routes taps to the NC sheet, so without an explicit clear
+ * the answer could never be changed again.
+ */
+export function clearVerificationItemResult(
+  state: VerificationFormState,
+  itemId: string,
+): VerificationFormState {
+  const itemResults = { ...state.itemResults };
+  delete itemResults[itemId];
+  const ncDetails = { ...state.ncDetails };
+  delete ncDetails[itemId];
+  // `userTouchedItemIds` deliberately keeps the id: the inspector did interact
+  // with this item, and that is what decides whether a draft exists at all.
+  return { ...state, itemResults, ncDetails };
+}
+
 export function isVerificationDraftCompatible(
   draft: VerificationDraftV1,
   context: Pick<VerificationDraftV1, 'draftId' | 'userId' | 'obraId' | 'ambienteId' | 'fvsId' | 'mode' | 'revision' | 'itemFingerprint'>,

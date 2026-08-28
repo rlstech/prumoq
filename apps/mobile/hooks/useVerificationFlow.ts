@@ -1,6 +1,7 @@
 import { AppState } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  clearVerificationItemResult,
   createVerificationDraft,
   emptyVerificationFormState,
   hasMeaningfulVerificationProgress,
@@ -66,6 +67,7 @@ export interface VerificationFlowApi {
   hasMeaningfulProgress: boolean;
   updateState: (patch: Partial<VerificationFormState> | ((state: VerificationFormState) => VerificationFormState)) => void;
   setItemResult: (itemId: string, result: VerificationResult) => void;
+  clearItemResult: (itemId: string) => void;
   updateNc: (itemId: string, patch: Partial<NcDraftDetail>) => void;
   getValidationErrors: (step?: VerificationStep) => Record<string, string>;
   validate: (step?: VerificationStep) => Record<string, string>;
@@ -151,6 +153,20 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
   const setItemResult = useCallback((itemId: string, result: VerificationResult) => {
     setState(previous => setVerificationItemResult(previous, itemId, result));
     clearErrors([`item_${itemId}`]);
+    setDraftStatus('idle');
+  }, [clearErrors]);
+
+  const clearItemResult = useCallback((itemId: string) => {
+    setState(previous => clearVerificationItemResult(previous, itemId));
+    clearErrors([
+      `item_${itemId}`,
+      `nc_desc_${itemId}`,
+      `nc_foto_${itemId}`,
+      `nc_sol_${itemId}`,
+      `nc_data_${itemId}`,
+      `nc_resp_${itemId}`,
+      `nc_fin_${itemId}`,
+    ]);
     setDraftStatus('idle');
   }, [clearErrors]);
 
@@ -361,6 +377,7 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
     hasMeaningfulProgress,
     updateState,
     setItemResult,
+    clearItemResult,
     updateNc,
     getValidationErrors,
     validate,

@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react-native';
 import { useRouter } from 'expo-router';
-import { Building2, Key, Mail, Phone, User } from 'lucide-react-native';
+import { Building2, Key, Mail, PenLine, Phone, User } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
   SafeAreaView,
@@ -11,10 +11,12 @@ import {
   View,
 } from 'react-native';
 import { AppHeader } from '../../../../components/AppHeader';
+import { SignatureField } from '../../../../components/SignatureField';
 import { Breakpoints, Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
 import { db } from '../../../../lib/powersync';
 import { supabase } from '../../../../lib/supabase';
 import { draftStore } from '../../../../lib/verification/draftStore';
+import { signatureStore } from '../../../../lib/signature-store';
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -22,7 +24,7 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-interface UsuarioRow { id: string; nome: string; cargo: string; perfil: string; cliente_id: string }
+interface UsuarioRow { id: string; nome: string; cargo: string; perfil: string; cliente_id: string; assinatura_padrao_url: string | null; assinatura_padrao_atualizada_em: string | null }
 interface ObraRow    { id: string; nome: string; municipio: string; uf: string }
 interface CountRow   { count: number }
 
@@ -58,11 +60,17 @@ export default function PerfilScreen() {
   const [userId, setUserId]     = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authResolved, setAuthResolved] = useState(false);
+  const [signing, setSigning] = useState(false);
+  const [savingSignature, setSavingSignature] = useState(false);
+  const [signatureError, setSignatureError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user.id ?? null);
       setUserEmail(session?.user.email ?? null);
+      setAuthResolved(true);
+    }).catch(err => {
+      console.warn('[Perfil] getSession failed', err);
       setAuthResolved(true);
     });
   }, []);
@@ -72,7 +80,7 @@ export default function PerfilScreen() {
     error: usuarioError,
   } = useQuery<UsuarioRow>(
     userId
-      ? `SELECT id, nome, cargo, perfil, cliente_id FROM usuarios WHERE id = ? LIMIT 1`
+      ? `SELECT id, nome, cargo, perfil, cliente_id, assinatura_padrao_url, assinatura_padrao_atualizada_em FROM usuarios WHERE id = ? LIMIT 1`
       : `SELECT 1 WHERE 0`,
     userId ? [userId] : [],
   );
@@ -106,9 +114,28 @@ export default function PerfilScreen() {
   async function handleLogout() {
     if (userId) {
       try { await draftStore.deleteForUser(userId); } catch { /* logout must continue */ }
+      try { await signatureStore.clear(userId); } catch { /* logout must continue */ }
     }
     try { await db.disconnectAndClear(); } catch { /* ignore */ }
     await supabase.auth.signOut();
+  }
+
+  async function handleSignature(path: string) {
+    if (!userId) return;
+    try {
+      setSavingSignature(true);
+      setSignatureError(null);
+      const localPath = await signatureStore.save(userId, path);
+      await db.execute(
+        'UPDATE usuarios SET assinatura_padrao_url = ?, assinatura_padrao_atualizada_em = ? WHERE id = ?',
+        [`pending:${localPath}`, new Date().toISOString(), userId],
+      );
+      setSigning(false);
+    } catch (error) {
+      setSignatureError(error instanceof Error ? error.message : 'Não foi possível salvar a assinatura padrão.');
+    } finally {
+      setSavingSignature(false);
+    }
   }
 
   const heroRole = [
@@ -174,6 +201,25 @@ export default function PerfilScreen() {
           })}
         </View>
 
+        <View style={s.divider} />
+        <Text style={s.sectionLabel}>ASSINATURA PADRÃO</Text>
+        <View style={s.signatureCard}>
+          <View style={s.pfIcon}><PenLine size={16} color={Colors.brand} /></View>
+          <View style={s.pfInfo}>
+            <Text style={s.pfLbl}>Assinatura digital</Text>
+            <Text style={s.pfVal}>{usuario?.assinatura_padrao_url ? 'Configurada para novas assinaturas' : 'Ainda não cadastrada'}</Text>
+          </View>
+          <TouchableOpacity
+            accessibilityRole="button"
+            disabled={!userId || savingSignature}
+            onPress={() => setSigning(true)}
+            style={s.signatureAction}
+          >
+            <Text style={s.signatureActionText}>{usuario?.assinatura_padrao_url ? 'Alterar' : 'Cadastrar'}</Text>
+          </TouchableOpacity>
+        </View>
+        {signatureError ? <Text style={s.signatureError}>{signatureError}</Text> : null}
+
         {/* Divider */}
         <View style={s.divider} />
 
@@ -228,6 +274,7 @@ export default function PerfilScreen() {
           <Text style={s.logoutText}>Sair do sistema</Text>
         </TouchableOpacity>
       </ScrollView>
+      <SignatureField visible={signing} onSign={handleSignature} onCancel={() => setSigning(false)} />
     </SafeAreaView>
   );
 }
@@ -295,6 +342,10 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 0,
   },
+  signatureCard: { backgroundColor: Colors.surface, borderRadius: Radius.lg, borderWidth: 0.5, borderColor: Colors.border, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  signatureAction: { borderWidth: 1, borderColor: Colors.brand, borderRadius: Radius.md, paddingHorizontal: Spacing.sm, paddingVertical: 8 },
+  signatureActionText: { ...Typography.label, color: Colors.brand },
+  signatureError: { ...Typography.caption, color: Colors.nok, marginTop: Spacing.xs },
   pfRow: {
     flexDirection: 'row',
     alignItems: 'center',

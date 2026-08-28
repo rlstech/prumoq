@@ -169,7 +169,7 @@ export default function FvsPrintPage() {
           supabase
             .from('fvs_conclusoes')
             .select(
-              'numero_conclusao, percentual_final, resultado, observacao_final, assinatura_url, inspetor_id, created_at',
+              'numero_conclusao, percentual_final, resultado, observacao_final, assinatura_url, inspetor_id, created_at, usuarios!inspetor_id(nome)',
             )
             .eq('fvs_planejada_id', fvsId)
             .order('numero_conclusao', { ascending: false })
@@ -239,12 +239,22 @@ export default function FvsPrintPage() {
           conclusao: (() => {
             const conclusion = (
               conclusaoRes.data as unknown as
-                | FvsPrintableConclusion[]
+                | Array<
+                    Omit<FvsPrintableConclusion, 'inspetor_nome'> & {
+                      usuarios: { nome: string | null } | null;
+                    }
+                  >
                 | null
             )?.[0] ?? null;
             return conclusion ? {
-              ...conclusion,
+              numero_conclusao: conclusion.numero_conclusao,
+              percentual_final: conclusion.percentual_final,
+              resultado: conclusion.resultado,
+              observacao_final: conclusion.observacao_final,
               assinatura_url: resolveR2(conclusion.assinatura_url, signedMedia),
+              inspetor_id: conclusion.inspetor_id,
+              inspetor_nome: conclusion.usuarios?.nome ?? null,
+              created_at: conclusion.created_at,
             } : null;
           })(),
           emitidoEm: new Intl.DateTimeFormat('pt-BR', {

@@ -109,6 +109,23 @@ inteiros saturados.
 - Ghost: sem fundo; hover usa Fog.
 - Apenas uma ação primária por superfície.
 
+### Controle de resposta (ChoiceToggle)
+
+Controle único de 2–3 posições, 56px de altura, ícone sobre rótulo, **todas as
+posições com a mesma largura** — nenhuma resposta pode ser mais difícil de
+acertar que outra. A posição escolhida carrega três sinais somados: fundo em
+tint suave, anel semântico de 1,5px e o glifo circular **preenchido**, enquanto
+as demais permanecem em contorno.
+
+O preenchimento do glifo é o sinal que sobrevive ao sol direto e continua legível
+em escala de cinza; o tint sozinho é um degrau de cerca de 4% de luminância e
+desaparece em campo. As posições não escolhidas recuam para Névoa assim que
+existe resposta.
+
+Isso substitui a marcação anterior por barra de 3px na base, que era fraca demais
+para uso externo. Preenchimento de glifo não conflita com a regra de fundos
+saturados: o bloco de cor tem o tamanho de um ícone, não de uma superfície.
+
 ### Status
 
 Badges usam ponto/ícone, texto, fundo suave e borda. NCs usam card branco com

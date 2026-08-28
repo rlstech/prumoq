@@ -131,6 +131,8 @@ export default function DashboardScreen() {
       const profile = rawProfile as UserProfile;
       setPerfil(profile.perfil);
       setUserInfo({ nome: profile.nome, cargo: profile.cargo });
+    }).catch(err => {
+      console.warn('[Dashboard] getUser failed', err);
     });
   }, []);
 
@@ -215,7 +217,7 @@ export default function DashboardScreen() {
     LEFT JOIN fvs_planejadas f ON f.ambiente_id = a.id
     WHERE o.ativo = 1 AND ${accessFilter}
     GROUP BY o.id
-    LIMIT 5
+    LIMIT 3
   ` : 'SELECT 1 WHERE 0',
     ready ? accessParams : [],
   );
@@ -407,7 +409,7 @@ export default function DashboardScreen() {
               )}
             />
             <View style={[styles.worksGrid, isTablet && styles.worksGridTablet]}>
-              {obrasProgresso.map(work => {
+              {obrasProgresso.slice(0, 3).map(work => {
                 const percentage = work.progresso_percentual ?? 0;
                 return (
                   <Pressable

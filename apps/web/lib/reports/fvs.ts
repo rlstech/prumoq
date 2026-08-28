@@ -159,7 +159,7 @@ export async function loadFvsReport(
       client
         .from('fvs_conclusoes')
         .select(
-          'numero_conclusao, percentual_final, resultado, observacao_final, assinatura_url, inspetor_id, created_at',
+          'numero_conclusao, percentual_final, resultado, observacao_final, assinatura_url, inspetor_id, created_at, usuarios!inspetor_id(nome)',
         )
         .eq('fvs_planejada_id', fvsId)
         .order('numero_conclusao', { ascending: false })
@@ -174,7 +174,23 @@ export async function loadFvsReport(
   if (!header) return null;
 
   const verificacoes = [...verificationRows].reverse();
-  const conclusao = conclusaoRes.data?.[0] ?? null;
+  const conclusaoRow = (conclusaoRes.data?.[0] ?? null) as unknown as
+    | (Omit<FvsReportConclusion, 'inspetor_nome'> & {
+        usuarios: { nome: string | null } | null;
+      })
+    | null;
+  const conclusao = conclusaoRow
+    ? {
+        numero_conclusao: conclusaoRow.numero_conclusao,
+        percentual_final: conclusaoRow.percentual_final,
+        resultado: conclusaoRow.resultado,
+        observacao_final: conclusaoRow.observacao_final,
+        assinatura_url: conclusaoRow.assinatura_url,
+        inspetor_id: conclusaoRow.inspetor_id,
+        inspetor_nome: conclusaoRow.usuarios?.nome ?? null,
+        created_at: conclusaoRow.created_at,
+      }
+    : null;
   const signedMedia = await signPrivateMedia(client, [
     ...photoRows.map(photo => photo.r2_key),
     ...verificacoes.map(verification => verification.assinatura_url),

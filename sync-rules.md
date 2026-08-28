@@ -47,6 +47,13 @@ bucket_definitions:
             SELECT obra_id FROM obra_usuarios
             WHERE usuario_id = :user_id AND ativo = true
           )
+      - SELECT r.* FROM avaliacao_empreiteiro_reaberturas r
+        JOIN avaliacoes_empreiteiro a ON a.id = r.avaliacao_id
+        WHERE r.cliente_id = :cliente_id
+          AND a.obra_id IN (
+            SELECT obra_id FROM obra_usuarios
+            WHERE usuario_id = :user_id AND ativo = true
+          )
 ```
 
 `medicoes_servico` também precisa estar disponível para que o app apresente as

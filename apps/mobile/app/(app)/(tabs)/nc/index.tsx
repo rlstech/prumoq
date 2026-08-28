@@ -175,6 +175,8 @@ export default function NcScreen() {
         .eq('id', data.user.id)
         .single();
       if (usuario) setPerfil((usuario as { perfil: string }).perfil);
+    }).catch(err => {
+      console.warn('[NC] getUser failed', err);
     });
   }, []);
 
