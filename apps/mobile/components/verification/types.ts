@@ -56,6 +56,7 @@ export interface UsuarioRow {
   nome: string;
   cargo: string;
   perfil: 'superadmin' | 'admin' | 'gestor' | 'inspetor';
+  assinatura_padrao_url: string | null;
 }
 
 export interface CountRow {
