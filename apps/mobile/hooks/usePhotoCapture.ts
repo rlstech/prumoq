@@ -3,10 +3,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useRef, useState } from 'react';
 import { normalizeEvidencePhoto } from '../lib/image-normalizer';
 
-async function saveToCache(uri: string, width?: number, height?: number): Promise<string> {
+const PENDING_MEDIA_DIRECTORY = `${FileSystem.documentDirectory}prumoq-pending-media/`;
+
+async function saveForOfflineSync(uri: string, width?: number, height?: number): Promise<string> {
   const normalizedUri = await normalizeEvidencePhoto(uri, width, height);
   const filename = `photo_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-  const dest = `${FileSystem.cacheDirectory}${filename}`;
+  await FileSystem.makeDirectoryAsync(PENDING_MEDIA_DIRECTORY, { intermediates: true });
+  const dest = `${PENDING_MEDIA_DIRECTORY}${filename}`;
   await FileSystem.copyAsync({ from: normalizedUri, to: dest });
   return dest;
 }
@@ -63,7 +66,7 @@ export function usePhotoCapture(
     });
 
     if (!result.canceled && result.assets[0]) {
-      const localPath = await saveToCache(result.assets[0].uri, result.assets[0].width, result.assets[0].height);
+      const localPath = await saveForOfflineSync(result.assets[0].uri, result.assets[0].width, result.assets[0].height);
       commitPhotos(prev => [...prev, localPath]);
     }
   }, [commitPhotos]);
@@ -79,7 +82,7 @@ export function usePhotoCapture(
     });
 
     if (!result.canceled && result.assets[0]) {
-      const localPath = await saveToCache(result.assets[0].uri, result.assets[0].width, result.assets[0].height);
+      const localPath = await saveForOfflineSync(result.assets[0].uri, result.assets[0].width, result.assets[0].height);
       commitPhotos(prev => [...prev, localPath]);
     }
   }, [commitPhotos]);

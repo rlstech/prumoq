@@ -305,9 +305,12 @@ test('preserva anexos antigos como avisos em vez de omiti-los', () => {
   ];
   const html = renderFvsReportsHtml([report([current])]);
 
-  assert.equal((html.match(/class="photo-unavailable"/g) ?? []).length, 2);
+  assert.equal((html.match(/class="photo-unavailable-notice"/g) ?? []).length, 2);
+  assert.doesNotMatch(html, /class="photo-unavailable"/);
+  assert.doesNotMatch(html, /data-pdf-kind="photo"/);
   assert.match(html, /Foto aguardando sincronização/);
   assert.match(html, /Imagem não sincronizada - referência local expirada/);
+  assert.match(html, /Anexos não sincronizados/);
 });
 
 test('trata URLs persistidas como referências legadas indisponíveis', () => {

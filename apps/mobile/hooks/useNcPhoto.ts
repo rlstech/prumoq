@@ -3,11 +3,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { normalizeEvidencePhoto } from '../lib/image-normalizer';
 import { uuid } from '../lib/uuid';
 
-/** Normalizes the picked asset and copies it into the cache under a stable
- * name, so the draft can reference a path that survives the picker closing. */
+const PENDING_MEDIA_DIRECTORY = `${FileSystem.documentDirectory}prumoq-pending-media/`;
+
+/** Normalizes the picked asset and stores it durably until PowerSync uploads it. */
 async function storeAsset(asset: ImagePicker.ImagePickerAsset): Promise<string> {
   const src = await normalizeEvidencePhoto(asset.uri, asset.width, asset.height);
-  const dest = `${FileSystem.cacheDirectory}nc_${uuid()}.jpg`;
+  await FileSystem.makeDirectoryAsync(PENDING_MEDIA_DIRECTORY, { intermediates: true });
+  const dest = `${PENDING_MEDIA_DIRECTORY}nc_${uuid()}.jpg`;
   await FileSystem.copyAsync({ from: src, to: dest });
   return dest;
 }

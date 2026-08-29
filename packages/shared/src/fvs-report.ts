@@ -604,15 +604,15 @@ function conclusionSection(report: FvsPrintableReport): string {
 
 function photoKindLabel(photo: FvsPrintablePhoto): string {
   if (photo.label) return photo.label;
-  if (photo.kind === 'nc') return 'Evidência de não conformidade';
-  if (photo.kind === 'reinspection') return 'Evidência de reinspeção';
-  return 'Evidência da verificação';
+  if (photo.kind === 'nc') return 'Evid\u00eancia de n\u00e3o conformidade';
+  if (photo.kind === 'reinspection') return 'Evid\u00eancia de reinspe\u00e7\u00e3o';
+  return 'Evid\u00eancia da verifica\u00e7\u00e3o';
 }
 
 function photoAvailabilityLabel(photo: FvsPrintablePhoto): string {
-  if (photo.availability === 'pending') return 'Foto aguardando sincronização';
+  if (photo.availability === 'pending') return 'Foto aguardando sincroniza\u00e7\u00e3o';
   if (photo.availability === 'expired') {
-    return 'Imagem não sincronizada - referência local expirada';
+    return 'Imagem n\u00e3o sincronizada - refer\u00eancia local expirada';
   }
   return '';
 }
@@ -632,31 +632,32 @@ function photoAnnexes(report: FvsPrintableReport): string {
   );
   if (!flatPhotos.length) return '';
 
+  const availablePhotos = flatPhotos.filter(
+    ({ photo }) => !photoAvailabilityLabel(photo),
+  );
+  const unavailablePhotos = flatPhotos.filter(
+    ({ photo }) => Boolean(photoAvailabilityLabel(photo)),
+  );
   const pages: FvsFlatPhoto[][] = [];
-  for (let index = 0; index < flatPhotos.length; index += FVS_PHOTOS_PER_PAGE) {
-    pages.push(flatPhotos.slice(index, index + FVS_PHOTOS_PER_PAGE));
+  for (let index = 0; index < availablePhotos.length; index += FVS_PHOTOS_PER_PAGE) {
+    pages.push(availablePhotos.slice(index, index + FVS_PHOTOS_PER_PAGE));
   }
 
-  return pages
+  const photoPages = pages
     .map((pagePhotos, pageIndex) => {
       const figures = pagePhotos
         .map(({ photo, verification }, photoIndex) => {
-          const availabilityLabel = photoAvailabilityLabel(photo);
           return `
-            <figure${availabilityLabel ? ' class="photo-unavailable"' : ''}>
+            <figure>
               <div class="photo-frame">
                 <img data-pdf-kind="photo" loading="eager" decoding="async" src="${escapeHtml(photo.r2_url)}" alt="${escapeHtml(photoKindLabel(photo))}">
               </div>
               <figcaption>
                 <div>
                   <strong>${escapeHtml(photoKindLabel(photo))}</strong>
-                  ${
-                    availabilityLabel
-                      ? `<em>${escapeHtml(availabilityLabel)}</em>`
-                      : `<span class="fig-meta">V${verification.numero_verif} · ${escapeHtml(localDate(verification.data_verif))}</span>`
-                  }
+                  <span class="fig-meta">V${verification.numero_verif} · ${escapeHtml(localDate(verification.data_verif))}</span>
                 </div>
-                <span>Foto ${pageIndex * FVS_PHOTOS_PER_PAGE + photoIndex + 1} de ${flatPhotos.length}</span>
+                <span>Foto ${flatPhotos.indexOf(pagePhotos[photoIndex]) + 1} de ${flatPhotos.length}</span>
               </figcaption>
             </figure>`;
         })
@@ -667,12 +668,36 @@ function photoAnnexes(report: FvsPrintableReport): string {
           ${reportIdentity(report, true)}
           <div class="section-heading attachment-heading">
             <div><strong>Anexo fotográfico</strong><span>${flatPhotos.length} foto(s) registradas na FVS</span></div>
-            <span>Página ${pageIndex + 1} de ${pages.length}</span>
+            <span>Página ${pageIndex + 1} de ${pages.length + (unavailablePhotos.length ? 1 : 0)}</span>
           </div>
           <div class="photos">${figures}</div>
         </section>`;
     })
     .join('');
+
+  if (!unavailablePhotos.length) return photoPages;
+
+  const notices = unavailablePhotos
+    .map(({ photo, verification }) => {
+      const photoNumber = flatPhotos.findIndex((entry) => entry.photo.id === photo.id) + 1;
+      return `
+        <li class="photo-unavailable-notice">
+          <strong>${escapeHtml(photoKindLabel(photo))}</strong>
+          <span>Foto ${photoNumber} de ${flatPhotos.length} · V${verification.numero_verif} · ${escapeHtml(localDate(verification.data_verif))}</span>
+          <em>${escapeHtml(photoAvailabilityLabel(photo))}</em>
+        </li>`;
+    })
+    .join('');
+
+  return `${photoPages}
+    <section class="photo-annex-page">
+      ${reportIdentity(report, true)}
+      <div class="section-heading attachment-heading">
+        <div><strong>Anexos não sincronizados</strong><span>${unavailablePhotos.length} arquivo(s) preservado(s) como registro</span></div>
+        <span>Página ${pages.length + 1} de ${pages.length + 1}</span>
+      </div>
+      <ul class="photo-unavailable-list">${notices}</ul>
+    </section>`;
 }
 
 export function renderFvsReportBody(
@@ -840,12 +865,17 @@ export const FVS_REPORT_CSS = `
   figure { border: 1px solid #D9DDD9; border-radius: 5px; break-inside: avoid; margin: 0; overflow: hidden; }
   .photo-frame { align-items: center; background: #F4F1E8; display: flex; height: 62mm; justify-content: center; padding: 4px; }
   figure img { display: block; height: 100%; max-width: 100%; object-fit: contain; width: 100%; }
-  figcaption { align-items: center; background: #F4F1E8; color: #52615B; display: flex; font-size: 7px; justify-content: space-between; min-height: 8mm; padding: 4px 6px; }
-  figcaption strong { color: #163B50; }
-  figcaption div { display: flex; flex-direction: column; gap: 2px; }
+  figcaption { align-items: center; background: #F4F1E8; color: #52615B; display: flex; font-size: 7px; gap: 6px; justify-content: space-between; min-height: 8mm; padding: 4px 6px; }
+  figcaption strong { color: #163B50; overflow-wrap: anywhere; }
+  figcaption div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  figcaption > span { flex: 0 0 auto; white-space: nowrap; }
   figcaption em { color: #B23A3A; font-size: 6.5px; font-style: normal; font-weight: 600; }
   figcaption .fig-meta { color: #6E7A75; font-size: 6.5px; }
-  .photo-unavailable { border-color: #E9BDBD; }
+  .photo-unavailable-list { display: grid; gap: 5px; grid-template-columns: repeat(2, 1fr); list-style: none; margin: 0; padding: 0; }
+  .photo-unavailable-notice { background: #FFFDFC; border: 1px solid #E9BDBD; border-radius: 5px; break-inside: avoid; display: flex; flex-direction: column; gap: 2px; min-height: 13mm; padding: 5px 7px; }
+  .photo-unavailable-notice strong { color: #163B50; font-size: 7px; overflow-wrap: anywhere; }
+  .photo-unavailable-notice span { color: #6E7A75; font-size: 6.5px; }
+  .photo-unavailable-notice em { color: #B23A3A; font-size: 6.5px; font-style: normal; font-weight: 600; }
   .empty { color: #6E7A75; padding: 24px 0; text-align: center; }
   .report > :last-child { break-after: auto; page-break-after: auto; }
   @media print {
