@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import FvsPlannerClient from './FvsPlannerClient';
 
 export default async function AmbientePage(props: { params: Promise<{ id: string, ambId: string }> }) {
@@ -40,12 +41,18 @@ export default async function AmbientePage(props: { params: Promise<{ id: string
         ]}
       />
       <div className="prumo-page">
-        <FvsPlannerClient 
-          ambiente={typedAmb} 
-          initialFvsList={fvsList || []} 
-          fvsPadraoList={availableFvs}
-          measurementEnabled={Boolean(typedAmb.obras?.controle_medicoes_efetivo)}
-        />
+        <div className="prumo-page-inner">
+          <PageHeader
+            title={typedAmb.nome}
+            description="FVS planejadas para este ambiente e as fichas padrão disponíveis para associar."
+          />
+          <FvsPlannerClient
+            ambiente={typedAmb}
+            initialFvsList={fvsList || []}
+            fvsPadraoList={availableFvs}
+            measurementEnabled={Boolean(typedAmb.obras?.controle_medicoes_efetivo)}
+          />
+        </div>
       </div>
     </>
   );

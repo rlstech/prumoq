@@ -17,6 +17,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import PhotoGallery from '@/components/ui/PhotoGallery';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { signPrivateMedia } from '@/lib/media/signed-urls';
@@ -313,31 +314,27 @@ export default async function NcDetailPage({ params }: PageProps) {
         <div className="prumo-page-inner space-y-5">
           <section className="overflow-hidden rounded-2xl border border-brd-0 bg-bg-1">
             <div className="h-1 bg-nok" />
-            <div className="flex flex-col gap-5 p-5 md:flex-row md:items-start md:justify-between md:p-6">
-              <div className="min-w-0">
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.9px] text-nok">
-                  Item não conforme
-                </div>
-                <h1 className="text-balance text-2xl font-semibold leading-tight text-txt">
-                  {item.titulo}
-                </h1>
-                <p className="mt-2 text-sm text-txt-2">
-                  {plannedFvs.subservico} · {work.nome} · {environment.nome}
-                </p>
-              </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-2 md:justify-end">
-                <StatusBadge status={nc.status} size="md" />
-                <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${
-                  nc.prioridade === 'alta'
-                    ? 'border-nok/20 bg-nok-bg text-nok'
-                    : nc.prioridade === 'media'
-                      ? 'border-warn/20 bg-warn-bg text-warn'
-                      : 'border-brd-1 bg-bg-0 text-txt-2'
-                }`}>
-                  <ShieldCheck size={13} />
-                  Prioridade {priorityLabel(nc.prioridade).toLocaleLowerCase('pt-BR')}
-                </span>
-              </div>
+            <div className="p-5 md:p-6">
+              <PageHeader
+                kicker={<span className="text-nok">Item não conforme</span>}
+                title={item.titulo}
+                description={`${plannedFvs.subservico} · ${work.nome} · ${environment.nome}`}
+                actions={
+                  <>
+                    <StatusBadge status={nc.status} size="md" />
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${
+                      nc.prioridade === 'alta'
+                        ? 'border-nok/20 bg-nok-bg text-nok'
+                        : nc.prioridade === 'media'
+                          ? 'border-warn/20 bg-warn-bg text-warn'
+                          : 'border-brd-1 bg-bg-0 text-txt-2'
+                    }`}>
+                      <ShieldCheck size={13} />
+                      Prioridade {priorityLabel(nc.prioridade).toLocaleLowerCase('pt-BR')}
+                    </span>
+                  </>
+                }
+              />
             </div>
             <div className="grid border-t border-brd-0 bg-bg-0 sm:grid-cols-3">
               <HeroFact icon={<CalendarDays size={16} />} label="Prazo" value={deadline.label} valueClassName={deadline.className} />

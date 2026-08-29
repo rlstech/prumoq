@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Plus, ShieldCheck, HardHat, KeyRound, Save } from 'lucide-react';
+import { Plus, ShieldCheck, HardHat, KeyRound, Save } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import DataTable, { Column } from '@/components/ui/DataTable';
+import { FilterBar, SearchField } from '@/components/ui/FilterBar';
 import { useToast } from '@/components/ui/Toast';
 import { createUsuario, sendPasswordRecovery, updateUsuario } from './actions';
 
@@ -111,99 +113,77 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
     setIsSendingRecovery(false);
   };
 
+  const columns: Column<any>[] = [
+    {
+      header: 'Nome',
+      cell: user => (
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brl)] text-[11px] font-semibold text-[var(--br)]">
+            {user.nome ? (user.nome.split(' ').length > 1 ? user.nome.split(' ')[0][0] + user.nome.split(' ').pop()[0] : user.nome.slice(0, 2)).toUpperCase() : '?'}
+          </div>
+          <div>
+            <div className="text-[13px] font-medium text-txt">{user.nome}</div>
+            <div className="text-xs text-txt-2">{user.cargo || '-'}</div>
+          </div>
+        </div>
+      ),
+    },
+    { header: 'E-mail', cell: user => <span className="text-[13px] text-txt">{user.email || '-'}</span> },
+    { header: 'Perfil', cell: user => getPerfilBadge(user.perfil) },
+    {
+      header: 'Obras com acesso',
+      cell: user => user.perfil === 'admin' ? (
+        <span className="text-xs text-txt-3">Todas as obras</span>
+      ) : user.obras_acesso && user.obras_acesso.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {user.obras_acesso.map((o: any, idx: number) => (
+            <span key={idx} className="rounded-full bg-pg-bg px-1.5 py-0.5 text-[10px] font-medium text-pg">{o.nome || o}</span>
+          ))}
+        </div>
+      ) : user.obras?.nome ? (
+        <span className="rounded-full bg-pg-bg px-1.5 py-0.5 text-[10px] font-medium text-pg">{user.obras.nome}</span>
+      ) : (
+        <span className="text-xs text-txt-3">—</span>
+      ),
+    },
+    {
+      header: 'Último acesso',
+      cell: user => (
+        <span className="text-[13px] text-txt">
+          {user.ultimo_acesso ? new Date(user.ultimo_acesso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+        </span>
+      ),
+    },
+    {
+      header: '',
+      align: 'right',
+      cell: user => (
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" onClick={() => setRecoveryUser(user)} className="prumo-row-button">
+            <KeyRound size={12} /> Recuperar senha
+          </button>
+          <button type="button" onClick={() => openEditUserModal(user)} className="prumo-row-button">Editar</button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        <div>
-          <h2 className="text-xl font-semibold text-txt">Usuários</h2>
-          <p className="text-[13px] text-txt-2">{initialUsers.length} usuários ativos</p>
-        </div>
-        <div className="flex gap-3 items-center">
-          <div className="relative w-full sm:w-56">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-3" />
-            <input 
-              type="text"
-              placeholder="Buscar usuário..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-[7px] border border-brd-1 rounded-lg text-[13px] bg-bg-1 focus:outline-none focus:border-[var(--br)]"
-            />
-          </div>
-          <button 
-            onClick={openNewUserModal}
-            className="flex items-center gap-1.5 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-[7px] rounded-lg text-[13px] font-medium transition-colors whitespace-nowrap"
-          >
-            <Plus size={14} /> Novo usuário
-          </button>
-        </div>
-      </div>
+      <FilterBar resultLabel={`${filtered.length} de ${initialUsers.length} pessoas`}>
+        <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Buscar por nome ou e-mail" />
+        <button type="button" onClick={openNewUserModal} className="prumo-primary-button ml-auto">
+          <Plus size={15} /> Novo usuário
+        </button>
+      </FilterBar>
 
-      <div className="bg-bg-1 border border-brd-0 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-bg-0 border-b border-brd-0">
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Nome</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">E-mail</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Perfil</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Obras com acesso</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Último acesso</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length ? filtered.map((user: any) => (
-                <tr key={user.id} className="border-b border-brd-0 last:border-0 hover:bg-bg-0">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[var(--brl)] text-[var(--br)] flex items-center justify-center text-[11px] font-semibold shrink-0">
-                        {user.nome ? (user.nome.split(' ').length > 1 ? user.nome.split(' ')[0][0] + user.nome.split(' ').pop()[0] : user.nome.slice(0,2)).toUpperCase() : '?'}
-                      </div>
-                      <div>
-                        <div className="font-medium text-[13px] text-txt">{user.nome}</div>
-                        <div className="text-xs text-txt-2">{user.cargo || '-'}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-[13px] text-txt">{user.email || '-'}</td>
-                  <td className="py-3 px-4">{getPerfilBadge(user.perfil)}</td>
-                  <td className="py-3 px-4">
-                    {user.perfil === 'admin' ? (
-                      <span className="text-xs text-txt-3">Todas as obras</span>
-                    ) : user.obras_acesso && user.obras_acesso.length > 0 ? (
-                      <div className="flex gap-1 flex-wrap">
-                        {user.obras_acesso.map((o: any, idx: number) => (
-                          <span key={idx} className="text-[10px] px-1.5 py-0.5 rounded-full bg-pg-bg text-pg font-medium">{o.nome || o}</span>
-                        ))}
-                      </div>
-                    ) : user.obras?.nome ? (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-pg-bg text-pg font-medium">{user.obras.nome}</span>
-                    ) : (
-                      <span className="text-xs text-txt-3">—</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-[13px] text-txt">{user.ultimo_acesso ? new Date(user.ultimo_acesso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setRecoveryUser(user)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors whitespace-nowrap"
-                      >
-                        <KeyRound size={12} />
-                        Recuperar senha
-                      </button>
-                      <button onClick={() => openEditUserModal(user)} className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors">Editar</button>
-                    </div>
-                  </td>
-                </tr>
-              )) : (
-                <tr><td colSpan={6} className="py-8 text-center text-sm text-txt-3">Nenhum usuário encontrado.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        data={filtered}
+        columns={columns}
+        rowKey={user => user.id}
+        emptyMessage="Nenhuma pessoa neste recorte"
+        emptyHint="Ajuste a busca para ver as pessoas cadastradas."
+      />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedUser ? "Editar Usuário" : "Novo Usuário"}>
         <form onSubmit={handleSave} className="flex flex-col gap-4 p-2">
@@ -282,10 +262,10 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
           )}
 
           <div className="flex gap-3 justify-end pt-3 border-t border-brd-0 mt-2">
-             <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">
+             <button type="button" onClick={() => setIsModalOpen(false)} className="prumo-secondary-button">
                Cancelar
              </button>
-             <button type="submit" disabled={isLoading} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
+             <button type="submit" disabled={isLoading} className="prumo-primary-button disabled:opacity-60">
                {isLoading ? 'Salvando...' : <><Save size={16} /> Salvar Usuário</>}
              </button>
           </div>

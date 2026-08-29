@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
-import { HardHat, Search, Plus, Save, XCircle } from 'lucide-react';
+import { HardHat, Plus, Save, XCircle } from 'lucide-react';
+import { FilterBar, SearchField } from '@/components/ui/FilterBar';
 import { createEquipe, updateEquipe } from './actions';
 
 export default function EquipesClient({
@@ -103,7 +104,7 @@ export default function EquipesClient({
          <div className="font-medium">{eq.responsavel || '-'}</div>
          <div className="text-txt-3">{eq.telefone || '-'}</div>
        </div>
-       <button className="px-3 py-1.5 bg-bg-2 hover:bg-brd-0 rounded-lg text-xs font-medium text-txt-2 transition-colors shrink-0">
+       <button type="button" onClick={e => { e.stopPropagation(); openEditEquipeModal(eq); }} className="prumo-row-button shrink-0">
          Editar
        </button>
     </div>
@@ -111,25 +112,12 @@ export default function EquipesClient({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-brd-0 pb-6 mb-6">
-        <div className="relative w-full sm:w-80">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-3" />
-          <input 
-            type="text"
-            placeholder="Buscar equipe..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-brd-1 rounded-lg text-sm bg-bg-1 focus:outline-none focus:border-[var(--br)]"
-          />
-        </div>
-
-        <button 
-          onClick={openNewEquipeModal}
-          className="flex items-center gap-2 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-        >
-          <Plus size={16} /> Nova Equipe
+      <FilterBar>
+        <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Buscar por equipe ou especialidade" />
+        <button type="button" onClick={openNewEquipeModal} className="prumo-primary-button ml-auto">
+          <Plus size={15} /> Nova equipe
         </button>
-      </div>
+      </FilterBar>
 
       {loadError && (
         <div role="alert" className="mb-5 flex items-center gap-3 rounded-lg border border-nok/20 bg-nok-bg px-4 py-3 text-sm font-medium text-nok">
@@ -217,8 +205,8 @@ export default function EquipesClient({
             </div>
 
             <div className="flex gap-3 justify-end pt-4 border-t border-brd-0 mt-2">
-               <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">Cancelar</button>
-               <button type="submit" disabled={isLoading} className="flex items-center gap-2 px-4 py-2 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
+               <button type="button" onClick={() => setModalOpen(false)} className="prumo-secondary-button">Cancelar</button>
+               <button type="submit" disabled={isLoading} className="prumo-primary-button disabled:opacity-60">
                  {isLoading ? 'Salvando...' : <><Save size={16} /> Salvar Equipe</>}
                </button>
             </div>

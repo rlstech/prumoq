@@ -1,9 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/context';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
+import ProgressBar from '@/components/ui/ProgressBar';
 import ObraDetailClient from './ObraDetailClient';
+
+function formatarData(value: string | null | undefined): string {
+  if (!value) return '';
+  return value.slice(0, 10).split('-').reverse().join('/');
+}
 
 export default async function ObraDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -138,6 +147,8 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
   const availableEquipes: any[] = allEquipesList.filter((e: any) => !linkedIds.includes(e.id));
 
   const typedKpi = kpi as any;
+  const totalFvs = Number(typedKpi?.total_fvs ?? 0);
+  const progressoFvs = totalFvs > 0 ? Math.round((Number(typedKpi?.fvs_concluidas ?? 0) / totalFvs) * 100) : 0;
 
   return (
     <>
@@ -150,34 +161,83 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
 
       <div className="prumo-page">
         <div className="prumo-page-inner">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-xl font-semibold text-txt tracking-tight">{typedObra.nome}</h1>
-            <StatusBadge status={typedObra.status} />
+        <PageHeader
+          title={typedObra.nome}
+          description={`${empresaNome} · ${typedObra.endereco || typedObra.municipio}${typedObra.uf ? `-${typedObra.uf}` : ''}${typedObra.eng_responsavel ? ` · ${typedObra.eng_responsavel}${typedObra.crea_cau ? ` (${typedObra.crea_cau})` : ''}` : ''}`}
+          actions={<StatusBadge status={typedObra.status} />}
+        />
+
+        {/* Ficha resumida: os dados que respondem "que obra é esta" sem abrir nada. */}
+        <div className="prumo-panel flex flex-col overflow-hidden lg:flex-row">
+          {[
+            {
+              rotulo: 'Engenheiro responsável',
+              valor: typedObra.eng_responsavel || '—',
+              apoio: typedObra.crea_cau || 'sem CREA/CAU informado',
+            },
+            {
+              rotulo: 'Prazo',
+              valor: formatarData(typedObra.data_inicio_prev) || '—',
+              apoio: typedObra.data_termino_prev ? `término previsto ${formatarData(typedObra.data_termino_prev)}` : 'sem término previsto',
+            },
+            {
+              rotulo: 'Empresa',
+              valor: empresaNome || '—',
+              apoio: `${typedObra.municipio || 'Local não informado'}${typedObra.uf ? `-${typedObra.uf}` : ''}`,
+            },
+          ].map(campo => (
+            <div key={campo.rotulo} className="flex-1 border-b border-brd-0 px-[18px] py-3.5 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-txt-3">{campo.rotulo}</div>
+              <div className="mt-1.5 truncate text-sm font-medium text-txt">{campo.valor}</div>
+              <div className="mt-0.5 truncate text-[11.5px] text-txt-3">{campo.apoio}</div>
+            </div>
+          ))}
+          <div className="w-full shrink-0 px-[18px] py-3.5 lg:w-[300px] lg:border-l lg:border-brd-0">
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-txt-3">Progresso das FVS</div>
+            <div className="mt-2.5 flex items-center gap-2.5">
+              <ProgressBar value={progressoFvs} variant={progressoFvs === 100 ? 'ok' : 'brand'} />
+              <span className="prumo-metric shrink-0 text-[15px] font-semibold text-txt">{progressoFvs}%</span>
+            </div>
+            <div className="mt-1 text-[11.5px] text-txt-3">
+              {typedKpi?.fvs_concluidas || 0} de {typedKpi?.total_fvs || 0} fichas conformes
+            </div>
           </div>
-          <p className="text-[13px] text-txt-2">
-            {empresaNome} · {typedObra.endereco || typedObra.municipio}{typedObra.uf ? `-${typedObra.uf}` : ''}
-            {typedObra.eng_responsavel && <> · {typedObra.eng_responsavel}{typedObra.crea_cau ? ` (${typedObra.crea_cau})` : ''}</>}
-          </p>
         </div>
 
-        {/* KPIs com border-left */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-[var(--br)] rounded-xl p-[14px_16px]">
-            <div className="text-2xl font-semibold text-[var(--br)]">{typedKpi?.total_ambientes || 0}</div>
-            <div className="text-xs text-txt-2">Ambientes</div>
-          </div>
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-pg rounded-xl p-[14px_16px]">
-            <div className="text-2xl font-semibold text-pg">{typedKpi?.total_fvs || 0}</div>
-            <div className="text-xs text-txt-2">FVS planejadas</div>
-          </div>
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-ok rounded-xl p-[14px_16px]">
-            <div className="text-2xl font-semibold text-ok">{typedKpi?.fvs_concluidas || 0}</div>
-            <div className="text-xs text-txt-2">Concluídas</div>
-          </div>
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-nok rounded-xl p-[14px_16px]">
-            <div className="text-2xl font-semibold text-nok">{typedKpi?.ncs_abertas || 0}</div>
-            <div className="text-xs text-txt-2">NC abertas</div>
+        {/* Trilha do fluxo: cada etapa alimenta a seguinte. */}
+        <div>
+          <h2 className="prumo-section-title mb-3">
+            <span>Fluxo da obra</span>
+          </h2>
+          <div className="flex flex-wrap items-stretch gap-2">
+            {[
+              { rotulo: 'Ambientes', valor: typedKpi?.total_ambientes || 0, apoio: 'onde a inspeção acontece', cor: 'text-[var(--br)]' },
+              { rotulo: 'FVS planejadas', valor: typedKpi?.total_fvs || 0, apoio: 'fichas associadas', cor: 'text-[var(--br)]' },
+              { rotulo: 'Conformes', valor: typedKpi?.fvs_concluidas || 0, apoio: 'liberam medição', cor: 'text-ok' },
+              { rotulo: 'NC abertas', valor: typedKpi?.ncs_abertas || 0, apoio: 'em tratativa', cor: 'text-nok', href: '/nc' },
+            ].map((etapa, idx, todas) => {
+              const conteudo = (
+                <>
+                  <div className="text-[12.5px] font-semibold text-txt">{etapa.rotulo}</div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className={`prumo-metric text-[22px] font-semibold leading-none ${etapa.cor}`}>{etapa.valor}</span>
+                    <span className="truncate text-[11.5px] text-txt-3">{etapa.apoio}</span>
+                  </div>
+                </>
+              );
+              return (
+                <div key={etapa.rotulo} className="flex min-w-[190px] flex-1 items-center gap-2">
+                  {etapa.href ? (
+                    <Link href={etapa.href} className="prumo-panel flex-1 px-4 py-3.5 transition-shadow hover:shadow-float">
+                      {conteudo}
+                    </Link>
+                  ) : (
+                    <div className="prumo-panel flex-1 px-4 py-3.5">{conteudo}</div>
+                  )}
+                  {idx < todas.length - 1 ? <ArrowRight size={16} className="shrink-0 text-txt-3" aria-hidden="true" /> : null}
+                </div>
+              );
+            })}
           </div>
         </div>
 

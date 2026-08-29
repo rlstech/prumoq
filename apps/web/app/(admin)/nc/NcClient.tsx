@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
+import Tabs from '@/components/ui/Tabs';
+import { FilterBar, SearchField, SelectFilter } from '@/components/ui/FilterBar';
 
 export interface NcListRecord {
   id: string;
@@ -61,7 +62,8 @@ export default function NcClient({ initialData, page, hasNextPage }: { initialDa
     return initialData.filter(nc => {
       const workName = nc.fvs_planejadas?.ambientes?.obras?.nome;
       if (obraFilter !== 'Todas' && workName !== obraFilter) return false;
-      if (statusFilter === 'Abertas' && !['aberta', 'em_correcao'].includes(nc.status)) return false;
+      if (statusFilter === 'Abertas' && nc.status !== 'aberta') return false;
+      if (statusFilter === 'Em correção' && nc.status !== 'em_correcao') return false;
       if (statusFilter === 'Resolvidas' && nc.status !== 'resolvida') return false;
       if (statusFilter === 'Canceladas' && nc.status !== 'cancelada') return false;
       if (!query) return true;
@@ -77,44 +79,39 @@ export default function NcClient({ initialData, page, hasNextPage }: { initialDa
 
   return (
     <>
-      <div className="mb-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-          <div className="relative min-w-[220px] flex-1 sm:w-72 sm:flex-initial">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-3" />
-            <input
-              type="search"
-              placeholder="Buscar descrição, serviço ou obra"
-              value={searchTerm}
-              onChange={event => setSearchTerm(event.target.value)}
-              className="w-full rounded-lg border border-brd-1 bg-bg-1 py-[7px] pl-9 pr-4 text-[13px] focus:border-[var(--br)] focus:outline-none"
-            />
-          </div>
-          <select
+      {/* Sem contagem nas abas: a lista chega paginada, então um número aqui
+          descreveria só a página atual — não o total do recorte. */}
+      <Tabs
+        tabs={[
+          { id: 'Todas', label: 'Todas' },
+          { id: 'Abertas', label: 'Abertas' },
+          { id: 'Em correção', label: 'Em correção' },
+          { id: 'Resolvidas', label: 'Resolvidas' },
+          { id: 'Canceladas', label: 'Canceladas' },
+        ]}
+        value={statusFilter}
+        onChange={setStatusFilter}
+        ariaLabel="Situação das não conformidades"
+      />
+
+      <div className="mt-4">
+        <FilterBar resultLabel={`${filtered.length} nesta página`}>
+          <SearchField
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar descrição, serviço ou obra"
+            className="w-full sm:w-[288px]"
+          />
+          <SelectFilter
+            label="Obra:"
             value={obraFilter}
-            onChange={event => setObraFilter(event.target.value)}
-            className="rounded-lg border border-brd-1 bg-bg-1 px-3 py-[7px] text-[13px] focus:border-[var(--br)] focus:outline-none"
-          >
-            <option value="Todas">Todas as obras</option>
-            {obras.map(obra => <option key={obra} value={obra}>{obra}</option>)}
-          </select>
-          <select
-            value={statusFilter}
-            onChange={event => setStatusFilter(event.target.value)}
-            className="rounded-lg border border-brd-1 bg-bg-1 px-3 py-[7px] text-[13px] focus:border-[var(--br)] focus:outline-none"
-          >
-            <option value="Todas">Todos os status</option>
-            <option value="Abertas">Abertas</option>
-            <option value="Resolvidas">Resolvidas</option>
-            <option value="Canceladas">Canceladas</option>
-          </select>
-        </div>
+            onChange={setObraFilter}
+            options={[{ value: 'Todas', label: 'Todas' }, ...obras.map(obra => ({ value: obra, label: obra }))]}
+          />
+        </FilterBar>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-brd-0 bg-bg-1">
-        <div className="flex items-center justify-between border-b border-brd-0 px-5 py-3">
-          <h3 className="text-[14px] font-semibold text-txt">Todas as não conformidades</h3>
-          <span className="font-mono text-xs text-txt-3">{filtered.length}</span>
-        </div>
+      <div className="prumo-panel overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>

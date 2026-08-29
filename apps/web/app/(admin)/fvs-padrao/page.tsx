@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import FvsPadraoClient from './FvsPadraoClient';
 import KPICard from '@/components/ui/KPICard';
 import { ClipboardList } from 'lucide-react';
@@ -44,10 +45,14 @@ export default async function FvsPadraoPage({ searchParams }: { searchParams?: {
 
   return (
     <>
-      <Header breadcrumbs={[{ label: 'FVS Padrão (Biblioteca)' }]} />
-      
+      <Header breadcrumbs={[{ label: 'FVS padrão' }]} />
+
       <div className="prumo-page">
         <div className="prumo-page-inner">
+        <PageHeader
+          title="FVS padrão"
+          description="Biblioteca de fichas de verificação de serviço. A revisão vigente é capturada no momento em que a FVS é associada a um ambiente."
+        />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <KPICard title="Total Cadastradas" value={contagens.total} icon={<ClipboardList size={20} />} />
           <KPICard title="Ativas" value={contagens.ativas} colorVariant="ok" />

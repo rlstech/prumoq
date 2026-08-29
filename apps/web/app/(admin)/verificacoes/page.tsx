@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import VerificacoesClient from './VerificacoesClient';
 import { pageFromSearchParam, pageRange, pageSlice } from '@/lib/pagination';
 import { getAuthContext } from '@/lib/auth/context';
@@ -21,9 +22,13 @@ export default async function VerificacoesPage({ searchParams }: { searchParams?
 
   return (
     <>
-      <Header breadcrumbs={[{ label: 'Verificações' }]} />
+      <Header breadcrumbs={[{ label: 'Vistorias' }]} />
       <div className="prumo-page">
         <div className="prumo-page-inner">
+          <PageHeader
+            title="Vistorias"
+            description="Registro de campo enviado pelos inspetores. Uma vistoria não conforme abre automaticamente as não conformidades do item reprovado."
+          />
           <VerificacoesClient initialData={rows} page={page} hasNextPage={hasNextPage} />
         </div>
       </div>
