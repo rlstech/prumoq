@@ -94,7 +94,7 @@ import { approveReinspecao, createNc, reprovarReinspecao } from '../../../../../
 import { resolveNcFinancialImpact } from '../../../../../../../../../../services/nc-finance.service';
 import { recordApprovedAdvances } from '../../../../../../../../../../services/measurement.service';
 import { uuid } from '../../../../../../../../../../lib/uuid';
-import { signatureStore } from '../../../../../../../../../../lib/signature-store';
+import { ensureDefaultSignature, signatureStore } from '../../../../../../../../../../lib/signature-store';
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function NovaVerificacaoScreen() {
@@ -110,7 +110,7 @@ export default function NovaVerificacaoScreen() {
     error: usuarioError,
   } = useQuery<UsuarioRow>(
     userId
-      ? `SELECT id, cliente_id, nome, cargo, perfil FROM usuarios WHERE id = ? LIMIT 1`
+      ? `SELECT id, cliente_id, nome, cargo, perfil, assinatura_padrao_url FROM usuarios WHERE id = ? LIMIT 1`
       : `SELECT 1 WHERE 0`,
     userId ? [userId] : [],
   );
@@ -330,10 +330,10 @@ export default function NovaVerificacaoScreen() {
   // offline. It is cloned at save time; this value is only the form preview.
   useEffect(() => {
     if (!userId || signaturePath) return;
-    void signatureStore.get(userId).then(path => {
+    void ensureDefaultSignature(userId, usuario?.assinatura_padrao_url).then(path => {
       if (path) updateState({ signaturePath: path });
     }).catch(() => {});
-  }, [signaturePath, updateState, userId]);
+  }, [signaturePath, updateState, usuario?.assinatura_padrao_url, userId]);
 
   const {
     addFromCamera,
@@ -686,6 +686,7 @@ export default function NovaVerificacaoScreen() {
         }));
       }
 
+      await ensureDefaultSignature(inspectorId, usuario?.assinatura_padrao_url);
       const verificationSignature = await signatureStore.snapshot(inspectorId, verificacaoId);
       if (!verificationSignature) throw new Error('Cadastre sua assinatura padrão no Perfil antes de concluir.');
 
@@ -716,7 +717,7 @@ export default function NovaVerificacaoScreen() {
         const conclusionNumber = (conclusionCountRows[0]?.count ?? 0) + 1;
         const conclusionId = uuid();
         const conclusionSignature = await signatureStore.snapshot(inspectorId, conclusionId);
-        if (!conclusionSignature) throw new Error('A assinatura padrão não está disponível neste dispositivo.');
+        if (!conclusionSignature) throw new Error('Cadastre sua assinatura padrão no Perfil antes de concluir.');
         await db.execute(
           `INSERT INTO fvs_conclusoes
             (id, cliente_id, fvs_planejada_id, verificacao_id, inspetor_id, numero_conclusao,

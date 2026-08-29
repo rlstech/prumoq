@@ -32,6 +32,12 @@ export const signatureStore: SignatureStore = {
     await FileSystem.copyAsync({ from: source, to: destination });
     return { uri: destination };
   },
+  async restoreFromRemote(userId, downloadUri) {
+    const destination = defaultPath(userId);
+    await FileSystem.makeDirectoryAsync(`${ROOT}${encodeURIComponent(userId)}/`, { intermediates: true });
+    const result = await FileSystem.downloadAsync(downloadUri, destination);
+    return result.status === 200 ? destination : null;
+  },
   async clear(userId) {
     await FileSystem.deleteAsync(`${ROOT}${encodeURIComponent(userId)}/`, { idempotent: true });
   },

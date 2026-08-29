@@ -50,7 +50,7 @@ import {
 import { db } from '../../../../lib/powersync';
 import { supabase } from '../../../../lib/supabase';
 import { now, today, uuid } from '../../../../lib/uuid';
-import { signatureStore } from '../../../../lib/signature-store';
+import { ensureDefaultSignature, signatureStore } from '../../../../lib/signature-store';
 
 type Work = { id: string; nome: string; empresa_id: string };
 type Team = { id: string; nome: string; obra_id: string };
@@ -130,11 +130,6 @@ export default function NewEvaluationScreen() {
       .catch(err => console.warn('[NovaAvaliacao] getUser failed', err));
   }, []);
 
-  useEffect(() => {
-    if (!userId || signature) return;
-    void signatureStore.get(userId).then(path => { if (path) setSignature(path); }).catch(() => {});
-  }, [signature, userId]);
-
   // ── Queries ─────────────────────────────────────────────────────────────────
   // The SQL text below is matched fragment-by-fragment by powersync-web-shim.ts
   // so the PWA can serve the same screens — keep the wording in sync with it.
@@ -191,11 +186,19 @@ export default function NewEvaluationScreen() {
     'SELECT id,titulo,peso,ordem FROM modelo_avaliacao_empreiteiro_criterios WHERE revisao_id=? ORDER BY ordem',
     [selectedModel?.revisao_id ?? ''],
   );
-  const { data: identity } = useQuery<{ cliente_id: string; nome: string; perfil: string }>(
-    'SELECT cliente_id, nome, perfil FROM usuarios WHERE id = ? LIMIT 1',
+  const { data: identity } = useQuery<{ cliente_id: string; nome: string; perfil: string; assinatura_padrao_url: string | null }>(
+    'SELECT cliente_id, nome, perfil, assinatura_padrao_url FROM usuarios WHERE id = ? LIMIT 1',
     [userId ?? ''],
   );
   const profile = identity[0]?.perfil;
+
+  useEffect(() => {
+    if (!userId || signature) return;
+    void ensureDefaultSignature(userId, identity[0]?.assinatura_padrao_url).then(path => {
+      if (path) setSignature(path);
+    }).catch(() => {});
+  }, [identity, signature, userId]);
+
   const canManageExisting = !!existing && (existing.avaliador_id === userId || profile === 'admin' || profile === 'gestor');
   const needsReopen = reopenStatus === 'concluida' && canManageExisting;
 
@@ -501,6 +504,7 @@ export default function NewEvaluationScreen() {
       // The rascunho → concluida transition is what makes the server trigger
       // recompute pontos/percentual and stamp concluida_em — same for a first
       // conclusion and a reconclusion after reabertura.
+      await ensureDefaultSignature(userId, identity[0]?.assinatura_padrao_url);
       const signatureSnapshot = await signatureStore.snapshot(userId, assessmentId);
       if (!signatureSnapshot) throw new Error('Cadastre sua assinatura padrão no Perfil antes de concluir.');
       await db.execute(

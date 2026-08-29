@@ -56,6 +56,13 @@ export const signatureStore: SignatureStore = {
     const blob = await storedBlob(userId);
     return blob ? { uri: URL.createObjectURL(blob.slice(0, blob.size, 'image/png')) } : null;
   },
+  async restoreFromRemote(userId, downloadUri) {
+    try {
+      return await this.save(userId, downloadUri);
+    } catch {
+      return null;
+    }
+  },
   async clear(userId) {
     const database = await openDatabase();
     const transaction = database.transaction(STORE, 'readwrite');
