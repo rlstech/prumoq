@@ -2,7 +2,8 @@ import {
   FVS_REPORT_CSS,
   fvsPhotoPlaceholderDataUrl,
   renderFvsReportBody,
-  resolveFvsReportPhotoSource,
+  resolveFvsReportPhotoFromKey,
+  resolveSignedMediaUrl,
 } from '@prumoq/shared';
 import type {
   FvsPrintableConclusion,
@@ -30,16 +31,12 @@ type PhotoRow = {
 
 const REPORT_PAGE_SIZE = 1000;
 const VERIFICATION_ID_BATCH_SIZE = 100;
-const IMAGE_READY_TIMEOUT_MS = 3_000;
+const IMAGE_READY_TIMEOUT_MS = 15_000;
 
-function resolveR2(key: string | null | undefined, signed: Record<string, string>): string | null {
-  if (!key) return null;
-  // Persisted values are media keys. Protocol URLs are legacy/untrusted values
-  // and must not be rendered directly in the printable report.
-  if (key.startsWith('http') || key.startsWith('data:')) return null;
-  if (key.startsWith('blob:') || key.startsWith('pending:')) return null;
-  return signed[key] ?? null;
-}
+// Persisted values are media keys. Protocol URLs are legacy/untrusted values
+// and must not be rendered directly in the printable report —
+// `resolveSignedMediaUrl` enforces that.
+const resolveR2 = resolveSignedMediaUrl;
 
 async function waitForPrintableImage(
   image: HTMLImageElement,
@@ -48,17 +45,23 @@ async function waitForPrintableImage(
   if (image.complete && image.naturalWidth > 0) return;
 
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const loaded = await Promise.race([
+  // 'timeout' must stay distinct from 'failed': a slow image is still a good
+  // image, and replacing its src would drop a photo that was about to render.
+  const outcome = await Promise.race([
     image
       .decode()
-      .then(() => true)
-      .catch(() => image.complete && image.naturalWidth > 0),
-    new Promise<boolean>((resolve) => {
-      timeoutId = setTimeout(() => resolve(false), timeoutMs);
+      .then(() => 'loaded' as const)
+      .catch(() =>
+        image.complete && image.naturalWidth > 0
+          ? ('loaded' as const)
+          : ('failed' as const),
+      ),
+    new Promise<'timeout'>((resolve) => {
+      timeoutId = setTimeout(() => resolve('timeout'), timeoutMs);
     }),
   ]);
   if (timeoutId) clearTimeout(timeoutId);
-  if (loaded || image.dataset.pdfKind !== 'photo') return;
+  if (outcome !== 'failed' || image.dataset.pdfKind !== 'photo') return;
 
   image.src = fvsPhotoPlaceholderDataUrl('expired');
   await image.decode().catch(() => undefined);
@@ -203,7 +206,7 @@ export default function FvsPrintPage() {
 
         const photosMap = new Map<string, FvsPrintablePhoto[]>();
         for (const photo of photoRows) {
-          const source = resolveFvsReportPhotoSource(resolveR2(photo.r2_key, signedMedia) ?? '', '');
+          const source = resolveFvsReportPhotoFromKey(photo.r2_key, signedMedia);
           if (!source) continue;
           const photos = photosMap.get(photo.verificacao_id) ?? [];
           photos.push({

@@ -4,6 +4,7 @@ import {
   buildFvsVerificationMatrix,
   FVS_MATRIX_ROWS_PER_PAGE,
   renderFvsReportsHtml,
+  resolveFvsReportPhotoFromKey,
   resolveFvsReportPhotoSource,
 } from '@prumoq/shared';
 import type {
@@ -321,4 +322,48 @@ test('trata URLs persistidas como referências legadas indisponíveis', () => {
 
   assert.equal(source?.availability, 'expired');
   assert.match(decodeURIComponent(source?.url ?? ''), /Imagem não sincronizada/);
+});
+
+test('renderiza foto assinada a partir da chave do R2', () => {
+  const key = 'fotos/cliente/usuario/2026/08/evidencia.jpg';
+  const signedUrl =
+    'https://acct123.r2.cloudflarestorage.com/prumoq-fotos/fotos/cliente/usuario/2026/08/evidencia.jpg?X-Amz-Signature=abc';
+
+  // Aceita tanto Record (PWA mobile) quanto Map (painel web).
+  for (const signed of [
+    { [key]: signedUrl },
+    new Map([[key, signedUrl]]),
+  ]) {
+    const source = resolveFvsReportPhotoFromKey(key, signed);
+    assert.deepEqual(source, { url: signedUrl, availability: 'available' });
+  }
+
+  const current = verification(1);
+  current.fotos = [
+    {
+      id: 'signed-photo',
+      r2_url: resolveFvsReportPhotoFromKey(key, { [key]: signedUrl })!.url,
+      ordem: 0,
+      availability: 'available',
+    },
+  ];
+  const html = renderFvsReportsHtml([report([current])]);
+
+  assert.match(html, /data-pdf-kind="photo"/);
+  assert.doesNotMatch(html, /Anexos não sincronizados/);
+});
+
+test('classifica chaves sem URL assinada sem inventar uma origem', () => {
+  // Comportamento herdado: chave válida ausente do mapa (ex.: presign parcial)
+  // ainda vira uma URL relativa que não resolve. Fixado aqui para que a
+  // mudança seja deliberada caso se decida tratá-la como indisponível.
+  const missing = resolveFvsReportPhotoFromKey('fotos/cliente/foto.jpg', {});
+  assert.equal(missing?.availability, 'available');
+  assert.equal(missing?.url, '/fotos/cliente/foto.jpg');
+
+  assert.equal(resolveFvsReportPhotoFromKey('pending:file:///tmp/a.jpg', {})?.availability, 'pending');
+  assert.equal(resolveFvsReportPhotoFromKey('blob:http://x/y', {})?.availability, 'expired');
+  // URL assinada nunca deve ser reprocessada como chave (regressão de 5da3c1a).
+  assert.equal(resolveFvsReportPhotoFromKey('https://signed.example/a.jpg', {})?.availability, 'expired');
+  assert.equal(resolveFvsReportPhotoFromKey(null, {}), null);
 });

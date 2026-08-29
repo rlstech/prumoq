@@ -153,6 +153,44 @@ export function resolveFvsReportPhotoSource(
   };
 }
 
+/** Presigned download URLs keyed by R2 object key, as returned by `r2-presign`. */
+export type SignedMediaLookup = Map<string, string> | Record<string, string>;
+
+/**
+ * Looks up the presigned URL for a stored media key.
+ *
+ * Returns null for anything that is not a plain R2 key — protocol URLs are
+ * legacy/untrusted values and unsynced media (`pending:`/`blob:`) has no
+ * object to sign yet.
+ */
+export function resolveSignedMediaUrl(
+  key: string | null | undefined,
+  signed: SignedMediaLookup,
+): string | null {
+  if (!key) return null;
+  if (key.startsWith('http') || key.startsWith('data:')) return null;
+  if (key.startsWith('blob:') || key.startsWith('pending:')) return null;
+  return (signed instanceof Map ? signed.get(key) : signed[key]) ?? null;
+}
+
+/**
+ * Resolves a stored photo key into a renderable source.
+ *
+ * Signed URLs are used as-is; only unsigned keys fall through to
+ * `resolveFvsReportPhotoSource`, whose job is to *classify* them as
+ * pending/expired. Feeding an already-signed `https://` URL into that
+ * classifier makes it report `expired` and drops the photo, so every report
+ * surface must go through this helper rather than combining the two by hand.
+ */
+export function resolveFvsReportPhotoFromKey(
+  r2Key: string | null | undefined,
+  signed: SignedMediaLookup,
+): FvsResolvedPhotoSource | null {
+  const signedUrl = resolveSignedMediaUrl(r2Key, signed);
+  if (signedUrl) return { url: signedUrl, availability: 'available' };
+  return resolveFvsReportPhotoSource(r2Key, '');
+}
+
 function normalizedItemKey(item: FvsPrintableItem): string {
   if (item.fvs_padrao_item_id) return `item:${item.fvs_padrao_item_id}`;
   return `legacy:${item.ordem}:${item.titulo.trim().toLocaleLowerCase('pt-BR')}`;

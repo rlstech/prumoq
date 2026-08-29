@@ -81,6 +81,7 @@ import {
 import { db } from '../../../../../../../../../../lib/powersync';
 import { alertInfo } from '../../../../../../../../../../lib/platform-alert';
 import { supabase } from '../../../../../../../../../../lib/supabase';
+import { draftStore } from '../../../../../../../../../../lib/verification/draftStore';
 import {
   makeDraftId,
   VerificationMode,
@@ -741,7 +742,16 @@ export default function NovaVerificacaoScreen() {
       }
 
       if (draftContext) {
-        try { await discardDraft(); } catch { /* saved record takes precedence */ }
+        try {
+          await discardDraft();
+          // O draftId inclui o modo ('verification'/'reinspection'): limpar
+          // também o rascunho do outro modo para não deixar órfão listado
+          // no dashboard quando a FVS mudou de modo entre sessões.
+          await Promise.all([
+            draftStore.delete(makeDraftId(userId, fvsId, 'verification')),
+            draftStore.delete(makeDraftId(userId, fvsId, 'reinspection')),
+          ]);
+        } catch { /* saved record takes precedence */ }
       }
 
       if (pendingResult.type !== 'idle') {

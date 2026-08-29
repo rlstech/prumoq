@@ -9,6 +9,17 @@ const config = getDefaultConfig(__dirname);
 const monorepoRoot = path.resolve(__dirname, '../..');
 config.watchFolders = [monorepoRoot];
 
+// Exclude apps/web's Next.js build output from Metro's watcher.
+// `.next/` churns constantly during `next dev` (files/dirs created and
+// removed as routes compile) and Metro's FallbackWatcher on Windows can
+// throw ENOENT if a directory disappears between crawl and fs.watch().
+// Since the mobile app never needs to resolve/watch anything under
+// apps/web, block it outright rather than let the two dev servers race.
+config.resolver.blockList = [
+  config.resolver.blockList,
+  /[\\/]apps[\\/]web[\\/]\.next[\\/].*/,
+].filter(Boolean);
+
 // ── Deduplicate singleton packages (pnpm creates multiple copies) ───
 // Resolve to the REAL path (not symlink) so Metro sees one canonical location
 const singletonDeps = ['react', 'react-dom', 'react-native', 'react-native-web'];

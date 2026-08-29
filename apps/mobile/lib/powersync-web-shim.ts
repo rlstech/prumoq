@@ -144,6 +144,35 @@ function filterByObraId<T>(rows: T[], field: keyof T, ids: string[] | null): T[]
   return rows.filter(r => ids.includes(r[field] as unknown as string));
 }
 
+// IDs das FVS planejadas visíveis ao usuário — a cadeia obras → ambientes →
+// FVS que o SQLite resolve com um JOIN. Mesma janela de cache do escopo de
+// obra: o dashboard dispara várias contagens de uma vez e a cadeia não muda
+// entre elas.
+let _fvsIdsCache: { ids: string[] | null; ts: number } | null = null;
+let _fvsIdsFlight: Promise<string[] | null> | null = null;
+
+async function getAllowedFvsPlanejadaIds(): Promise<string[] | null> {
+  if (_fvsIdsCache && Date.now() - _fvsIdsCache.ts < 30_000) return _fvsIdsCache.ids;
+  if (_fvsIdsFlight) return _fvsIdsFlight;
+  _fvsIdsFlight = _fetchAllowedFvsPlanejadaIds().finally(() => { _fvsIdsFlight = null; });
+  return _fvsIdsFlight;
+}
+
+async function _fetchAllowedFvsPlanejadaIds(): Promise<string[] | null> {
+  const obraIds = await getAllowedObraIds();
+  if (obraIds === null) { _fvsIdsCache = { ids: null, ts: Date.now() }; return null; }
+  if (obraIds.length === 0) { _fvsIdsCache = { ids: [], ts: Date.now() }; return []; }
+
+  const { data: ambientes } = await supabase.from('ambientes').select('id').in('obra_id', obraIds);
+  const ambienteIds = (ambientes ?? []).map((ambiente: any) => ambiente.id as string);
+  if (!ambienteIds.length) { _fvsIdsCache = { ids: [], ts: Date.now() }; return []; }
+
+  const { data: fvs } = await supabase.from('fvs_planejadas').select('id').in('ambiente_id', ambienteIds);
+  const ids = (fvs ?? []).map((planned: any) => planned.id as string);
+  _fvsIdsCache = { ids, ts: Date.now() };
+  return ids;
+}
+
 function nestedRecord(value: unknown): Record<string, unknown> {
   if (Array.isArray(value)) {
     const first = value[0];
@@ -160,11 +189,17 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
 
   if (s === 'select 1 where 0') return [];
 
-  // Gestores disponíveis para atribuição da análise financeira de NC.
-  if (s.includes('from usuarios') && s.includes("perfil in ('admin','gestor')")) {
+  // Admins/gestores da empresa — usado para atribuição da análise financeira
+  // de NC (nova.tsx) e para "Autorizado por" na reabertura de FVS (FVSReopenModal).
+  if (
+    s.includes('from usuarios') &&
+    s.includes('perfil in (') &&
+    s.includes("'admin'") &&
+    s.includes("'gestor'")
+  ) {
     const { data, error } = await supabase
       .from('usuarios')
-      .select('id, nome')
+      .select('id, nome, perfil')
       .in('perfil', ['admin', 'gestor'])
       .order('nome');
     if (error) throw new Error(`Erro ao carregar gestores: ${error.message}`);
@@ -300,6 +335,78 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
     return filterByObraId((data ?? []) as T[], 'id' as keyof T, ids);
   }
 
+  // ── dashboard: reinspeções abertas por prazo ──────────
+  // Precede os contadores genéricos de NC: a query traz COUNT(*) e
+  // date(n.data_nova_verif), que casariam com os dois branches abaixo.
+  if (s.includes('as nc_vencidas')) {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const horizon = new Date();
+    horizon.setDate(horizon.getDate() + 7);
+    const horizonStr = horizon.toISOString().slice(0, 10);
+
+    const [{ data: ncs }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
+    const open = filterByObraId((ncs ?? []) as any[], 'obra_id', ids)
+      .filter((nc: any) => nc.status === 'aberta' || nc.status === 'em_correcao');
+    const dueDates = open.map((nc: any) => (nc.data_nova_verif ?? '').slice(0, 10)).filter(Boolean);
+
+    return [{
+      nc_vencidas: dueDates.filter(due => due < todayStr).length,
+      nc_hoje: dueDates.filter(due => due === todayStr).length,
+      nc_proximos: dueDates.filter(due => due > todayStr && due <= horizonStr).length,
+      nc_abertas: open.length,
+    }] as T[];
+  }
+
+  // ── dashboard: verificações da semana + conformes ─────
+  if (s.includes('as verif_conformes')) {
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - 7);
+    const weekStartStr = weekStart.toISOString().slice(0, 10);
+
+    const fvsIds = await getAllowedFvsPlanejadaIds();
+    if (fvsIds !== null && fvsIds.length === 0) return [{ verif_total: 0, verif_conformes: 0 }] as T[];
+
+    let query = supabase.from('verificacoes').select('status').gte('data_verif', weekStartStr);
+    if (fvsIds !== null) query = query.in('fvs_planejada_id', fvsIds);
+    const { data, error } = await query;
+    if (error) throw new Error(`Erro ao carregar as verificações da semana: ${error.message}`);
+
+    const rows = data ?? [];
+    return [{
+      verif_total: rows.length,
+      verif_conformes: rows.filter((verification: any) => verification.status === 'conforme').length,
+    }] as T[];
+  }
+
+  // ── dashboard: NCs resolvidas na semana ───────────────
+  if (s.includes("n.status = 'resolvida'") && s.includes('resolvida_em')) {
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - 7);
+    const weekStartStr = weekStart.toISOString().slice(0, 10);
+
+    const fvsIds = await getAllowedFvsPlanejadaIds();
+    if (fvsIds !== null && fvsIds.length === 0) return [{ count: 0 }] as T[];
+
+    let verificationsQuery = supabase.from('verificacoes').select('id');
+    if (fvsIds !== null) verificationsQuery = verificationsQuery.in('fvs_planejada_id', fvsIds);
+    const { data: verifications, error: verificationsError } = await verificationsQuery;
+    if (verificationsError) throw new Error(`Erro ao carregar as verificações do período: ${verificationsError.message}`);
+
+    const verificationIds = new Set((verifications ?? []).map((verification: any) => verification.id as string));
+    if (verificationIds.size === 0) return [{ count: 0 }] as T[];
+
+    const { data: ncs, error } = await supabase
+      .from('nao_conformidades')
+      .select('verificacao_id')
+      .eq('status', 'resolvida')
+      .gte('resolvida_em', `${weekStartStr}T00:00:00`);
+    if (error) throw new Error(`Erro ao carregar as NCs resolvidas: ${error.message}`);
+
+    return [{
+      count: (ncs ?? []).filter((nc: any) => verificationIds.has(nc.verificacao_id)).length,
+    }] as T[];
+  }
+
   // ── ncs abertas count (com ou sem joins de obra) ──────
   if ((s.includes("status = 'aberta'") || s.includes("status in ('aberta','em_correcao')")) && s.includes('count(*)') && s.includes('from nao_conformidades') && !s.includes('date(n.data_nova_verif)') && !s.includes('from ambientes') && !s.includes('from obras o')) {
     const [{ data: ncs }, ids] = await Promise.all([supabase.rpc('get_ncs_full'), getAllowedObraIds()]);
@@ -369,9 +476,23 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   }
 
   // ── obras com progresso (dashboard) ───────────────────
+  // `ncs_abertas` da view v_obras_com_fvs conta só status 'aberta'; o
+  // dashboard trata 'em_correcao' como aberta também. Recontar aqui mantém o
+  // mesmo número no PWA e no app nativo.
   if (s.includes('progresso_percentual') && s.includes('from obras o') && s.includes('where o.ativo = 1') && s.includes('limit 3')) {
-    const [{ data }, ids] = await Promise.all([supabase.rpc('get_obras_com_fvs'), getAllowedObraIds()]);
-    return filterByObraId((data ?? []) as T[], 'id' as keyof T, ids).slice(0, 3);
+    const [{ data }, { data: ncs }, ids] = await Promise.all([
+      supabase.rpc('get_obras_com_fvs'),
+      supabase.rpc('get_ncs_full'),
+      getAllowedObraIds(),
+    ]);
+    const openByObra = new Map<string, number>();
+    for (const nc of (ncs ?? []) as any[]) {
+      if (nc.status !== 'aberta' && nc.status !== 'em_correcao') continue;
+      openByObra.set(nc.obra_id, (openByObra.get(nc.obra_id) ?? 0) + 1);
+    }
+    return filterByObraId((data ?? []) as any[], 'id', ids)
+      .slice(0, 3)
+      .map((obra: any) => ({ ...obra, ncs_abertas: openByObra.get(obra.id) ?? 0 })) as T[];
   }
 
   // ── verificações recentes (dashboard) ─────────────────
@@ -603,23 +724,6 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
     return (data ?? []) as T[];
   }
 
-  // ── gestores/admins da obra (FVSReopenModal autorizado_por) ──
-  if (s.includes('from usuarios u') && s.includes('join obra_usuarios') && s.includes('perfil in') && params[0]) {
-    const { data: ouRows } = await supabase
-      .from('obra_usuarios')
-      .select('usuario_id')
-      .eq('obra_id', params[0] as string)
-      .eq('ativo', true);
-    const userIds = (ouRows ?? []).map((r: any) => r.usuario_id as string);
-    if (!userIds.length) return [] as T[];
-    const { data } = await supabase
-      .from('usuarios')
-      .select('id, nome, perfil')
-      .in('id', userIds)
-      .in('perfil', ['gestor', 'admin']);
-    return (data ?? []) as T[];
-  }
-
   // ── última conclusão da FVS ───────────────────────────
   if (s.includes('from fvs_conclusoes fc') && s.includes('join usuarios u') && s.includes('where fc.fvs_planejada_id = ?') && params[0]) {
     const { data } = await supabase
@@ -846,6 +950,28 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   if (s.includes('select id, subservico, revisao_associada, status from fvs_planejadas where id = ?') && params[0]) {
     const { data } = await supabase.from('fvs_planejadas').select('id, subservico, revisao_associada, status').eq('id', params[0] as string);
     return (data ?? []) as T[];
+  }
+
+  // ── dashboard: status da FVS + última verificação dos rascunhos (prune) ──
+  if (s.includes('from fvs_planejadas fp') && s.includes('where fp.id in')) {
+    const ids = params.filter((value): value is string => typeof value === 'string');
+    if (ids.length === 0) return [] as T[];
+    const [{ data: fps }, { data: verifs }] = await Promise.all([
+      supabase.from('fvs_planejadas').select('id, status').in('id', ids),
+      supabase.from('verificacoes').select('fvs_planejada_id, updated_at, created_at').in('fvs_planejada_id', ids),
+    ]);
+    const ultimaPorFvs = new Map<string, string>();
+    for (const verif of verifs ?? []) {
+      const candidate = verif.updated_at ?? verif.created_at;
+      if (!candidate) continue;
+      const previous = ultimaPorFvs.get(verif.fvs_planejada_id);
+      if (!previous || candidate > previous) ultimaPorFvs.set(verif.fvs_planejada_id, candidate);
+    }
+    return (fps ?? []).map(fp => ({
+      id: fp.id,
+      status: fp.status,
+      ultima_verif_em: ultimaPorFvs.get(fp.id) ?? null,
+    })) as T[];
   }
 
   // ── nova verificação: count verificacoes fvs ─────────

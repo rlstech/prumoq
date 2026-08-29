@@ -45,13 +45,8 @@ export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: P
   const [errors, setErrors]               = useState<Record<string, string>>({});
 
   const { data: autorizadores } = useQuery<AutorizadorRow>(`
-    SELECT u.id, u.nome, u.perfil
-    FROM usuarios u
-    JOIN obra_usuarios ou ON ou.usuario_id = u.id
-    WHERE ou.obra_id = ?
-    AND u.perfil IN ('gestor', 'admin')
-    AND ou.ativo = true
-  `, [obraId]);
+    SELECT id, nome, perfil FROM usuarios WHERE perfil IN ('admin','gestor') ORDER BY nome
+  `);
 
   useEffect(() => {
     if (visible) {

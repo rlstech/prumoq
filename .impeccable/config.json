@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "packages/shared/src/fvs-report.ts"
+        ],
+        "createdAt": "2026-08-28T02:22:24.241Z",
+        "reason": "PrumoQ design-system.md mandates a 3px left 'linha de datum' (Cal Viva/brand accent) as the canonical context/state marker across the app — not AI-slop, it's the documented brand pattern already used elsewhere in this same file (.fvs, .verification-column, .nc-heading)."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "apps/web/lib/reports/pdf.ts"
+        ],
+        "createdAt": "2026-08-29T19:49:55.739Z",
+        "reason": "Server-side PDF module: the flagged lines are regex literals matching/rewriting <img src> to inline data URIs, not rendered markup. No JSX/HTML is emitted from this file."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          ".design/Antes.dc.html"
+        ],
+        "createdAt": "2026-08-29T21:29:06.522Z",
+        "reason": "Antes.dc.html e a recriacao fiel do dashboard atual (index.tsx antes desta mudanca), que usa borderLeftWidth: 3 na FieldQueue e no painel de atencao. E o 'antes' de uma critica: a borda lateral e o defeito documentado, nao uma escolha nova."
+      }
+    ]
+  }
+}

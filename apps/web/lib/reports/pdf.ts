@@ -50,6 +50,12 @@ function dataUrlAsBuffer(source: string): Buffer {
   return buffer;
 }
 
+// Presigned R2 downloads always resolve to `<account-id>.r2.cloudflarestorage.com`
+// (supabase/functions/r2-presign). Trusting that suffix by default keeps every
+// environment working without a matching env var, which is what silently turned
+// every report attachment into a placeholder.
+const R2_ENDPOINT_SUFFIX = '.r2.cloudflarestorage.com';
+
 function allowedMediaHosts(): Set<string> {
   return new Set(
     (process.env.R2_ALLOWED_MEDIA_HOSTS ?? '')
@@ -62,9 +68,21 @@ function allowedMediaHosts(): Set<string> {
 function isAllowedRemoteMediaUrl(source: string): boolean {
   try {
     const url = new URL(source.replaceAll('&amp;', '&'));
-    return url.protocol === 'https:' && allowedMediaHosts().has(url.hostname.toLowerCase());
+    if (url.protocol !== 'https:') return false;
+    const hostname = url.hostname.toLowerCase();
+    // Match on the leading dot so `evilr2.cloudflarestorage.com` stays blocked.
+    return hostname.endsWith(R2_ENDPOINT_SUFFIX) || allowedMediaHosts().has(hostname);
   } catch {
     return false;
+  }
+}
+
+// Presigned URLs carry credentials in the query string — never log them whole.
+function safeHostname(source: string): string {
+  try {
+    return new URL(source.replaceAll('&amp;', '&')).hostname;
+  } catch {
+    return '<url inválida>';
   }
 }
 
@@ -135,7 +153,14 @@ export async function normalizePdfImageSource(
       .toBuffer();
     return `data:image/jpeg;base64,${normalized.toString('base64')}`;
   } catch (error) {
-    console.warn('Anexo do relatório indisponível:', error);
+    if (error instanceof Error && error.message === 'Unauthorized image host.') {
+      console.error(
+        'Anexo do relatório bloqueado por host não autorizado. Adicione o host a R2_ALLOWED_MEDIA_HOSTS.',
+        { host: safeHostname(source) },
+      );
+    } else {
+      console.warn('Anexo do relatório indisponível:', error);
+    }
     return unavailableImageDataUrl();
   }
 }

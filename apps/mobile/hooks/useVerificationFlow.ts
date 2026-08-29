@@ -230,8 +230,17 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
     const operation = (async () => {
       setDraftStatus('saving');
       try {
+        // Discard pode ter vencido a corrida enquanto esta operação agendava:
+        // gravar agora ressuscitaria o rascunho depois do delete.
+        if (discardingRef.current) return;
         const snapshot = createVerificationDraft(snapshotContext, snapshotState, snapshotStep);
         await store.save(snapshot, mediaSourcesFromVerificationState(snapshotState));
+        if (discardingRef.current) {
+          // discardDraft rodou enquanto store.save estava em voo e o delete
+          // pode ter concluído antes desta escrita — remover o ressuscitado.
+          await store.delete(snapshotContext.draftId);
+          return;
+        }
         setDraftStatus('saved');
       } catch (error) {
         // A draft save must never block the field workflow. The next debounce
@@ -350,6 +359,9 @@ export function useVerificationFlow(options: UseVerificationFlowOptions): Verifi
     // excluí-lo. Sem esta guarda, o fluxo de `handleSave` → `discardDraft`
     // deixava um rascunho órfão no storage (carbono em `discardDraftAndReset`).
     discardingRef.current = true;
+    // Um persist enfileirado (persistQueuedRef) re-executaria persistDraft —
+    // barrado por discardingRef, mas limpar aqui evita até a tentativa.
+    persistQueuedRef.current = false;
     if (context) await store.delete(context.draftId);
     setDraftCandidate(null);
     setDraftConflict(false);

@@ -1,5 +1,6 @@
 import {
-  resolveFvsReportPhotoSource,
+  resolveFvsReportPhotoFromKey,
+  resolveSignedMediaUrl,
   type Database,
   type FvsPrintableConclusion,
   type FvsPrintableItem,
@@ -41,15 +42,10 @@ export interface FvsReportData extends FvsPrintableReport {
   emitidoEm: string;
 }
 
-function resolveR2(key: string | null | undefined, signed: Map<string, string>): string | null {
-  if (!key) return null;
-  // Media references are object keys, never caller-controlled URLs. Accepting a
-  // URL here would let a database write turn into a server-side request during
-  // PDF generation.
-  if (key.startsWith('http') || key.startsWith('data:')) return null;
-  if (key.startsWith('pending:') || key.startsWith('blob:')) return null;
-  return signed.get(key) ?? null;
-}
+// Media references are object keys, never caller-controlled URLs. Accepting a
+// URL here would let a database write turn into a server-side request during
+// PDF generation — `resolveSignedMediaUrl` enforces that.
+const resolveR2 = resolveSignedMediaUrl;
 
 function assertNoError(
   error: { message: string } | null,
@@ -199,10 +195,7 @@ export async function loadFvsReport(
 
   const fotosMap = new Map<string, FvsReportPhoto[]>();
   for (const photo of photoRows) {
-    const signedSource = resolveR2(photo.r2_key, signedMedia);
-    const source = signedSource
-      ? { url: signedSource, availability: 'available' as const }
-      : resolveFvsReportPhotoSource(photo.r2_key, '');
+    const source = resolveFvsReportPhotoFromKey(photo.r2_key, signedMedia);
     if (!source) continue;
     const photos = fotosMap.get(photo.verificacao_id) ?? [];
     photos.push({

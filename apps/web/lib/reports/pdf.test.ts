@@ -97,3 +97,69 @@ test('não faz requisições para URLs remotas fora da allowlist de R2', async (
     globalThis.fetch = originalFetch;
   }
 });
+
+test('baixa fotos assinadas do endpoint R2 mesmo sem R2_ALLOWED_MEDIA_HOSTS', async () => {
+  const photo = await sharp({
+    create: {
+      width: 800,
+      height: 600,
+      channels: 3,
+      background: { r: 200, g: 120, b: 40 },
+    },
+  })
+    .jpeg()
+    .toBuffer();
+
+  const originalFetch = globalThis.fetch;
+  const originalHosts = process.env.R2_ALLOWED_MEDIA_HOSTS;
+  delete process.env.R2_ALLOWED_MEDIA_HOSTS;
+
+  let requestedUrl: string | null = null;
+  globalThis.fetch = (async (input: string) => {
+    requestedUrl = input;
+    return new Response(new Uint8Array(photo), {
+      status: 200,
+      headers: {
+        'content-type': 'image/jpeg',
+        'content-length': String(photo.byteLength),
+      },
+    });
+  }) as typeof globalThis.fetch;
+
+  try {
+    const normalized = await normalizePdfImageSource(
+      'https://acct123.r2.cloudflarestorage.com/prumoq-fotos/fotos/a/b/2026/08/foto.jpg?X-Amz-Signature=abc',
+      'photo',
+    );
+
+    assert.match(normalized, /^data:image\/jpeg;base64,/);
+    assert.equal(
+      requestedUrl,
+      'https://acct123.r2.cloudflarestorage.com/prumoq-fotos/fotos/a/b/2026/08/foto.jpg?X-Amz-Signature=abc',
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalHosts === undefined) delete process.env.R2_ALLOWED_MEDIA_HOSTS;
+    else process.env.R2_ALLOWED_MEDIA_HOSTS = originalHosts;
+  }
+});
+
+test('bloqueia host que apenas termina parecido com o endpoint R2', async () => {
+  const originalFetch = globalThis.fetch;
+  let called = false;
+  globalThis.fetch = async () => {
+    called = true;
+    throw new Error('fetch não deveria ser chamado');
+  };
+
+  try {
+    const normalized = await normalizePdfImageSource(
+      'https://evilr2.cloudflarestorage.com/payload.jpg',
+      'photo',
+    );
+    assert.match(normalized, /^data:image\/svg\+xml;base64,/);
+    assert.equal(called, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
