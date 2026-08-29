@@ -94,7 +94,8 @@ import { approveReinspecao, createNc, reprovarReinspecao } from '../../../../../
 import { resolveNcFinancialImpact } from '../../../../../../../../../../services/nc-finance.service';
 import { recordApprovedAdvances } from '../../../../../../../../../../services/measurement.service';
 import { uuid } from '../../../../../../../../../../lib/uuid';
-import { ensureDefaultSignature, signatureStore } from '../../../../../../../../../../lib/signature-store';
+import { ensureDefaultSignature } from '../../../../../../../../../../lib/signature-defaults';
+import { signatureStore } from '../../../../../../../../../../lib/signature-store';
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function NovaVerificacaoScreen() {

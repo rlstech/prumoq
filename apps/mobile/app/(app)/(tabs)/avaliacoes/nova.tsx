@@ -50,7 +50,8 @@ import {
 import { db } from '../../../../lib/powersync';
 import { supabase } from '../../../../lib/supabase';
 import { now, today, uuid } from '../../../../lib/uuid';
-import { ensureDefaultSignature, signatureStore } from '../../../../lib/signature-store';
+import { ensureDefaultSignature } from '../../../../lib/signature-defaults';
+import { signatureStore } from '../../../../lib/signature-store';
 
 type Work = { id: string; nome: string; empresa_id: string };
 type Team = { id: string; nome: string; obra_id: string };
