@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search, Upload, Trash2, XCircle } from 'lucide-react';
+import { Plus, Upload, Trash2, XCircle } from 'lucide-react';
 import DataTable, { Column } from '@/components/ui/DataTable';
+import { FilterBar, SearchField, SelectFilter } from '@/components/ui/FilterBar';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
@@ -208,45 +209,30 @@ export default function FvsPadraoClient({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-brd-0 pb-6 mb-6">
-        <div className="flex bg-bg-1 border border-brd-1 rounded-lg overflow-hidden w-full sm:w-auto h-[38px]">
-          <div className="flex items-center px-3 border-r border-brd-1 bg-bg-0">
-            <Search size={16} className="text-txt-3" />
-          </div>
-          <input 
-            type="text"
-            placeholder="Buscar FVS..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-64 px-3 py-1.5 text-sm outline-none bg-transparent"
-          />
-          <select 
-            value={categoriaFilter} 
-            onChange={e => setCategoriaFilter(e.target.value)}
-            className="border-l border-brd-1 px-3 py-1.5 text-sm bg-bg-1 outline-none font-medium text-txt-2"
-          >
-            <option value="todas">Todas</option>
-            {FVS_CATEGORIES.map(category => (
-              <option key={category.value} value={category.value}>{category.label}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={() => setImportModalOpen(true)}
-            className="flex items-center gap-2 bg-bg-1 border border-brd-1 hover:bg-bg-2 text-txt-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-          >
-            <Upload size={16} /> Importar em Lote
+      <FilterBar>
+        <SearchField
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar por nome da FVS"
+        />
+        <SelectFilter
+          label="Categoria:"
+          value={categoriaFilter}
+          onChange={setCategoriaFilter}
+          options={[
+            { value: 'todas', label: 'Todas' },
+            ...FVS_CATEGORIES.map(category => ({ value: category.value, label: category.label })),
+          ]}
+        />
+        <div className="ml-auto flex flex-wrap gap-2.5">
+          <button type="button" onClick={() => setImportModalOpen(true)} className="prumo-secondary-button">
+            <Upload size={15} /> Importar em lote
           </button>
-          <button
-            onClick={() => setCreateModalOpen(true)}
-            className="flex items-center gap-2 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-          >
-            <Plus size={16} /> Nova FVS Padrão
+          <button type="button" onClick={() => setCreateModalOpen(true)} className="prumo-primary-button">
+            <Plus size={15} /> Nova FVS padrão
           </button>
         </div>
-      </div>
+      </FilterBar>
 
       {loadError && (
         <div role="alert" className="mb-5 flex items-center gap-3 rounded-lg border border-nok/20 bg-nok-bg px-4 py-3 text-sm font-medium text-nok">

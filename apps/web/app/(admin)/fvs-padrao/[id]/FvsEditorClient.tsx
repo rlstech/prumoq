@@ -141,11 +141,12 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
                 <h2 className="text-[14px] font-semibold text-txt tracking-tight">Itens de Verificação</h2>
                 <p className="text-xs text-txt-2">{items.filter(i => !i.deleted).length} itens</p>
               </div>
-              <button 
+              <button
+                type="button"
                 onClick={() => setIsPublishModalOpen(true)}
-                className="flex items-center gap-2 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                className="prumo-primary-button"
               >
-                <Save size={16} /> Salvar Nova Revisão
+                <Save size={16} /> Salvar nova revisão
               </button>
            </div>
            
@@ -295,10 +296,10 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
             />
           </div>
           <div className="flex gap-3 justify-end pt-2 border-t border-brd-0">
-             <button type="button" onClick={() => setIsPublishModalOpen(false)} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">
+             <button type="button" onClick={() => setIsPublishModalOpen(false)} className="prumo-secondary-button">
                Cancelar
              </button>
-             <button type="submit" disabled={isPublishing} className="px-5 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
+             <button type="submit" disabled={isPublishing} className="prumo-primary-button disabled:opacity-60">
                {isPublishing ? 'Salvando...' : `Publicar Rev. ${fvsData.revisao_atual + 1}`}
              </button>
           </div>

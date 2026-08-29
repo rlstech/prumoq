@@ -1,4 +1,5 @@
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/context';
 import EvaluationsClient from './EvaluationsClient';
@@ -24,5 +25,5 @@ export default async function EvaluationsPage({ searchParams }: { searchParams?:
     supabase.from('usuarios').select('id,nome'),
   ]);
   const evaluationPage = pageSlice(evaluations ?? []);
-  return <><Header breadcrumbs={[{ label: 'Avaliações' }]} /><main className="prumo-page"><div className="prumo-page-inner"><EvaluationsClient evaluations={evaluationPage.rows} metrics={metrics ?? []} models={models ?? []} revisions={revisions ?? []} criteria={criteria ?? []} works={works ?? []} teams={teams ?? []} companies={companies ?? []} users={users ?? []} canManageModels={context?.perfil === 'admin'} canDecide={context?.perfil === 'admin' || context?.perfil === 'gestor'} page={page} hasNextPage={evaluationPage.hasNextPage} /></div></main></>;
+  return <><Header breadcrumbs={[{ label: 'Avaliações' }]} /><main className="prumo-page"><div className="prumo-page-inner"><PageHeader title="Avaliações de empreiteiro" description="Nota consolidada por empreiteiro no período, a partir das vistorias realizadas e do tratamento das não conformidades." /><EvaluationsClient evaluations={evaluationPage.rows} metrics={metrics ?? []} models={models ?? []} revisions={revisions ?? []} criteria={criteria ?? []} works={works ?? []} teams={teams ?? []} companies={companies ?? []} users={users ?? []} canManageModels={context?.perfil === 'admin'} canDecide={context?.perfil === 'admin' || context?.perfil === 'gestor'} page={page} hasNextPage={evaluationPage.hasNextPage} /></div></main></>;
 }

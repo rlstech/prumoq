@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import EmpresasClient from './EmpresasClient';
 import KPICard from '@/components/ui/KPICard';
 import { Building2 } from 'lucide-react';
@@ -17,9 +18,13 @@ export default async function EmpresasPage() {
 
   return (
     <>
-      <Header breadcrumbs={[{ label: 'Empresas Parceiras' }]} />
+      <Header breadcrumbs={[{ label: 'Empresas' }]} />
       <div className="prumo-page">
         <div className="prumo-page-inner">
+        <PageHeader
+          title="Empresas"
+          description="Construtoras e empreiteiros do cliente. A empresa define quais obras, equipes e modelos de medição ficam disponíveis."
+        />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <KPICard title="Total Cadastrado" value={empresas.length} icon={<Building2 size={20} />} />
           <KPICard title="Ativas" value={ativas} colorVariant="ok" />

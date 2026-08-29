@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import FvsEditorClient from './FvsEditorClient';
 
 export default async function FvsPadraoDetailPage(props: { params: Promise<{ id: string }> }) {
@@ -38,13 +39,19 @@ export default async function FvsPadraoDetailPage(props: { params: Promise<{ id:
       />
       
       <div className="prumo-page">
-        <FvsEditorClient 
-          fvs={fvs} 
-          initialItems={itemsData as any[] || []} 
-          logs={logsData as any[] || []} 
-          empresas={empresasData ?? []}
-          initialEmpresaIds={(escopoData ?? []).map(item => item.empresa_id)}
-        />
+        <div className="prumo-page-inner">
+          <PageHeader
+            title={fvs.nome}
+            description="Itens de verificação e revisões desta FVS padrão. Editar aqui não afeta fichas já planejadas em obras — só a próxima associação."
+          />
+          <FvsEditorClient
+            fvs={fvs}
+            initialItems={itemsData as any[] || []}
+            logs={logsData as any[] || []}
+            empresas={empresasData ?? []}
+            initialEmpresaIds={(escopoData ?? []).map(item => item.empresa_id)}
+          />
+        </div>
       </div>
     </>
   );

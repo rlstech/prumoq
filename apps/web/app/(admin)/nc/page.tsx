@@ -1,4 +1,5 @@
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import NcClient, { type NcListRecord } from './NcClient';
 import { pageFromSearchParam, pageRange, pageSlice } from '@/lib/pagination';
@@ -76,9 +77,13 @@ export default async function NcPage({ searchParams }: { searchParams?: { page?:
 
   return (
     <>
-      <Header breadcrumbs={[{ label: 'Não Conformidades' }]} />
+      <Header breadcrumbs={[{ label: 'Não conformidades' }]} />
       <div className="prumo-page">
         <div className="prumo-page-inner">
+        <PageHeader
+          title="Não conformidades"
+          description="Desvios abertos pelas vistorias. Uma NC só encerra com reinspeção conforme — o prazo comanda a ordem da fila."
+        />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-nok rounded-xl p-[14px_16px]">
             <div className="text-2xl font-semibold text-nok">{abertas}</div>

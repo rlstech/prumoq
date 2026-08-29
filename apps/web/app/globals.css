@@ -25,8 +25,8 @@
   --warn: var(--prumo-warning);
   --warnb: var(--prumo-warning-soft);
 
-  --sb-w: 88px;
-  --hd: 72px;
+  --sb-w: 248px;
+  --hd: 56px;
   --bg0: var(--prumo-canvas);
   --bg1: var(--prumo-surface);
   --bg2: var(--prumo-fog);
@@ -112,7 +112,7 @@ a {
   }
 
   .prumo-primary-button {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded px-4 text-sm font-semibold text-white transition-colors;
+    @apply inline-flex h-[38px] min-h-[38px] items-center justify-center gap-2 rounded px-4 text-[13px] font-semibold text-white transition-colors;
     background: var(--prumo-brand);
   }
 
@@ -121,7 +121,26 @@ a {
   }
 
   .prumo-secondary-button {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded border border-[var(--brd1)] bg-bg-1 px-4 text-sm font-semibold text-txt transition-colors hover:bg-bg-2;
+    @apply inline-flex h-[38px] min-h-[38px] items-center justify-center gap-2 rounded border border-[var(--brd1)] bg-bg-1 px-3.5 text-[13px] font-semibold text-txt transition-colors hover:bg-bg-2;
+  }
+
+  /* Ação dentro de uma linha de tabela — menor que a ação da página. */
+  .prumo-row-button {
+    @apply inline-flex h-7 items-center justify-center gap-1.5 rounded border border-[var(--brd1)] bg-bg-1 px-2.5 text-xs font-semibold text-[var(--br)] transition-colors hover:bg-bg-2;
+  }
+
+  /* Título de faixa dentro da página: rótulo em caixa alta seguido de fio. */
+  .prumo-section-title {
+    @apply flex items-center gap-2.5;
+  }
+
+  .prumo-section-title > span:first-child {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-[var(--br)];
+  }
+
+  .prumo-section-title::after {
+    content: '';
+    @apply h-px flex-1 bg-[var(--brd0)];
   }
 
   .prumo-field {

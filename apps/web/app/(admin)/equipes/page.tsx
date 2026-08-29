@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import EquipesClient from './EquipesClient';
 
 export default async function EquipesPage() {
@@ -15,9 +16,13 @@ export default async function EquipesPage() {
 
   return (
     <>
-      <Header breadcrumbs={[{ label: 'Equipes Cadastradas' }]} />
+      <Header breadcrumbs={[{ label: 'Equipes' }]} />
       <div className="prumo-page">
         <div className="prumo-page-inner">
+          <PageHeader
+            title="Equipes"
+            description="Frentes de trabalho responsáveis por corrigir não conformidades. Uma equipe só aparece na abertura de uma NC se estiver associada à obra."
+          />
           <EquipesClient
             initialEquipes={(equipes as any[]) || []}
             empresas={empresas ?? []}

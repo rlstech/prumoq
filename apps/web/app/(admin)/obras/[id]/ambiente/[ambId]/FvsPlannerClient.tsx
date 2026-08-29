@@ -61,9 +61,10 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
             <h2 className="text-[14px] font-semibold text-txt tracking-tight">FVS Planejadas</h2>
             <p className="text-xs text-txt-2">{initialFvsList.length} serviços • {concluidasCount} concluídos</p>
           </div>
-          <button 
+          <button
+            type="button"
             onClick={() => setIsAddModalOpen(true)}
-            className="px-3 py-1.5 bg-[var(--br)] text-white rounded-lg text-xs font-medium hover:bg-[var(--brd)] transition-colors"
+            className="prumo-row-button"
           >
             + Adicionar
           </button>
@@ -72,6 +73,13 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
         <div className="flex-1 overflow-y-auto">
           {initialFvsList.length > 0 ? (
            <table className="w-full text-left">
+             <thead>
+               <tr className="border-b border-brd-0 bg-bg-0">
+                 <th className="py-2.5 px-5 text-[11px] font-semibold uppercase tracking-[0.4px] text-txt-2">Serviço</th>
+                 <th className="py-2.5 px-5 text-[11px] font-semibold uppercase tracking-[0.4px] text-txt-2">Status</th>
+                 <th className="py-2.5 px-5 text-[11px] font-semibold uppercase tracking-[0.4px] text-txt-2 text-right">Ações</th>
+               </tr>
+             </thead>
              <tbody>
                {initialFvsList.map((fvs) => (
                  <tr key={fvs.id} className="border-b border-brd-0 last:border-0 hover:bg-bg-2">
@@ -124,10 +132,11 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
                           </button>
                         ) : null}
                         <button
+                          type="button"
                           onClick={() => setSelectedFvsId(fvs.id)}
-                          className="text-xs font-semibold text-[var(--br)] hover:text-[var(--brd)]"
+                          className="prumo-row-button"
                         >
-                          Ver Checklist
+                          Ver checklist
                         </button>
                      </div>
                    </td>

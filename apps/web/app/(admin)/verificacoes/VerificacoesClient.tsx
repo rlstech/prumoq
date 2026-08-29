@@ -16,6 +16,8 @@ function formatDateTime(dateStr: string): string {
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Download, Loader2, Printer } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import DataTable, { Column } from '@/components/ui/DataTable';
+import { FilterBar, SelectFilter } from '@/components/ui/FilterBar';
 import { getVerificacaoDetalhe } from './actions';
 import Pagination from '@/components/ui/Pagination';
 
@@ -35,10 +37,14 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
   const [isPending, startTransition] = useTransition();
 
   const obras = useMemo(() => Array.from(new Set(initialData.map(v => v.fvs_planejadas?.ambientes?.obras?.nome).filter(Boolean))), [initialData]);
+  const ambientes = useMemo(() => Array.from(new Set(initialData.map(v => v.fvs_planejadas?.ambientes?.nome).filter(Boolean))), [initialData]);
+  const servicos = useMemo(() => Array.from(new Set(initialData.map(v => v.fvs_planejadas?.subservico).filter(Boolean))), [initialData]);
   const inspetores = useMemo(() => Array.from(new Set(initialData.map(v => v.usuarios?.nome).filter(Boolean))), [initialData]);
 
   const filtered = initialData.filter(v => {
     if (filters.obra !== 'Todas' && v.fvs_planejadas?.ambientes?.obras?.nome !== filters.obra) return false;
+    if (filters.ambiente !== 'Todos' && v.fvs_planejadas?.ambientes?.nome !== filters.ambiente) return false;
+    if (filters.fvs !== 'Todos' && v.fvs_planejadas?.subservico !== filters.fvs) return false;
     if (filters.inspetor !== 'Todos' && v.usuarios?.nome !== filters.inspetor) return false;
     if (filters.status !== 'Todos') {
       if (filters.status === 'Conforme' && v.status !== 'conforme') return false;
@@ -89,122 +95,78 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
     return v.verificacao_fotos?.[0]?.count ?? 0;
   }
 
+  const columns: Column<any>[] = [
+    {
+      header: 'Nº',
+      cell: (v) => <span className="text-[13px] font-medium text-pg">V-{String(v.numero_verif || filtered.indexOf(v) + 1).padStart(3, '0')}</span>,
+    },
+    {
+      header: 'Serviço / FVS',
+      cell: (v) => <span className="text-[13px] font-medium text-txt">{v.fvs_planejadas?.subservico || 'N/A'}</span>,
+    },
+    {
+      header: 'Obra / Ambiente',
+      cell: (v) => (
+        <div>
+          <div className="text-[13px] text-txt">{v.fvs_planejadas?.ambientes?.obras?.nome}</div>
+          <div className="text-xs text-txt-2">{v.fvs_planejadas?.ambientes?.nome}</div>
+        </div>
+      ),
+    },
+    { header: 'Resultado', cell: (v) => <StatusBadge status={v.status || 'em_andamento'} size="sm" /> },
+    { header: 'Inspetor', cell: (v) => <span className="text-[13px] text-txt">{v.usuarios?.nome || '-'}</span> },
+    { header: 'Data', cell: (v) => <span className="text-[13px] text-txt">{v.data_verif ? formatDate(v.data_verif) : '-'}</span> },
+    {
+      header: 'Fotos',
+      cell: (v) => fotoCount(v) > 0 ? (
+        <span className="text-xs font-medium text-pg">{fotoCount(v)} foto{fotoCount(v) > 1 ? 's' : ''}</span>
+      ) : <span className="text-xs text-txt-3">—</span>,
+    },
+    {
+      header: '',
+      align: 'right',
+      cell: (v) => (
+        <button type="button" className="prumo-row-button" onClick={e => { e.stopPropagation(); openVerif(v); }}>Ver</button>
+      ),
+    },
+  ];
+
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-semibold text-txt">Verificações</h2>
-          <p className="text-[13px] text-txt-2 mt-0.5">Registro completo de todas as verificações de campo</p>
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-1 border border-brd-1 rounded-lg text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors">
-            <Download size={14} /> Exportar Excel
+      <FilterBar resultLabel={`${filtered.length} de ${initialData.length} vistorias`}>
+        <SelectFilter label="Obra:" value={filters.obra} onChange={value => setFilters({ ...filters, obra: value })}
+          options={[{ value: 'Todas', label: 'Todas' }, ...obras.map(o => ({ value: o, label: o }))]} />
+        <SelectFilter label="Ambiente:" value={filters.ambiente} onChange={value => setFilters({ ...filters, ambiente: value })}
+          options={[{ value: 'Todos', label: 'Todos' }, ...ambientes.map(a => ({ value: a, label: a }))]} />
+        <SelectFilter label="Serviço:" value={filters.fvs} onChange={value => setFilters({ ...filters, fvs: value })}
+          options={[{ value: 'Todos', label: 'Todos' }, ...servicos.map(s => ({ value: s, label: s }))]} />
+        <SelectFilter label="Status:" value={filters.status} onChange={value => setFilters({ ...filters, status: value })}
+          options={[
+            { value: 'Todos', label: 'Todos' },
+            { value: 'Conforme', label: 'Conforme' },
+            { value: 'Não conforme', label: 'Não conforme' },
+            { value: 'Em andamento', label: 'Em andamento' },
+          ]} />
+        <SelectFilter label="Inspetor:" value={filters.inspetor} onChange={value => setFilters({ ...filters, inspetor: value })}
+          options={[{ value: 'Todos', label: 'Todos' }, ...inspetores.map(i => ({ value: i, label: i }))]} />
+        <div className="ml-auto flex gap-2">
+          <button type="button" className="prumo-secondary-button">
+            <Download size={15} /> Exportar Excel
           </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-1 border border-brd-1 rounded-lg text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors">
-            <Printer size={14} /> PDF
+          <button type="button" className="prumo-secondary-button">
+            <Printer size={15} /> PDF
           </button>
         </div>
-      </div>
+      </FilterBar>
 
-      {/* Filtros */}
-      <div className="bg-bg-1 border border-brd-0 rounded-xl p-4 mb-5">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
-          <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Obra</label>
-            <select className="w-full px-3 py-[9px] border border-brd-1 rounded-lg text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
-              value={filters.obra} onChange={e => setFilters({...filters, obra: e.target.value})}>
-              <option>Todas</option>
-              {obras.map(o => <option key={o}>{o}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Ambiente</label>
-            <select className="w-full px-3 py-[9px] border border-brd-1 rounded-lg text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
-              value={filters.ambiente} onChange={e => setFilters({...filters, ambiente: e.target.value})}>
-              <option>Todos</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Serviço (FVS)</label>
-            <select className="w-full px-3 py-[9px] border border-brd-1 rounded-lg text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
-              value={filters.fvs} onChange={e => setFilters({...filters, fvs: e.target.value})}>
-              <option>Todos</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Status</label>
-            <select className="w-full px-3 py-[9px] border border-brd-1 rounded-lg text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
-              value={filters.status} onChange={e => setFilters({...filters, status: e.target.value})}>
-              <option>Todos</option>
-              <option>Conforme</option>
-              <option>Não conforme</option>
-              <option>Em andamento</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Inspetor</label>
-            <select className="w-full px-3 py-[9px] border border-brd-1 rounded-lg text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
-              value={filters.inspetor} onChange={e => setFilters({...filters, inspetor: e.target.value})}>
-              <option>Todos</option>
-              {inspetores.map(i => <option key={i}>{i}</option>)}
-            </select>
-          </div>
-          <button className="px-4 py-[9px] bg-[var(--br)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brd)] transition-colors">
-            Filtrar
-          </button>
-        </div>
-      </div>
-
-      {/* Tabela */}
-      <div className="bg-bg-1 border border-brd-0 rounded-xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-brd-0 flex items-center justify-between">
-          <h3 className="text-[14px] font-semibold text-txt">Verificações registradas</h3>
-          <span className="text-xs text-txt-3">Exibindo {filtered.length} registros</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-bg-0 border-b border-brd-0">
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Nº</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Serviço / FVS</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Obra / Ambiente</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Resultado</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Inspetor</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Data</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase">Fotos</th>
-                <th className="py-2.5 px-4 text-[11px] font-semibold text-txt-2 tracking-[0.4px] uppercase"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length ? filtered.map((v: any, idx: number) => (
-                <tr key={v.id || idx} className="border-b border-brd-0 last:border-0 hover:bg-bg-0 cursor-pointer" onClick={() => openVerif(v)}>
-                  <td className="py-3 px-4"><span className="font-medium text-pg text-[13px]">V-{String(v.numero_verif || idx + 1).padStart(3, '0')}</span></td>
-                  <td className="py-3 px-4">
-                    <div className="font-medium text-[13px] text-txt">{v.fvs_planejadas?.subservico || 'N/A'}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="text-[13px] text-txt">{v.fvs_planejadas?.ambientes?.obras?.nome}</div>
-                    <div className="text-xs text-txt-2">{v.fvs_planejadas?.ambientes?.nome}</div>
-                  </td>
-                  <td className="py-3 px-4"><StatusBadge status={v.status || 'em_andamento'} size="sm" /></td>
-                  <td className="py-3 px-4 text-[13px] text-txt">{v.usuarios?.nome || '-'}</td>
-                  <td className="py-3 px-4 text-[13px] text-txt">{v.data_verif ? formatDate(v.data_verif) : '-'}</td>
-                  <td className="py-3 px-4">
-                    {fotoCount(v) > 0 ? (
-                      <span className="text-xs text-pg font-medium">📷 {fotoCount(v)}</span>
-                    ) : <span className="text-xs text-txt-3">—</span>}
-                  </td>
-                  <td className="py-3 px-4">
-                    <button className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors" onClick={e => { e.stopPropagation(); openVerif(v); }}>Ver</button>
-                  </td>
-                </tr>
-              )) : (
-                <tr><td colSpan={8} className="py-8 text-center text-sm text-txt-3">Nenhuma verificação encontrada.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        data={filtered}
+        columns={columns}
+        onRowClick={openVerif}
+        rowKey={(v) => String(v.id)}
+        emptyMessage="Nenhuma vistoria neste recorte"
+        emptyHint="Ajuste os filtros acima para ver as vistorias registradas."
+      />
       <Pagination page={page} hasNextPage={hasNextPage} pathname="/verificacoes" />
 
       {/* Modal Detalhe */}
@@ -348,10 +310,10 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
           </div>
         )}
         <div className="mt-6 pt-4 border-t border-brd-0 flex justify-end gap-3">
-          <button className="px-4 py-2 bg-bg-1 border border-brd-1 rounded-lg text-sm text-txt-2 hover:bg-bg-2 transition-colors flex items-center gap-1.5">
-            <Printer size={14} /> Exportar PDF
+          <button type="button" className="prumo-secondary-button">
+            <Printer size={15} /> Exportar PDF
           </button>
-          <button onClick={closeModal} className="px-5 py-2 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 transition-colors">Fechar</button>
+          <button type="button" onClick={closeModal} className="prumo-secondary-button">Fechar</button>
         </div>
       </Modal>
     </>

@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { Plus, Search, Trash2 } from 'lucide-react';
+import { useMemo, useState, useTransition } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
+import Tabs from '@/components/ui/Tabs';
+import { FilterBar, SearchField } from '@/components/ui/FilterBar';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
@@ -22,13 +25,27 @@ export default function ObrasClient({ initialObras, empresas, canDelete }: Obras
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusTab, setStatusTab] = useState('todas');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const filteredObras = initialObras.filter(o =>
-    o.nome.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Os recortes seguem a ordem em que uma obra caminha: começa, anda, para ou termina.
+  const tabs = useMemo(() => {
+    const count = (status: string) => initialObras.filter(o => (o.status ?? 'em_andamento') === status).length;
+    return [
+      { id: 'todas', label: 'Todas', count: initialObras.length },
+      { id: 'em_andamento', label: 'Em andamento', count: count('em_andamento') },
+      { id: 'nao_iniciada', label: 'Não iniciadas', count: count('nao_iniciada') },
+      { id: 'paralisada', label: 'Paralisadas', count: count('paralisada') },
+      { id: 'concluida', label: 'Concluídas', count: count('concluida') },
+    ];
+  }, [initialObras]);
+
+  const filteredObras = initialObras.filter(o => {
+    if (statusTab !== 'todas' && (o.status ?? 'em_andamento') !== statusTab) return false;
+    return o.nome.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   function handleDeleteObra() {
     if (!confirmDelete) return;
@@ -102,7 +119,7 @@ export default function ObrasClient({ initialObras, empresas, canDelete }: Obras
           <div className="flex items-center gap-1">
             <button
               onClick={(e) => { e.stopPropagation(); router.push(`/obras/${item.id}`); }}
-              className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors"
+              className="prumo-row-button"
             >
               Abrir
             </button>
@@ -125,52 +142,39 @@ export default function ObrasClient({ initialObras, empresas, canDelete }: Obras
 
   return (
     <>
-      <Header 
-        breadcrumbs={[{ label: 'Obras' }]}
-        actions={
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Nova obra</span>
-          </button>
-        }
-      />
+      <Header breadcrumbs={[{ label: 'Obras' }]} />
 
       <div className="prumo-page">
         <div className="prumo-page-inner">
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-txt">Obras</h2>
-            <p className="text-[13px] text-txt-2">{initialObras.length} obras cadastradas</p>
-          </div>
-          <div className="flex gap-3 items-center">
-            <div className="relative w-full sm:w-56">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-3" />
-              <input 
-                type="text"
-                placeholder="Buscar obra..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-[7px] border border-brd-1 rounded-lg text-[13px] bg-bg-1 focus:outline-none focus:border-[var(--br)]"
-              />
-            </div>
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-1.5 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-[7px] rounded-lg text-[13px] font-medium transition-colors whitespace-nowrap"
-            >
-              <Plus size={14} /> Nova obra
+        <PageHeader
+          title="Obras"
+          description="Ponto de entrada da operação: de cada obra você desce para ambientes, FVS planejadas, vistorias e medições."
+          actions={
+            <button type="button" onClick={() => setIsModalOpen(true)} className="prumo-primary-button">
+              <Plus size={15} /> Nova obra
             </button>
-          </div>
-        </div>
+          }
+        >
+          <Tabs tabs={tabs} value={statusTab} onChange={setStatusTab} ariaLabel="Situação das obras" />
+        </PageHeader>
 
-        <DataTable
-          columns={columns}
-          data={filteredObras}
-          onRowClick={(item) => router.push(`/obras/${item.id}`)}
-          emptyMessage="Nenhuma obra encontrada com esse nome."
-        />
+        <div>
+          <FilterBar resultLabel={`${filteredObras.length} de ${initialObras.length} obras`}>
+            <SearchField
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Buscar por nome da obra"
+            />
+          </FilterBar>
+
+          <DataTable
+            columns={columns}
+            data={filteredObras}
+            onRowClick={(item) => router.push(`/obras/${item.id}`)}
+            emptyMessage="Nenhuma obra neste recorte"
+            emptyHint="Ajuste a busca ou escolha outra situação acima para ver as obras cadastradas."
+          />
+        </div>
         </div>
       </div>
 

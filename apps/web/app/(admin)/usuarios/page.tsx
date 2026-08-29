@@ -1,4 +1,5 @@
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import UsuariosClient from './UsuariosClient';
 import { requireTenantRole } from '@/lib/auth/context';
 import { createClient } from '@/lib/supabase/server';
@@ -31,8 +32,12 @@ export default async function UsuariosPage() {
 
   return (
     <>
-      <Header breadcrumbs={[{ label: 'Usuários' }]} />
+      <Header breadcrumbs={[{ label: 'Pessoas' }]} />
       <div className="prumo-page"><div className="prumo-page-inner">
+        <PageHeader
+          title="Pessoas"
+          description="Usuários do painel e o escopo de obras que cada um enxerga. O perfil inspetor usa apenas o aplicativo de campo."
+        />
         <UsuariosClient initialUsers={users} availableObras={obras ?? []} />
       </div></div>
     </>

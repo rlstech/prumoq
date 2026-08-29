@@ -12,6 +12,9 @@ import ObraEquipeModal from './ObraEquipeModal';
 import { deleteObra, deleteAmbiente, removeEquipeFromObra } from './actions';
 import ObraModal from '../ObraModal';
 import ObraFeatureControls from './ObraFeatureControls';
+import Tabs from '@/components/ui/Tabs';
+import { FilterBar, SearchField } from '@/components/ui/FilterBar';
+import DataTable from '@/components/ui/DataTable';
 
 export interface MeasurementServiceSummary {
   fvsId: string;
@@ -131,9 +134,9 @@ export default function ObraDetailClient({
   }
 
   const tabs = [
-    { id: 'ambientes', label: 'Ambientes' },
-    { id: 'equipe',    label: 'Equipe' },
-    { id: 'medicoes',  label: 'Medições' },
+    { id: 'ambientes', label: 'Ambientes', count: initialAmbientes.length },
+    { id: 'equipe',    label: 'Equipe',    count: obraEquipes.length },
+    { id: 'medicoes',  label: 'Medições',  count: medicoesServices.length },
   ];
 
   const medicoesEnabled = Boolean(obra.controle_medicoes_efetivo);
@@ -169,69 +172,38 @@ export default function ObraDetailClient({
         medicionesEffective={Boolean(obra.controle_medicoes_efetivo)}
         financeiroEffective={Boolean(obra.controle_financeiro_nc_efetivo)}
       />
-      {/* Tabs + Edit button */}
-      <div className="flex items-center justify-between border-b border-brd-0 mb-6">
-      <div className="flex gap-0">
-        {tabs.map(tab => (
-          <div
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-5 py-2.5 text-[13px] font-medium cursor-pointer border-b-2 -mb-px transition-colors ${
-              activeTab === tab.id
-                ? 'text-[var(--br)] border-[var(--br)]'
-                : 'text-txt-2 border-transparent hover:text-txt'
-            }`}
-          >
-            {tab.label}
-            {tab.id === 'equipe' && obraEquipes.length > 0 && (
-              <span className="ml-1.5 text-[10px] bg-pg-bg text-pg font-semibold px-1.5 py-0.5 rounded-full">
-                {obraEquipes.length}
-              </span>
-            )}
-            {tab.id === 'medicoes' && medicoesServices.length > 0 && (
-              <span className="ml-1.5 text-[10px] bg-pg-bg text-pg font-semibold px-1.5 py-0.5 rounded-full">
-                {medicoesServices.length}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-        <button
-          onClick={() => setIsEditModalOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-0 border border-brd-1 rounded-lg text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors mb-px"
-        >
-          <Pencil size={13} /> Editar obra
-        </button>
+      <div className="mb-6">
+        <Tabs
+          tabs={tabs}
+          value={activeTab}
+          onChange={setActiveTab}
+          ariaLabel="Seções da obra"
+          trailing={
+            <button type="button" onClick={() => setIsEditModalOpen(true)} className="prumo-row-button">
+              <Pencil size={13} /> Editar obra
+            </button>
+          }
+        />
       </div>
 
       {/* Tab: Ambientes */}
       {activeTab === 'ambientes' && (
         <>
-          <div className="flex flex-col sm:flex-row gap-3 justify-between items-center mb-5">
-            <div className="flex gap-1.5 flex-wrap">
-              {['Todos', 'Internos', 'Externos', 'Com NC'].map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilterType(f === 'Internos' ? 'Interno' : f === 'Externos' ? 'Externo' : f)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                    filterType === f || (filterType === 'Interno' && f === 'Internos') || (filterType === 'Externo' && f === 'Externos')
-                      ? 'bg-[var(--brl)] text-[var(--br)] border-[var(--br)]/20'
-                      : f === 'Com NC'
-                      ? 'bg-bg-0 text-nok border-nok/30 hover:bg-nok-bg'
-                      : 'bg-bg-0 text-txt-2 border-brd-1 hover:bg-bg-2'
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-            <input
-              type="text"
-              placeholder="Filtrar ambiente..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="px-3 py-1.5 border border-brd-1 rounded-lg text-xs bg-bg-1 w-44 outline-none focus:border-[var(--br)]"
-            />
+          <Tabs
+            tabs={[
+              { id: 'Todos', label: 'Todos', count: initialAmbientes.length },
+              { id: 'Interno', label: 'Internos', count: initialAmbientes.filter(a => a.tipo === 'Interno').length },
+              { id: 'Externo', label: 'Externos', count: initialAmbientes.filter(a => a.tipo === 'Externo').length },
+              { id: 'Com NC', label: 'Com NC', count: initialAmbientes.filter(a => a.ncs_abertas > 0).length },
+            ]}
+            value={filterType}
+            onChange={setFilterType}
+            ariaLabel="Recorte de ambientes"
+          />
+          <div className="mt-4 mb-5">
+            <FilterBar resultLabel={`${filtered.length} de ${initialAmbientes.length} ambientes`}>
+              <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Buscar ambiente" className="w-full sm:w-64" />
+            </FilterBar>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -293,8 +265,9 @@ export default function ObraDetailClient({
           <div className="px-5 py-3 border-b border-brd-0 flex items-center justify-between">
             <h3 className="text-[14px] font-semibold text-txt">Equipe da obra</h3>
             <button
+              type="button"
               onClick={() => setIsEquipeModalOpen(true)}
-              className="px-3 py-1.5 bg-[var(--br)] text-white rounded-lg text-xs font-medium hover:bg-[var(--brd)] transition-colors"
+              className="prumo-row-button"
             >
               + Adicionar
             </button>
@@ -376,68 +349,44 @@ export default function ObraDetailClient({
               <span>O controle de medições está desativado nesta obra.</span>
               <span className="text-xs">Ative-o nos recursos opcionais da obra (seção acima).</span>
             </div>
-          ) : medicoesServices.length === 0 ? (
-            <div className="py-10 text-center text-sm text-txt-3 flex flex-col items-center gap-2">
-              <Ruler size={24} className="opacity-40" />
-              <span>Nenhum serviço com medição configurada.</span>
-              <span className="text-xs">
-                Abra uma FVS em um ambiente e configure a medição em <b>Medição</b>.
-              </span>
-            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-brd-0 text-[11px] uppercase tracking-wider text-txt-3">
-                    <th className="py-3 px-5 font-semibold">Serviço</th>
-                    <th className="py-3 px-5 font-semibold">Método</th>
-                    <th className="py-3 px-5 font-semibold text-right">Previsto</th>
-                    <th className="py-3 px-5 font-semibold text-right">Aprovado</th>
-                    <th className="py-3 px-5 font-semibold text-right">Disponível</th>
-                    <th className="py-3 px-5 font-semibold text-right">Valor disponível</th>
-                    <th className="py-3 px-5 font-semibold">Empreiteiro</th>
-                    <th className="py-3 px-5 font-semibold text-right">Ação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {medicoesServices.map(svc => (
-                    <tr key={svc.fvsId} className="border-b border-brd-0 last:border-0 hover:bg-bg-2">
-                      <td className="py-3 px-5">
-                        <div className="font-medium text-[13px] text-txt">{svc.subservico}</div>
-                        <div className="text-xs text-txt-2">{svc.ambienteNome}</div>
-                      </td>
-                      <td className="py-3 px-5">
-                        <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                          svc.metodo === 'quantidade' ? 'bg-pg-bg text-pg'
-                          : svc.metodo === 'unidade_concluida' ? 'bg-ok-bg text-ok'
-                          : 'bg-warn-bg text-warn'
-                        }`}>
-                          {metodoLabels[svc.metodo] ?? svc.metodo}
-                        </span>
-                      </td>
-                      <td className="py-3 px-5 text-right text-[13px] text-txt">{fmt(svc.escopo || svc.quantidadeTotal)} {svc.unidade}</td>
-                      <td className="py-3 px-5 text-right text-[13px] text-txt">{fmt(svc.aprovado)}</td>
-                      <td className="py-3 px-5 text-right text-[13px] text-ok font-medium">{fmt(svc.disponivel)}</td>
-                      <td className="py-3 px-5 text-right text-[13px] text-txt">{money(svc.valorDisponivel)}</td>
-                      <td className="py-3 px-5">
-                        <div className="text-[13px] text-txt">{svc.empreiteiro ?? '—'}</div>
-                        {svc.dataInicio && (
-                          <div className="text-xs text-txt-3">desde {fmtDate(svc.dataInicio)}</div>
-                        )}
-                      </td>
-                      <td className="py-3 px-5 text-right">
-                        <Link
-                          href={`/obras/${obraId}/ambiente/${svc.ambienteId}/fvs/${svc.fvsId}/medicao`}
-                          className="text-xs font-semibold text-[var(--br)] hover:underline"
-                        >
-                          Abrir
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              data={medicoesServices}
+              rowKey={svc => svc.fvsId}
+              emptyMessage="Nenhum serviço com medição configurada"
+              emptyHint="Abra uma FVS em um ambiente e configure a medição em Medição."
+              columns={[
+                {
+                  header: 'Serviço',
+                  cell: svc => <div><div className="font-medium text-[13px] text-txt">{svc.subservico}</div><div className="text-xs text-txt-2">{svc.ambienteNome}</div></div>,
+                },
+                {
+                  header: 'Método',
+                  cell: svc => (
+                    <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                      svc.metodo === 'quantidade' ? 'bg-pg-bg text-pg'
+                      : svc.metodo === 'unidade_concluida' ? 'bg-ok-bg text-ok'
+                      : 'bg-warn-bg text-warn'
+                    }`}>
+                      {metodoLabels[svc.metodo] ?? svc.metodo}
+                    </span>
+                  ),
+                },
+                { header: 'Previsto', align: 'right', cell: svc => <span className="text-[13px] text-txt">{fmt(svc.escopo || svc.quantidadeTotal)} {svc.unidade}</span> },
+                { header: 'Aprovado', align: 'right', cell: svc => <span className="text-[13px] text-txt">{fmt(svc.aprovado)}</span> },
+                { header: 'Disponível', align: 'right', cell: svc => <span className="text-[13px] font-medium text-ok">{fmt(svc.disponivel)}</span> },
+                { header: 'Valor disponível', align: 'right', cell: svc => <span className="text-[13px] text-txt">{money(svc.valorDisponivel)}</span> },
+                {
+                  header: 'Empreiteiro',
+                  cell: svc => <div><div className="text-[13px] text-txt">{svc.empreiteiro ?? '—'}</div>{svc.dataInicio && <div className="text-xs text-txt-3">desde {fmtDate(svc.dataInicio)}</div>}</div>,
+                },
+                {
+                  header: '',
+                  align: 'right',
+                  cell: svc => <Link href={`/obras/${obraId}/ambiente/${svc.ambienteId}/fvs/${svc.fvsId}/medicao`} className="prumo-row-button">Abrir</Link>,
+                },
+              ]}
+            />
           )}
         </div>
       )}

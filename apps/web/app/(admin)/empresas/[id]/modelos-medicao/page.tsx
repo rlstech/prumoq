@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import { createClient } from '@/lib/supabase/server';
 import StageModelsClient from './StageModelsClient';
 
@@ -10,5 +11,14 @@ export default async function StageModelsPage({ params }: { params: Promise<{ id
   const { data: models } = await supabase.from('modelos_etapas_medicao').select('*').eq('empresa_id', id).order('nome');
   const ids=(models??[]).map(model=>model.id);
   const { data: items }=ids.length?await supabase.from('modelo_etapas_medicao_itens').select('*').in('modelo_id',ids).order('ordem'):{data:[]};
-  return <><Header breadcrumbs={[{label:'Empresas',href:'/empresas'},{label:company.nome},{label:'Modelos de medição'}]}/><main className="prumo-page"><div className="prumo-page-inner"><StageModelsClient empresaId={id} models={(models??[]).map(model=>({...model,items:(items??[]).filter(item=>item.modelo_id===model.id)}))}/></div></main></>;
+  return <>
+    <Header breadcrumbs={[{label:'Empresas',href:'/empresas'},{label:company.nome},{label:'Modelos de medição'}]}/>
+    <main className="prumo-page"><div className="prumo-page-inner">
+      <PageHeader
+        title="Modelos de medição"
+        description="Etapas de avanço físico reutilizáveis para os serviços desta empresa, aplicadas na configuração de medição de cada FVS."
+      />
+      <StageModelsClient empresaId={id} models={(models??[]).map(model=>({...model,items:(items??[]).filter(item=>item.modelo_id===model.id)}))}/>
+    </div></main>
+  </>;
 }

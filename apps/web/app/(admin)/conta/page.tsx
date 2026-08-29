@@ -1,4 +1,5 @@
 import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import ChangePasswordForm from './ChangePasswordForm';
 
 export default function AccountPage() {
@@ -8,13 +9,10 @@ export default function AccountPage() {
       <div className="prumo-page">
         <div className="prumo-page-inner">
           <div className="max-w-2xl">
-            <p className="prumo-kicker text-[var(--prumo-brand)]">Segurança da conta</p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-[-.035em] text-txt">
-              Alterar senha
-            </h1>
-            <p className="mt-2 text-sm text-txt-2">
-              Atualize suas credenciais de acesso ao painel PrumoQ.
-            </p>
+            <PageHeader
+              title="Minha conta"
+              description="Atualize suas credenciais de acesso ao painel PrumoQ."
+            />
             <ChangePasswordForm />
           </div>
         </div>

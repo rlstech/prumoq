@@ -71,7 +71,7 @@ export default function NcFinancialPanel({ ncId, initial, users, history }: Prop
       </div>
       <Field label="Observação financeira"><textarea rows={2} value={form.observacao ?? ''} onChange={event => set('observacao', event.target.value || null)} /></Field>
       <Field label="Documento/evidência (chave R2 ou referência)"><input value={form.documento ?? ''} onChange={event => set('documento', event.target.value || null)} /></Field>
-      <button onClick={submit} disabled={pending} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[var(--br)] px-3 py-2 text-xs font-medium text-white hover:bg-[var(--brd)] disabled:opacity-60"><Save size={14} />{pending ? 'Salvando...' : 'Salvar impacto'}</button>
+      <button type="button" onClick={submit} disabled={pending} className="prumo-primary-button mt-4 disabled:opacity-60"><Save size={15} />{pending ? 'Salvando...' : 'Salvar impacto'}</button>
       {history.length ? <div className="mt-5 border-t border-brd-0 pt-4"><h3 className="text-xs font-semibold uppercase tracking-wider text-txt-3">Histórico financeiro</h3><div className="mt-2 space-y-2">{history.map(item=><div key={item.id} className="rounded-lg bg-bg-0 p-3 text-xs text-txt-2"><b className="text-txt">{item.situacao?.replaceAll('_',' ') ?? 'Declaração'}</b> · bloqueio {item.bloqueio?.replaceAll('_',' ') ?? 'não informado'}<span className="block mt-1 text-txt-3">{new Date(item.created_at).toLocaleString('pt-BR')}</span></div>)}</div></div>:null}
     </section>
   );

@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { CheckCircle2, Search, Plus, Save, XCircle } from 'lucide-react';
+import { CheckCircle2, Plus, Save, XCircle } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import { FilterBar, SearchField } from '@/components/ui/FilterBar';
 import { createEmpresa, updateEmpresa } from './actions';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
@@ -182,12 +183,13 @@ export default function EmpresasClient({
     {
       header: '',
       cell: (item) => (
-        <div className="flex gap-1">
-          <Link href={`/empresas/${item.id}/modelos-medicao`} className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-brand hover:bg-bg-2 transition-colors">Modelos</Link>
-          <button onClick={() => openEdit(item)} className="px-2.5 py-1 bg-bg-0 border border-brd-1 rounded text-xs font-medium text-txt-2 hover:bg-bg-2 transition-colors">Editar</button>
+        <div className="flex gap-1.5">
+          <Link href={`/empresas/${item.id}/modelos-medicao`} className="prumo-row-button">Modelos</Link>
+          <button type="button" onClick={() => openEdit(item)} className="prumo-row-button">Editar</button>
           <button
+            type="button"
             onClick={() => toggleAtivo(item)}
-            className={`px-2.5 py-1 rounded text-xs font-medium transition-colors border ${
+            className={`inline-flex h-7 items-center rounded border px-2.5 text-xs font-semibold transition-colors ${
               item.ativo
                 ? 'border-nok/30 text-nok hover:bg-nok-bg'
                 : 'border-ok/30 text-ok hover:bg-ok-bg'
@@ -202,24 +204,12 @@ export default function EmpresasClient({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-brd-0 pb-6 mb-6">
-        <div className="relative w-full sm:w-80">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-3" />
-          <input 
-            type="text"
-            placeholder="Buscar por nome ou CNPJ..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-brd-1 rounded-lg text-sm bg-bg-1 focus:outline-none focus:border-[var(--br)]"
-          />
-        </div>
-        <button 
-          onClick={openNew}
-          className="flex items-center gap-2 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-        >
-          <Plus size={16} /> Nova Empresa
+      <FilterBar resultLabel={`${filtered.length} de ${initialData.length} empresas`}>
+        <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Buscar por razão social ou CNPJ" />
+        <button type="button" onClick={openNew} className="prumo-primary-button ml-auto">
+          <Plus size={15} /> Nova empresa
         </button>
-      </div>
+      </FilterBar>
 
       {feedback && (
         <div
@@ -345,8 +335,8 @@ export default function EmpresasClient({
           </div>
 
           <div className="flex gap-3 justify-end pt-2">
-            <button type="button" onClick={() => setModalOpen(false)} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">Cancelar</button>
-            <button type="submit" disabled={loading} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
+            <button type="button" onClick={() => setModalOpen(false)} className="prumo-secondary-button">Cancelar</button>
+            <button type="submit" disabled={loading} className="prumo-primary-button disabled:opacity-60">
               <Save size={16} /> {loading ? 'Salvando...' : selectedEmpresa ? 'Salvar alterações' : 'Salvar Empresa'}
             </button>
           </div>
