@@ -15,14 +15,19 @@ import {
 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { AppHeader } from '../../../components/AppHeader';
+import { BrandMark } from '../../../components/BrandMark';
+import { BrandWordmark } from '../../../components/BrandWordmark';
+import { ConformityRing } from '../../../components/ConformityRing';
+import { CanopyBackdrop } from '../../../components/DashboardCanopy';
 import { OfflineBanner } from '../../../components/OfflineBanner';
 import { ProgressBar } from '../../../components/ProgressBar';
 import { BadgeStatus, StatusBadge } from '../../../components/StatusBadge';
+import { SyncStatusIndicator } from '../../../components/SyncStatusIndicator';
 import { useResponsiveLayout } from '../../../hooks/useResponsiveLayout';
 import {
   Breakpoints,
   Colors,
+  ComponentSize,
   Elevation,
   FontFamily,
   FontSizes,
@@ -417,7 +422,7 @@ export default function DashboardScreen() {
   const activeWorks = obrasAtivas[0]?.count ?? 0;
 
   return (
-    <SafeAreaView style={[styles.safe, styles.safeBrand]}>
+    <SafeAreaView style={styles.safe}>
       <StatusBar style="light" backgroundColor={Colors.brand} />
       <OfflineBanner />
       <ScrollView
@@ -425,30 +430,46 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.page}
       >
-        <AppHeader
-          tone="brand"
-          rightElement={(
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Abrir perfil"
-              onPress={() => router.push('/(app)/(tabs)/perfil' as never)}
-              style={({ pressed }) => [styles.avatar, pressed && styles.pressed]}
-            >
-              <Text style={styles.avatarText}>{userInfo ? initials(userInfo.nome) : 'IN'}</Text>
-            </Pressable>
-          )}
-        >
-          <View style={styles.greetingBlock}>
-            <Text style={styles.greeting}>
-              {greetingFor()}, {userInfo?.nome?.split(' ')[0] ?? 'Inspetor'}
-            </Text>
-            <Text style={styles.headerSub}>
-              {todayLabel()} · {userInfo?.cargo ?? 'Inspetor de Campo'} · {activeWorks} {activeWorks === 1 ? 'obra ativa' : 'obras ativas'}
-            </Text>
+        <View style={styles.canopy}>
+          <CanopyBackdrop />
+          <View style={styles.canopyInner}>
+            <View style={styles.topRow}>
+              <View style={styles.brandRow}>
+                <BrandMark size={34} variant="onBrand" tile />
+                <BrandWordmark fontSize={FontSizes.md} variant="onBrand" />
+              </View>
+              <View style={styles.headerActions}>
+                <SyncStatusIndicator tone="onBrand" compact={false} />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Abrir perfil"
+                  onPress={() => router.push('/(app)/(tabs)/perfil' as never)}
+                  style={({ pressed }) => [styles.avatar, pressed && styles.pressed]}
+                >
+                  <Text style={styles.avatarText}>{userInfo ? initials(userInfo.nome) : 'IN'}</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.greetingBlock}>
+              <Text style={styles.greeting} numberOfLines={1}>
+                {greetingFor()}, {userInfo?.nome?.split(' ')[0] ?? 'Inspetor'}
+              </Text>
+              <Text style={styles.headerSub} numberOfLines={1}>
+                {todayLabel()} · {activeWorks} {activeWorks === 1 ? 'obra ativa' : 'obras ativas'}
+              </Text>
+            </View>
           </View>
-        </AppHeader>
+        </View>
 
         <View style={styles.content}>
+          <WeekCard
+            verifications={week.total}
+            openNcs={prazos.abertas}
+            resolved={week.resolvidas}
+            rate={week.taxa}
+          />
+
           {heroDraft ? (
             <ResumeSection
               draft={heroDraft}
@@ -468,34 +489,22 @@ export default function DashboardScreen() {
               />
             </View>
             <View style={isTablet ? styles.columnNarrow : undefined}>
-              <WeekPanel
-                verifications={week.total}
-                openNcs={prazos.abertas}
-                resolved={week.resolvidas}
-                rate={week.taxa}
-              />
-            </View>
-          </View>
-
-          <View style={[styles.columns, isTablet && styles.columnsTablet]}>
-            <View style={isTablet ? styles.columnWide : undefined}>
               <WorksPanel
                 works={obrasProgresso.slice(0, 3)}
                 onOpenAll={() => router.push('/(app)/(tabs)/obras' as never)}
                 onOpenWork={workId => router.push(`/obras/${workId}` as never)}
               />
             </View>
-            {verifsRecentes.length > 0 ? (
-              <View style={isTablet ? styles.columnNarrow : undefined}>
-                <ActivityPanel
-                  verifications={verifsRecentes}
-                  onOpen={verification => router.push(
-                    `/obras/${verification.obra_id}/ambiente/${verification.ambiente_id}/fvs/${verification.fvs_planejada_id}` as never,
-                  )}
-                />
-              </View>
-            ) : null}
           </View>
+
+          {verifsRecentes.length > 0 ? (
+            <ActivityPanel
+              verifications={verifsRecentes}
+              onOpen={verification => router.push(
+                `/obras/${verification.obra_id}/ambiente/${verification.ambiente_id}/fvs/${verification.fvs_planejada_id}` as never,
+              )}
+            />
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -508,10 +517,94 @@ function stepNumber(step: VerificationDraftV1['currentStep']): number {
   return verificationStepIndex(normalizeVerificationStep(step)) + 1;
 }
 
+/** Cabeçalho de seção fora do cartão, no padrão de lista agrupada do iOS. */
+function SectionHeader({
+  title,
+  actionLabel,
+  actionHint,
+  onPress,
+}: {
+  title: string;
+  actionLabel?: string;
+  actionHint?: string;
+  onPress?: () => void;
+}) {
+  return (
+    <View style={styles.sectionHead}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {actionLabel && onPress ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={actionHint ?? actionLabel}
+          onPress={onPress}
+          hitSlop={8}
+          style={({ pressed }) => [styles.sectionLink, pressed && styles.pressed]}
+        >
+          <Text style={styles.sectionLinkText}>{actionLabel}</Text>
+          <ChevronRight size={14} color={Colors.brand} strokeWidth={2.4} />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
 /**
- * Primeiro bloco da tela: a única coisa que o inspetor pode continuar agora.
- * O rascunho mais recente vira ação primária; os demais ficam como linhas
- * compactas logo abaixo, sem repetir o botão.
+ * Cartão-herói: flutua sobre a capa e responde à única pergunta que abre o
+ * dia — como está o trabalho da semana. O anel carrega a taxa de conformidade
+ * e a faixa inferior os três números que a explicam.
+ */
+function WeekCard({
+  verifications,
+  openNcs,
+  resolved,
+  rate,
+}: {
+  verifications: number;
+  openNcs: number;
+  resolved: number;
+  rate: number | null;
+}) {
+  const headline = verifications === 0
+    ? 'Nenhuma verificação'
+    : `${verifications} ${verifications === 1 ? 'verificação' : 'verificações'}`;
+
+  return (
+    <View style={styles.heroCard}>
+      <View style={styles.heroRow}>
+        <ConformityRing value={rate} />
+        <View style={styles.heroBody}>
+          <Text style={styles.overline}>SUA SEMANA</Text>
+          <Text style={styles.heroHeadline} numberOfLines={2}>{headline}</Text>
+          <Text style={styles.heroCaption}>nos últimos 7 dias</Text>
+        </View>
+      </View>
+
+      <View style={[styles.cardDivider, styles.heroDivider]} />
+
+      <View style={styles.statsRow}>
+        <View style={[styles.stat, styles.statFirst]}>
+          <Text style={styles.statValue}>{verifications}</Text>
+          <Text style={styles.statLabel}>Verificações</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.stat}>
+          <Text style={[styles.statValue, openNcs > 0 && { color: Colors.nok }]}>{openNcs}</Text>
+          <Text style={styles.statLabel}>NCs abertas</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.stat}>
+          <Text style={[styles.statValue, resolved > 0 && { color: Colors.ok }]}>{resolved}</Text>
+          <Text style={styles.statLabel}>Resolvidas</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * A única coisa que o inspetor pode continuar agora. O rascunho mais recente
+ * vira ação primária; os demais ficam como linhas compactas logo abaixo, sem
+ * repetir o botão.
  */
 function ResumeSection({
   draft,
@@ -529,30 +622,32 @@ function ResumeSection({
 
   return (
     <View style={styles.resumeGroup}>
-      <View style={styles.hero}>
-        <View style={styles.heroTop}>
-          <View style={styles.heroIcon}>
-            <FileClock size={22} color={Colors.brandSignature} />
+      <View style={styles.card}>
+        <View style={styles.draftHead}>
+          <View style={styles.draftIcon}>
+            <FileClock size={19} color={Colors.brand} strokeWidth={2} />
           </View>
-          <View style={styles.heroBody}>
-            <Text style={styles.heroEyebrow}>RASCUNHO SALVO</Text>
-            <Text style={styles.heroTitle} numberOfLines={2}>
+          <View style={styles.draftBody}>
+            <Text style={styles.draftEyebrow} numberOfLines={1}>
+              RASCUNHO · {formatDraftTime(draft.updatedAt)}
+            </Text>
+            <Text style={styles.draftTitle} numberOfLines={2}>
               {draft.fvsName || 'Verificação em andamento'}
             </Text>
-            <Text style={styles.heroMeta} numberOfLines={1}>
-              {draft.ambienteName} · salvo em {formatDraftTime(draft.updatedAt)}
+            <Text style={styles.draftMeta} numberOfLines={1}>{draft.ambienteName}</Text>
+          </View>
+          <View style={styles.stepChip}>
+            <Text style={styles.stepChipText}>
+              Etapa {step}/{VERIFICATION_STEPS.length}
             </Text>
           </View>
         </View>
 
-        <View style={styles.heroStep}>
-          <Text style={styles.heroStepLabel}>Etapa {step} de {VERIFICATION_STEPS.length}</Text>
-          <View style={styles.heroTrack}>
-            <View style={[styles.heroFill, { width: `${progress}%` as `${number}%` }]} />
-          </View>
+        <View style={styles.draftTrack}>
+          <View style={[styles.draftFill, { width: `${progress}%` as `${number}%` }]} />
         </View>
 
-        <View style={styles.heroActions}>
+        <View style={styles.draftActions}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Continuar ${draft.fvsName || 'verificação em andamento'}`}
@@ -560,16 +655,16 @@ function ResumeSection({
             style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
           >
             <Text style={styles.ctaText}>Continuar vistoria</Text>
-            <ArrowRight size={18} color={Colors.text} strokeWidth={2.4} />
+            <ArrowRight size={17} color={Colors.text} strokeWidth={2.4} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Descartar rascunho de ${draft.fvsName || 'verificação em andamento'}`}
             onPress={() => onDiscard(draft)}
             hitSlop={8}
-            style={({ pressed }) => [styles.ghostButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.ghostButton, pressed && styles.rowPressed]}
           >
-            <Trash2 size={18} color={Colors.nok} />
+            <Trash2 size={17} color={Colors.nok} />
           </Pressable>
         </View>
       </View>
@@ -582,7 +677,7 @@ function ResumeSection({
             onPress={() => onResume(other)}
             style={({ pressed }) => [styles.draftRowMain, pressed && styles.pressed]}
           >
-            <FileClock size={18} color={Colors.brandSignature} />
+            <FileClock size={17} color={Colors.brand} />
             <View style={styles.draftRowBody}>
               <Text style={styles.draftRowTitle} numberOfLines={1}>
                 {other.fvsName || 'Verificação em andamento'}
@@ -591,7 +686,7 @@ function ResumeSection({
                 {other.ambienteName} · etapa {stepNumber(other.currentStep)} de {VERIFICATION_STEPS.length}
               </Text>
             </View>
-            <ArrowRight size={16} color={Colors.brandSignature} />
+            <ArrowRight size={16} color={Colors.brand} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -627,99 +722,101 @@ function ReinspectionPanel({
   const remaining = prazos.abertas - ncs.length;
 
   return (
-    <View style={styles.panel}>
-      <View style={styles.panelHead}>
-        <Text style={styles.panelTitle}>Reinspeções</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ver todas as não conformidades"
-          onPress={onOpenQueue}
-          hitSlop={8}
-          style={({ pressed }) => [styles.panelLink, pressed && styles.pressed]}
-        >
-          <Text style={styles.panelLinkText}>Ver todas</Text>
-          <ChevronRight size={14} color={Colors.brand} strokeWidth={2.4} />
-        </Pressable>
-      </View>
+    <View style={styles.section}>
+      <SectionHeader
+        title="REINSPEÇÕES"
+        actionLabel={prazos.abertas > 0 ? `Ver as ${prazos.abertas}` : 'Ver todas'}
+        actionHint="Ver todas as não conformidades"
+        onPress={onOpenQueue}
+      />
 
-      <View style={styles.band}>
-        <DeadlineCell
-          value={prazos.vencidas}
-          label="Vencidas"
-          color={prazos.vencidas > 0 ? Colors.nok : Colors.textTertiary}
-          Icon={AlertTriangle}
-          onPress={onOpenQueue}
-        />
-        <View style={styles.bandDivider} />
-        <DeadlineCell
-          value={prazos.hoje}
-          label="Vencem hoje"
-          color={prazos.hoje > 0 ? Colors.warn : Colors.textTertiary}
-          Icon={Clock3}
-          onPress={onOpenQueue}
-        />
-        <View style={styles.bandDivider} />
-        <DeadlineCell
-          value={prazos.proximos}
-          label="Próx. 7 dias"
-          color={Colors.textSecondary}
-          Icon={CalendarDays}
-          onPress={onOpenQueue}
-        />
-      </View>
-
-      {ncs.length === 0 ? (
-        <View style={styles.emptyRow}>
-          <CheckCircle2 size={20} color={Colors.ok} strokeWidth={2.2} />
-          <View style={styles.emptyBody}>
-            <Text style={styles.emptyTitle}>Campo em dia</Text>
-            <Text style={styles.emptyText}>Nenhuma reinspeção pendente nas suas obras.</Text>
-          </View>
-        </View>
-      ) : (
-        <>
-          {ncs.map(nc => {
-            const due = deadline(nc.data_nova_verif);
-            return (
-              <Pressable
-                key={nc.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Reinspecionar ${nc.item_titulo} em ${nc.obra_nome}, ${nc.ambiente_nome}. ${due.label}.`}
-                onPress={() => onOpenNc(nc.id)}
-                style={({ pressed }) => [styles.queueRow, pressed && styles.rowPressed]}
-              >
-                <View style={[styles.datum, { backgroundColor: due.color }]} />
-                <View style={styles.queueBody}>
-                  <Text style={styles.queueTitle} numberOfLines={2}>{nc.item_titulo}</Text>
-                  <Text style={styles.queueMeta} numberOfLines={1}>
-                    {nc.obra_nome} · {nc.ambiente_nome}
-                  </Text>
-                </View>
-                <View style={[styles.chip, { backgroundColor: due.bg }]}>
-                  <View style={[styles.chipDot, { backgroundColor: due.color }]} />
-                  <Text style={[styles.chipText, { color: due.color }]}>{due.label}</Text>
-                </View>
-              </Pressable>
-            );
-          })}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Abrir a fila de reinspeções"
+      <View style={styles.card}>
+        <View style={styles.band}>
+          <DeadlineCell
+            value={prazos.vencidas}
+            label="Vencidas"
+            color={prazos.vencidas > 0 ? Colors.nok : Colors.textTertiary}
+            Icon={AlertTriangle}
             onPress={onOpenQueue}
-            style={({ pressed }) => [styles.panelFoot, pressed && styles.rowPressed]}
-          >
-            <Text style={styles.panelFootText}>
-              {remaining > 0
-                ? `Mais ${remaining} ${remaining === 1 ? 'reinspeção' : 'reinspeções'} na fila`
-                : 'Fila de reinspeção completa'}
-            </Text>
-            <View style={styles.panelLink}>
-              <Text style={styles.panelLinkText}>Abrir fila</Text>
-              <ChevronRight size={14} color={Colors.brand} strokeWidth={2.4} />
+          />
+          <View style={styles.bandDivider} />
+          <DeadlineCell
+            value={prazos.hoje}
+            label="Vencem hoje"
+            color={prazos.hoje > 0 ? Colors.warn : Colors.textTertiary}
+            Icon={Clock3}
+            onPress={onOpenQueue}
+          />
+          <View style={styles.bandDivider} />
+          <DeadlineCell
+            value={prazos.proximos}
+            label="Próx. 7 dias"
+            color={Colors.text}
+            Icon={CalendarDays}
+            onPress={onOpenQueue}
+          />
+        </View>
+
+        {ncs.length === 0 ? (
+          <>
+            <View style={styles.cardDivider} />
+            <View style={styles.emptyRow}>
+              <CheckCircle2 size={20} color={Colors.ok} strokeWidth={2.2} />
+              <View style={styles.emptyBody}>
+                <Text style={styles.emptyTitle}>Campo em dia</Text>
+                <Text style={styles.emptyText}>Nenhuma reinspeção pendente nas suas obras.</Text>
+              </View>
             </View>
-          </Pressable>
-        </>
-      )}
+          </>
+        ) : (
+          <>
+            {ncs.map(nc => {
+              const due = deadline(nc.data_nova_verif);
+              return (
+                <View key={nc.id}>
+                  <View style={styles.cardDivider} />
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Reinspecionar ${nc.item_titulo} em ${nc.obra_nome}, ${nc.ambiente_nome}. ${due.label}.`}
+                    onPress={() => onOpenNc(nc.id)}
+                    style={({ pressed }) => [styles.queueRow, pressed && styles.rowPressed]}
+                  >
+                    <View style={[styles.tile, { backgroundColor: due.bg }]}>
+                      <AlertTriangle size={17} color={due.color} strokeWidth={2.1} />
+                    </View>
+                    <View style={styles.queueBody}>
+                      <Text style={styles.queueTitle} numberOfLines={2}>{nc.item_titulo}</Text>
+                      <Text style={styles.queueMeta} numberOfLines={1}>
+                        {nc.obra_nome} · {nc.ambiente_nome}
+                      </Text>
+                    </View>
+                    <View style={[styles.chip, { backgroundColor: due.bg }]}>
+                      <View style={[styles.chipDot, { backgroundColor: due.color }]} />
+                      <Text style={[styles.chipText, { color: due.color }]}>{due.label}</Text>
+                    </View>
+                  </Pressable>
+                </View>
+              );
+            })}
+            {remaining > 0 ? (
+              <>
+                <View style={styles.cardDivider} />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Abrir a fila de reinspeções"
+                  onPress={onOpenQueue}
+                  style={({ pressed }) => [styles.cardFoot, pressed && styles.rowPressed]}
+                >
+                  <Text style={styles.cardFootText}>
+                    Mais {remaining} {remaining === 1 ? 'reinspeção' : 'reinspeções'} na fila
+                  </Text>
+                  <ChevronRight size={15} color={Colors.brand} strokeWidth={2.4} />
+                </Pressable>
+              </>
+            ) : null}
+          </>
+        )}
+      </View>
     </View>
   );
 }
@@ -753,53 +850,6 @@ function DeadlineCell({
   );
 }
 
-/** Desempenho dos últimos 7 dias — o contrapeso das reinspeções. */
-function WeekPanel({
-  verifications,
-  openNcs,
-  resolved,
-  rate,
-}: {
-  verifications: number;
-  openNcs: number;
-  resolved: number;
-  rate: number | null;
-}) {
-  return (
-    <View style={styles.panel}>
-      <View style={styles.panelHead}>
-        <Text style={styles.panelTitle}>Sua semana</Text>
-        <Text style={styles.panelCaption}>Últimos 7 dias</Text>
-      </View>
-
-      <View style={styles.statsRow}>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{verifications}</Text>
-          <Text style={styles.statLabel}>Verificações</Text>
-        </View>
-        <View style={styles.stat}>
-          <Text style={[styles.statValue, openNcs > 0 && { color: Colors.nok }]}>{openNcs}</Text>
-          <Text style={styles.statLabel}>NCs abertas</Text>
-        </View>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{resolved}</Text>
-          <Text style={styles.statLabel}>NCs resolvidas</Text>
-        </View>
-      </View>
-
-      <View style={styles.rateBlock}>
-        <View style={styles.rateTop}>
-          <Text style={styles.rateLabel}>Verificações conformes</Text>
-          <Text style={[styles.rateValue, rate === null && styles.rateValueEmpty]}>
-            {rate === null ? '—' : `${rate}%`}
-          </Text>
-        </View>
-        <ProgressBar value={rate ?? 0} height={6} color={Colors.ok} />
-      </View>
-    </View>
-  );
-}
-
 function WorksPanel({
   works,
   onOpenAll,
@@ -810,68 +860,64 @@ function WorksPanel({
   onOpenWork: (workId: string) => void;
 }) {
   return (
-    <View style={styles.panel}>
-      <View style={styles.panelHead}>
-        <Text style={styles.panelTitle}>Obras</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ver todas as obras"
-          onPress={onOpenAll}
-          hitSlop={8}
-          style={({ pressed }) => [styles.panelLink, pressed && styles.pressed]}
-        >
-          <Text style={styles.panelLinkText}>Todas</Text>
-          <ChevronRight size={14} color={Colors.brand} strokeWidth={2.4} />
-        </Pressable>
-      </View>
+    <View style={styles.section}>
+      <SectionHeader
+        title="SUAS OBRAS"
+        actionLabel="Todas"
+        actionHint="Ver todas as obras"
+        onPress={onOpenAll}
+      />
 
-      {works.length === 0 ? (
-        <View style={styles.emptyRow}>
-          <Building2 size={20} color={Colors.textSecondary} />
-          <View style={styles.emptyBody}>
-            <Text style={styles.emptyTitle}>Nenhuma obra ativa</Text>
-            <Text style={styles.emptyText}>Peça acesso a uma obra ao administrador.</Text>
-          </View>
-        </View>
-      ) : works.map((work, index) => {
-        const percentage = work.progresso_percentual ?? 0;
-        const ncs = work.ncs_abertas ?? 0;
-        return (
-          <Pressable
-            key={work.id}
-            accessibilityRole="button"
-            accessibilityLabel={`${work.nome}, ${Math.round(percentage)} por cento concluída, ${ncs} não conformidades abertas.`}
-            onPress={() => onOpenWork(work.id)}
-            style={({ pressed }) => [
-              styles.workRow,
-              index === works.length - 1 && styles.rowLast,
-              pressed && styles.rowPressed,
-            ]}
-          >
-            <View style={styles.workIcon}><Building2 size={20} color={Colors.info} /></View>
-            <View style={styles.workBody}>
-              <View style={styles.workTop}>
-                <Text style={styles.workName} numberOfLines={1}>{work.nome}</Text>
-                {work.status ? <StatusBadge status={work.status as BadgeStatus} size="sm" /> : null}
-              </View>
-              <View style={styles.progressRow}>
-                <View style={styles.progress}>
-                  <ProgressBar
-                    value={percentage}
-                    height={6}
-                    color={percentage === 100 ? Colors.ok : Colors.brand}
-                  />
-                </View>
-                <Text style={styles.progressText}>{Math.round(percentage)}%</Text>
-              </View>
-              <Text style={styles.workMeta} numberOfLines={1}>
-                {work.total_ambientes ?? 0} ambientes · {work.fvs_concluidas ?? 0}/{work.total_fvs ?? 0} FVS
-                {ncs > 0 ? ` · ${ncs} ${ncs === 1 ? 'NC aberta' : 'NCs abertas'}` : ''}
-              </Text>
+      <View style={styles.card}>
+        {works.length === 0 ? (
+          <View style={styles.emptyRow}>
+            <Building2 size={20} color={Colors.textSecondary} />
+            <View style={styles.emptyBody}>
+              <Text style={styles.emptyTitle}>Nenhuma obra ativa</Text>
+              <Text style={styles.emptyText}>Peça acesso a uma obra ao administrador.</Text>
             </View>
-          </Pressable>
-        );
-      })}
+          </View>
+        ) : works.map((work, index) => {
+          const percentage = work.progresso_percentual ?? 0;
+          const ncs = work.ncs_abertas ?? 0;
+          const done = percentage === 100;
+          return (
+            <View key={work.id}>
+              {index > 0 ? <View style={styles.rowDivider} /> : null}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${work.nome}, ${Math.round(percentage)} por cento concluída, ${ncs} não conformidades abertas.`}
+                onPress={() => onOpenWork(work.id)}
+                style={({ pressed }) => [styles.workRow, pressed && styles.rowPressed]}
+              >
+                <View style={[styles.tile, { backgroundColor: done ? Colors.okBg : Colors.infoBg }]}>
+                  <Building2 size={19} color={done ? Colors.ok : Colors.info} strokeWidth={1.9} />
+                </View>
+                <View style={styles.workBody}>
+                  <View style={styles.workTop}>
+                    <Text style={styles.workName} numberOfLines={1}>{work.nome}</Text>
+                    {work.status ? <StatusBadge status={work.status as BadgeStatus} size="sm" /> : null}
+                  </View>
+                  <View style={styles.progressRow}>
+                    <View style={styles.progress}>
+                      <ProgressBar
+                        value={percentage}
+                        height={6}
+                        color={done ? Colors.ok : Colors.brand}
+                      />
+                    </View>
+                    <Text style={styles.progressText}>{Math.round(percentage)}%</Text>
+                  </View>
+                  <Text style={styles.workMeta} numberOfLines={1}>
+                    {work.total_ambientes ?? 0} ambientes · {work.fvs_concluidas ?? 0}/{work.total_fvs ?? 0} FVS
+                    {ncs > 0 ? ` · ${ncs} ${ncs === 1 ? 'NC aberta' : 'NCs abertas'}` : ''}
+                  </Text>
+                </View>
+              </Pressable>
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -884,337 +930,447 @@ function ActivityPanel({
   onOpen: (verification: VerifRecentRow) => void;
 }) {
   return (
-    <View style={styles.panel}>
-      <View style={styles.panelHead}>
-        <Text style={styles.panelTitle}>Atividade recente</Text>
-      </View>
-      {verifications.map((verification, index) => {
-        const conforming = verification.status === 'conforme';
-        return (
-          <Pressable
-            key={verification.id}
-            accessibilityRole="button"
-            accessibilityLabel={`${verification.fvs_nome || 'Verificação'} em ${verification.obra_nome}, ${relativeDate(verification.data_verif)}.`}
-            onPress={() => onOpen(verification)}
-            style={({ pressed }) => [
-              styles.activityRow,
-              index === verifications.length - 1 && styles.rowLast,
-              pressed && styles.rowPressed,
-            ]}
-          >
-            {conforming
-              ? <CheckCircle2 size={18} color={Colors.ok} strokeWidth={2.2} />
-              : <XCircle size={18} color={Colors.nok} strokeWidth={2.2} />}
-            <View style={styles.activityBody}>
-              <Text style={styles.activityTitle} numberOfLines={1}>{verification.fvs_nome || 'Verificação'}</Text>
-              <Text style={styles.activityMeta} numberOfLines={1}>
-                {verification.obra_nome} · {relativeDate(verification.data_verif)}
-              </Text>
+    <View style={styles.section}>
+      <SectionHeader title="ATIVIDADE RECENTE" />
+
+      <View style={styles.card}>
+        {verifications.map((verification, index) => {
+          const conforming = verification.status === 'conforme';
+          return (
+            <View key={verification.id}>
+              {index > 0 ? <View style={styles.rowDivider} /> : null}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${verification.fvs_nome || 'Verificação'} em ${verification.obra_nome}, ${relativeDate(verification.data_verif)}.`}
+                onPress={() => onOpen(verification)}
+                style={({ pressed }) => [styles.activityRow, pressed && styles.rowPressed]}
+              >
+                <View style={[styles.avatarDot, { backgroundColor: conforming ? Colors.okBg : Colors.nokBg }]}>
+                  {conforming
+                    ? <CheckCircle2 size={17} color={Colors.ok} strokeWidth={2.3} />
+                    : <XCircle size={17} color={Colors.nok} strokeWidth={2.3} />}
+                </View>
+                <View style={styles.activityBody}>
+                  <Text style={styles.activityTitle} numberOfLines={1}>
+                    {verification.fvs_nome || 'Verificação'}
+                  </Text>
+                  <Text style={styles.activityMeta} numberOfLines={1}>
+                    {verification.obra_nome} · {verification.ambiente_nome}
+                  </Text>
+                </View>
+                <Text style={styles.activityDate}>{relativeDate(verification.data_verif)}</Text>
+                <ChevronRight size={15} color={Colors.borderNormal} strokeWidth={2.4} />
+              </Pressable>
             </View>
-            <StatusBadge status={verification.status as BadgeStatus} size="sm" />
-          </Pressable>
-        );
-      })}
+          );
+        })}
+      </View>
     </View>
   );
 }
 
+/** Raio da capa — maior que Radius.xl de propósito: é a única superfície de
+ *  tela cheia do app e acompanha o arredondamento do aparelho. */
+const CANOPY_RADIUS = 28;
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  safeBrand: { backgroundColor: Colors.brand },
+  safe: { flex: 1, backgroundColor: Colors.brand },
   scroll: { backgroundColor: Colors.bg },
-  page: { paddingBottom: Spacing.xxxl },
+  page: { paddingBottom: Spacing.huge, backgroundColor: Colors.bg },
+
+  // ── Capa ────────────────────────────────────────────────────────────
+  canopy: {
+    backgroundColor: Colors.brand,
+    borderBottomLeftRadius: CANOPY_RADIUS,
+    borderBottomRightRadius: CANOPY_RADIUS,
+    overflow: 'hidden',
+    paddingBottom: 64,
+  },
+  canopyInner: {
+    width: '100%',
+    maxWidth: Breakpoints.maxContent,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.sm,
+    gap: Spacing.lg,
+  },
+  topRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+  },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: Radius.full,
+    backgroundColor: 'rgba(216,229,104,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(216,229,104,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: Colors.brandSignature,
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.tiny,
+  },
+  greetingBlock: { gap: 6 },
+  greeting: { ...Typography.title, color: Palette.white },
+  headerSub: { ...Typography.overline, color: Palette.white, opacity: 0.6 },
+
+  // ── Estrutura ───────────────────────────────────────────────────────
   content: {
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
     gap: Spacing.xl,
   },
   columns: { gap: Spacing.xl },
   columnsTablet: { flexDirection: 'row', alignItems: 'flex-start' },
   columnWide: { flex: 1.25, minWidth: 0 },
   columnNarrow: { flex: 1, minWidth: 0 },
-
-  greetingBlock: { gap: 2 },
-  greeting: {
-    color: Palette.white,
-    fontFamily: FontFamily.bold,
-    fontSize: FontSizes.xxl,
-    lineHeight: 32,
-    letterSpacing: -0.5,
+  section: { gap: Spacing.sm },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.sm,
   },
-  headerSub: { ...Typography.label, fontFamily: FontFamily.regular, color: Palette.white, opacity: 0.76 },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.brandSignature,
+  sectionTitle: { ...Typography.overline, color: Colors.textTertiary },
+  sectionLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  sectionLinkText: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.xs,
+    color: Colors.brand,
+  },
+
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+    ...Elevation.card,
+  },
+  cardDivider: { height: 1, backgroundColor: Colors.border },
+  rowDivider: { height: 1, backgroundColor: Colors.border, marginLeft: 68 },
+  cardFoot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  cardFootText: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+  },
+  tile: {
+    width: 38,
+    height: 38,
+    borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: Colors.text, fontFamily: FontFamily.bold, fontSize: FontSizes.sm },
+  overline: { ...Typography.overline, color: Colors.textTertiary },
   pressed: { opacity: 0.72 },
   rowPressed: { backgroundColor: Colors.surface2 },
 
-  // ── Retomar ────────────────────────────────────────────
-  resumeGroup: { gap: Spacing.sm },
-  hero: {
-    backgroundColor: Colors.text,
-    borderRadius: Radius.lg,
+  // ── Cartão da semana ────────────────────────────────────────────────
+  heroCard: {
+    marginTop: -52,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
     padding: Spacing.lg,
-    gap: Spacing.md,
-    ...Elevation.card,
+    ...Elevation.floating,
   },
-  heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md },
-  heroIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
-    backgroundColor: 'rgba(216,229,104,0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroBody: { flex: 1, minWidth: 0, gap: 3 },
-  heroEyebrow: { ...Typography.overline, color: Colors.brandSignature },
-  heroTitle: {
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
+  heroBody: { flex: 1, minWidth: 0, gap: 4 },
+  heroHeadline: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSizes.lg,
     lineHeight: 24,
-    letterSpacing: -0.2,
-    color: Colors.surface,
+    letterSpacing: -0.3,
+    color: Colors.text,
   },
-  heroMeta: { ...Typography.caption, color: Colors.borderNormal },
-  heroStep: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  heroStepLabel: { fontFamily: FontFamily.regular, fontSize: FontSizes.tiny, lineHeight: 16, color: Colors.borderNormal },
-  heroTrack: {
-    flex: 1,
-    height: 4,
+  heroCaption: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+  },
+  statsRow: { flexDirection: 'row', alignItems: 'center', paddingTop: Spacing.md },
+  heroDivider: { marginHorizontal: -Spacing.lg },
+  stat: { flex: 1, gap: 2, paddingLeft: Spacing.md },
+  statFirst: { paddingLeft: 0 },
+  statDivider: { width: 1, height: 26, backgroundColor: Colors.border },
+  statValue: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSizes.lg,
+    lineHeight: 24,
+    letterSpacing: -0.4,
+    color: Colors.text,
+  },
+  statLabel: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSizes.tiny,
+    color: Colors.textSecondary,
+  },
+
+  // ── Rascunho ────────────────────────────────────────────────────────
+  resumeGroup: { gap: Spacing.sm },
+  draftHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.md,
+    padding: Spacing.lg,
+    paddingBottom: 0,
+  },
+  draftIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.brandLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  draftBody: { flex: 1, minWidth: 0, gap: 3 },
+  draftEyebrow: { ...Typography.overline, color: Colors.warn },
+  draftTitle: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.base,
+    lineHeight: 21,
+    letterSpacing: -0.25,
+    color: Colors.text,
+  },
+  draftMeta: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.tiny,
+    color: Colors.textSecondary,
+  },
+  stepChip: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 5,
     borderRadius: Radius.full,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: Colors.naBg,
+  },
+  stepChipText: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.tiny,
+    color: Colors.textSecondary,
+  },
+  draftTrack: {
+    height: 5,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.border,
     overflow: 'hidden',
   },
-  heroFill: { height: 4, borderRadius: Radius.full, backgroundColor: Colors.brandSignature },
-  heroActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  draftFill: { height: 5, borderRadius: Radius.full, backgroundColor: Colors.brand },
+  draftActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    padding: Spacing.lg,
+    paddingTop: Spacing.md,
+  },
   cta: {
     flex: 1,
-    minHeight: 48,
-    borderRadius: Radius.sm,
+    height: ComponentSize.touch,
+    borderRadius: Radius.md,
     backgroundColor: Colors.brandSignature,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
   },
-  ctaPressed: { opacity: 0.82 },
-  ctaText: { ...Typography.button, color: Colors.text },
+  ctaPressed: { opacity: 0.85 },
+  ctaText: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.md,
+    letterSpacing: -0.2,
+    color: Colors.text,
+  },
   ghostButton: {
-    width: 48,
-    height: 48,
-    borderRadius: Radius.sm,
+    width: ComponentSize.touch,
+    height: ComponentSize.touch,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
+    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   draftRow: {
-    borderRadius: Radius.md,
-    backgroundColor: Colors.text,
     flexDirection: 'row',
     alignItems: 'center',
-    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingRight: Spacing.sm,
   },
   draftRowMain: {
     flex: 1,
-    minWidth: 0,
-    minHeight: 56,
-    paddingHorizontal: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingLeft: Spacing.lg,
   },
-  draftRowBody: { flex: 1, minWidth: 0, gap: 1 },
-  draftRowTitle: { ...Typography.label, color: Colors.surface },
-  draftRowMeta: { fontFamily: FontFamily.regular, fontSize: FontSizes.tiny, lineHeight: 16, color: Colors.textTertiary },
+  draftRowBody: { flex: 1, minWidth: 0, gap: 2 },
+  draftRowTitle: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.sm,
+    color: Colors.text,
+  },
+  draftRowMeta: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.tiny,
+    color: Colors.textSecondary,
+  },
   draftRowDiscard: {
-    alignSelf: 'stretch',
-    width: 48,
+    width: ComponentSize.touch,
+    height: ComponentSize.touch,
     alignItems: 'center',
     justifyContent: 'center',
-    borderLeftWidth: 1,
-    borderLeftColor: 'rgba(255,255,255,0.08)',
   },
 
-  // ── Painéis ────────────────────────────────────────────
-  panel: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-    ...Elevation.card,
+  // ── Reinspeções ─────────────────────────────────────────────────────
+  band: { flexDirection: 'row', alignItems: 'stretch', paddingVertical: Spacing.md },
+  bandCell: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
+  bandDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 2 },
+  bandValue: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSizes.xxl,
+    lineHeight: 30,
+    letterSpacing: -1,
   },
-  panelHead: {
-    minHeight: 48,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
+  bandLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  bandLabel: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSizes.tiny,
+    color: Colors.textSecondary,
+  },
+  queueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
-  panelTitle: {
+  queueBody: { flex: 1, minWidth: 0, gap: 2 },
+  queueTitle: {
     fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.lg,
-    lineHeight: 24,
+    fontSize: FontSizes.sm,
+    lineHeight: 19,
     letterSpacing: -0.2,
     color: Colors.text,
   },
-  panelCaption: { fontFamily: FontFamily.regular, fontSize: FontSizes.tiny, lineHeight: 16, color: Colors.textTertiary },
-  panelLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  panelLinkText: { fontFamily: FontFamily.semibold, fontSize: FontSizes.xs, lineHeight: 18, color: Colors.brand },
-  panelFoot: {
-    minHeight: 48,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
+  queueMeta: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.tiny,
+    color: Colors.textSecondary,
   },
-  panelFootText: { ...Typography.caption, color: Colors.textSecondary, flexShrink: 1 },
-
-  band: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: Colors.border,
-  },
-  bandDivider: { width: 1, backgroundColor: Colors.border },
-  bandCell: {
-    flex: 1,
-    minWidth: 0,
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.lg,
-    gap: 2,
-  },
-  bandValue: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.xxl,
-    lineHeight: 30,
-    letterSpacing: -0.8,
-  },
-  bandLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  bandLabel: { fontFamily: FontFamily.regular, fontSize: FontSizes.tiny, lineHeight: 16, color: Colors.textSecondary, flexShrink: 1 },
-
-  queueRow: {
-    minHeight: 64,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  datum: { width: 3, alignSelf: 'stretch', borderRadius: Radius.full },
-  queueBody: { flex: 1, minWidth: 0, gap: 2 },
-  queueTitle: { ...Typography.label, fontFamily: FontFamily.medium, fontSize: FontSizes.base, color: Colors.text },
-  queueMeta: { fontFamily: FontFamily.regular, fontSize: FontSizes.tiny, lineHeight: 16, color: Colors.textSecondary },
   chip: {
-    minHeight: 24,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.full,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 5,
+    borderRadius: Radius.full,
   },
-  chipDot: { width: 6, height: 6, borderRadius: Radius.full },
-  chipText: { fontFamily: FontFamily.semibold, fontSize: FontSizes.tiny, lineHeight: 16 },
+  chipDot: { width: 5, height: 5, borderRadius: Radius.full },
+  chipText: { fontFamily: FontFamily.semibold, fontSize: FontSizes.tiny },
 
-  emptyRow: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.lg,
+  // ── Obras ───────────────────────────────────────────────────────────
+  workRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-  },
-  emptyBody: { flex: 1, minWidth: 0, gap: 2 },
-  emptyTitle: { ...Typography.label, color: Colors.text },
-  emptyText: { ...Typography.caption, color: Colors.textSecondary },
-
-  statsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
-    gap: Spacing.md,
-  },
-  stat: { flex: 1, minWidth: 0, gap: 2 },
-  statValue: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.xl,
-    lineHeight: 28,
-    letterSpacing: -0.8,
-    color: Colors.text,
-  },
-  statLabel: { fontFamily: FontFamily.regular, fontSize: FontSizes.tiny, lineHeight: 16, color: Colors.textSecondary },
-  rateBlock: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.lg,
-    gap: 6,
-  },
-  rateTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Spacing.sm },
-  rateLabel: { ...Typography.caption, color: Colors.textSecondary },
-  rateValue: { fontFamily: FontFamily.monoSemibold, fontSize: FontSizes.sm, lineHeight: 20, color: Colors.ok },
-  rateValueEmpty: { color: Colors.textTertiary },
-
-  workRow: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  rowLast: { borderBottomWidth: 0 },
-  workIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.progressBg,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   workBody: { flex: 1, minWidth: 0, gap: 6 },
   workTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  workName: { ...Typography.label, fontSize: FontSizes.base, color: Colors.text, flex: 1, minWidth: 0 },
-  workMeta: { fontFamily: FontFamily.regular, fontSize: FontSizes.tiny, lineHeight: 16, color: Colors.textSecondary },
+  workName: {
+    flexShrink: 1,
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.sm,
+    letterSpacing: -0.2,
+    color: Colors.text,
+  },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   progress: { flex: 1 },
   progressText: {
-    fontFamily: FontFamily.mono,
+    fontFamily: FontFamily.bold,
     fontSize: FontSizes.tiny,
-    lineHeight: 16,
+    letterSpacing: -0.2,
+    color: Colors.text,
+  },
+  workMeta: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.tiny,
     color: Colors.textSecondary,
-    width: 36,
-    textAlign: 'right',
   },
 
+  // ── Atividade ───────────────────────────────────────────────────────
   activityRow: {
-    minHeight: 62,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  avatarDot: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activityBody: { flex: 1, minWidth: 0, gap: 2 },
-  activityTitle: { ...Typography.label, fontFamily: FontFamily.medium, fontSize: FontSizes.base, color: Colors.text },
-  activityMeta: { fontFamily: FontFamily.regular, fontSize: FontSizes.tiny, lineHeight: 16, color: Colors.textSecondary },
+  activityTitle: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.xs,
+    letterSpacing: -0.15,
+    color: Colors.text,
+  },
+  activityMeta: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.tiny,
+    color: Colors.textSecondary,
+  },
+  activityDate: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSizes.tiny,
+    color: Colors.textSecondary,
+  },
+
+  // ── Estados vazios ──────────────────────────────────────────────────
+  emptyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.md,
+    padding: Spacing.lg,
+  },
+  emptyBody: { flex: 1, gap: 2 },
+  emptyTitle: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.sm,
+    color: Colors.text,
+  },
+  emptyText: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSizes.tiny,
+    lineHeight: 18,
+    color: Colors.textSecondary,
+  },
 });

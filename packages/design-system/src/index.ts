@@ -108,17 +108,28 @@ export const statusTones = {
 } as const;
 
 /**
- * Canonical PrumoQ symbol geometry. The ring and tail form the Q; the centered
- * cord and faceted weight make the mark read as a plumb bob at small sizes.
+ * Canonical PrumoQ symbol geometry, on a 32-unit grid.
+ *
+ * The plumb line drops from the ring of the "O" and ends in the faceted
+ * weight — the instrument the product is named after. Numeric fields exist so
+ * non-SVG renderers (the React Native mark, icon generators) draw the exact
+ * same shape as the SVG paths.
  */
 export const prumoSymbolGeometry = {
-  viewBox: '0 0 64 64',
-  ring: { cx: 32, cy: 30, radius: 20, strokeWidth: 6 },
-  cordPath: 'M32 7V35',
-  cordStrokeWidth: 3.2,
-  weightPath: 'M32 32L38 40L35 47L32 53L29 47L26 40Z',
-  tailPath: 'M46.5 44.5L55 53',
-  tailStrokeWidth: 6,
+  viewBox: '0 0 32 32',
+  /** Lado da grade do viewBox, para renderizadores que nao leem SVG. */
+  grid: 32,
+  ring: { cx: 16, cy: 13.2, radius: 6, strokeWidth: 2.1 },
+  cord: { x: 16, top: 19.2, bottom: 23.4, strokeWidth: 1.7 },
+  weight: { cx: 16, cy: 25.95, halfWidth: 2.3, halfHeight: 2.75 },
+  cordPath: 'M16 19.2V23.4',
+  weightPath: 'M16 23.2L18.3 25.5L16 28.7L13.7 25.5Z',
+  /**
+   * Visual bounds of the drawn mark inside the grid — the ring starts at 6.15
+   * and the weight ends at 28.7, so the optical centre sits below the centre
+   * of the box. Use it to centre the mark inside a tile or an app icon.
+   */
+  visualBounds: { top: 6.15, bottom: 28.7, left: 8.95, right: 23.05 },
 } as const;
 
 export type MineralColorToken = keyof typeof mineralColors;

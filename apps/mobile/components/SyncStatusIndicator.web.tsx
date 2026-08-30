@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
-import { SyncIndicator } from './ui';
+import { SyncIndicator, SyncIndicatorTone } from './ui';
 
-export function SyncStatusIndicator() {
+interface Props {
+  /** `onBrand` na capa do dashboard; `surface` nos cabecalhos claros. */
+  tone?: SyncIndicatorTone;
+  compact?: boolean;
+}
+
+export function SyncStatusIndicator({ tone = 'surface', compact = true }: Props = {}) {
   const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
   useEffect(() => {
     const onOnline = () => setOnline(true);
@@ -13,5 +19,5 @@ export function SyncStatusIndicator() {
       window.removeEventListener('offline', onOffline);
     };
   }, []);
-  return <SyncIndicator state={online ? 'synced' : 'offline'} compact />;
+  return <SyncIndicator state={online ? 'synced' : 'offline'} compact={compact} tone={tone} />;
 }

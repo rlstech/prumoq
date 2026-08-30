@@ -29,6 +29,15 @@
         ],
         "createdAt": "2026-08-29T21:29:06.522Z",
         "reason": "Antes.dc.html e a recriacao fiel do dashboard atual (index.tsx antes desta mudanca), que usa borderLeftWidth: 3 na FieldQueue e no painel de atencao. E o 'antes' de uma critica: a borda lateral e o defeito documentado, nao uma escolha nova."
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          ".design/home-ios/RolagemA.dc.html"
+        ],
+        "createdAt": "2026-08-30T03:05:25.097Z",
+        "reason": "Cabecalho de lista agrupada iOS: overline 11px caixa-alta/tracked vs link 12.5px em cor de marca. Hierarquia vem de caixa, cor e peso, nao de tamanho; o par espelha os tokens Typography.overline (12) e FontSizes.xs (13) do proprio design system do projeto, ja usados na implementacao em app/(app)/(tabs)/index.tsx."
       }
     ]
   }
