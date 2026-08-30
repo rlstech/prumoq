@@ -12,12 +12,17 @@ interface Props {
   className?: string;
 }
 
+/**
+ * Marca PrumoQ — o fio de prumo desce do contorno do "O" e termina no peso em
+ * cal viva. Mesma geometria do símbolo no app mobile: os números vivem em
+ * `prumoSymbolGeometry`, no design system, para as duas plataformas não
+ * divergirem.
+ */
 export function BrandMark({ size = 40, variant = 'onBrand', className }: Props) {
   const onBrand = variant === 'onBrand';
-  const ringColor = onBrand ? mineralColors.accent : mineralColors.brand;
-  const cordColor = onBrand ? mineralPalette.mineralWhite : mineralColors.brand;
-  const weightColor = onBrand ? mineralPalette.mineralWhite : mineralColors.accent;
-  const weightOutline = onBrand ? mineralColors.brand : mineralColors.surface;
+  const ringColor = onBrand ? mineralPalette.mineralWhite : mineralColors.brand;
+  const cordColor = onBrand ? mineralColors.accent : mineralColors.brand;
+  const weightColor = mineralColors.accent;
   const geometry = prumoSymbolGeometry;
 
   return (
@@ -37,22 +42,17 @@ export function BrandMark({ size = 40, variant = 'onBrand', className }: Props) 
         strokeWidth={geometry.ring.strokeWidth}
       />
       <path
-        d={geometry.tailPath}
-        stroke={ringColor}
-        strokeWidth={geometry.tailStrokeWidth}
-        strokeLinecap="round"
-      />
-      <path
         d={geometry.cordPath}
         stroke={cordColor}
-        strokeWidth={geometry.cordStrokeWidth}
+        strokeWidth={geometry.cord.strokeWidth}
         strokeLinecap="round"
       />
+      {/* Sobre fundo claro o peso ganha contorno para não sumir no calcário. */}
       <path
         d={geometry.weightPath}
         fill={weightColor}
-        stroke={weightOutline}
-        strokeWidth="1.25"
+        stroke={onBrand ? 'none' : mineralColors.brand}
+        strokeWidth={onBrand ? 0 : 0.9}
         strokeLinejoin="round"
       />
     </svg>

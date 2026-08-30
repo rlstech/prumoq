@@ -21,6 +21,7 @@ import {
   Elevation,
   FontFamily,
   FontSizes,
+  Palette,
   Radius,
   Spacing,
   Typography,
@@ -1262,28 +1263,46 @@ export function Progress({
 }
 
 export type SyncState = 'synced' | 'syncing' | 'offline' | 'error';
+export type SyncIndicatorTone = 'surface' | 'onBrand';
 
 /** Connection state with icon, text and colour (never colour-only). */
 export function SyncIndicator({
   state,
   label,
   compact = false,
+  tone = 'surface',
 }: {
   state: SyncState;
   label?: string;
   compact?: boolean;
+  /** `onBrand` para superfícies escuras (capa do dashboard). */
+  tone?: SyncIndicatorTone;
 }) {
   const config = syncConfig[state];
   const Icon = config.Icon;
+  const onBrand = tone === 'onBrand';
+  // Sobre o azul da capa as cores semânticas escuras somem; a versão onBrand
+  // usa a pastilha de vidro e as variantes claras dos mesmos tokens.
+  const foreground = onBrand ? onBrandSyncColor[state] : config.color;
+  // O rótulo longo do offline não cabe ao lado do avatar — na capa entra a
+  // versão curta, mas o leitor de tela continua ouvindo o rótulo completo.
+  const text = label ?? (onBrand ? config.shortLabel : config.label);
+
   return (
     <View
       accessible
       accessibilityRole="text"
       accessibilityLabel={label ?? config.label}
-      style={[styles.sync, compact && styles.syncCompact, { backgroundColor: config.background }]}
+      style={[
+        styles.sync,
+        compact && styles.syncCompact,
+        onBrand ? styles.syncOnBrand : { backgroundColor: config.background },
+      ]}
     >
-      <Icon size={compact ? 14 : 16} color={config.color} strokeWidth={2.2} />
-      {!compact ? <Text style={[styles.syncText, { color: config.color }]}>{label ?? config.label}</Text> : null}
+      <Icon size={compact ? 14 : 16} color={foreground} strokeWidth={2.2} />
+      {!compact ? (
+        <Text style={[styles.syncText, { color: onBrand ? Palette.white : config.color }]}>{text}</Text>
+      ) : null}
     </View>
   );
 }
@@ -1374,19 +1393,28 @@ const progressPalette: Record<BadgeTone, string> = {
   info: Colors.info,
 };
 
-const syncConfig: Record<SyncState, { color: string; background: string; label: string; Icon: LucideIcon }> = {
-  synced: { color: Colors.ok, background: Colors.okBg, label: 'Sincronizado', Icon: CheckCircle2 },
-  syncing: { color: Colors.info, background: Colors.infoBg, label: 'Sincronizando…', Icon: RefreshCw },
-  offline: { color: Colors.warn, background: Colors.warnBg, label: 'Offline — salvo neste dispositivo', Icon: WifiOff },
-  error: { color: Colors.nok, background: Colors.nokBg, label: 'Falha na sincronização', Icon: AlertCircle },
+const syncConfig: Record<SyncState, { color: string; background: string; label: string; shortLabel: string; Icon: LucideIcon }> = {
+  synced: { color: Colors.ok, background: Colors.okBg, label: 'Sincronizado', shortLabel: 'Sincronizado', Icon: CheckCircle2 },
+  syncing: { color: Colors.info, background: Colors.infoBg, label: 'Sincronizando…', shortLabel: 'Sincronizando\u2026', Icon: RefreshCw },
+  offline: { color: Colors.warn, background: Colors.warnBg, label: 'Offline — salvo neste dispositivo', shortLabel: 'Offline', Icon: WifiOff },
+  error: { color: Colors.nok, background: Colors.nokBg, label: 'Falha na sincronização', shortLabel: 'Falha', Icon: AlertCircle },
+};
+
+/** Sobre o azul da capa as cores semanticas escuras somem: aqui entram as
+ *  variantes claras dos mesmos tokens, com a cal viva nos estados saudaveis. */
+const onBrandSyncColor: Record<SyncState, string> = {
+  synced: Colors.brandSignature,
+  syncing: Colors.brandSignature,
+  offline: Colors.warnBg,
+  error: Colors.nokBg,
 };
 
 // Keep the labels in source ASCII so the same bundle renders correctly on all
 // terminals/build agents regardless of their default code page.
 Object.assign(syncConfig, {
-  syncing: { color: Colors.info, background: Colors.infoBg, label: 'Sincronizando\u2026', Icon: RefreshCw },
-  offline: { color: Colors.warn, background: Colors.warnBg, label: 'Offline \u2014 salvo neste dispositivo', Icon: WifiOff },
-  error: { color: Colors.nok, background: Colors.nokBg, label: 'Falha na sincroniza\u00e7\u00e3o', Icon: AlertCircle },
+  syncing: { color: Colors.info, background: Colors.infoBg, label: 'Sincronizando\u2026', shortLabel: 'Sincronizando\u2026', Icon: RefreshCw },
+  offline: { color: Colors.warn, background: Colors.warnBg, label: 'Offline \u2014 salvo neste dispositivo', shortLabel: 'Offline', Icon: WifiOff },
+  error: { color: Colors.nok, background: Colors.nokBg, label: 'Falha na sincroniza\u00e7\u00e3o', shortLabel: 'Falha', Icon: AlertCircle },
 });
 
 const toastPalette: Record<ToastTone, { color: string; background: string; border: string; Icon: LucideIcon }> = {
@@ -1905,6 +1933,11 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   syncCompact: { width: 28, height: 28, paddingHorizontal: 0, justifyContent: 'center' },
+  syncOnBrand: {
+    backgroundColor: 'rgba(255,255,255,0.11)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+  },
   syncText: { ...Typography.caption, fontFamily: FontFamily.medium },
   modalBackdrop: {
     flex: 1,

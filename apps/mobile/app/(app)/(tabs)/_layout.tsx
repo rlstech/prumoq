@@ -94,7 +94,9 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xs,
     paddingBottom: Spacing.sm,
     borderTopWidth: 0,
-    backgroundColor: Colors.text,
+    // Mesma família do azul da capa do dashboard: a pílula flutuante lê como
+    // a mesma superfície da marca, não como uma barra preta genérica.
+    backgroundColor: Colors.brand,
     marginHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
     borderRadius: Radius.xl,
@@ -110,7 +112,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.lg,
     borderTopWidth: 0,
     borderRightWidth: 1,
-    borderRightColor: Colors.text,
+    borderRightColor: Colors.brandDark,
   },
   tabItem: {
     minHeight: 52,
