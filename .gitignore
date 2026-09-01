@@ -36,3 +36,8 @@ Thumbs.db
 
 # Codex local settings
 .codex/
+
+# Scratch das skills de design (canvas .dc.html, mocks, logs de decisao)
+.design/
+.impeccable/
+
