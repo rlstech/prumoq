@@ -44,7 +44,14 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
 
     try {
       for (const op of transaction.crud) {
-        await this.processOperation(op);
+        // TEMP DEBUG — identificar a operação recusada pela RLS
+        try {
+          await this.processOperation(op);
+        } catch (e) {
+          console.error('[PowerSync] op recusada:', op.op, op.table, op.id,
+            JSON.stringify(op.opData));
+          throw e;
+        }
       }
       await transaction.complete();
       for (const localPath of this.uploadedMedia.keys()) {

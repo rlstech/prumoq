@@ -8,6 +8,12 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "updates": {
+      "url": "https://u.expo.dev/1518ca00-df13-40d6-96de-29e70691d5ba"
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -15,13 +21,18 @@
     },
     "plugins": [
       "expo-router",
+      "expo-dev-client",
       [
         "expo-camera",
-        { "cameraPermission": "PrumoQ precisa da câmera para registrar evidências de verificação." }
+        {
+          "cameraPermission": "PrumoQ precisa da câmera para registrar evidências de verificação."
+        }
       ],
       [
         "expo-image-picker",
-        { "photosPermission": "PrumoQ precisa acessar suas fotos para anexar evidências de verificação." }
+        {
+          "photosPermission": "PrumoQ precisa acessar suas fotos para anexar evidências de verificação."
+        }
       ],
       "expo-secure-store"
     ],
@@ -30,7 +41,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#163B50"
       },
-      "package": "br.com.prumoq.app"
+      "package": "br.com.prumoq.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "ios": {
       "bundleIdentifier": "br.com.prumoq.app",
@@ -48,9 +63,28 @@
       "display": "standalone",
       "orientation": "any",
       "icons": [
-        { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-        { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any maskable"
+        },
+        {
+          "src": "/icon-512.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "any maskable"
+        }
       ]
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "1518ca00-df13-40d6-96de-29e70691d5ba"
+      }
+    },
+    "owner": "railtonlima"
   }
 }

@@ -1252,7 +1252,10 @@ export function Progress({
   const bounded = Math.min(100, Math.max(0, value));
   const color = progressPalette[tone];
   return (
-    <View style={styles.progressRow} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: bounded }}>
+    // `now` é marshalado para long no Android: um percentual fracionário
+    // (ex.: 14.50381679389313) lança "Loss of precision during arithmetic
+    // conversion". A barra continua usando o valor cru na largura.
+    <View style={styles.progressRow} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(bounded) }}>
       {label ? <Text style={styles.progressLabel}>{label}</Text> : null}
       <View style={[styles.progressTrack, { height }]}>
         <View style={[styles.progressFill, { width: `${bounded}%` as `${number}%`, height, backgroundColor: color }]} />
