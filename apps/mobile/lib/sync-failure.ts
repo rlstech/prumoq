@@ -74,8 +74,14 @@ export function classifyUploadFailure(error: unknown): FailureClassification {
   }
 
   // O arquivo local sumiu (limpeza do sistema, reinstalação): não volta.
-  if (/Pending media file is unavailable or empty/i.test(message)) {
+  if (/arquivo da foto não está mais no aparelho/i.test(message)) {
     return { permanent: true, code: code || 'MEDIA_MISSING', message };
+  }
+
+  // Alteração sem linha alvo: a criação correspondente foi recusada, então
+  // repetir nunca vai encontrá-la. Vai para a quarentena junto com ela.
+  if (/registro não existe no servidor/i.test(message)) {
+    return { permanent: true, code: code || 'ROW_MISSING', message };
   }
 
   const status = httpStatusFromMessage(message);

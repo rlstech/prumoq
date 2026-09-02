@@ -11,7 +11,9 @@ import { classifyUploadFailure, quarantineOperation } from './sync-quarantine';
 
 const PENDING_PREFIX = 'pending:';
 /** Mensagem unica: `classifyUploadFailure` a reconhece como falha definitiva. */
-const MEDIA_MISSING = 'Pending media file is unavailable or empty';
+const MEDIA_MISSING = 'O arquivo da foto não está mais no aparelho';
+/** Alteração que não encontrou a linha no servidor — ver `patchRow`. */
+const ROW_MISSING = 'O registro não existe no servidor';
 /** Tentativas de uma mesma operacao antes de manda-la para a quarentena. */
 const MAX_TRANSIENT_ATTEMPTS = 5;
 const MEDIA_FIELDS: Record<string, string[]> = {
@@ -26,7 +28,18 @@ const MEDIA_FIELDS: Record<string, string[]> = {
 };
 
 export class SupabaseConnector implements PowerSyncBackendConnector {
+  /** Cache por transação: caminho local -> chave do R2, evita subir duas vezes. */
   private uploadedMedia = new Map<string, string>();
+  /**
+   * Caminhos locais que só podem ser apagados porque a linha correspondente foi
+   * ACEITA pelo servidor. Antes a limpeza usava `uploadedMedia`, ou seja,
+   * apagava a foto assim que o binário chegava ao R2 — mesmo quando a linha do
+   * banco era recusada logo depois. A evidência sumia do aparelho e a operação
+   * ficava impossível de reenviar. Enquanto a linha não é aceita, o arquivo
+   * fica onde está: `documentDirectory`, que sobrevive a reinício e a limpeza
+   * de cache do sistema.
+   */
+  private confirmedMedia = new Set<string>();
   /** Tentativas por operacao, para que falha transitoria nao vire eterna. */
   private attempts = new Map<string, number>();
   async fetchCredentials() {
@@ -58,8 +71,11 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
         // impossivel de reenviar depois.
         const data: Record<string, unknown> = { ...(op.opData ?? {}) };
         const opKey = `${op.op}:${op.table}:${op.id}`;
+        const opMedia = new Set<string>();
         try {
-          await this.processOperation(op, data);
+          await this.processOperation(op, data, opMedia);
+          // Só agora a mídia desta operação pode ser descartada do aparelho.
+          for (const localPath of opMedia) this.confirmedMedia.add(localPath);
           this.attempts.delete(opKey);
         } catch (error) {
           // Uma linha que o servidor recusa em definitivo não pode segurar a
@@ -92,7 +108,7 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
         }
       }
       await transaction.complete();
-      for (const localPath of this.uploadedMedia.keys()) {
+      for (const localPath of this.confirmedMedia) {
         // The reusable source must survive sync; document snapshots can be
         // discarded because their R2 key is already persisted remotely.
         if (!localPath.includes('/prumoq-signatures/') || localPath.includes('/snapshots/')) {
@@ -100,19 +116,24 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
         }
       }
       this.uploadedMedia.clear();
+      this.confirmedMedia.clear();
     } catch (error) {
       console.error('[PowerSync] uploadData error:', error);
       throw error; // Let PowerSync retry
     }
   }
 
-  private async processOperation(op: CrudEntry, data: Record<string, unknown>): Promise<void> {
+  private async processOperation(
+    op: CrudEntry,
+    data: Record<string, unknown>,
+    opMedia: Set<string>,
+  ): Promise<void> {
     const table = op.table;
 
     // Resolve pending photo uploads before writing to Supabase
     await this.ensureThumbnail(table, data);
     for (const field of MEDIA_FIELDS[table] ?? []) {
-      await this.resolvePendingMedia(data, field);
+      await this.resolvePendingMedia(data, field, opMedia);
     }
 
     switch (op.op) {
@@ -149,11 +170,16 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
    * If r2_key starts with 'pending:', uploads the local file to R2
    * via presigned URL and replaces r2_key with the final cloud key.
    */
-  private async resolvePendingMedia(data: Record<string, unknown>, field: string): Promise<void> {
+  private async resolvePendingMedia(
+    data: Record<string, unknown>,
+    field: string,
+    opMedia: Set<string>,
+  ): Promise<void> {
     const r2Key = data[field] as string | undefined;
     if (!r2Key?.startsWith(PENDING_PREFIX)) return;
 
     const localPath = r2Key.slice(PENDING_PREFIX.length);
+    opMedia.add(localPath);
     const cachedKey = this.uploadedMedia.get(localPath);
     if (cachedKey) {
       data[field] = cachedKey;
@@ -245,9 +271,20 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     if (updateError) throw updateError;
   }
 
+  /**
+   * `count: 'exact'` não é detalhe: um UPDATE que não encontra a linha responde
+   * 204 e passa por sucesso. Foi assim que a assinatura de uma verificação se
+   * perdeu — a criação da verificação tinha sido recusada, o PATCH seguinte não
+   * casou com nada, e a fila seguiu como se tivesse gravado. Sem linha alvo, a
+   * alteração vai para a quarentena com o resto da verificação.
+   */
   private async patchRow(table: string, id: string, data: Record<string, unknown>): Promise<void> {
-    const { error } = await supabase.from(table as never).update(data as never).eq('id', id);
+    const { error, count } = await supabase
+      .from(table as never)
+      .update(data as never, { count: 'exact' })
+      .eq('id', id);
     if (error) throw error;
+    if (count === 0) throw new Error(ROW_MISSING);
   }
 
   private async deleteRow(table: string, id: string): Promise<void> {

@@ -27,9 +27,15 @@ test('erro de forma da requisição no PostgREST é definitivo', () => {
 });
 
 test('arquivo local sumido não volta por repetição', () => {
-  const result = classifyUploadFailure(new Error('Pending media file is unavailable or empty'));
+  const result = classifyUploadFailure(new Error('O arquivo da foto não está mais no aparelho'));
   assert.equal(result.permanent, true);
   assert.equal(result.code, 'MEDIA_MISSING');
+});
+
+test('alteração sem linha alvo no servidor é definitiva', () => {
+  const result = classifyUploadFailure(new Error('O registro não existe no servidor'));
+  assert.equal(result.permanent, true);
+  assert.equal(result.code, 'ROW_MISSING');
 });
 
 test('status HTTP no texto separa recusa de indisponibilidade', () => {

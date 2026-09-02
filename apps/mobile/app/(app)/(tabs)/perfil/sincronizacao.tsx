@@ -20,6 +20,7 @@ const CODE_LABELS: Record<string, string> = {
   '23514': 'Valor fora das regras do banco',
   '22P02': 'Formato de dado inválido',
   MEDIA_MISSING: 'Arquivo da foto não está mais no aparelho',
+  ROW_MISSING: 'Registro relacionado não chegou ao servidor',
 };
 
 const OP_LABELS: Record<string, string> = {
