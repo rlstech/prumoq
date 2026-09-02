@@ -10,6 +10,10 @@ import { supabase } from './supabase';
 import { classifyUploadFailure, quarantineOperation } from './sync-quarantine';
 
 const PENDING_PREFIX = 'pending:';
+/** Mensagem unica: `classifyUploadFailure` a reconhece como falha definitiva. */
+const MEDIA_MISSING = 'Pending media file is unavailable or empty';
+/** Tentativas de uma mesma operacao antes de manda-la para a quarentena. */
+const MAX_TRANSIENT_ATTEMPTS = 5;
 const MEDIA_FIELDS: Record<string, string[]> = {
   verificacao_fotos: ['r2_key', 'r2_thumb_key'],
   nc_fotos: ['r2_key', 'r2_thumb_key'],
@@ -23,6 +27,8 @@ const MEDIA_FIELDS: Record<string, string[]> = {
 
 export class SupabaseConnector implements PowerSyncBackendConnector {
   private uploadedMedia = new Map<string, string>();
+  /** Tentativas por operacao, para que falha transitoria nao vire eterna. */
+  private attempts = new Map<string, number>();
   async fetchCredentials() {
     const {
       data: { session },
@@ -51,20 +57,38 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
         // ao final da transacao, entao um payload com `pending:` seria
         // impossivel de reenviar depois.
         const data: Record<string, unknown> = { ...(op.opData ?? {}) };
+        const opKey = `${op.op}:${op.table}:${op.id}`;
         try {
           await this.processOperation(op, data);
+          this.attempts.delete(opKey);
         } catch (error) {
           // Uma linha que o servidor recusa em definitivo não pode segurar a
           // fila: ela sai para a quarentena (visível em Perfil > Sincronizacao)
           // e as gravações seguintes continuam subindo. Falha transitória
           // relança, e o PowerSync repete a transação inteira.
+          const attempt = (this.attempts.get(opKey) ?? 0) + 1;
+          this.attempts.set(opKey, attempt);
+
           const failure = classifyUploadFailure(error);
-          if (!failure.permanent) throw error;
+          // Rede instavel merece repeticao; repeticao infinita, nao. Sem este
+          // teto, um erro local nao previsto (arquivo sumido, biblioteca
+          // lancando algo generico) volta a congelar a fila para sempre — que e
+          // exatamente o defeito que a quarentena existe para eliminar.
+          const exhausted = attempt >= MAX_TRANSIENT_ATTEMPTS;
+          if (!failure.permanent && !exhausted) throw error;
           console.warn(
-            `[PowerSync] operação em quarentena: ${op.op} ${op.table} ${op.id}`,
-            `${failure.code} — ${failure.message}`,
+            `[PowerSync] operação em quarentena após ${attempt} tentativa(s):`,
+            `${op.op} ${op.table} ${op.id} — ${failure.code} — ${failure.message}`,
           );
-          await quarantineOperation(database, op, failure, data);
+          await quarantineOperation(
+            database,
+            op,
+            failure.permanent
+              ? failure
+              : { ...failure, message: `${failure.message} (após ${attempt} tentativas)` },
+            data,
+          );
+          this.attempts.delete(opKey);
         }
       }
       await transaction.complete();
@@ -108,7 +132,16 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     if (table !== 'verificacao_fotos' && table !== 'nc_fotos') return;
     const source = data.r2_key as string | undefined;
     if (!source?.startsWith(PENDING_PREFIX) || data.r2_thumb_key) return;
-    const thumbnailPath = await createEvidenceThumbnail(source.slice(PENDING_PREFIX.length));
+    const localPath = source.slice(PENDING_PREFIX.length);
+
+    // Sem esta checagem o ImageManipulator lanca um erro generico, que a
+    // classificacao trata como transitorio — e a operacao volta a cada retry
+    // sem nunca chegar ao servidor, congelando a fila em silencio. O arquivo
+    // some quando a transacao anterior e concluida, entao o caso e real.
+    const info = await FileSystem.getInfoAsync(localPath, { size: true });
+    if (!info.exists || !info.size) throw new Error(MEDIA_MISSING);
+
+    const thumbnailPath = await createEvidenceThumbnail(localPath);
     data.r2_thumb_key = `${PENDING_PREFIX}${thumbnailPath}`;
   }
 
@@ -131,7 +164,7 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     const mimeType = (data['mime_type'] as string | undefined) ?? (isSignature ? 'image/png' : 'image/jpeg');
     const fileInfo = await FileSystem.getInfoAsync(localPath, { size: true });
     if (!fileInfo.exists || !fileInfo.size) {
-      throw new Error('Pending media file is unavailable or empty');
+      throw new Error(MEDIA_MISSING);
     }
 
     // Get presigned URL from Edge Function
