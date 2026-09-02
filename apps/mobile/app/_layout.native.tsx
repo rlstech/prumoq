@@ -8,6 +8,18 @@ import { SupabaseConnector } from '../lib/supabase-connector';
 import { validateMobileAccess } from '../lib/auth/mobile-access';
 import { ThemeProvider } from '../lib/theme/ThemeProvider';
 
+/**
+ * A cadência padrão do PowerSync (5s) fazia o app disparar ~40 requisições em
+ * 4 minutos quando o servidor recusava uma gravação — martelando a API e
+ * mantendo a tela em re-render contínuo, já que o indicador de sync observa o
+ * status. Com a quarentena a fila não trava mais, mas uma falha de rede real
+ * ainda merece um intervalo civilizado.
+ */
+const SYNC_OPTIONS = {
+  crudUploadThrottleMs: 20_000,
+  retryDelayMs: 20_000,
+};
+
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const router = useRouter();
@@ -26,7 +38,7 @@ export default function RootLayout() {
             await supabase.auth.signOut();
             await db.disconnectAndClear();
           } else {
-            await db.connect(new SupabaseConnector());
+            await db.connect(new SupabaseConnector(), SYNC_OPTIONS);
           }
         }
       } catch (e) {
@@ -50,7 +62,7 @@ export default function RootLayout() {
           if (accessError) {
             await supabase.auth.signOut();
           } else {
-            await db.connect(new SupabaseConnector());
+            await db.connect(new SupabaseConnector(), SYNC_OPTIONS);
           }
         }
         if (event === 'SIGNED_OUT') {

@@ -79,6 +79,9 @@ export default function TabsLayout() {
           href: null,
         }}
       />
+      {/* Rota interna do Perfil: precisa ser declarada com href null, senão o
+          Expo Router a promoveria a uma sexta aba. */}
+      <Tabs.Screen name="perfil/sincronizacao" options={{ href: null }} />
       <Tabs.Screen
         name="perfil/index"
         options={{

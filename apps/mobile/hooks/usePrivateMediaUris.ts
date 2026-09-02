@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { isRemoteMediaKey, localMediaUri } from '../lib/media-uri';
 import { supabase } from '../lib/supabase';
-
-function localUri(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  if (value.startsWith('pending:')) return value.slice('pending:'.length);
-  if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
-  return null;
-}
 
 export function usePrivateMediaUris(keys: string[]): (key: string) => string {
   const stableKeys = useMemo(() => Array.from(new Set(keys.filter(Boolean))).sort(), [JSON.stringify(keys)]);
@@ -15,7 +9,7 @@ export function usePrivateMediaUris(keys: string[]): (key: string) => string {
   useEffect(() => {
     let active = true;
     let refreshTimer: ReturnType<typeof setTimeout> | undefined;
-    const remoteKeys = stableKeys.filter(key => localUri(key) === null);
+    const remoteKeys = stableKeys.filter(isRemoteMediaKey);
 
     async function authorize() {
       if (!remoteKeys.length) {
@@ -42,5 +36,5 @@ export function usePrivateMediaUris(keys: string[]): (key: string) => string {
     };
   }, [stableKeys.join('\n')]);
 
-  return (key: string) => localUri(key) ?? signed[key] ?? '';
+  return (key: string) => localMediaUri(key) ?? signed[key] ?? '';
 }

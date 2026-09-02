@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react-native';
 import { useRouter } from 'expo-router';
-import { Building2, Key, Mail, PenLine, Phone, User } from 'lucide-react-native';
+import { Building2, Key, Mail, PenLine, Phone, RefreshCw, User } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
+import { IconBox } from '../../../../components/IconBox';
 import { SignatureField } from '../../../../components/SignatureField';
 import { Breakpoints, Colors, ComponentSize, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
 import { db } from '../../../../lib/powersync';
@@ -267,11 +268,22 @@ export default function PerfilScreen() {
 
         <TouchableOpacity
           style={s.passwordBtn}
+          onPress={() => router.push('/(app)/(tabs)/perfil/sincronizacao')}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityHint="Fila de envio e registros recusados pelo servidor"
+        >
+          <IconBox icon={RefreshCw} size={18} color={Colors.brand} />
+          <Text style={s.passwordText}>Sincronização</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={s.passwordBtn}
           onPress={() => router.push('/(app)/alterar-senha')}
           activeOpacity={0.85}
           accessibilityRole="button"
         >
-          <Key size={18} color={Colors.brand} />
+          <IconBox icon={Key} size={18} color={Colors.brand} />
           <Text style={s.passwordText}>Alterar senha</Text>
         </TouchableOpacity>
 

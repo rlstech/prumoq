@@ -15,6 +15,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Edge, SafeAreaView } from 'react-native-safe-area-context';
+import { IconBox } from '../IconBox';
 import {
   Breakpoints,
   Colors,
@@ -1318,7 +1319,7 @@ export function SyncIndicator({
         onBrand ? styles.syncOnBrand : { backgroundColor: config.background },
       ]}
     >
-      <Icon size={compact ? 14 : 16} color={foreground} strokeWidth={2.2} />
+      <IconBox icon={Icon} size={compact ? 14 : 16} color={foreground} strokeWidth={2.2} />
       {!compact ? (
         <Text style={[styles.syncText, { color: onBrand ? Palette.white : config.color }]}>{text}</Text>
       ) : null}

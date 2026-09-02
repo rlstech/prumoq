@@ -319,6 +319,28 @@ const avaliacao_empreiteiro_reaberturas = new Table({
   reaberto_por: column.text, motivo: column.text, numero_reabertura: column.integer, created_at: column.text,
 }, { indexes: { avaliacao: ['avaliacao_id'] } });
 
+/**
+ * Operações que o servidor recusou em definitivo (RLS, FK, dado inválido).
+ *
+ * Tabela local-only: nunca sincroniza, existe só para que uma linha ruim não
+ * congele a fila. A fila do PowerSync é FIFO — sem isto, uma verificação
+ * recusada bloqueia todas as gravações seguintes, indefinidamente e em
+ * silêncio. Cada registro guarda o payload completo para diagnóstico e para
+ * permitir reenvio manual pela tela de sincronização.
+ */
+const sync_falhas = new Table(
+  {
+    op: column.text,
+    tabela: column.text,
+    registro_id: column.text,
+    payload: column.text,
+    erro: column.text,
+    codigo: column.text,
+    criado_em: column.text,
+  },
+  { localOnly: true },
+);
+
 export const AppSchema = new Schema({
   obras,
   obra_usuarios,
@@ -349,6 +371,7 @@ export const AppSchema = new Schema({
   avaliacoes_empreiteiro,
   avaliacao_empreiteiro_itens,
   avaliacao_empreiteiro_reaberturas,
+  sync_falhas,
 });
 
 // Row types — manual interfaces matching the SQLite columns above
@@ -387,3 +410,7 @@ export interface NcFotosRow { id: string; nc_id: string; r2_key: string; r2_thum
 export interface NcReinspecoesRow { id: string; nc_id: string; verificacao_id: string; inspetor_id: string; resultado: 'aprovada' | 'reprovada'; observacao: string | null; foto_url: string | null; nova_nc_id: string | null; created_at: string }
 export interface EquipesRow extends TenantRow { id: string; escopo: string; nome: string; tipo: string; responsavel: string; especialidade: string; ativo: number }
 export interface UsuariosRow extends TenantRow { id: string; nome: string; cargo: string; perfil: string; avatar_url: string; onboarding_concluido_em: string | null }
+export interface SyncFalhasRow {
+  id: string; op: string; tabela: string; registro_id: string;
+  payload: string; erro: string; codigo: string; criado_em: string;
+}

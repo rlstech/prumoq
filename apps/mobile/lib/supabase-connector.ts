@@ -7,6 +7,7 @@ import {
 import * as FileSystem from 'expo-file-system';
 import { createEvidenceThumbnail } from './image-normalizer';
 import { supabase } from './supabase';
+import { classifyUploadFailure, quarantineOperation } from './sync-quarantine';
 
 const PENDING_PREFIX = 'pending:';
 const MEDIA_FIELDS: Record<string, string[]> = {
@@ -44,13 +45,20 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
 
     try {
       for (const op of transaction.crud) {
-        // TEMP DEBUG — identificar a operação recusada pela RLS
         try {
           await this.processOperation(op);
-        } catch (e) {
-          console.error('[PowerSync] op recusada:', op.op, op.table, op.id,
-            JSON.stringify(op.opData));
-          throw e;
+        } catch (error) {
+          // Uma linha que o servidor recusa em definitivo não pode segurar a
+          // fila: ela sai para a quarentena (visível em Perfil > Sincronizacao)
+          // e as gravações seguintes continuam subindo. Falha transitória
+          // relança, e o PowerSync repete a transação inteira.
+          const failure = classifyUploadFailure(error);
+          if (!failure.permanent) throw error;
+          console.warn(
+            `[PowerSync] operação em quarentena: ${op.op} ${op.table} ${op.id}`,
+            `${failure.code} — ${failure.message}`,
+          );
+          await quarantineOperation(database, op, failure);
         }
       }
       await transaction.complete();
