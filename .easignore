@@ -1,0 +1,51 @@
+# ATENÇÃO: quando este arquivo existe, o EAS Build o usa NO LUGAR do
+# .gitignore ao montar o tarball do projeto. Tudo que precisa ficar de fora
+# do build tem que estar listado aqui — inclusive o que já está no
+# .gitignore. Manter os dois em sincronia ao editar qualquer um deles.
+
+# ── Espelho do .gitignore ────────────────────────────────────
+# Environment — never commit secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# pnpm
+node_modules/
+.pnpm-store/
+
+# Expo / React Native
+apps/mobile/.expo/
+apps/mobile/dist/
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+apps/web/.next-*/
+
+# TypeScript
+*.tsbuildinfo
+
+# Local PDF render validation
+tmp/pdfs/
+
+# Supabase local dev
+supabase/.branches/
+supabase/.temp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+.claude/settings.local.json
+.codex/
+.design/
+.impeccable/
+
+# ── Exclusivo do EAS ─────────────────────────────────────────
+# Ferramental de agente: nada disso entra no app, e `.claude/skills/powersync`
+# é um symlink para `.agents/skills/powersync` que quebra o empacotamento no
+# Windows com "EPERM: operation not permitted, symlink".
+.agents/
+.claude/
+skills-lock.json
