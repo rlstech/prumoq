@@ -132,6 +132,14 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.xs,
   },
   tabLabel: {
+    // O <Label> do react-navigation não tem largura definida: fica com largura
+    // automática dentro do item, e nesse modo o texto é medido em torno de
+    // metade do real — "Início" virava "Iníc…" num item de 79dp. alignSelf
+    // stretch é o equivalente do flex: 1 no eixo transversal de uma coluna:
+    // dá ao rótulo a largura do item, e o textAlign center do próprio Label
+    // mantém o alinhamento.
+    alignSelf: 'stretch',
+    textAlign: 'center',
     fontFamily: FontFamily.medium,
     fontSize: FontSizes.tiny,
   },

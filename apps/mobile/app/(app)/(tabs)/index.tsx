@@ -1276,8 +1276,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   bandLabel: {
-    flexShrink: 1,
+    // Largura definida pelo pai (flex: 1) e não pelo conteúdo: com largura
+    // automática o texto era medido em cerca de metade do disponível e saía
+    // como "Vencem ho…" dentro de uma célula de 126dp. flexShrink não resolve —
+    // só o flex. O paddingRight compensa o ícone à esquerda, devolvendo o
+    // texto ao centro óptico da célula.
+    flex: 1,
     minWidth: 0,
+    textAlign: 'center',
+    paddingRight: 17,
     fontFamily: FontFamily.medium,
     fontSize: FontSizes.tiny,
     color: Colors.textSecondary,
@@ -1322,9 +1329,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   workBody: { flex: 1, minWidth: 0, gap: 6 },
-  workTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  workTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, minWidth: 0 },
   workName: {
-    flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
     fontFamily: FontFamily.semibold,
     fontSize: FontSizes.sm,
     letterSpacing: -0.2,
