@@ -1,6 +1,7 @@
 import { PowerSyncContext } from '@powersync/react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { db } from '../lib/powersync';
 import { supabase } from '../lib/supabase';
 import { SupabaseConnector } from '../lib/supabase-connector';
@@ -64,11 +65,16 @@ export default function RootLayout() {
 
   if (!ready) return null;
 
+  // SafeAreaProvider por fora de tudo: os navigators do React Navigation montam
+  // um provider próprio, mas as telas de (auth) e qualquer coisa renderizada
+  // fora de um navigator dependem deste para ter insets reais no Android.
   return (
-    <ThemeProvider>
-      <PowerSyncContext.Provider value={db}>
-        <Slot />
-      </PowerSyncContext.Provider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <PowerSyncContext.Provider value={db}>
+          <Slot />
+        </PowerSyncContext.Provider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

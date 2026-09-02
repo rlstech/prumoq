@@ -63,7 +63,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="avaliacoes/index"
         options={{
-          title: 'Avaliações',
+          // "Avaliações" não cabe na aba: são 5 abas dividindo 360–411dp, o que
+          // dá ~69dp cada, e o rótulo saía como "Avaliaçõ…". O nome completo
+          // fica no rótulo de acessibilidade.
+          title: 'Avaliar',
           tabBarAccessibilityLabel: 'Avaliações de empreiteiros',
           tabBarIcon: ({ color }) => <ClipboardCheck size={21} color={color} strokeWidth={2.1} />,
         }}
@@ -97,7 +100,9 @@ const styles = StyleSheet.create({
     // Mesma família do azul da capa do dashboard: a pílula flutuante lê como
     // a mesma superfície da marca, não como uma barra preta genérica.
     backgroundColor: Colors.brand,
-    marginHorizontal: Spacing.md,
+    // 8dp em vez de 12dp de margem lateral: devolve 8dp para os rótulos, que em
+    // aparelhos de 360dp era a diferença entre caber e cortar.
+    marginHorizontal: Spacing.sm,
     marginBottom: Spacing.sm,
     borderRadius: Radius.xl,
     overflow: 'hidden',
@@ -117,7 +122,6 @@ const styles = StyleSheet.create({
   tabItem: {
     minHeight: 52,
     borderRadius: Radius.md,
-    marginHorizontal: Spacing.xs,
   },
   railItem: {
     maxHeight: 72,

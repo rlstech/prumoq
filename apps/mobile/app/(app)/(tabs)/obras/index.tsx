@@ -4,14 +4,15 @@ import { Building2, ChevronRight, Search, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
+import { IconBox } from '../../../../components/IconBox';
 import {
   Badge,
   type BadgeTone,
@@ -202,7 +203,7 @@ export default function ObrasScreen() {
         : 'Nenhuma obra encontrada';
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top']} style={styles.safe}>
       <AppHeader
         title="Obras"
         subtitle={`${activeCount} em andamento · ${doneCount} concluídas`}
@@ -243,7 +244,7 @@ export default function ObrasScreen() {
           />
 
           <View style={styles.searchBox}>
-            <Search size={18} color={Colors.textTertiary} />
+            <IconBox icon={Search} size={18} color={Colors.textTertiary} />
             <TextInput
               accessibilityLabel="Buscar obras"
               style={styles.searchInput}
@@ -366,7 +367,7 @@ function ObraRowItem({
       last={last}
       onPress={onOpen}
       accessibilityLabel={`Abrir obra ${item.nome}`}
-      trailing={<ChevronRight size={19} color={Colors.textTertiary} />}
+      trailing={<IconBox icon={ChevronRight} size={19} color={Colors.textTertiary} />}
     >
       <View style={styles.rowTop}>
         <Text style={styles.rowTitle} numberOfLines={1}>{item.nome}</Text>

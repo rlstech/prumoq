@@ -3,16 +3,16 @@ import { useRouter } from 'expo-router';
 import { Building2, Key, Mail, PenLine, Phone, User } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
 import { SignatureField } from '../../../../components/SignatureField';
-import { Breakpoints, Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
+import { Breakpoints, Colors, ComponentSize, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
 import { db } from '../../../../lib/powersync';
 import { supabase } from '../../../../lib/supabase';
 import { draftStore } from '../../../../lib/verification/draftStore';
@@ -57,6 +57,7 @@ const PERFIL_ACCESS: Record<string, string> = {
 
 export default function PerfilScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [userId, setUserId]     = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authResolved, setAuthResolved] = useState(false);
@@ -152,7 +153,7 @@ export default function PerfilScreen() {
   ].filter(r => !!r.value);
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView edges={['top']} style={s.safe}>
       {/* Hero */}
       <AppHeader>
         <View style={s.hero}>
@@ -169,7 +170,12 @@ export default function PerfilScreen() {
       <ScrollView
         style={s.body}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={s.bodyContent}
+        // Reserva a altura da barra de abas flutuante mais o inset do gesto,
+        // senao o ultimo bloco fica embaixo dela sem como rolar.
+        contentContainerStyle={[
+          s.bodyContent,
+          { paddingBottom: ComponentSize.tabBar + Spacing.sm + Spacing.xxl + insets.bottom },
+        ]}
       >
         {profileUnavailable ? (
           <View style={s.errorCard}>
@@ -306,7 +312,6 @@ const s = StyleSheet.create({
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
     padding: Spacing.lg,
-    paddingBottom: 40,
   },
   errorCard: {
     backgroundColor: Colors.nokBg,

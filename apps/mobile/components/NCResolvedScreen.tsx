@@ -1,5 +1,6 @@
 import { Check, CheckCircle2, FileDown } from 'lucide-react-native';
-import { Alert, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from './AppHeader';
 import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
 
@@ -42,7 +43,7 @@ export function NCResolvedScreen({
 
   return (
     <View style={st.overlay}>
-      <SafeAreaView style={st.safe}>
+      <SafeAreaView edges={['top']} style={st.safe}>
         <AppHeader title="RE-INSPEÇÃO" subtitle="Resultado da re-inspeção" showBack={false} />
         <ScrollView contentContainerStyle={st.content}>
           <View style={st.hero}>

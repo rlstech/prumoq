@@ -4,12 +4,12 @@ import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/AppHeader';
 import { Button, Card, ErrorBanner, Field } from '../../components/ui';
 import {
@@ -101,7 +101,7 @@ export default function ChangePasswordScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safe}>
       <AppHeader
         title="Alterar senha"
         subtitle="Atualize suas credenciais de acesso."

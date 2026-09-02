@@ -1,7 +1,8 @@
 import { useQuery } from '@powersync/react-native';
 import { useRouter } from 'expo-router';
 import { ChevronRight, ClipboardCheck, FileDown, Plus } from 'lucide-react-native';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
 import { Badge, type BadgeTone, Button, EmptyState, ListSurface, OperationalRow } from '../../../../components/ui';
 import { Breakpoints, Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
@@ -46,7 +47,7 @@ export default function EvaluationsScreen() {
   const { data: pending } = useQuery<PendingRow>(PENDING, []);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top']} style={styles.safe}>
       <AppHeader title="Avaliações" subtitle="Fornecedores de serviço" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>

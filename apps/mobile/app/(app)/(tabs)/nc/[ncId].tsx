@@ -23,12 +23,12 @@ import {
 import { useMemo, useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
 import { PhotoGrid } from '../../../../components/PhotoGrid';
 import { PhotoViewer } from '../../../../components/PhotoViewer';
@@ -248,7 +248,7 @@ export default function NcDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
         <AppHeader title="Não conformidade" showBack onBack={() => goBack('/nc')} />
         <View style={styles.loading}>
           <Skeleton style={styles.skeletonHero} />
@@ -261,7 +261,7 @@ export default function NcDetailScreen() {
 
   if (!nc) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
         <AppHeader title="Não conformidade" showBack onBack={() => goBack('/nc')} />
         <View style={styles.notFound}>
           {error ? <ErrorBanner message="Não foi possível carregar o registro." /> : null}
@@ -278,7 +278,7 @@ export default function NcDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top']} style={styles.safe}>
       <AppHeader
         title={`NC · ocorrência ${nc.numero_ocorrencia}`}
         subtitle={`${nc.obra_nome} · ${nc.ambiente_nome}`}

@@ -5,12 +5,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
 import { SignatureField } from '../../../../components/SignatureField';
 import { SignatureSection } from '../../../../components/verification/SignatureSection';
@@ -549,7 +549,7 @@ export default function NewEvaluationScreen() {
   // ── Render ──────────────────────────────────────────────────────────────────
   if (medicaoId && !context) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
         <AppHeader title="Avaliação" showBack onBack={() => router.back()} />
         <EmptyState
           Icon={PenLine}
@@ -562,7 +562,7 @@ export default function NewEvaluationScreen() {
 
   if (isEditing && !existingEvalLoading && !existing) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
         <AppHeader title="Avaliação" showBack onBack={() => router.back()} />
         <EmptyState
           Icon={PenLine}
@@ -575,7 +575,7 @@ export default function NewEvaluationScreen() {
 
   if (isEditing && !loaded) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
         <AppHeader title="Avaliação" showBack onBack={() => router.back()} />
       </SafeAreaView>
     );
@@ -583,7 +583,7 @@ export default function NewEvaluationScreen() {
 
   if (isEditing && (!canManageExisting || reopenStatus === 'aprovada' || reopenStatus === 'invalidada')) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
         <AppHeader title="Avaliação" showBack onBack={() => router.back()} />
         <EmptyState
           Icon={LockKeyhole}
@@ -596,7 +596,7 @@ export default function NewEvaluationScreen() {
 
   if (isEditing && needsReopen) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
         <AppHeader title="Reabrir avaliação" showBack onBack={() => router.back()} />
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.column}>
@@ -637,7 +637,7 @@ export default function NewEvaluationScreen() {
   const pendingErrors = step === 'fechamento' ? collectErrors('all') : {};
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top']} style={styles.safe}>
       <AppHeader
         title={isEditing ? 'Editar avaliação' : 'Nova avaliação'}
         subtitle={context ? `Medição ${context.referencia}` : 'Avaliação avulsa'}

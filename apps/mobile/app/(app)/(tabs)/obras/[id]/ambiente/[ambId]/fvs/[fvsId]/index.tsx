@@ -16,7 +16,8 @@ import {
 import { AppHeader } from '../../../../../../../../../components/AppHeader';
 import { goBack } from '../../../../../../../../../lib/navigation';
 import { useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { FVSLockedScreen } from '../../../../../../../../../components/FVSLockedScreen';
 import { FVSReopenModal } from '../../../../../../../../../components/FVSReopenModal';
 import { StatusBadge } from '../../../../../../../../../components/StatusBadge';
@@ -149,7 +150,7 @@ export default function FvsHistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top']} style={styles.safe}>
       {/* Header */}
       <AppHeader
         title={fvs?.subservico || 'FVS'}

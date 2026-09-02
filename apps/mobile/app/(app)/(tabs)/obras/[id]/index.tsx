@@ -4,14 +4,15 @@ import { ChevronRight, Layers3, Search, UserRound, X } from 'lucide-react-native
 import { useMemo, useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../../components/AppHeader';
+import { IconBox } from '../../../../../components/IconBox';
 import {
   Badge,
   type BadgeTone,
@@ -217,7 +218,7 @@ export default function ObraDetailScreen() {
     : 'Local não informado';
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top']} style={styles.safe}>
       <AppHeader
         title={obra?.nome ?? 'Obra'}
         subtitle={location}
@@ -251,7 +252,7 @@ export default function ObraDetailScreen() {
 
           {obra?.eng_responsavel ? (
             <View style={styles.engineer}>
-              <UserRound size={14} color={Colors.textTertiary} />
+              <IconBox icon={UserRound} size={14} color={Colors.textTertiary} />
               <Text style={styles.engineerText} numberOfLines={1}>
                 {obra.eng_responsavel}
               </Text>
@@ -268,7 +269,7 @@ export default function ObraDetailScreen() {
           />
 
           <View style={styles.searchBox}>
-            <Search size={18} color={Colors.textTertiary} />
+            <IconBox icon={Search} size={18} color={Colors.textTertiary} />
             <TextInput
               accessibilityLabel="Buscar ambientes"
               style={styles.searchInput}
@@ -394,7 +395,7 @@ function AmbienteRowItem({
       last={last}
       onPress={onOpen}
       accessibilityLabel={`Abrir ambiente ${item.nome}, ${estado.label}`}
-      trailing={<ChevronRight size={19} color={Colors.textTertiary} />}
+      trailing={<IconBox icon={ChevronRight} size={19} color={Colors.textTertiary} />}
     >
       <View style={styles.rowTop}>
         <Text style={styles.rowTitle} numberOfLines={1}>{item.nome}</Text>

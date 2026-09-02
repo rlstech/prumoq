@@ -4,14 +4,15 @@ import { ChevronRight, Layers3, Search, X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../../../../components/AppHeader';
+import { IconBox } from '../../../../../../../components/IconBox';
 import {
   Badge,
   type BadgeTone,
@@ -206,7 +207,7 @@ export default function AmbienteScreen() {
   ].filter(Boolean).join(' · ');
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top']} style={styles.safe}>
       <AppHeader
         title={ambiente?.nome ?? 'Ambiente'}
         subtitle={subtitle}
@@ -248,7 +249,7 @@ export default function AmbienteScreen() {
           />
 
           <View style={styles.searchBox}>
-            <Search size={18} color={Colors.textTertiary} />
+            <IconBox icon={Search} size={18} color={Colors.textTertiary} />
             <TextInput
               accessibilityLabel="Buscar serviços"
               style={styles.searchInput}
@@ -376,7 +377,7 @@ function ServicoRowItem({
       last={last}
       onPress={onOpen}
       accessibilityLabel={`Abrir serviço ${item.subservico || 'sem nome'}, ${estado.label}`}
-      trailing={<ChevronRight size={19} color={Colors.textTertiary} />}
+      trailing={<IconBox icon={ChevronRight} size={19} color={Colors.textTertiary} />}
     >
       <View style={styles.rowTop}>
         <Text style={styles.rowTitle} numberOfLines={1}>

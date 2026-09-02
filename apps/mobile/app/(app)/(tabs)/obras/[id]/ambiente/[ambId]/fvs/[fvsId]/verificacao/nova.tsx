@@ -12,12 +12,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../../../../../../../components/AppHeader';
 import { NCReprovadaPanel } from '../../../../../../../../../../components/NCReprovadaPanel';
 import { NCResolvedScreen } from '../../../../../../../../../../components/NCResolvedScreen';
@@ -817,7 +817,7 @@ export default function NovaVerificacaoScreen() {
   // Guard: FVS concluída bloqueia nova verificação (RN-FVS-01)
   if (fvs && (fvs.status === 'conforme' || fvs.status === 'concluida' || fvs.status === 'concluida_ressalva')) {
     return (
-      <SafeAreaView style={st.safe}>
+      <SafeAreaView edges={['top']} style={st.safe}>
         <AppHeader
           title="Nova Verificação"
           subtitle={[ambienteNome, fvs.subservico].filter(Boolean).join(' · ')}
@@ -845,7 +845,7 @@ export default function NovaVerificacaoScreen() {
   }
 
   return (
-    <SafeAreaView style={st.safe}>
+    <SafeAreaView edges={['top']} style={st.safe}>
       <AppHeader
         title={hasOpenNCs ? 'Reinspeção de serviço' : 'Nova verificação'}
         subtitle={[

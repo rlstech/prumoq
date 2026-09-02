@@ -14,6 +14,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { Edge, SafeAreaView } from 'react-native-safe-area-context';
 import {
   Breakpoints,
   Colors,
@@ -39,27 +40,42 @@ import {
   WEEKDAY_LABELS,
 } from '../../lib/calendar';
 
+/**
+ * Raiz de tela com safe area de verdade. O `SafeAreaView` de 'react-native' é
+ * implementado só no iOS — no Android ele não aplica inset nenhum, e o conteúdo
+ * fica embaixo da status bar. Este usa o do 'react-native-safe-area-context'.
+ *
+ * `edges` default é só o topo: telas dentro das abas já têm a barra flutuante
+ * cuidando do rodapé. Fora das abas, passar `edges={['top', 'bottom']}`.
+ */
 export function Screen({
   children,
   scroll = false,
   contentStyle,
+  edges = ['top'],
 }: {
   children: ReactNode;
   scroll?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
+  edges?: readonly Edge[];
 }) {
   if (scroll) {
     return (
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={[styles.screenContent, contentStyle]}
-        showsVerticalScrollIndicator={false}
-      >
-        {children}
-      </ScrollView>
+      <SafeAreaView edges={edges} style={styles.screen}>
+        <ScrollView
+          contentContainerStyle={[styles.screenContent, contentStyle]}
+          showsVerticalScrollIndicator={false}
+        >
+          {children}
+        </ScrollView>
+      </SafeAreaView>
     );
   }
-  return <View style={[styles.screen, styles.screenContent, contentStyle]}>{children}</View>;
+  return (
+    <SafeAreaView edges={edges} style={[styles.screen, styles.screenContent, contentStyle]}>
+      {children}
+    </SafeAreaView>
+  );
 }
 
 export function Container({

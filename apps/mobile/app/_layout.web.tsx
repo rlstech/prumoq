@@ -5,6 +5,7 @@ import '../lib/setup-rn-web';
 import '../global.css';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { InstallBanner } from '../components/InstallBanner.web';
 import { PullToRefresh } from '../components/PullToRefresh.web';
 import {
@@ -100,19 +101,24 @@ export default function RootLayout() {
     return () => subscription.unsubscribe();
   }, [ready]); // segments deliberately excluded — use segmentsRef instead
 
+  // Mesmo provider do nativo: as telas usam SafeAreaView do safe-area-context,
+  // que exige um provider acima. No browser os insets vêm de env(safe-area-*),
+  // zero em desktop e reais na PWA instalada no iOS.
   return (
-    <ThemeProvider>
-      {isPrintRoute ? (
-        <Slot />
-      ) : (
-        <PullToRefresh
-          enabled={pullToRefreshEnabled}
-          onRefresh={refreshCurrentScreen}
-        >
-          <InstallBanner />
-          <Slot key={screenRefreshKey} />
-        </PullToRefresh>
-      )}
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        {isPrintRoute ? (
+          <Slot />
+        ) : (
+          <PullToRefresh
+            enabled={pullToRefreshEnabled}
+            onRefresh={refreshCurrentScreen}
+          >
+            <InstallBanner />
+            <Slot key={screenRefreshKey} />
+          </PullToRefresh>
+        )}
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

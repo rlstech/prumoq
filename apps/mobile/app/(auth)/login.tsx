@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMark } from '../../components/BrandMark';
 import { Button, ErrorBanner, Field, Toast } from '../../components/ui';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
@@ -87,102 +88,104 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.safe}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <StatusBar style={isTablet ? 'light' : 'dark'} />
-      <ScrollView
-        contentContainerStyle={[styles.scroll, isTablet && styles.scrollTablet]}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safe}>
+      <KeyboardAvoidingView
+        style={styles.safe}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={[styles.shell, isTablet && styles.shellTablet]}>
-          <View style={[styles.hero, isTablet && styles.heroTablet]}>
-            <View style={styles.brand}>
-              <BrandMark size={38} variant="onBrand" />
-              <Text style={styles.logo}>PrumoQ</Text>
-            </View>
-            <View style={styles.heroCopy}>
-              <View style={styles.heroIcon}>
-                <HardHat size={30} color={Colors.brandSignature} />
+        <StatusBar style={isTablet ? 'light' : 'dark'} />
+        <ScrollView
+          contentContainerStyle={[styles.scroll, isTablet && styles.scrollTablet]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={[styles.shell, isTablet && styles.shellTablet]}>
+            <View style={[styles.hero, isTablet && styles.heroTablet]}>
+              <View style={styles.brand}>
+                <BrandMark size={38} variant="onBrand" />
+                <Text style={styles.logo}>PrumoQ</Text>
               </View>
-              <Text style={styles.eyebrow}>QUALIDADE EM CAMPO</Text>
-              <Text style={styles.heroTitle}>Verificações claras, mesmo sem conexão.</Text>
-              <Text style={styles.heroDescription}>
-                Registre serviços, evidências e não conformidades com segurança durante toda a inspeção.
+              <View style={styles.heroCopy}>
+                <View style={styles.heroIcon}>
+                  <HardHat size={30} color={Colors.brandSignature} />
+                </View>
+                <Text style={styles.eyebrow}>QUALIDADE EM CAMPO</Text>
+                <Text style={styles.heroTitle}>Verificações claras, mesmo sem conexão.</Text>
+                <Text style={styles.heroDescription}>
+                  Registre serviços, evidências e não conformidades com segurança durante toda a inspeção.
+                </Text>
+              </View>
+              <View style={styles.trustList}>
+                <TrustItem Icon={ClipboardCheck} text="Fluxo guiado de verificação" />
+                <TrustItem Icon={WifiOff} text="Trabalho offline com sincronização" />
+                <TrustItem Icon={ShieldCheck} text="Dados protegidos por obra" />
+              </View>
+            </View>
+
+            <View style={[styles.formPanel, isTablet && styles.formPanelTablet]}>
+              <View style={styles.formHeader}>
+                <Text style={styles.formEyebrow}>ACESSO DO INSPETOR</Text>
+                <Text style={styles.formTitle}>Entrar na conta</Text>
+                <Text style={styles.formDescription}>
+                  Use suas credenciais do PrumoQ para continuar o trabalho de campo.
+                </Text>
+              </View>
+
+              <View style={styles.fields}>
+                <Field
+                  label="E-mail"
+                  value={email}
+                  onChangeText={value => { setEmail(value); setError(null); }}
+                  placeholder="seu@email.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  returnKeyType="next"
+                />
+                <Field
+                  label="Senha"
+                  value={password}
+                  onChangeText={value => { setPassword(value); setError(null); }}
+                  placeholder="Digite sua senha"
+                  secureTextEntry
+                  autoComplete="password"
+                  returnKeyType="done"
+                  onSubmitEditing={handleLogin}
+                />
+              </View>
+
+              {error ? <ErrorBanner message={error} /> : null}
+              {passwordChanged ? (
+                <Toast
+                  message="Senha alterada. Entre novamente com sua nova senha."
+                  tone="success"
+                  onDismiss={() => setPasswordChanged(false)}
+                />
+              ) : null}
+
+              <Button
+                label="Entrar no PrumoQ"
+                onPress={handleLogin}
+                loading={loading}
+                fullWidth
+                accessibilityHint="Autentica e abre o painel de campo"
+              />
+
+              <TouchableOpacity
+                accessibilityRole="link"
+                onPress={() => router.push('/(auth)/recuperar-senha')}
+                style={styles.recoveryLink}
+              >
+                <Text style={styles.recoveryLinkText}>Esqueci minha senha</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.support}>
+                Outros problemas com o acesso? Fale com o administrador da sua empresa.
               </Text>
             </View>
-            <View style={styles.trustList}>
-              <TrustItem Icon={ClipboardCheck} text="Fluxo guiado de verificação" />
-              <TrustItem Icon={WifiOff} text="Trabalho offline com sincronização" />
-              <TrustItem Icon={ShieldCheck} text="Dados protegidos por obra" />
-            </View>
           </View>
-
-          <View style={[styles.formPanel, isTablet && styles.formPanelTablet]}>
-            <View style={styles.formHeader}>
-              <Text style={styles.formEyebrow}>ACESSO DO INSPETOR</Text>
-              <Text style={styles.formTitle}>Entrar na conta</Text>
-              <Text style={styles.formDescription}>
-                Use suas credenciais do PrumoQ para continuar o trabalho de campo.
-              </Text>
-            </View>
-
-            <View style={styles.fields}>
-              <Field
-                label="E-mail"
-                value={email}
-                onChangeText={value => { setEmail(value); setError(null); }}
-                placeholder="seu@email.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                returnKeyType="next"
-              />
-              <Field
-                label="Senha"
-                value={password}
-                onChangeText={value => { setPassword(value); setError(null); }}
-                placeholder="Digite sua senha"
-                secureTextEntry
-                autoComplete="password"
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-              />
-            </View>
-
-            {error ? <ErrorBanner message={error} /> : null}
-            {passwordChanged ? (
-              <Toast
-                message="Senha alterada. Entre novamente com sua nova senha."
-                tone="success"
-                onDismiss={() => setPasswordChanged(false)}
-              />
-            ) : null}
-
-            <Button
-              label="Entrar no PrumoQ"
-              onPress={handleLogin}
-              loading={loading}
-              fullWidth
-              accessibilityHint="Autentica e abre o painel de campo"
-            />
-
-            <TouchableOpacity
-              accessibilityRole="link"
-              onPress={() => router.push('/(auth)/recuperar-senha')}
-              style={styles.recoveryLink}
-            >
-              <Text style={styles.recoveryLinkText}>Esqueci minha senha</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.support}>
-              Outros problemas com o acesso? Fale com o administrador da sua empresa.
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

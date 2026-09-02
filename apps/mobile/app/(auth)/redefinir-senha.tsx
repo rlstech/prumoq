@@ -6,12 +6,12 @@ import {
   KeyboardAvoidingView,
   Linking,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMark } from '../../components/BrandMark';
 import { Button, ErrorBanner, Field } from '../../components/ui';
 import {
@@ -161,7 +161,7 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safe}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         style={styles.safe}

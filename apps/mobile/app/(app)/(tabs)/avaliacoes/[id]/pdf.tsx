@@ -2,7 +2,8 @@ import { useQuery } from '@powersync/react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FileDown, FileText, LoaderCircle } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../../components/AppHeader';
 import { Button, EmptyState, ListSurface, OperationalRow } from '../../../../../components/ui';
 import { contractorEvaluationPdfFilename, generateAndShareContractorEvaluationPdf, renderContractorEvaluationPdfHtml, type ContractorEvaluationPdfReport } from '../../../../../lib/contractor-evaluation-pdf';
@@ -38,7 +39,7 @@ export default function ContractorEvaluationPdfScreen() {
     finally { setGenerating(false); }
   }
   const loading = isLoadingEvaluation || isLoadingItems;
-  return <SafeAreaView style={styles.safe}><AppHeader title="Documento da avaliação" subtitle="PDF local para compartilhamento" showBack onBack={() => router.back()} /><ScrollView contentContainerStyle={styles.content}>
+  return <SafeAreaView edges={['top']} style={styles.safe}><AppHeader title="Documento da avaliação" subtitle="PDF local para compartilhamento" showBack onBack={() => router.back()} /><ScrollView contentContainerStyle={styles.content}>
     {loading ? <View style={styles.loading}><LoaderCircle size={24} color={Colors.brand} /><Text style={styles.muted}>Preparando documento...</Text></View> : !report || !printable(report.status) ? <EmptyState Icon={FileText} title="PDF indisponível" description="Somente avaliações assinadas, aprovadas ou invalidadas podem gerar documento." /> : <>
       <View style={styles.hero}><FileText size={24} color={Colors.brand} /><View style={styles.heroText}><Text style={styles.title}>Avaliação de {report.empreiteiro}</Text><Text style={styles.copy}>{report.obra} · {report.percentual.toFixed(0)}% · {report.itens.length} critérios</Text></View></View>
       <ListSurface>

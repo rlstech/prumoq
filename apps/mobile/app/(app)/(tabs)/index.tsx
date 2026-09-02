@@ -14,10 +14,12 @@ import {
   XCircle,
 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandMark } from '../../../components/BrandMark';
 import { BrandWordmark } from '../../../components/BrandWordmark';
 import { ConformityRing } from '../../../components/ConformityRing';
+import { IconBox } from '../../../components/IconBox';
 import { CanopyBackdrop } from '../../../components/DashboardCanopy';
 import { OfflineBanner } from '../../../components/OfflineBanner';
 import { ProgressBar } from '../../../components/ProgressBar';
@@ -172,6 +174,11 @@ interface UserProfile extends UserInfo { perfil: string }
 export default function DashboardScreen() {
   const router = useRouter();
   const { isTablet } = useResponsiveLayout();
+  // O inset do topo entra como padding da raiz, que já é azul da marca: a faixa
+  // sob a status bar continua sendo capa, sem a faixa clara que um SafeAreaView
+  // abriria. SafeAreaView de 'react-native' não faz nada no Android — era por
+  // isso que a marca aparecia cortada atrás da status bar.
+  const insets = useSafeAreaInsets();
   const [userId, setUserId] = useState<string | null>(null);
   const [perfil, setPerfil] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -422,13 +429,19 @@ export default function DashboardScreen() {
   const activeWorks = obrasAtivas[0]?.count ?? 0;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={[styles.safe, { paddingTop: insets.top }]}>
       <StatusBar style="light" backgroundColor={Colors.brand} />
       <OfflineBanner />
       <ScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.page}
+        // A barra de abas flutua sobre o scroll: sem reservar a altura dela mais
+        // o inset do gesto, o último cartão da lista fica embaixo da barra e não
+        // há como rolar para vê-lo.
+        contentContainerStyle={[
+          styles.page,
+          { paddingBottom: ComponentSize.tabBar + Spacing.sm + Spacing.xxl + insets.bottom },
+        ]}
       >
         <View style={styles.canopy}>
           <CanopyBackdrop />
@@ -507,7 +520,7 @@ export default function DashboardScreen() {
           ) : null}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -531,7 +544,7 @@ function SectionHeader({
 }) {
   return (
     <View style={styles.sectionHead}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionTitle} numberOfLines={1}>{title}</Text>
       {actionLabel && onPress ? (
         <Pressable
           accessibilityRole="button"
@@ -541,7 +554,7 @@ function SectionHeader({
           style={({ pressed }) => [styles.sectionLink, pressed && styles.pressed]}
         >
           <Text style={styles.sectionLinkText}>{actionLabel}</Text>
-          <ChevronRight size={14} color={Colors.brand} strokeWidth={2.4} />
+          <IconBox icon={ChevronRight} size={14} color={Colors.brand} strokeWidth={2.4} />
         </Pressable>
       ) : null}
     </View>
@@ -655,7 +668,7 @@ function ResumeSection({
             style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
           >
             <Text style={styles.ctaText}>Continuar vistoria</Text>
-            <ArrowRight size={17} color={Colors.text} strokeWidth={2.4} />
+            <IconBox icon={ArrowRight} size={17} color={Colors.text} strokeWidth={2.4} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -677,7 +690,7 @@ function ResumeSection({
             onPress={() => onResume(other)}
             style={({ pressed }) => [styles.draftRowMain, pressed && styles.pressed]}
           >
-            <FileClock size={17} color={Colors.brand} />
+            <IconBox icon={FileClock} size={17} color={Colors.brand} />
             <View style={styles.draftRowBody}>
               <Text style={styles.draftRowTitle} numberOfLines={1}>
                 {other.fvsName || 'Verificação em andamento'}
@@ -686,7 +699,7 @@ function ResumeSection({
                 {other.ambienteName} · etapa {stepNumber(other.currentStep)} de {VERIFICATION_STEPS.length}
               </Text>
             </View>
-            <ArrowRight size={16} color={Colors.brand} />
+            <IconBox icon={ArrowRight} size={16} color={Colors.brand} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -761,7 +774,7 @@ function ReinspectionPanel({
           <>
             <View style={styles.cardDivider} />
             <View style={styles.emptyRow}>
-              <CheckCircle2 size={20} color={Colors.ok} strokeWidth={2.2} />
+              <IconBox icon={CheckCircle2} size={20} color={Colors.ok} strokeWidth={2.2} />
               <View style={styles.emptyBody}>
                 <Text style={styles.emptyTitle}>Campo em dia</Text>
                 <Text style={styles.emptyText}>Nenhuma reinspeção pendente nas suas obras.</Text>
@@ -810,7 +823,7 @@ function ReinspectionPanel({
                   <Text style={styles.cardFootText}>
                     Mais {remaining} {remaining === 1 ? 'reinspeção' : 'reinspeções'} na fila
                   </Text>
-                  <ChevronRight size={15} color={Colors.brand} strokeWidth={2.4} />
+                  <IconBox icon={ChevronRight} size={15} color={Colors.brand} strokeWidth={2.4} />
                 </Pressable>
               </>
             ) : null}
@@ -843,7 +856,7 @@ function DeadlineCell({
     >
       <Text style={[styles.bandValue, { color }]}>{value}</Text>
       <View style={styles.bandLabelRow}>
-        <Icon size={13} color={color} strokeWidth={2.2} />
+        <IconBox icon={Icon} size={13} color={color} strokeWidth={2.2} />
         <Text style={styles.bandLabel} numberOfLines={1}>{label}</Text>
       </View>
     </Pressable>
@@ -871,7 +884,7 @@ function WorksPanel({
       <View style={styles.card}>
         {works.length === 0 ? (
           <View style={styles.emptyRow}>
-            <Building2 size={20} color={Colors.textSecondary} />
+            <IconBox icon={Building2} size={20} color={Colors.textSecondary} />
             <View style={styles.emptyBody}>
               <Text style={styles.emptyTitle}>Nenhuma obra ativa</Text>
               <Text style={styles.emptyText}>Peça acesso a uma obra ao administrador.</Text>
@@ -959,7 +972,7 @@ function ActivityPanel({
                   </Text>
                 </View>
                 <Text style={styles.activityDate}>{relativeDate(verification.data_verif)}</Text>
-                <ChevronRight size={15} color={Colors.borderNormal} strokeWidth={2.4} />
+                <IconBox icon={ChevronRight} size={15} color={Colors.borderNormal} strokeWidth={2.4} />
               </Pressable>
             </View>
           );
@@ -976,7 +989,7 @@ const CANOPY_RADIUS = 28;
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.brand },
   scroll: { backgroundColor: Colors.bg },
-  page: { paddingBottom: Spacing.huge, backgroundColor: Colors.bg },
+  page: { backgroundColor: Colors.bg },
 
   // ── Capa ────────────────────────────────────────────────────────────
   canopy: {
@@ -1041,8 +1054,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.sm,
   },
-  sectionTitle: { ...Typography.overline, color: Colors.textTertiary },
-  sectionLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  // flex: 1 dá ao título a largura restante da linha em vez de deixá-la ser
+  // negociada com o link ao lado; flexShrink: 0 no link protege "Ver as N".
+  sectionTitle: { ...Typography.overline, color: Colors.textTertiary, flex: 1, minWidth: 0 },
+  sectionLink: { flexDirection: 'row', alignItems: 'center', gap: 2, flexShrink: 0 },
   sectionLinkText: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSizes.xs,
@@ -1253,8 +1268,16 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     letterSpacing: -1,
   },
-  bandLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  bandLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+    gap: 4,
+  },
   bandLabel: {
+    flexShrink: 1,
+    minWidth: 0,
     fontFamily: FontFamily.medium,
     fontSize: FontSizes.tiny,
     color: Colors.textSecondary,

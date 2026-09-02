@@ -22,7 +22,6 @@ import {
   ActivityIndicator,
   Image,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleProp,
   StyleSheet,
@@ -31,6 +30,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../../../../../../../components/AppHeader';
 import { PhotoGrid } from '../../../../../../../../../../components/PhotoGrid';
 import { PhotoViewer } from '../../../../../../../../../../components/PhotoViewer';
@@ -305,7 +305,7 @@ export default function VerificationDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
         <AppHeader title="Registro da verificação" showBack onBack={() => goBack(historyHref)} />
         <View style={styles.centerState}>
           <ActivityIndicator color={Colors.brand} size="large" />
@@ -318,7 +318,7 @@ export default function VerificationDetailScreen() {
 
   if (queryError) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
         <AppHeader title="Registro da verificação" showBack onBack={() => goBack(historyHref)} />
         <View style={styles.stateContent}>
           <ErrorBanner message={`Não foi possível carregar o registro. ${queryError.message}`} />
@@ -330,7 +330,7 @@ export default function VerificationDetailScreen() {
 
   if (!verification) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
         <AppHeader title="Registro da verificação" showBack onBack={() => goBack(historyHref)} />
         <View style={styles.centerState}>
           <View style={styles.stateIcon}>
@@ -351,7 +351,7 @@ export default function VerificationDetailScreen() {
   const isPendingSync = verification.created_offline === 1 || verification.created_offline === true;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top']} style={styles.safe}>
       <AppHeader
         title={`Verificação #${verification.numero_verif}`}
         subtitle={[verification.subservico, verification.ambiente_nome, verification.obra_nome]
