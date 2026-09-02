@@ -17,10 +17,17 @@ const SYNCABLE_TABLES: ReadonlySet<string> = new Set(
   (AppSchema.tables ?? []).map(table => table.name).filter(name => name !== 'sync_falhas'),
 );
 
+/**
+ * `resolved` e o payload apos a resolucao de midia: com `pending:<caminho>` ja
+ * trocado pela chave do R2. E ele que vai para a quarentena, porque o arquivo
+ * local e apagado quando a transacao fecha — guardar o caminho local deixaria o
+ * reenvio impossivel, mesmo com o binario ja no R2.
+ */
 export async function quarantineOperation(
   database: AbstractPowerSyncDatabase,
   op: CrudEntry,
   failure: FailureClassification,
+  resolved?: Record<string, unknown>,
 ): Promise<void> {
   await database.execute(
     `INSERT INTO sync_falhas (id, op, tabela, registro_id, payload, erro, codigo, criado_em)
@@ -30,7 +37,7 @@ export async function quarantineOperation(
       op.op,
       op.table,
       op.id,
-      JSON.stringify(op.opData ?? {}),
+      JSON.stringify(resolved ?? op.opData ?? {}),
       failure.message,
       failure.code,
       new Date().toISOString(),

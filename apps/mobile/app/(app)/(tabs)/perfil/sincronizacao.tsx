@@ -55,6 +55,7 @@ export default function SincronizacaoScreen() {
   );
   const [fila, setFila] = useState<number | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [retryingAll, setRetryingAll] = useState(false);
 
   const refreshQueue = useCallback(async () => {
     try {
@@ -78,6 +79,28 @@ export default function SincronizacaoScreen() {
       Alert.alert('Não foi possível reenviar', error instanceof Error ? error.message : String(error));
     } finally {
       setBusyId(null);
+    }
+  }
+
+  /**
+   * Reenvia em ordem cronologica. A ordem importa: a verificacao precisa entrar
+   * antes dos itens e das fotos que apontam para ela, senao a FK derruba os
+   * dependentes de novo. Para no primeiro erro para nao mascarar a causa.
+   */
+  async function handleRetryAll() {
+    setRetryingAll(true);
+    try {
+      for (const row of [...falhas].reverse()) {
+        await retryQuarantined(db, row);
+      }
+      await refreshQueue();
+    } catch (error) {
+      Alert.alert(
+        'Reenvio interrompido',
+        error instanceof Error ? error.message : String(error),
+      );
+    } finally {
+      setRetryingAll(false);
     }
   }
 
@@ -148,6 +171,18 @@ export default function SincronizacaoScreen() {
               necessários.
             </Text>
 
+            {falhas.length > 1 ? (
+              <Button
+                label={`Reenviar todos os ${falhas.length}`}
+                onPress={() => void handleRetryAll()}
+                Icon={RefreshCw}
+                variant="secondary"
+                loading={retryingAll}
+                fullWidth
+                accessibilityHint="Reenvia na ordem em que foram criados"
+              />
+            ) : null}
+
             {falhas.map(row => (
               <View key={row.id} style={styles.card}>
                 <View style={styles.cardHead}>
@@ -181,6 +216,7 @@ export default function SincronizacaoScreen() {
                     Icon={RefreshCw}
                     variant="secondary"
                     loading={busyId === row.id}
+                    disabled={retryingAll}
                     accessibilityHint="Recoloca o registro na fila de envio"
                   />
                   <Button
@@ -188,7 +224,7 @@ export default function SincronizacaoScreen() {
                     onPress={() => handleDiscard(row)}
                     Icon={Trash2}
                     variant="ghost"
-                    disabled={busyId === row.id}
+                    disabled={busyId === row.id || retryingAll}
                     accessibilityHint="Remove o registro do aparelho em definitivo"
                   />
                 </View>

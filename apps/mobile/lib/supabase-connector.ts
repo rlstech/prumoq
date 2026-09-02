@@ -45,8 +45,14 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
 
     try {
       for (const op of transaction.crud) {
+        // `data` e mutado por processOperation: e nele que `pending:<caminho>`
+        // vira a chave definitiva do R2. Fica declarado aqui fora para que a
+        // quarentena guarde o payload JA resolvido — o arquivo local e apagado
+        // ao final da transacao, entao um payload com `pending:` seria
+        // impossivel de reenviar depois.
+        const data: Record<string, unknown> = { ...(op.opData ?? {}) };
         try {
-          await this.processOperation(op);
+          await this.processOperation(op, data);
         } catch (error) {
           // Uma linha que o servidor recusa em definitivo não pode segurar a
           // fila: ela sai para a quarentena (visível em Perfil > Sincronizacao)
@@ -58,7 +64,7 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
             `[PowerSync] operação em quarentena: ${op.op} ${op.table} ${op.id}`,
             `${failure.code} — ${failure.message}`,
           );
-          await quarantineOperation(database, op, failure);
+          await quarantineOperation(database, op, failure, data);
         }
       }
       await transaction.complete();
@@ -76,9 +82,8 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     }
   }
 
-  private async processOperation(op: CrudEntry): Promise<void> {
+  private async processOperation(op: CrudEntry, data: Record<string, unknown>): Promise<void> {
     const table = op.table;
-    const data = { ...(op.opData ?? {}) };
 
     // Resolve pending photo uploads before writing to Supabase
     await this.ensureThumbnail(table, data);
@@ -179,8 +184,32 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       if (error && error.code !== '23505') throw error;
       return;
     }
-    const { error } = await supabase.from(table as never).upsert(data as never);
-    if (error) throw error;
+    // NUNCA usar upsert aqui. O `upsert` do supabase-js vira
+    // `INSERT ... ON CONFLICT`, e com ON CONFLICT o PostgreSQL passa a exigir
+    // também a policy de SELECT sobre a linha proposta. As policies de leitura
+    // deste schema consultam a propria tabela — `verificacoes_select` e
+    // `has_verificacao_access(id)` fazem EXISTS(SELECT 1 FROM verificacoes
+    // WHERE id = ...) — e para uma linha nova isso e falso por definicao. O
+    // resultado era 42501 ("new row violates row-level security policy") em
+    // toda verificacao criada no aparelho, travando a fila inteira.
+    //
+    // Reproduzido no banco: mesmo payload e mesma autenticacao, INSERT puro
+    // passa, ON CONFLICT DO UPDATE e ON CONFLICT DO NOTHING falham.
+    //
+    // PowerSync emite PUT para insercao local e PATCH para alteracao, entao o
+    // INSERT e o caminho certo. O 23505 so aparece em reenvio de uma operacao
+    // que o servidor ja aplicou sem que o cliente confirmasse; nesse caso vale
+    // atualizar, para nao perder os campos do reenvio.
+    const { id, ...fields } = data;
+    const { error } = await supabase.from(table as never).insert(data as never);
+    if (!error) return;
+    if (error.code !== '23505') throw error;
+
+    const { error: updateError } = await supabase
+      .from(table as never)
+      .update(fields as never)
+      .eq('id', id as string);
+    if (updateError) throw updateError;
   }
 
   private async patchRow(table: string, id: string, data: Record<string, unknown>): Promise<void> {
