@@ -854,11 +854,11 @@ function DeadlineCell({
       onPress={onPress}
       style={({ pressed }) => [styles.bandCell, pressed && styles.rowPressed]}
     >
-      <Text style={[styles.bandValue, { color }]}>{value}</Text>
-      <View style={styles.bandLabelRow}>
-        <IconBox icon={Icon} size={13} color={color} strokeWidth={2.2} />
-        <Text style={styles.bandLabel} numberOfLines={1}>{label}</Text>
+      <View style={styles.bandValueRow}>
+        <IconBox icon={Icon} size={15} color={color} strokeWidth={2.2} />
+        <Text style={[styles.bandValue, { color }]}>{value}</Text>
       </View>
+      <Text style={styles.bandLabel} numberOfLines={2}>{label}</Text>
     </Pressable>
   );
 }
@@ -1260,33 +1260,37 @@ const styles = StyleSheet.create({
 
   // ── Reinspeções ─────────────────────────────────────────────────────
   band: { flexDirection: 'row', alignItems: 'stretch', paddingVertical: Spacing.md },
-  bandCell: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
-  bandDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 2 },
+  bandCell: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: ComponentSize.touch,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: Spacing.xs,
+  },
+  bandDivider: { width: 1, backgroundColor: Colors.border, marginVertical: Spacing.xs },
+  bandValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+  },
   bandValue: {
     fontFamily: FontFamily.bold,
     fontSize: FontSizes.xxl,
     lineHeight: 30,
     letterSpacing: -1,
   },
-  bandLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'stretch',
-    gap: 4,
-  },
   bandLabel: {
-    // Largura definida pelo pai (flex: 1) e não pelo conteúdo: com largura
-    // automática o texto era medido em cerca de metade do disponível e saía
-    // como "Vencem ho…" dentro de uma célula de 126dp. flexShrink não resolve —
-    // só o flex. O paddingRight compensa o ícone à esquerda, devolvendo o
-    // texto ao centro óptico da célula.
-    flex: 1,
+    width: '100%',
     minWidth: 0,
     textAlign: 'center',
-    paddingRight: 17,
+    paddingHorizontal: Spacing.xs,
     fontFamily: FontFamily.medium,
     fontSize: FontSizes.tiny,
+    lineHeight: 16,
     color: Colors.textSecondary,
   },
   queueRow: {

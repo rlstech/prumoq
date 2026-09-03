@@ -231,23 +231,27 @@ export default function ObraDetailScreen() {
         contentContainerStyle={styles.content}
       >
         <View style={styles.summary}>
-          <View style={styles.summaryPrimary}>
-            <Text style={styles.summaryEyebrow}>PROGRESSO DA OBRA</Text>
-            <Text style={styles.summaryValue}>{Math.round(progress)}%</Text>
-            <Text style={styles.summaryLabel}>avanço ponderado das FVS</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryFacts}>
-            <SummaryFact
-              value={`${kpi.fvs_concluidas}/${kpi.total_fvs}`}
-              label="FVS concluídas"
-              tone={Colors.text}
-            />
-            <SummaryFact
-              value={kpi.ncs_abertas}
-              label="NC abertas"
-              tone={kpi.ncs_abertas > 0 ? Colors.nok : Colors.text}
-            />
+          <View style={styles.summaryMetrics}>
+            <View style={styles.summaryPrimary}>
+              <Text style={styles.summaryEyebrow}>PROGRESSO DA OBRA</Text>
+              <Text style={styles.summaryValue}>{Math.round(progress)}%</Text>
+              <Text style={styles.summaryLabel} numberOfLines={2}>
+                avanço ponderado das FVS
+              </Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryFacts}>
+              <SummaryFact
+                value={`${kpi.fvs_concluidas}/${kpi.total_fvs}`}
+                label="FVS concluídas"
+                tone={Colors.text}
+              />
+              <SummaryFact
+                value={kpi.ncs_abertas}
+                label="NC abertas"
+                tone={kpi.ncs_abertas > 0 ? Colors.nok : Colors.text}
+              />
+            </View>
           </View>
 
           {obra?.eng_responsavel ? (
@@ -370,7 +374,7 @@ function SummaryFact({
   return (
     <View style={styles.summaryFact}>
       <Text style={[styles.summaryFactValue, { color: tone }]}>{value}</Text>
-      <Text style={styles.summaryFactLabel}>{label}</Text>
+      <Text style={styles.summaryFactLabel} numberOfLines={2}>{label}</Text>
     </View>
   );
 }
@@ -430,9 +434,6 @@ const styles = StyleSheet.create({
   },
   summary: {
     minHeight: 112,
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    flexWrap: 'wrap',
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -440,7 +441,16 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     gap: Spacing.sm,
   },
-  summaryPrimary: { flex: 1.5, minWidth: 180, justifyContent: 'center' },
+  summaryMetrics: {
+    minHeight: 76,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  summaryPrimary: {
+    flex: 1.15,
+    minWidth: 0,
+    justifyContent: 'center',
+  },
   summaryEyebrow: { ...Typography.overline, color: Colors.textTertiary },
   summaryValue: {
     marginTop: 2,
@@ -452,24 +462,33 @@ const styles = StyleSheet.create({
   summaryLabel: { ...Typography.caption, color: Colors.textSecondary },
   summaryDivider: {
     width: 1,
-    marginHorizontal: Spacing.lg,
+    marginHorizontal: Spacing.sm,
     backgroundColor: Colors.border,
   },
   summaryFacts: {
     flex: 1,
-    minWidth: 116,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    gap: Spacing.md,
+    gap: Spacing.xs,
   },
-  summaryFact: { alignItems: 'center', gap: 1 },
+  summaryFact: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    gap: 1,
+  },
   summaryFactValue: {
     fontFamily: FontFamily.monoSemibold,
     fontSize: FontSizes.xl,
     lineHeight: 28,
   },
-  summaryFactLabel: { ...Typography.caption, color: Colors.textTertiary },
+  summaryFactLabel: {
+    ...Typography.caption,
+    width: '100%',
+    color: Colors.textTertiary,
+    textAlign: 'center',
+  },
   engineer: {
     width: '100%',
     paddingTop: Spacing.sm,
