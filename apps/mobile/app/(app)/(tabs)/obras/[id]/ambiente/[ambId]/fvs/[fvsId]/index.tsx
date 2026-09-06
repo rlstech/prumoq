@@ -112,6 +112,18 @@ export default function FvsHistoryScreen() {
     ORDER BY verificacao_id, ordem
   `, [fvsId]);
 
+  // Numa reinspeção a tela de captura só oferece o slot único da NC, então
+  // `verificacao_fotos` fica vazia e o registro aparecia aqui como "0 fotos"
+  // mesmo com a evidência gravada em `nc_reinspecoes.foto_url`.
+  const { data: fotosReinspecao } = useQuery<FotoRow>(`
+    SELECT id, verificacao_id
+    FROM nc_reinspecoes
+    WHERE foto_url IS NOT NULL AND verificacao_id IN (
+      SELECT id FROM verificacoes WHERE fvs_planejada_id = ?
+    )
+    ORDER BY verificacao_id, created_at
+  `, [fvsId]);
+
   const { data: conclusoes } = useQuery<ConclusaoRow>(`
     SELECT fc.id, fc.resultado, fc.observacao_final,
            fc.motivo_antes_100, fc.created_at, u.nome AS inspetor_nome
@@ -124,11 +136,12 @@ export default function FvsHistoryScreen() {
   const ultimaConclusao = conclusoes[0] ?? null;
 
   const historyItems = useMemo<VerificationListItem[]>(() => {
+    const evidencias = [...fotos, ...fotosReinspecao];
     return sortVerificationRecords(verificacoes).map(verification => ({
       ...verification,
-      ...summarizeVerificationEvidence(verification.id, ncs, fotos),
+      ...summarizeVerificationEvidence(verification.id, ncs, evidencias),
     }));
-  }, [verificacoes, ncs, fotos]);
+  }, [verificacoes, ncs, fotos, fotosReinspecao]);
 
   const isLocked = fvs?.status === 'conforme'
     || fvs?.status === 'concluida'

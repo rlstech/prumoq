@@ -900,6 +900,18 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
     return (data ?? []) as T[];
   }
 
+  // ── registro completo: evidência da reinspeção ─────────
+  if (s.includes('from nc_reinspecoes nr') && s.includes('where nr.verificacao_id = ?') && params[0]) {
+    const { data, error } = await supabase
+      .from('nc_reinspecoes')
+      .select('id, nc_id, foto_url, resultado')
+      .eq('verificacao_id', params[0] as string)
+      .not('foto_url', 'is', null)
+      .order('created_at');
+    if (error) throw new Error(`Erro ao carregar evidências da reinspeção: ${error.message}`);
+    return (data ?? []) as T[];
+  }
+
   // ── FVS detalhe ───────────────────────────────────────
   if (s.includes('from fvs_planejadas fp') && s.includes('join ambientes a') && s.includes('where fp.id = ?') && params[0]) {
     const { data } = await supabase.rpc('get_fvs_detalhe', { p_fvs_id: params[0] as string });
@@ -921,6 +933,27 @@ async function fetchFromSupabase<T>(sql: string, params: unknown[]): Promise<T[]
   // ── fotos do FVS ──────────────────────────────────────
   if (s.includes('from verificacao_fotos') && s.includes('verificacao_id in') && s.includes('fvs_planejada_id = ?') && params[0]) {
     const { data } = await supabase.rpc('get_fotos_fvs', { p_fvs_id: params[0] as string });
+    return (data ?? []) as T[];
+  }
+
+  // ── fotos de reinspeção do FVS (contagem no histórico) ─
+  if (s.includes('from nc_reinspecoes') && s.includes('verificacao_id in') && s.includes('fvs_planejada_id = ?') && params[0]) {
+    const { data: verificacoes, error: verificacoesError } = await supabase
+      .from('verificacoes')
+      .select('id')
+      .eq('fvs_planejada_id', params[0] as string);
+    if (verificacoesError) throw new Error(`Erro ao localizar verificações da FVS: ${verificacoesError.message}`);
+
+    const verificacaoIds = (verificacoes ?? []).map(row => row.id);
+    if (verificacaoIds.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('nc_reinspecoes')
+      .select('id, verificacao_id')
+      .in('verificacao_id', verificacaoIds)
+      .not('foto_url', 'is', null)
+      .order('created_at');
+    if (error) throw new Error(`Erro ao carregar evidências da reinspeção: ${error.message}`);
     return (data ?? []) as T[];
   }
 

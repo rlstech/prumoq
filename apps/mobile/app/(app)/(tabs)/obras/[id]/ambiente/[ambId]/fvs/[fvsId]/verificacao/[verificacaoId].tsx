@@ -134,6 +134,13 @@ interface NonConformityPhotoRow {
   ordem: number;
 }
 
+interface ReinspectionPhotoRow {
+  id: string;
+  nc_id: string;
+  foto_url: string;
+  resultado: string;
+}
+
 interface ViewerState {
   photos: string[];
   initialIndex: number;
@@ -260,6 +267,18 @@ export default function VerificationDetailScreen() {
     ORDER BY nf.ordem ASC
   `, [verificacaoId]);
 
+  // A evidência da reinspeção mora em `nc_reinspecoes.foto_url`, não em
+  // `verificacao_fotos`: numa reinspeção a tela de captura oferece apenas o
+  // slot único da NC, então `verificacao_fotos` fica vazia. Sem esta consulta
+  // a foto era gravada e sincronizada, mas não aparecia em nenhuma tela
+  // nativa — só no relatório web, que a lê pela RPC `get_fvs_attachments`.
+  const reinspectionPhotosQuery = useQuery<ReinspectionPhotoRow>(`
+    SELECT nr.id, nr.nc_id, nr.foto_url, nr.resultado
+    FROM nc_reinspecoes nr
+    WHERE nr.verificacao_id = ? AND nr.foto_url IS NOT NULL
+    ORDER BY nr.created_at ASC
+  `, [verificacaoId]);
+
   const verification = headerQuery.data[0];
   const resolveMediaUri = usePrivateMediaUris(verification?.assinatura_url ? [verification.assinatura_url] : []);
   const items = useMemo(
@@ -280,14 +299,23 @@ export default function VerificationDetailScreen() {
     [verificationPhotosQuery.data],
   );
   const generalPhotoKeys = useMemo(() => generalPhotos.map(photo => photo.key), [generalPhotos]);
+  const reinspectionPhotos = useMemo(
+    () => reinspectionPhotosQuery.data.map(photo => ({ key: photo.foto_url, thumbnailKey: null })),
+    [reinspectionPhotosQuery.data],
+  );
+  const reinspectionPhotoKeys = useMemo(
+    () => reinspectionPhotos.map(photo => photo.key),
+    [reinspectionPhotos],
+  );
   const pendingMediaCount = useMemo(() => {
     const photoKeys = [
       ...generalPhotoKeys,
+      ...reinspectionPhotoKeys,
       ...nonConformityPhotosQuery.data.map(photo => photo.r2_key),
     ];
     if (verification?.assinatura_url) photoKeys.push(verification.assinatura_url);
     return photoKeys.filter(isPendingMediaKey).length;
-  }, [generalPhotoKeys, nonConformityPhotosQuery.data, verification?.assinatura_url]);
+  }, [generalPhotoKeys, reinspectionPhotoKeys, nonConformityPhotosQuery.data, verification?.assinatura_url]);
 
   const queries = [
     headerQuery,
@@ -295,6 +323,7 @@ export default function VerificationDetailScreen() {
     nonConformitiesQuery,
     verificationPhotosQuery,
     nonConformityPhotosQuery,
+    reinspectionPhotosQuery,
   ];
   const isLoading = queries.some(query => query.isLoading);
   const queryError = queries.find(query => query.error)?.error;
@@ -618,6 +647,19 @@ export default function VerificationDetailScreen() {
             <Text style={styles.emptyInline}>Nenhuma observação registrada.</Text>
           )}
         </Card>
+
+        {reinspectionPhotos.length > 0 ? (
+          <Card>
+            <SectionTitle
+              title="Evidência da reinspeção"
+              description={`${reinspectionPhotos.length} foto${reinspectionPhotos.length === 1 ? '' : 's'} de fechamento de NC`}
+            />
+            <PhotoGrid
+              photos={reinspectionPhotos}
+              onPress={index => openViewer(reinspectionPhotoKeys, index)}
+            />
+          </Card>
+        ) : null}
 
         <Card>
           <SectionTitle

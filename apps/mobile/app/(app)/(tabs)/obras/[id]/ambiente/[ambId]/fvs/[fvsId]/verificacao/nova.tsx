@@ -91,6 +91,7 @@ import {
   canConcludeFvs,
   verificationStatusFromResults,
 } from '../../../../../../../../../../lib/verification/controller';
+import { adoptPendingMedia } from '../../../../../../../../../../lib/pending-media';
 import { approveReinspecao, createNc, reprovarReinspecao } from '../../../../../../../../../../services/nc.service';
 import { resolveNcFinancialImpact } from '../../../../../../../../../../services/nc-finance.service';
 import { recordApprovedAdvances } from '../../../../../../../../../../services/measurement.service';
@@ -593,153 +594,184 @@ export default function NovaVerificacaoScreen() {
     let pendingResult: ReinspResult = { type: 'idle' };
 
     try {
-      await db.execute(`
-        INSERT INTO verificacoes
-          (id, cliente_id, fvs_planejada_id, numero_verif, inspetor_id, equipe_id, data_verif,
-           status, observacoes, created_offline, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        verificacaoId, clienteId, fvsId, proximoNumero,
-        inspectorId, selectedEquipeId, dataVerif,
-        verificationStatus, observacoes, 1, now,
-      ]);
-
-      for (const item of itens) {
-        const resultado = itemResults[item.id] ?? 'na';
-        const itemVerifId = uuid();
-        await db.execute(`
-          INSERT INTO verificacao_itens
-            (id, cliente_id, verificacao_id, fvs_padrao_item_id, ordem, titulo,
-             metodo_verif, tolerancia, resultado)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [itemVerifId, clienteId, verificacaoId, item.id, item.ordem,
-            item.titulo, item.metodo_verif, item.tolerancia, resultado]);
-
-        const ncAberta = ncAbertoByItemId[item.id];
-        if (ncAberta) {
-          const fotoUrl = reinspFoto ? `pending:${reinspFoto}` : null;
-          if (resultado === 'conforme') {
-            await approveReinspecao({ clienteId, ncId: ncAberta.nc_id, verificacaoId, inspetorId: inspectorId, fotoUrl });
-            if (pendingResult.type === 'idle') {
-              pendingResult = {
-                type: 'aprovada',
-                itemTitle: item.titulo,
-                abertoEm: ncAberta.nc_data_criacao,
-                resolvidoEm: now.slice(0, 10),
-                responsavelNome: equipes.find(e => e.id === ncAberta.responsavel_id)?.nome ?? null,
-                fotoUri: reinspFoto ?? null,
-              };
-            }
-          } else if (resultado === 'nao_conforme') {
-            const { proximaOcorrencia } = await reprovarReinspecao({
-              clienteId,
-              ncId: ncAberta.nc_id,
-              numeroOcorrenciaAtual: ncAberta.numero_ocorrencia,
-              verificacaoId,
-              inspetorId: inspectorId,
-              fotoUrl,
-            });
-            if (pendingResult.type === 'idle') {
-              pendingResult = {
-                type: 'reprovada',
-                ocorrencia: proximaOcorrencia,
-                ncAnteriorId: ncAberta.nc_id,
-                ncAnteriorDescricao: ncAberta.descricao,
-                ncAnteriorVerifNum: ncAberta.numero_verif,
-                ncAnteriorDataCriacao: ncAberta.nc_data_criacao,
-                verificacaoId,
-                verificacaoItemId: itemVerifId,
-              };
-            }
-          }
-        } else if (resultado === 'nao_conforme') {
-          const nc = ncDetails[item.id];
-          if (nc) {
-            await createNc({
-              clienteId,
-              verificacaoId,
-              verificacaoItemId: itemVerifId,
-              descricao: nc.descricao,
-              solucao_proposta: nc.solucao_proposta,
-              responsavel_id: nc.responsavel_id || null,
-              data_nova_verif: nc.data_nova_verif,
-              foto_local_path: nc.foto,
-              financeiro: financialRequired ? nc.financeiro ?? null : null,
-            });
-          }
-        }
+      // A mídia é adotada para `prumoq-pending-media/` ANTES de qualquer
+      // gravação. Um rascunho restaurado devolve caminhos dentro de
+      // `prumoq-drafts/<draftId>/`, e o descarte do rascunho — logo abaixo —
+      // apaga esse diretório inteiro, em geral antes de a fila do PowerSync
+      // drenar: a foto sumia do aparelho e a linha ia para a quarentena. De
+      // `prumoq-pending-media/` só o connector apaga, e só depois que o
+      // servidor aceita a linha.
+      const reinspPhotoPath = reinspFoto ? await adoptPendingMedia(reinspFoto) : null;
+      const generalPhotoPaths: string[] = [];
+      for (const localPath of generalPhotos) generalPhotoPaths.push(await adoptPendingMedia(localPath));
+      const ncPhotoByItemId: Record<string, string> = {};
+      for (const [itemId, detail] of Object.entries(ncDetails)) {
+        if (detail?.foto) ncPhotoByItemId[itemId] = await adoptPendingMedia(detail.foto);
       }
 
-      if (measurementEnabled && registrarAvanco) {
-        await recordApprovedAdvances(selectedMeasurementLinks.map(link => {
-          const draft = currentMeasurementAdvances[link.id];
-          return {
-            clienteId,
-            verificacaoId,
-            vinculoId: link.id,
-            etapaId: link.etapa_id,
-            executadoAnterior: link.executado_atual,
-            executadoAtual: String(measurementTotal(link.executado_atual, draft?.executadoDelta ?? '')),
-            aprovadoAnterior: link.aprovado_atual,
-            aprovadoAtual: String(measurementTotal(link.aprovado_atual, draft?.aprovadoDelta ?? '')),
-            unidade: link.unidade,
-            aprovadoPor: inspectorId,
-          };
-        }));
-      }
-
+      // Assinaturas antes da transação: são filesystem e rede, e a transação
+      // de escrita segura o lock do banco local enquanto roda. Falhar aqui
+      // também não pode deixar meia verificação gravada.
       await ensureDefaultSignature(inspectorId, usuario?.assinatura_padrao_url);
       const verificationSignature = await signatureStore.snapshot(inspectorId, verificacaoId);
       if (!verificationSignature) throw new Error('Cadastre sua assinatura padrão no Perfil antes de concluir.');
 
-      await Promise.all([
-        ...generalPhotos.map((localPath, i) =>
-          db.execute(`
+      const conclusionId = shouldConclude ? uuid() : null;
+      const conclusionNumber = (conclusionCountRows[0]?.count ?? 0) + 1;
+      const conclusionSignature = conclusionId
+        ? await signatureStore.snapshot(inspectorId, conclusionId)
+        : null;
+      if (conclusionId && !conclusionSignature) {
+        throw new Error('Cadastre sua assinatura padrão no Perfil antes de concluir.');
+      }
+
+      // Tudo em uma única transação. O PowerSync agrupa a fila de upload por
+      // transação SQLite: com escritas soltas cada linha virava uma transação
+      // CRUD própria, e o connector apaga a mídia confirmada ao fim de cada
+      // uma — então a segunda NC reinspecionada, que compartilha a MESMA foto
+      // da primeira, não encontrava mais o arquivo e ia para a quarentena.
+      // Agrupadas, o cache `uploadedMedia` do connector sobe a foto uma vez e
+      // reusa a chave do R2 em todas as linhas.
+      await db.writeTransaction(async tx => {
+        await tx.execute(`
+          INSERT INTO verificacoes
+            (id, cliente_id, fvs_planejada_id, numero_verif, inspetor_id, equipe_id, data_verif,
+             status, observacoes, created_offline, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          verificacaoId, clienteId, fvsId, proximoNumero,
+          inspectorId, selectedEquipeId, dataVerif,
+          verificationStatus, observacoes, 1, now,
+        ]);
+
+        for (const item of itens) {
+          const resultado = itemResults[item.id] ?? 'na';
+          const itemVerifId = uuid();
+          await tx.execute(`
+            INSERT INTO verificacao_itens
+              (id, cliente_id, verificacao_id, fvs_padrao_item_id, ordem, titulo,
+               metodo_verif, tolerancia, resultado)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [itemVerifId, clienteId, verificacaoId, item.id, item.ordem,
+              item.titulo, item.metodo_verif, item.tolerancia, resultado]);
+
+          const ncAberta = ncAbertoByItemId[item.id];
+          if (ncAberta) {
+            const fotoUrl = reinspPhotoPath ? `pending:${reinspPhotoPath}` : null;
+            if (resultado === 'conforme') {
+              await approveReinspecao({ clienteId, ncId: ncAberta.nc_id, verificacaoId, inspetorId: inspectorId, fotoUrl }, tx);
+              if (pendingResult.type === 'idle') {
+                pendingResult = {
+                  type: 'aprovada',
+                  itemTitle: item.titulo,
+                  abertoEm: ncAberta.nc_data_criacao,
+                  resolvidoEm: now.slice(0, 10),
+                  responsavelNome: equipes.find(e => e.id === ncAberta.responsavel_id)?.nome ?? null,
+                  fotoUri: reinspPhotoPath,
+                };
+              }
+            } else if (resultado === 'nao_conforme') {
+              const { proximaOcorrencia } = await reprovarReinspecao({
+                clienteId,
+                ncId: ncAberta.nc_id,
+                numeroOcorrenciaAtual: ncAberta.numero_ocorrencia,
+                verificacaoId,
+                inspetorId: inspectorId,
+                fotoUrl,
+              }, tx);
+              if (pendingResult.type === 'idle') {
+                pendingResult = {
+                  type: 'reprovada',
+                  ocorrencia: proximaOcorrencia,
+                  ncAnteriorId: ncAberta.nc_id,
+                  ncAnteriorDescricao: ncAberta.descricao,
+                  ncAnteriorVerifNum: ncAberta.numero_verif,
+                  ncAnteriorDataCriacao: ncAberta.nc_data_criacao,
+                  verificacaoId,
+                  verificacaoItemId: itemVerifId,
+                };
+              }
+            }
+          } else if (resultado === 'nao_conforme') {
+            const nc = ncDetails[item.id];
+            if (nc) {
+              await createNc({
+                clienteId,
+                verificacaoId,
+                verificacaoItemId: itemVerifId,
+                descricao: nc.descricao,
+                solucao_proposta: nc.solucao_proposta,
+                responsavel_id: nc.responsavel_id || null,
+                data_nova_verif: nc.data_nova_verif,
+                foto_local_path: ncPhotoByItemId[item.id] ?? null,
+                financeiro: financialRequired ? nc.financeiro ?? null : null,
+              }, tx);
+            }
+          }
+        }
+
+        if (measurementEnabled && registrarAvanco) {
+          await recordApprovedAdvances(selectedMeasurementLinks.map(link => {
+            const draft = currentMeasurementAdvances[link.id];
+            return {
+              clienteId,
+              verificacaoId,
+              vinculoId: link.id,
+              etapaId: link.etapa_id,
+              executadoAnterior: link.executado_atual,
+              executadoAtual: String(measurementTotal(link.executado_atual, draft?.executadoDelta ?? '')),
+              aprovadoAnterior: link.aprovado_atual,
+              aprovadoAtual: String(measurementTotal(link.aprovado_atual, draft?.aprovadoDelta ?? '')),
+              unidade: link.unidade,
+              aprovadoPor: inspectorId,
+            };
+          }), tx);
+        }
+
+        for (const [i, localPath] of generalPhotoPaths.entries()) {
+          await tx.execute(`
             INSERT INTO verificacao_fotos
               (id, cliente_id, verificacao_id, r2_key, nome_arquivo, mime_type, ordem)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-          `, [uuid(), clienteId, verificacaoId, `pending:${localPath}`, localPath.split('/').pop() ?? 'photo.jpg', 'image/jpeg', i])
-        ),
-        db.execute(
+          `, [uuid(), clienteId, verificacaoId, `pending:${localPath}`, localPath.split('/').pop() ?? 'photo.jpg', 'image/jpeg', i]);
+        }
+
+        await tx.execute(
           `UPDATE verificacoes SET assinatura_url = ?, assinada_em = ? WHERE id = ?`,
           [`pending:${verificationSignature.uri}`, now, verificacaoId]
-        ),
-      ]);
-
-      if (Platform.OS !== 'web' && !shouldConclude && fvs?.status !== 'em_revisao') {
-        await db.execute(
-          `UPDATE fvs_planejadas
-           SET status = ?, concluida_em = ?
-           WHERE id = ?`,
-          ['em_andamento', null, fvsId],
-        );
-      }
-
-      if (shouldConclude) {
-        const conclusionNumber = (conclusionCountRows[0]?.count ?? 0) + 1;
-        const conclusionId = uuid();
-        const conclusionSignature = await signatureStore.snapshot(inspectorId, conclusionId);
-        if (!conclusionSignature) throw new Error('Cadastre sua assinatura padrão no Perfil antes de concluir.');
-        await db.execute(
-          `INSERT INTO fvs_conclusoes
-            (id, cliente_id, fvs_planejada_id, verificacao_id, inspetor_id, numero_conclusao,
-             percentual_final, resultado, observacao_final, assinatura_url, assinada_em, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            conclusionId, clienteId, fvsId, verificacaoId, inspectorId, conclusionNumber,
-            100, 'aprovado', observacoes || null, `pending:${conclusionSignature.uri}`, now, now,
-          ],
         );
 
-        if (Platform.OS !== 'web') {
-          await db.execute(
+        if (Platform.OS !== 'web' && !shouldConclude && fvs?.status !== 'em_revisao') {
+          await tx.execute(
             `UPDATE fvs_planejadas
-             SET status = ?, concluida_em = ?, ultima_conclusao_em = ?
+             SET status = ?, concluida_em = ?
              WHERE id = ?`,
-            ['concluida', now, now, fvsId],
+            ['em_andamento', null, fvsId],
           );
         }
-      }
+
+        if (conclusionId && conclusionSignature) {
+          await tx.execute(
+            `INSERT INTO fvs_conclusoes
+              (id, cliente_id, fvs_planejada_id, verificacao_id, inspetor_id, numero_conclusao,
+               percentual_final, resultado, observacao_final, assinatura_url, assinada_em, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              conclusionId, clienteId, fvsId, verificacaoId, inspectorId, conclusionNumber,
+              100, 'aprovado', observacoes || null, `pending:${conclusionSignature.uri}`, now, now,
+            ],
+          );
+
+          if (Platform.OS !== 'web') {
+            await tx.execute(
+              `UPDATE fvs_planejadas
+               SET status = ?, concluida_em = ?, ultima_conclusao_em = ?
+               WHERE id = ?`,
+              ['concluida', now, now, fvsId],
+            );
+          }
+        }
+      });
 
       if (draftContext) {
         try {

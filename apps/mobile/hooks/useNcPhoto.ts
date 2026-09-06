@@ -1,17 +1,11 @@
-import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { normalizeEvidencePhoto } from '../lib/image-normalizer';
-import { uuid } from '../lib/uuid';
-
-const PENDING_MEDIA_DIRECTORY = `${FileSystem.documentDirectory}prumoq-pending-media/`;
+import { storePendingMedia } from '../lib/pending-media';
 
 /** Normalizes the picked asset and stores it durably until PowerSync uploads it. */
 async function storeAsset(asset: ImagePicker.ImagePickerAsset): Promise<string> {
   const src = await normalizeEvidencePhoto(asset.uri, asset.width, asset.height);
-  await FileSystem.makeDirectoryAsync(PENDING_MEDIA_DIRECTORY, { intermediates: true });
-  const dest = `${PENDING_MEDIA_DIRECTORY}nc_${uuid()}.jpg`;
-  await FileSystem.copyAsync({ from: src, to: dest });
-  return dest;
+  return storePendingMedia(src, 'nc');
 }
 
 /** Opens the camera. The primary path: the inspector is standing at the defect. */

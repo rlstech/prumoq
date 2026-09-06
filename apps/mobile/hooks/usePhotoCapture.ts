@@ -1,17 +1,11 @@
-import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useRef, useState } from 'react';
 import { normalizeEvidencePhoto } from '../lib/image-normalizer';
-
-const PENDING_MEDIA_DIRECTORY = `${FileSystem.documentDirectory}prumoq-pending-media/`;
+import { storePendingMedia } from '../lib/pending-media';
 
 async function saveForOfflineSync(uri: string, width?: number, height?: number): Promise<string> {
   const normalizedUri = await normalizeEvidencePhoto(uri, width, height);
-  const filename = `photo_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-  await FileSystem.makeDirectoryAsync(PENDING_MEDIA_DIRECTORY, { intermediates: true });
-  const dest = `${PENDING_MEDIA_DIRECTORY}${filename}`;
-  await FileSystem.copyAsync({ from: normalizedUri, to: dest });
-  return dest;
+  return storePendingMedia(normalizedUri);
 }
 
 async function requestCameraPermission(): Promise<boolean> {

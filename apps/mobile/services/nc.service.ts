@@ -1,4 +1,5 @@
 import { db } from '../lib/powersync';
+import type { SqlExecutor } from '../lib/sql-executor';
 import type { NcFinancialDeclaration } from '../lib/nc-finance';
 export { validateNcFinancialDeclaration } from '../lib/nc-finance';
 
@@ -57,14 +58,14 @@ export interface ReinspecaoReprovadaParams {
  * Também usada pelo caller após reprovação para criar a NC sucessora (RN-NC-05).
  * Retorna o id da NC criada.
  */
-export async function createNc(params: NcCreateParams): Promise<string> {
+export async function createNc(params: NcCreateParams, exec: SqlExecutor = db): Promise<string> {
   const ncId = uuid();
   const now = new Date().toISOString();
   const numeroOcorrencia = params.numero_ocorrencia ?? 1;
   // RN-NC-01: prioridade sobe automaticamente a partir da 2ª ocorrência
   const prioridade = numeroOcorrencia >= 2 ? 'alta' : 'media';
 
-  await db.execute(
+  await exec.execute(
     `INSERT INTO nao_conformidades
        (id, cliente_id, verificacao_id, verificacao_item_id, descricao, solucao_proposta,
         responsavel_id, data_nova_verif, status, numero_ocorrencia,
@@ -101,7 +102,7 @@ export async function createNc(params: NcCreateParams): Promise<string> {
   );
 
   if (params.foto_local_path) {
-    await db.execute(
+    await exec.execute(
       `INSERT INTO nc_fotos (id, cliente_id, nc_id, r2_key, nome_arquivo, mime_type, ordem)
        VALUES (?, ?, ?, ?, ?, 'image/jpeg', 0)`,
       [
@@ -125,10 +126,11 @@ export async function createNc(params: NcCreateParams): Promise<string> {
  */
 export async function approveReinspecao(
   params: ReinspecaoAprovadaParams,
+  exec: SqlExecutor = db,
 ): Promise<void> {
   const now = new Date().toISOString();
 
-  await db.execute(
+  await exec.execute(
     `INSERT INTO nc_reinspecoes
        (id, cliente_id, nc_id, verificacao_id, inspetor_id, resultado, observacao, foto_url, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -161,11 +163,12 @@ export async function approveReinspecao(
  */
 export async function reprovarReinspecao(
   params: ReinspecaoReprovadaParams,
+  exec: SqlExecutor = db,
 ): Promise<{ proximaOcorrencia: number }> {
   const now = new Date().toISOString();
   const proximaOcorrencia = params.numeroOcorrenciaAtual + 1;
 
-  await db.execute(
+  await exec.execute(
     `INSERT INTO nc_reinspecoes
        (id, cliente_id, nc_id, verificacao_id, inspetor_id, resultado, observacao, foto_url, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
