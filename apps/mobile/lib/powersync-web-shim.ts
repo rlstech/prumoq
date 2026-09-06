@@ -105,6 +105,24 @@ export const db = {
     await executeOnSupabase(sql, params);
     notifyWriteListeners();
   },
+  /**
+   * Compatibilidade de API com o PowerSyncDatabase nativo, onde as telas
+   * agrupam gravações relacionadas. Aqui NÃO há atomicidade: cada `execute`
+   * vai direto para o Supabase REST, e uma falha no meio deixa as gravações
+   * anteriores aplicadas. A garantia de tudo-ou-nada existe só no nativo,
+   * que é onde a fila offline pode acumular rascunhos órfãos.
+   */
+  async writeTransaction<T>(
+    callback: (tx: { execute: (sql: string, params?: unknown[]) => Promise<void> }) => Promise<T>,
+  ): Promise<T> {
+    try {
+      return await callback({
+        execute: async (sql: string, params: unknown[] = []) => { await executeOnSupabase(sql, params); },
+      });
+    } finally {
+      notifyWriteListeners();
+    }
+  },
 };
 
 // ─────────────────────────────────────────────────────────

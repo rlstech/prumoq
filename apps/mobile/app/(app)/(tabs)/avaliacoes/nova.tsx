@@ -415,33 +415,84 @@ export default function NewEvaluationScreen() {
     try {
       setSaving(true);
       const at = now();
-      let assessmentId: string;
+      const assessmentId = isEditing && avaliacaoId ? avaliacaoId : uuid();
 
-      if (isEditing && avaliacaoId) {
-        assessmentId = avaliacaoId;
-        await db.execute(
-          `UPDATE avaliacoes_empreiteiro SET medicao_id=?,obra_id=?,equipe_id=?,data_avaliacao=?,notificacoes_ocorridas=?,providencias_tomadas=?,updated_at=? WHERE id = ?`,
-          [
-            effectiveMedicaoId || null,
-            effectiveWorkId,
-            effectiveTeamId,
-            date || at.slice(0, 10),
-            notifications.trim() || null,
-            actions.trim() || null,
-            at,
-            assessmentId,
-          ],
-        );
+      // A assinatura é resolvida ANTES de qualquer gravação: sem ela a conclusão
+      // é impossível, e falhar depois do INSERT deixaria um rascunho órfão.
+      await ensureDefaultSignature(userId, identity[0]?.assinatura_padrao_url);
+      const signatureSnapshot = await signatureStore.snapshot(userId, assessmentId);
+      if (!signatureSnapshot) throw new Error('Cadastre sua assinatura padrão no Perfil antes de concluir.');
 
-        for (const criterion of criteria) {
-          const existingItemId = itemIdByCriterion[criterion.id];
-          if (existingItemId) {
-            await db.execute(
-              'UPDATE avaliacao_empreiteiro_itens SET resultado=?,comentario_nao_atende=? WHERE id = ?',
-              [answers[criterion.id], comments[criterion.id]?.trim() || null, existingItemId],
-            );
-          } else {
-            await db.execute(
+      // Tudo em uma única transação: se um item falhar, o rascunho não fica
+      // para trás — era isso que fazia cada nova tentativa criar mais uma
+      // avaliação em rascunho da mesma medição.
+      await db.writeTransaction(async tx => {
+        if (isEditing && avaliacaoId) {
+          await tx.execute(
+            `UPDATE avaliacoes_empreiteiro SET medicao_id=?,obra_id=?,equipe_id=?,data_avaliacao=?,notificacoes_ocorridas=?,providencias_tomadas=?,updated_at=? WHERE id = ?`,
+            [
+              effectiveMedicaoId || null,
+              effectiveWorkId,
+              effectiveTeamId,
+              date || at.slice(0, 10),
+              notifications.trim() || null,
+              actions.trim() || null,
+              at,
+              assessmentId,
+            ],
+          );
+
+          for (const criterion of criteria) {
+            const existingItemId = itemIdByCriterion[criterion.id];
+            if (existingItemId) {
+              await tx.execute(
+                'UPDATE avaliacao_empreiteiro_itens SET resultado=?,comentario_nao_atende=? WHERE id = ?',
+                [answers[criterion.id], comments[criterion.id]?.trim() || null, existingItemId],
+              );
+            } else {
+              await tx.execute(
+                `INSERT INTO avaliacao_empreiteiro_itens (id,cliente_id,avaliacao_id,criterio_origem_id,titulo,peso,resultado,comentario_nao_atende,ordem,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+                [
+                  uuid(),
+                  clientId,
+                  assessmentId,
+                  criterion.id,
+                  criterion.titulo,
+                  criterion.peso,
+                  answers[criterion.id],
+                  comments[criterion.id]?.trim() || null,
+                  criterion.ordem,
+                  at,
+                ],
+              );
+            }
+          }
+        } else {
+          await tx.execute(
+            `INSERT INTO avaliacoes_empreiteiro (id,cliente_id,medicao_id,obra_id,equipe_id,modelo_revisao_id,avaliador_id,data_avaliacao,status,pontos_obtidos,pontos_possiveis,percentual,notificacoes_ocorridas,providencias_tomadas,created_offline,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+            [
+              assessmentId,
+              clientId,
+              medicaoId ?? null,
+              effectiveWorkId,
+              effectiveTeamId,
+              selectedModel.revisao_id,
+              userId,
+              date || at.slice(0, 10),
+              'rascunho',
+              0,
+              total,
+              0,
+              notifications.trim() || null,
+              actions.trim() || null,
+              1,
+              at,
+              at,
+            ],
+          );
+
+          for (const criterion of criteria) {
+            await tx.execute(
               `INSERT INTO avaliacao_empreiteiro_itens (id,cliente_id,avaliacao_id,criterio_origem_id,titulo,peso,resultado,comentario_nao_atende,ordem,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`,
               [
                 uuid(),
@@ -458,60 +509,15 @@ export default function NewEvaluationScreen() {
             );
           }
         }
-      } else {
-        assessmentId = uuid();
-        await db.execute(
-          `INSERT INTO avaliacoes_empreiteiro (id,cliente_id,medicao_id,obra_id,equipe_id,modelo_revisao_id,avaliador_id,data_avaliacao,status,pontos_obtidos,pontos_possiveis,percentual,notificacoes_ocorridas,providencias_tomadas,created_offline,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-          [
-            assessmentId,
-            clientId,
-            medicaoId ?? null,
-            effectiveWorkId,
-            effectiveTeamId,
-            selectedModel.revisao_id,
-            userId,
-            date || at.slice(0, 10),
-            'rascunho',
-            0,
-            total,
-            0,
-            notifications.trim() || null,
-            actions.trim() || null,
-            1,
-            at,
-            at,
-          ],
+
+        // The rascunho → concluida transition is what makes the server trigger
+        // recompute pontos/percentual and stamp concluida_em — same for a first
+        // conclusion and a reconclusion after reabertura.
+        await tx.execute(
+          'UPDATE avaliacoes_empreiteiro SET assinatura_url=?, assinada_em=?, status=?, avaliador_id=?, updated_at=? WHERE id = ?',
+          [`pending:${signatureSnapshot.uri}`, at, 'concluida', userId, at, assessmentId],
         );
-
-        for (const criterion of criteria) {
-          await db.execute(
-            `INSERT INTO avaliacao_empreiteiro_itens (id,cliente_id,avaliacao_id,criterio_origem_id,titulo,peso,resultado,comentario_nao_atende,ordem,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-            [
-              uuid(),
-              clientId,
-              assessmentId,
-              criterion.id,
-              criterion.titulo,
-              criterion.peso,
-              answers[criterion.id],
-              comments[criterion.id]?.trim() || null,
-              criterion.ordem,
-              at,
-            ],
-          );
-        }
-      }
-
-      // The rascunho → concluida transition is what makes the server trigger
-      // recompute pontos/percentual and stamp concluida_em — same for a first
-      // conclusion and a reconclusion after reabertura.
-      await ensureDefaultSignature(userId, identity[0]?.assinatura_padrao_url);
-      const signatureSnapshot = await signatureStore.snapshot(userId, assessmentId);
-      if (!signatureSnapshot) throw new Error('Cadastre sua assinatura padrão no Perfil antes de concluir.');
-      await db.execute(
-        'UPDATE avaliacoes_empreiteiro SET assinatura_url=?, assinada_em=?, status=?, avaliador_id=?, updated_at=? WHERE id = ?',
-        [`pending:${signatureSnapshot.uri}`, at, 'concluida', userId, at, assessmentId],
-      );
+      });
 
       router.replace('/avaliacoes' as never);
     } catch (error) {

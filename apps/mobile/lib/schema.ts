@@ -313,6 +313,7 @@ const avaliacoes_empreiteiro = new Table({
 const avaliacao_empreiteiro_itens = new Table({
   cliente_id: column.text, avaliacao_id: column.text, criterio_origem_id: column.text, ordem: column.integer,
   titulo: column.text, peso: column.integer, resultado: column.text, comentario_nao_atende: column.text,
+  created_at: column.text,
 }, { indexes: { avaliacao: ['avaliacao_id'] } });
 const avaliacao_empreiteiro_reaberturas = new Table({
   cliente_id: column.text, avaliacao_id: column.text, avaliador_anterior_id: column.text,
@@ -404,7 +405,7 @@ export interface ModeloAvaliacaoEmpreiteiroRow extends TenantRow { id:string; em
 export interface ModeloAvaliacaoRevisaoRow extends TenantRow { id:string; modelo_id:string; numero_revisao:number; descricao_alteracoes:string }
 export interface ModeloAvaliacaoCriterioRow extends TenantRow { id:string; revisao_id:string; ordem:number; titulo:string; peso:number }
 export interface AvaliacaoEmpreiteiroRow extends TenantRow { id:string; obra_id:string; equipe_id:string; medicao_id:string|null; modelo_revisao_id:string; data_avaliacao:string; status:string; avaliador_id:string; assinatura_url:string|null; percentual:string; pontos_obtidos:string; pontos_possiveis:string; notificacoes_ocorridas:string|null; providencias_tomadas:string|null; ultimo_motivo_reabertura:string|null }
-export interface AvaliacaoEmpreiteiroItemRow extends TenantRow { id:string; avaliacao_id:string; criterio_origem_id:string|null; ordem:number; titulo:string; peso:number; resultado:string|null; comentario_nao_atende:string|null }
+export interface AvaliacaoEmpreiteiroItemRow extends TenantRow { id:string; avaliacao_id:string; criterio_origem_id:string|null; ordem:number; titulo:string; peso:number; resultado:string|null; comentario_nao_atende:string|null; created_at:string }
 export interface AvaliacaoEmpreiteiroReaberturaRow extends TenantRow { id:string; avaliacao_id:string; avaliador_anterior_id:string; reaberto_por:string; motivo:string; numero_reabertura:number; created_at:string }
 export interface NcFotosRow { id: string; nc_id: string; r2_key: string; r2_thumb_key: string | null; nome_arquivo: string | null; mime_type: string | null; ordem: number }
 export interface NcReinspecoesRow { id: string; nc_id: string; verificacao_id: string; inspetor_id: string; resultado: 'aprovada' | 'reprovada'; observacao: string | null; foto_url: string | null; nova_nc_id: string | null; created_at: string }
