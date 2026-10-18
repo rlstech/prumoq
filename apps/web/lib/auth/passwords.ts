@@ -32,10 +32,10 @@ export function getPasswordAuthErrorMessage(message: string): string {
   if (normalized.includes('same password') || normalized.includes('different from the old')) {
     return 'A nova senha deve ser diferente da senha atual.';
   }
-  if (normalized.includes('current password') || normalized.includes('invalid login credentials')) {
+  if (normalized.includes('current password') || normalized.includes('invalid login credentials') || normalized.includes('incorrect')) {
     return 'A senha atual está incorreta.';
   }
-  if (normalized.includes('weak password') || normalized.includes('password should')) {
+  if (normalized.includes('weak password') || normalized.includes('password should') || normalized.includes('breach') || normalized.includes('characters or more')) {
     return 'A nova senha não atende à política de segurança.';
   }
   if (normalized.includes('rate limit') || normalized.includes('too many')) {

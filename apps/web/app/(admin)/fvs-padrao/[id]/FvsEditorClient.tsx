@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ChecklistEditor, { ChecklistItemType } from '@/components/ChecklistEditor';
 import { createClient } from '@/lib/supabase/client';
+import { getUsuarioAtual } from '@/lib/auth/usuario-atual';
 import { useToast } from '@/components/ui/Toast';
 import { FVS_CATEGORIES } from '@/lib/fvs/categories';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
@@ -58,8 +59,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
 
     setIsPublishing(true);
     const supabase = createClient();
-    const { data: auth } = await supabase.auth.getSession();
-    const user = auth.session?.user;
+    const user = await getUsuarioAtual(supabase);
     if (!user) {
       toast('Sessão expirada. Faça login novamente.', 'error');
       setIsPublishing(false);
@@ -107,7 +107,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
       cliente_id: fvs.cliente_id,
       fvs_padrao_id: fvs.id,
       numero_revisao: novaRevisao,
-      revisado_por: user!.id,
+      revisado_por: user.id,
       descricao_alt: resumoAlteracoes
     }] as any);
 

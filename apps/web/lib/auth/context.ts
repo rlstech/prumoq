@@ -1,9 +1,11 @@
 import type { PerfilUsuario, StatusCliente } from '@prumoq/shared';
+import { auth } from '@clerk/nextjs/server';
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 
 export interface AuthContext {
   userId: string;
+  clerkUserId: string;
   email: string | null;
   nome: string;
   perfil: PerfilUsuario;
@@ -22,18 +24,22 @@ export class AuthorizationError extends Error {
 // React scopes this cache to the active server render. A layout and its page can
 // therefore share a single verified user/profile lookup without weakening the
 // request-level verification performed by Supabase and the middleware.
+// `userId` é o UUID interno de `usuarios` (o mesmo valor que auth.users.id tinha no Supabase), não o id do
+// Clerk: auditorias e FKs continuam apontando para ele. O id do Clerk fica em `clerkUserId`.
 export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  const { userId: clerkUserId } = await auth();
+  if (!clerkUserId) return null;
 
+  const supabase = await createClient();
   const { data: profileData } = await supabase
     .from('usuarios')
-    .select('nome, perfil, cliente_id, ativo')
-    .eq('id', user.id)
+    .select('id, nome, email, perfil, cliente_id, ativo')
+    .eq('clerk_user_id', clerkUserId)
     .single();
   const profile = profileData as {
+    id: string;
     nome: string;
+    email: string | null;
     perfil: PerfilUsuario;
     cliente_id: string | null;
     ativo: boolean;
@@ -42,8 +48,9 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
 
   if (profile.perfil === 'superadmin') {
     return {
-      userId: user.id,
-      email: user.email ?? null,
+      userId: profile.id,
+      clerkUserId,
+      email: profile.email,
       nome: profile.nome,
       perfil: profile.perfil,
       clienteId: null,
@@ -62,8 +69,9 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
   if (!cliente) return null;
 
   return {
-    userId: user.id,
-    email: user.email ?? null,
+    userId: profile.id,
+    clerkUserId,
+    email: profile.email,
     nome: profile.nome,
     perfil: profile.perfil,
     clienteId: profile.cliente_id,

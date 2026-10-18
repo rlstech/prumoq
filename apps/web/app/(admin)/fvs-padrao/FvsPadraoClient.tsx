@@ -8,6 +8,7 @@ import ToggleSwitch from '@/components/ui/ToggleSwitch';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import { createClient } from '@/lib/supabase/client';
+import { getUsuarioAtual } from '@/lib/auth/usuario-atual';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Modal from '@/components/ui/Modal';
 import FvsImportModal from './FvsImportModal';
@@ -85,10 +86,8 @@ export default function FvsPadraoClient({
     e.preventDefault();
     const supabase = createClient();
     
-    const { data: auth } = await supabase.auth.getUser();
-    const { data: userData } = await supabase.from('usuarios').select('cliente_id').eq('id', auth.user?.id ?? '').single();
-    const typedUser = userData as { cliente_id: string | null } | null;
-    if (!typedUser?.cliente_id) {
+    const usuario = await getUsuarioAtual(supabase);
+    if (!usuario?.clienteId) {
        toast('Sua conta não tem cliente vinculado.', 'error');
        return;
     }
@@ -101,7 +100,7 @@ export default function FvsPadraoClient({
       nome: formData.nome,
       codigo: formData.codigo.trim() || null,
       categoria: formData.categoria,
-      cliente_id: typedUser.cliente_id,
+      cliente_id: usuario.clienteId,
       escopo: formData.escopo,
       revisao_atual: -1,
       ativo: true
@@ -112,7 +111,7 @@ export default function FvsPadraoClient({
     if (!error && novafvs) {
       if (formData.escopo === 'restrito') {
         const { error: scopeError } = await supabase.from('fvs_padrao_empresas').insert(formData.empresaIds.map(empresa_id => ({
-          cliente_id: typedUser.cliente_id!, fvs_padrao_id: (novafvs as any).id, empresa_id,
+          cliente_id: usuario.clienteId!, fvs_padrao_id: (novafvs as any).id, empresa_id,
         })));
         if (scopeError) { toast('FVS criada, mas o escopo não pôde ser salvo.', 'error'); return; }
       }

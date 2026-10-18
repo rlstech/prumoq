@@ -12,16 +12,19 @@
     "bootstrap:superadmin": "node --env-file=.env.local scripts/bootstrap-superadmin.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1152.0",
+    "@aws-sdk/s3-request-presigner": "^3.1152.0",
+    "@clerk/nextjs": "6.39.7",
     "@fontsource-variable/ibm-plex-sans": "5.3.0",
     "@fontsource/ibm-plex-mono": "5.3.0",
     "@hookform/resolvers": "^5.2.2",
     "@prumoq/design-system": "workspace:*",
     "@prumoq/shared": "workspace:*",
-    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.0",
     "@tanstack/react-query": "^5.97.0",
     "lucide-react": "^0.475.0",
     "next": "14.2.29",
+    "pg": "^8.13.0",
     "puppeteer-core": "24.40.0",
     "react": "^18",
     "react-dom": "^18",
@@ -32,6 +35,7 @@
   },
   "devDependencies": {
     "@types/node": "^22",
+    "@types/pg": "^8.11.0",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.0",

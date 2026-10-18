@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { assertObraInTenant, requireTenantRole } from '@/lib/auth/context';
 
 async function requireObra(obraId: string) {
@@ -125,24 +124,17 @@ export async function deleteObra(obraId: string) {
   try {
     const context = await requireTenantRole(['admin']);
     await assertObraInTenant(obraId, context.clienteId);
-    // Service role: RLS não possui policy de DELETE em obras — o client SSR
-    // deletaria 0 linhas silenciosamente. As verificações de auth/tenant acima
-    // garantem a segurança no lugar da RLS.
-    const admin = createAdminClient();
-
-    const [amb, usr, eq] = await Promise.all([
-      admin.from('ambientes').select('id', { count: 'exact', head: true })
-        .eq('obra_id', obraId).eq('cliente_id', context.clienteId),
-      admin.from('obra_usuarios').select('id', { count: 'exact', head: true })
-        .eq('obra_id', obraId).eq('cliente_id', context.clienteId),
-      admin.from('obra_equipes').select('id', { count: 'exact', head: true })
-        .eq('obra_id', obraId).eq('cliente_id', context.clienteId),
-    ]);
+    // obras não tem policy de DELETE: a exclusão passa por excluir_obra(), função do banco que
+    // exige perfil admin e acesso à obra (substitui a antiga service role).
+    const supabase = await createClient();
+    const { data: result, error } = await supabase.rpc('excluir_obra', { p_obra_id: obraId });
+    if (error) throw error;
+    const outcome = result as { deleted: boolean; ambientes: number; usuarios: number; equipes: number };
 
     const counts = {
-      ambientes: amb.count ?? 0,
-      usuarios: usr.count ?? 0,
-      equipes: eq.count ?? 0,
+      ambientes: outcome.ambientes ?? 0,
+      usuarios: outcome.usuarios ?? 0,
+      equipes: outcome.equipes ?? 0,
     };
     const total = counts.ambientes + counts.usuarios + counts.equipes;
     if (total > 0) {
@@ -157,10 +149,7 @@ export async function deleteObra(obraId: string) {
       };
     }
 
-    const { data: deleted, error } = await admin.from('obras').delete()
-      .eq('id', obraId).eq('cliente_id', context.clienteId).select('id');
-    if (error) throw error;
-    if (!deleted?.length) {
+    if (!outcome.deleted) {
       return { success: false, error: 'Obra não encontrada ou já excluída.' };
     }
 

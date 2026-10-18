@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useClerk } from '@clerk/nextjs';
 import { useCallback, useEffect, useState } from 'react';
 import type { PerfilUsuario } from '@prumoq/shared';
 import { BrandMark } from '@/components/ui/BrandMark';
@@ -72,7 +73,7 @@ function initials(name: string) {
 
 export default function Sidebar({ profile }: { profile: UserSummary }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const { signOut } = useClerk();
   const [ncCount, setNcCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -113,9 +114,7 @@ export default function Sidebar({ profile }: { profile: UserSummary }) {
   }, []);
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/login');
+    await signOut({ redirectUrl: '/admin/login' });
   }
 
   function navigation(expanded: boolean) {

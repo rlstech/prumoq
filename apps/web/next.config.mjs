@@ -3,6 +3,24 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Clerk (login) e Neon (Data API). Em produção com domínio próprio no Clerk (ex.: clerk.prumoq.com.br),
+// inclua esse host em script-src e connect-src.
+const CLERK_HOSTS = 'https://*.clerk.accounts.dev https://*.clerk.com';
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "object-src 'none'",
+  "img-src 'self' data: https:",
+  "style-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${CLERK_HOSTS} https://challenges.cloudflare.com`,
+  `connect-src 'self' ${CLERK_HOSTS} https://clerk-telemetry.com https://*.neon.tech https://*.powersync.journeyapps.com`,
+  "frame-src 'self' https://challenges.cloudflare.com",
+  "worker-src 'self' blob:",
+  "font-src 'self' data:",
+].join('; ') + ';';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   basePath: '/admin',
@@ -35,7 +53,7 @@ const nextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://*.supabase.co https://*.powersync.journeyapps.com; font-src 'self' data:;",
+            value: CONTENT_SECURITY_POLICY,
           },
         ],
       },

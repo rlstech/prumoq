@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useClerk, useUser } from '@clerk/nextjs';
+import { isClerkAPIResponseError } from '@clerk/nextjs/errors';
 import { KeyRound, ShieldCheck } from 'lucide-react';
 import {
   changePasswordSchema,
   getPasswordAuthErrorMessage,
 } from '@/lib/auth/passwords';
-import { createClient } from '@/lib/supabase/client';
 
 export default function ChangePasswordForm() {
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -19,16 +22,15 @@ export default function ChangePasswordForm() {
   async function finishGlobalSignOut() {
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error: signOutError } = await supabase.auth.signOut({ scope: 'global' });
-    if (signOutError) {
+    try {
+      // as demais sessões já foram encerradas por updatePassword(signOutOfOtherSessions)
+      await signOut({ redirectUrl: '/admin/login?senha=alterada' });
+    } catch {
       setError(
-        'A senha foi alterada, mas não foi possível encerrar todas as sessões. Tente novamente.',
+        'A senha foi alterada, mas não foi possível encerrar a sessão. Tente novamente.',
       );
       setLoading(false);
-      return;
     }
-    window.location.assign('/admin/login?senha=alterada');
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -43,15 +45,23 @@ export default function ChangePasswordForm() {
       return;
     }
 
+    if (!user) {
+      setError('Sessão não carregada. Atualize a página e tente novamente.');
+      return;
+    }
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: validation.data.newPassword,
-      current_password: validation.data.currentPassword,
-    });
-    if (updateError) {
-      setError(getPasswordAuthErrorMessage(updateError.message));
+    try {
+      await user.updatePassword({
+        currentPassword: validation.data.currentPassword,
+        newPassword: validation.data.newPassword,
+        signOutOfOtherSessions: true,
+      });
+    } catch (updateError) {
+      const message = isClerkAPIResponseError(updateError)
+        ? (updateError.errors[0]?.longMessage ?? updateError.errors[0]?.message ?? '')
+        : updateError instanceof Error ? updateError.message : '';
+      setError(getPasswordAuthErrorMessage(message));
       setLoading(false);
       return;
     }

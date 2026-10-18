@@ -1,62 +1,44 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { type NextRequest, NextResponse } from 'next/server';
+import { clerkMiddleware } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+import { createDataClient, memoizeToken, NEON_TOKEN_TEMPLATE } from '@/lib/neon/data-client';
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+export default clerkMiddleware(async (auth, request) => {
+  const { userId, getToken } = await auth();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
   // With basePath '/admin', Next.js strips the prefix before middleware sees it.
   // pathname is '/login', '/dashboard', etc. — not '/admin/login'.
   const isLoginPage = pathname === '/login';
-  const isSuspendedPage = pathname === '/suspenso';
   const isProtected =
     !pathname.startsWith('/login') &&
     !pathname.startsWith('/suspenso') &&
     !pathname.startsWith('/_next') &&
     !pathname.startsWith('/favicon');
 
-  if (!user && isProtected) {
-    const redirectResponse = NextResponse.redirect(new URL('/admin/login', request.url));
-    supabaseResponse.cookies.getAll().forEach(cookie => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
-    });
-    return redirectResponse;
+  if (!userId && isProtected) {
+    return NextResponse.redirect(new URL('/admin/login', request.url));
   }
 
-  if (user && isLoginPage) {
+  // `?sair=1`: a tela de login encerra a sessão do Clerk no navegador (o servidor não consegue).
+  // Sem esta exceção, um usuário inativo cairia num laço login -> login.
+  if (userId && isLoginPage && searchParams.get('sair') !== '1') {
+    const supabase = createDataClient(memoizeToken(() => getToken({ template: NEON_TOKEN_TEMPLATE })));
     const { data: profile } = await supabase
       .from('usuarios')
       .select('perfil, cliente_id, ativo')
-      .eq('id', user.id)
+      .eq('clerk_user_id', userId)
       .maybeSingle();
-    let destination = '/admin/dashboard';
-    if (!profile?.ativo) {
-      await supabase.auth.signOut();
-      return supabaseResponse;
+    // Só encerra a sessão quando o banco CONFIRMA que o usuário está inativo. Perfil ausente (consulta vazia
+    // por cold start da Data API, ou conta ainda sem linha em `usuarios`) não pode deslogar ninguém.
+    if (profile && !profile.ativo) {
+      return NextResponse.redirect(new URL('/admin/login?sair=1&motivo=inativo', request.url));
     }
+    // Inspetor usa só o mobile. Sem isto, login -> dashboard -> (layout barra inspetor) -> login vira laço.
+    if (profile?.perfil === 'inspetor') {
+      return NextResponse.redirect(new URL('/admin/login?sair=1&motivo=inspetor', request.url));
+    }
+    if (!profile) return NextResponse.next();
+    let destination = '/admin/dashboard';
     if (profile.perfil === 'superadmin') destination = '/admin/clientes';
     if (profile.cliente_id) {
       const { data: cliente } = await supabase
@@ -66,17 +48,11 @@ export async function middleware(request: NextRequest) {
         .maybeSingle();
       if (cliente?.status === 'suspenso') destination = '/admin/suspenso';
     }
-    const redirectResponse = NextResponse.redirect(new URL(destination, request.url));
-    supabaseResponse.cookies.getAll().forEach(cookie => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
-    });
-    return redirectResponse;
+    return NextResponse.redirect(new URL(destination, request.url));
   }
 
-  if (user && isSuspendedPage) return supabaseResponse;
-
-  return supabaseResponse;
-}
+  return NextResponse.next();
+});
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],

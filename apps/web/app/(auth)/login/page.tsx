@@ -1,36 +1,11 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
 import { CheckCircle2, ShieldCheck, Wifi } from 'lucide-react';
 import { BrandMark } from '@/components/ui/BrandMark';
-import { loginAction } from './actions';
+import LoginForm from './LoginForm';
 
 export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null);
-  const [passwordChanged, setPasswordChanged] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
-  const pwaOrigin = process.env.NEXT_PUBLIC_PWA_URL?.replace(/\/+$/, '')
-    ?? (process.env.NODE_ENV === 'development' ? 'http://localhost:8081' : '');
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setPasswordChanged(params.get('senha') === 'alterada');
-  }, []);
-
-  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    const formData = new FormData(event.currentTarget);
-
-    startTransition(async () => {
-      const result = await loginAction(null, formData);
-      if (result?.error) setError(result.error);
-      else if (result?.success) router.push(result.destination ?? '/dashboard');
-    });
-  }
-
   return (
     <main className="min-h-screen bg-sidebar p-3 sm:p-6 lg:grid lg:grid-cols-[1.12fr_.88fr] lg:p-8">
       <section className="relative hidden min-h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-white/10 bg-[var(--prumo-brand-deep)] p-12 text-white lg:flex lg:flex-col lg:justify-between">
@@ -86,59 +61,9 @@ export default function LoginPage() {
           </div>
 
           <p className="prumo-kicker text-[var(--prumo-brand)]">Painel administrativo</p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-[-.035em] text-txt">Bem-vindo de volta.</h2>
-          <p className="mt-2 text-sm text-txt-2">Entre com suas credenciais para continuar a operação.</p>
-
-          <form onSubmit={onSubmit} className="mt-9 flex flex-col gap-5">
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-txt">E-mail corporativo</span>
-              <input
-                type="email"
-                name="email"
-                className="prumo-field"
-                placeholder="voce@empresa.com.br"
-                required
-                autoComplete="email"
-              />
-            </label>
-
-            <label className="space-y-2">
-              <span className="flex items-center justify-between gap-3 text-sm font-semibold text-txt">
-                Senha
-                <a
-                  href={`${pwaOrigin}/recuperar-senha`}
-                  className="font-medium text-[var(--prumo-brand)] hover:underline"
-                >
-                  Esqueci minha senha
-                </a>
-              </span>
-              <input
-                type="password"
-                name="password"
-                className="prumo-field"
-                placeholder="••••••••"
-                required
-                autoComplete="current-password"
-              />
-            </label>
-
-            {error ? (
-              <div role="alert" className="rounded-lg border border-nok/20 bg-nok-bg px-4 py-3 text-sm font-medium text-nok">
-                {error}
-              </div>
-            ) : null}
-
-            {passwordChanged ? (
-              <div role="status" className="flex items-start gap-2 rounded-lg border border-ok/20 bg-ok-bg px-4 py-3 text-sm font-medium text-ok">
-                <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-                Senha alterada. Entre novamente com sua nova senha.
-              </div>
-            ) : null}
-
-            <button type="submit" disabled={isPending} className="prumo-primary-button mt-1 min-h-12 w-full disabled:opacity-60">
-              {isPending ? 'Validando acesso…' : 'Entrar no painel'}
-            </button>
-          </form>
+          <Suspense>
+            <LoginForm />
+          </Suspense>
 
           <div className="mt-8 flex items-center gap-3 border-t border-brd-0 pt-5 text-xs text-txt-3">
             <ShieldCheck size={16} />

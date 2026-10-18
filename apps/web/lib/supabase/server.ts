@@ -1,36 +1,11 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import type { Database } from '@prumoq/shared';
+// O nome do caminho (lib/supabase) é histórico: o banco agora é o Neon (Data API) e a identidade vem do Clerk.
+// Mantido para não alterar os imports das telas.
+import { auth } from '@clerk/nextjs/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@prumoq/shared';
+import { createDataClient, memoizeToken, NEON_TOKEN_TEMPLATE } from '@/lib/neon/data-client';
 
-export async function createClient() {
-  const cookieStore = await cookies();
-
-  const client = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch (error) {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    }
-  );
-
-  // @supabase/ssr 0.5 passes its legacy schema generic in a position that
-  // changed in supabase-js 2.103. The runtime client is correct; normalize the
-  // public return type until @supabase/ssr is upgraded.
-  return client as unknown as SupabaseClient<Database>;
+export async function createClient(): Promise<SupabaseClient<Database>> {
+  const { getToken } = await auth();
+  return createDataClient(memoizeToken(() => getToken({ template: NEON_TOKEN_TEMPLATE })));
 }

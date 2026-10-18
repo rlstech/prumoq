@@ -1,0 +1,1 @@
+-- Neon: uuid-ossp instala uuid_generate_v4() em public; nada a fazer.

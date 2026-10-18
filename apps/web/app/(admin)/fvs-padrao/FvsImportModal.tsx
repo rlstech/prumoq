@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CheckCircle2, AlertTriangle, ChevronRight, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { createClient } from '@/lib/supabase/client';
+import { getUsuarioAtual } from '@/lib/auth/usuario-atual';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { getFvsCategoryLabel, normalizeFvsCategory } from '@/lib/fvs/categories';
@@ -123,16 +124,14 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
     setIsImporting(true);
     const supabase = createClient();
 
-    const { data: auth } = await supabase.auth.getUser();
-    const { data: userData } = await supabase.from('usuarios').select('cliente_id').eq('id', auth.user?.id ?? '').single();
-    const typedUser = userData as { cliente_id: string | null } | null;
-    if (!typedUser?.cliente_id) {
+    const usuario = await getUsuarioAtual(supabase);
+    if (!usuario?.clienteId) {
       toast('Sua conta não tem cliente vinculado.', 'error');
       setIsImporting(false);
       return;
     }
 
-    const userId = auth.user?.id;
+    const userId = usuario.id;
 
     const createdList: { id: string; nome: string }[] = [];
 
@@ -142,7 +141,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
           nome: fvs.nome,
           codigo: fvs.codigo || null,
           categoria: fvs.categoria,
-          cliente_id: typedUser.cliente_id,
+          cliente_id: usuario.clienteId,
           escopo: 'global',
           revisao_atual: 0,
           ativo: true,
@@ -158,7 +157,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
       const fvsId = (novafvs as any).id;
 
       const itens = fvs.itens.map((it, idx) => ({
-        cliente_id: typedUser.cliente_id!,
+        cliente_id: usuario.clienteId!,
         fvs_padrao_id: fvsId,
         revisao: 0,
         ordem: idx + 1,
@@ -170,7 +169,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
       await supabase.from('fvs_padrao_itens' as any).insert(itens as any);
 
       await supabase.from('fvs_padrao_revisoes' as any).insert([{
-        cliente_id: typedUser.cliente_id,
+        cliente_id: usuario.clienteId,
         fvs_padrao_id: fvsId,
         numero_revisao: 0,
         revisado_por: userId ?? null,
