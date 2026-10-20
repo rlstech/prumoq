@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { isRemoteMediaKey, localMediaUri } from '../lib/media-uri';
-import { supabase } from '../lib/supabase';
+import { assinarDownloads } from '../lib/media-api';
 
 export function usePrivateMediaUris(keys: string[]): (key: string) => string {
   const stableKeys = useMemo(() => Array.from(new Set(keys.filter(Boolean))).sort(), [JSON.stringify(keys)]);
@@ -16,16 +16,18 @@ export function usePrivateMediaUris(keys: string[]): (key: string) => string {
         if (active) setSigned({});
         return;
       }
-      const { data, error } = await supabase.functions.invoke('r2-presign', {
-        body: { operation: 'download', keys: remoteKeys },
-      });
-      if (!active) return;
-      if (error) {
-        console.warn('[media] authorization failed:', error.message);
-        setSigned({});
+      let urls: Record<string, string>;
+      try {
+        urls = await assinarDownloads(remoteKeys);
+      } catch (error) {
+        // Offline ou sem permissão: a foto remota simplesmente não aparece; tenta de novo depois.
+        if (!active) return;
+        console.warn('[media] authorization failed:', error instanceof Error ? error.message : error);
+        refreshTimer = setTimeout(authorize, 60 * 1000);
         return;
       }
-      setSigned((data as { urls?: Record<string, string> } | null)?.urls ?? {});
+      if (!active) return;
+      setSigned(urls);
       refreshTimer = setTimeout(authorize, 10 * 60 * 1000);
     }
 

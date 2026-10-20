@@ -1,21 +1,20 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// O nome do arquivo é histórico: este cliente fala com a Data API do Neon (PostgREST, mesma API do
+// supabase-js) usando o token do Clerk. Só funciona online; a leitura e a gravação normais do app passam
+// pelo banco local do PowerSync. Com `accessToken`, `supabase.auth.*` lança erro de propósito: a identidade
+// vem de lib/auth/sessao.tsx.
 import { createClient } from '@supabase/supabase-js';
-import { Platform } from 'react-native';
 import type { Database } from '@prumoq/shared';
+import { NEON_TOKEN_TEMPLATE, obterToken } from './auth/clerk';
+import { createRetryFetch } from './neon/retry-fetch';
 
-const supabaseUrl  = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+function dataApiUrl(): string {
+  // Base SEM /rest/v1 (o supabase-js acrescenta).
+  const url = process.env.EXPO_PUBLIC_NEON_DATA_API_URL?.trim().replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  if (!url) throw new Error('EXPO_PUBLIC_NEON_DATA_API_URL não configurada.');
+  return url;
+}
 
-// On web, use the browser's native localStorage so the session is accessible
-// synchronously. AsyncStorage wraps localStorage in Promises on web, which can
-// cause timing issues with getSession() right after signInWithPassword().
-const storage = Platform.OS === 'web' ? localStorage : AsyncStorage;
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnon, {
-  auth: {
-    storage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
+export const supabase = createClient<Database>(dataApiUrl(), 'neon-data-api', {
+  accessToken: () => obterToken(NEON_TOKEN_TEMPLATE),
+  global: { fetch: createRetryFetch() },
 });

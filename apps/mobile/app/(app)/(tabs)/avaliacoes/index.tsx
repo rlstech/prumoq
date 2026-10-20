@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useRouter } from 'expo-router';
 import { ChevronRight, ClipboardCheck, FileDown, Plus } from 'lucide-react-native';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -11,9 +11,6 @@ import { formatDateOnly } from '../../../../lib/verification-detail';
 type Row = { id:string; obra_id:string; equipe_id:string; medicao_id:string|null; data_avaliacao:string; status:string; percentual:string; obra_nome:string; equipe_nome:string; referencia:string|null };
 type PendingRow = { id:string; referencia:string; obra_nome:string; equipe_nome:string };
 
-// As strings SQL abaixo são reconhecidas por pattern-matching em
-// lib/powersync-web-shim.ts para traduzir a query em chamadas Supabase no PWA.
-// Alterá-las quebra a versão web silenciosamente.
 const QUERY = `SELECT a.id,a.obra_id,a.equipe_id,a.medicao_id,a.data_avaliacao,a.status,a.percentual,o.nome obra_nome,e.nome equipe_nome,m.referencia FROM avaliacoes_empreiteiro a JOIN obras o ON o.id=a.obra_id JOIN equipes e ON e.id=a.equipe_id LEFT JOIN medicoes_servico m ON m.id=a.medicao_id ORDER BY a.created_at DESC`;
 const PENDING = `SELECT m.id,m.referencia,o.nome obra_nome,e.nome equipe_nome FROM medicoes_servico m JOIN obras o ON o.id=m.obra_id JOIN equipes e ON e.id=m.equipe_id LEFT JOIN avaliacoes_empreiteiro a ON a.medicao_id=m.id AND a.status IN ('rascunho','concluida','aprovada') WHERE m.status='rascunho' AND e.tipo='terceirizado' AND a.id IS NULL ORDER BY m.data_medicao DESC`;
 

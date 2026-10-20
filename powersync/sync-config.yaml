@@ -1,0 +1,89 @@
+# PrumoQ — configuração de sincronização do PowerSync (Sync Streams, edição 3).
+# Colar no dashboard do PowerSync (Sync Streams) e clicar em "Validate" / "Deploy".
+#
+# Espelha a RLS do Neon:
+#   - has_obra_access: admin vê todas as obras do seu cliente; gestor/inspetor só as de obra_usuarios ativo;
+#     o cliente precisa estar com status 'ativo'.
+#   - has_cliente_access: tabelas de cadastro do cliente (FVS padrão, equipes, usuários, modelos).
+# O `sub` do token é o id do Clerk, então o usuário é achado por usuarios.clerk_user_id.
+# `clientes` está na publicação só com (id, status), para estas checagens; nunca vai para o aparelho.
+#
+# CTEs não podem referenciar outras CTEs: cada uma repete a busca do usuário.
+#
+# As tabelas filhas filtram pela própria coluna obra_id (derivada por trigger, ver
+# neon/baseline/extra/20_powersync_obra_id.sql). Filtrar por subconsulta encadeada criaria um
+# bucket por registro pai e estoura o limite de 1000 parâmetros (PSYNC_S2305).
+
+config:
+  edition: 3
+
+with:
+  # Obras que o usuário logado pode ver (uma coluna, usada como `IN minhas_obras`).
+  minhas_obras: >
+    SELECT o.id FROM obras o
+    WHERE o.cliente_id IN (
+        SELECT u.cliente_id FROM usuarios u
+        JOIN clientes c ON c.id = u.cliente_id
+        WHERE u.clerk_user_id = auth.user_id() AND u.ativo = true AND c.status = 'ativo'
+      )
+      AND (
+        o.cliente_id IN (
+          SELECT u.cliente_id FROM usuarios u
+          WHERE u.clerk_user_id = auth.user_id() AND u.ativo = true AND u.perfil = 'admin'
+        )
+        OR o.id IN (
+          SELECT ou.obra_id FROM obra_usuarios ou
+          JOIN usuarios u ON u.id = ou.usuario_id
+          WHERE u.clerk_user_id = auth.user_id() AND u.ativo = true AND ou.ativo = true
+        )
+      )
+
+  # Cliente (tenant) do usuário logado, se ativo.
+  meu_cliente: >
+    SELECT u.cliente_id FROM usuarios u
+    JOIN clientes c ON c.id = u.cliente_id
+    WHERE u.clerk_user_id = auth.user_id() AND u.ativo = true AND c.status = 'ativo'
+
+streams:
+  # Cadastros do cliente: um bucket por cliente, compartilhado por todos os usuários dele.
+  cadastros_cliente:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM fvs_padrao WHERE cliente_id IN meu_cliente
+      - SELECT * FROM fvs_padrao_revisoes WHERE cliente_id IN meu_cliente
+      - SELECT * FROM fvs_padrao_itens WHERE cliente_id IN meu_cliente
+      - SELECT * FROM equipes WHERE cliente_id IN meu_cliente
+      - SELECT * FROM modelos_avaliacao_empreiteiro WHERE cliente_id IN meu_cliente
+      - SELECT * FROM modelo_avaliacao_empreiteiro_revisoes WHERE cliente_id IN meu_cliente
+      - SELECT * FROM modelo_avaliacao_empreiteiro_criterios WHERE cliente_id IN meu_cliente
+      # Sem e-mail, telefone nem clerk_user_id: o app não usa e não precisam ir para o aparelho.
+      - >
+        SELECT id, cliente_id, nome, cargo, perfil, avatar_url, assinatura_padrao_url,
+               assinatura_padrao_atualizada_em, onboarding_concluido_em
+        FROM usuarios WHERE cliente_id IN meu_cliente
+
+  # Dados operacionais: um bucket por obra acessível.
+  dados_obra:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM obras WHERE id IN minhas_obras
+      - SELECT * FROM obra_usuarios WHERE obra_id IN minhas_obras
+      - SELECT * FROM obra_equipes WHERE obra_id IN minhas_obras
+      - SELECT * FROM ambientes WHERE obra_id IN minhas_obras
+      - SELECT * FROM medicoes_servico WHERE obra_id IN minhas_obras
+      - SELECT * FROM avaliacoes_empreiteiro WHERE obra_id IN minhas_obras
+      - SELECT * FROM avaliacao_empreiteiro_itens WHERE obra_id IN minhas_obras
+      - SELECT * FROM avaliacao_empreiteiro_reaberturas WHERE obra_id IN minhas_obras
+      - SELECT * FROM fvs_planejadas WHERE obra_id IN minhas_obras
+      - SELECT * FROM fvs_conclusoes WHERE obra_id IN minhas_obras
+      - SELECT * FROM fvs_reaberturas WHERE obra_id IN minhas_obras
+      - SELECT * FROM fvs_medicao_configuracoes WHERE obra_id IN minhas_obras
+      - SELECT * FROM vinculos_execucao_servico WHERE obra_id IN minhas_obras
+      - SELECT * FROM verificacoes WHERE obra_id IN minhas_obras
+      - SELECT * FROM fvs_medicao_etapas WHERE obra_id IN minhas_obras
+      - SELECT * FROM avancos_aprovados_servico WHERE obra_id IN minhas_obras
+      - SELECT * FROM verificacao_itens WHERE obra_id IN minhas_obras
+      - SELECT * FROM verificacao_fotos WHERE obra_id IN minhas_obras
+      - SELECT * FROM nao_conformidades WHERE obra_id IN minhas_obras
+      - SELECT * FROM nc_fotos WHERE obra_id IN minhas_obras
+      - SELECT * FROM nc_reinspecoes WHERE obra_id IN minhas_obras

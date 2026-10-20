@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { CheckCircle2, KeyRound, Mail } from 'lucide-react-native';
-import { useState } from 'react';
+import { KeyRound, Mail } from 'lucide-react-native';
+import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,10 +15,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMark } from '../../components/BrandMark';
 import { Button, ErrorBanner, Field } from '../../components/ui';
 import {
-  getPasswordRecoveryRedirectUrl,
-  getPasswordRecoveryRequestErrorMessage,
-  validateRecoveryEmail,
-} from '../../lib/auth/passwords';
+  confirmarCodigo,
+  mensagemDoErro,
+  pedirCodigoRedefinicao,
+  redefinirSenha,
+  type ResultadoEtapa,
+} from '../../lib/auth/fluxo-login';
+import { validateNewPassword, validateRecoveryEmail } from '../../lib/auth/passwords';
+import { useSessao } from '../../lib/auth/sessao';
 import {
   Breakpoints,
   Colors,
@@ -29,41 +33,102 @@ import {
   Spacing,
   Typography,
 } from '../../lib/constants';
-import { supabase } from '../../lib/supabase';
+
+// Recuperação pelo Clerk: código enviado por e-mail + nova senha na mesma tela. Também é o caminho de quem
+// recebeu acesso sem senha definida (usuário criado pelo painel).
+type Etapa = 'email' | 'redefinir' | 'codigo';
+
+const TITULO: Record<Etapa, string> = {
+  email: 'Esqueceu sua senha?',
+  redefinir: 'Defina a nova senha',
+  codigo: 'Confirme o seu acesso',
+};
+
+const BOTAO: Record<Etapa, string> = {
+  email: 'Enviar código',
+  redefinir: 'Redefinir e entrar',
+  codigo: 'Confirmar código',
+};
 
 export default function RecoverPasswordScreen() {
   const router = useRouter();
+  const { concluirLogin } = useSessao();
+  const [etapa, setEtapa] = useState<Etapa>('email');
   const [email, setEmail] = useState('');
+  const [codigo, setCodigo] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
+  const [confirmacao, setConfirmacao] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const ocupado = useRef(false);
 
-  async function handleSubmit() {
+  async function executar(acao: () => Promise<void>) {
+    if (ocupado.current) return;
+    ocupado.current = true;
+    setLoading(true);
+    setError(null);
+    try {
+      await acao();
+    } catch (err) {
+      setError(mensagemDoErro(err));
+    } finally {
+      ocupado.current = false;
+      setLoading(false);
+    }
+  }
+
+  async function seguir(resultado: ResultadoEtapa) {
+    if (resultado.tipo === 'codigo') {
+      setCodigo('');
+      setEtapa('codigo');
+      return;
+    }
+    // O layout raiz leva para o app quando a sessão fica ativa.
+    await concluirLogin(resultado.sessionId);
+  }
+
+  function pedirCodigo() {
     const validationError = validateRecoveryEmail(email);
     if (validationError) {
       setError(validationError);
       return;
     }
-
-    setLoading(true);
-    setError(null);
-    try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim().toLowerCase(),
-        { redirectTo: getPasswordRecoveryRedirectUrl() },
-      );
-      if (resetError) {
-        setError(getPasswordRecoveryRequestErrorMessage(resetError.message));
-        return;
-      }
-      setSent(true);
-    } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : '';
-      setError(getPasswordRecoveryRequestErrorMessage(message));
-    } finally {
-      setLoading(false);
-    }
+    void executar(async () => {
+      await pedirCodigoRedefinicao(email);
+      setCodigo('');
+      setNovaSenha('');
+      setConfirmacao('');
+      setEtapa('redefinir');
+    });
   }
+
+  function redefinir() {
+    if (!codigo.trim()) {
+      setError('Informe o código recebido por e-mail');
+      return;
+    }
+    const validationError = validateNewPassword(novaSenha, confirmacao);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    void executar(async () => seguir(await redefinirSenha(codigo, novaSenha)));
+  }
+
+  function confirmar() {
+    if (!codigo.trim()) {
+      setError('Informe o código recebido por e-mail');
+      return;
+    }
+    void executar(async () => seguir(await confirmarCodigo(codigo)));
+  }
+
+  const enviar = { email: pedirCodigo, redefinir, codigo: confirmar }[etapa];
+  const descricao = etapa === 'email'
+    ? 'Informe seu e-mail. Enviaremos um código para você criar uma nova senha.'
+    : etapa === 'redefinir'
+      ? `Digite o código enviado para ${email.trim().toLowerCase()} e escolha uma nova senha.`
+      : 'Enviamos um código de verificação para o seu e-mail.';
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safe}>
@@ -82,80 +147,92 @@ export default function RecoverPasswordScreen() {
               <Text style={styles.brandName}>PrumoQ</Text>
             </View>
 
-            {sent ? (
-              <View style={styles.content}>
-                <View style={[styles.iconBox, styles.successIcon]}>
-                  <CheckCircle2 size={28} color={Colors.ok} />
-                </View>
-                <Text style={styles.title}>Verifique seu e-mail</Text>
-                <Text style={styles.description}>
-                  Se houver uma conta associada ao endereço informado, você receberá um link
-                  para criar uma nova senha.
-                </Text>
-                <View style={styles.notice}>
-                  <Mail size={18} color={Colors.textSecondary} />
-                  <Text style={styles.noticeText}>
-                    O link é temporário. Verifique também a caixa de spam.
-                  </Text>
-                </View>
-                <Button
-                  label="Voltar para o login"
-                  onPress={() => router.replace('/(auth)/login')}
-                  fullWidth
-                />
-                <Button
-                  label="Enviar novamente"
-                  onPress={() => setSent(false)}
-                  variant="ghost"
-                  fullWidth
-                />
+            <View style={styles.content}>
+              <View style={styles.iconBox}>
+                {etapa === 'email'
+                  ? <KeyRound size={27} color={Colors.brand} />
+                  : <Mail size={27} color={Colors.brand} />}
               </View>
-            ) : (
-              <View style={styles.content}>
-                <View style={styles.iconBox}>
-                  <KeyRound size={27} color={Colors.brand} />
-                </View>
-                <View>
-                  <Text style={styles.eyebrow}>RECUPERAÇÃO DE ACESSO</Text>
-                  <Text style={styles.title}>Esqueceu sua senha?</Text>
-                  <Text style={styles.description}>
-                    Informe seu e-mail. Enviaremos um link seguro para você criar uma nova senha.
-                  </Text>
-                </View>
+              <View>
+                <Text style={styles.eyebrow}>RECUPERAÇÃO DE ACESSO</Text>
+                <Text style={styles.title}>{TITULO[etapa]}</Text>
+                <Text style={styles.description}>{descricao}</Text>
+              </View>
 
+              {etapa === 'email' ? (
                 <Field
                   label="E-mail"
                   value={email}
-                  onChangeText={value => {
-                    setEmail(value);
-                    setError(null);
-                  }}
+                  onChangeText={value => { setEmail(value); setError(null); }}
                   placeholder="seu@email.com"
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
                   returnKeyType="send"
-                  onSubmitEditing={handleSubmit}
+                  onSubmitEditing={pedirCodigo}
                 />
+              ) : (
+                <Field
+                  label="Código de verificação"
+                  value={codigo}
+                  onChangeText={value => { setCodigo(value); setError(null); }}
+                  placeholder="000000"
+                  keyboardType="number-pad"
+                  autoComplete="one-time-code"
+                  returnKeyType={etapa === 'codigo' ? 'done' : 'next'}
+                  onSubmitEditing={etapa === 'codigo' ? confirmar : undefined}
+                />
+              )}
 
-                {error ? <ErrorBanner message={error} /> : null}
+              {etapa === 'redefinir' ? (
+                <>
+                  <Field
+                    label="Nova senha"
+                    value={novaSenha}
+                    onChangeText={value => { setNovaSenha(value); setError(null); }}
+                    secureTextEntry
+                    autoComplete="new-password"
+                    hint="Mínimo de 8 caracteres"
+                  />
+                  <Field
+                    label="Confirmar nova senha"
+                    value={confirmacao}
+                    onChangeText={value => { setConfirmacao(value); setError(null); }}
+                    secureTextEntry
+                    autoComplete="new-password"
+                    returnKeyType="done"
+                    onSubmitEditing={redefinir}
+                  />
+                  <View style={styles.notice}>
+                    <Mail size={18} color={Colors.textSecondary} />
+                    <Text style={styles.noticeText}>
+                      O código é temporário. Se não chegar, verifique também a caixa de spam.
+                    </Text>
+                  </View>
+                </>
+              ) : null}
 
+              {error ? <ErrorBanner message={error} /> : null}
+
+              <Button label={BOTAO[etapa]} onPress={enviar} loading={loading} fullWidth />
+
+              {etapa === 'redefinir' ? (
                 <Button
-                  label="Enviar link de recuperação"
-                  onPress={handleSubmit}
-                  loading={loading}
+                  label="Enviar novo código"
+                  onPress={() => { setEtapa('email'); setError(null); }}
+                  variant="ghost"
                   fullWidth
                 />
+              ) : null}
 
-                <TouchableOpacity
-                  accessibilityRole="link"
-                  onPress={() => router.replace('/(auth)/login')}
-                  style={styles.backLink}
-                >
-                  <Text style={styles.backLinkText}>Voltar para o login</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              <TouchableOpacity
+                accessibilityRole="link"
+                onPress={() => router.replace('/(auth)/login')}
+                style={styles.backLink}
+              >
+                <Text style={styles.backLinkText}>Voltar para o login</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -198,7 +275,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.brandLight,
   },
-  successIcon: { backgroundColor: Colors.okBg },
   eyebrow: {
     ...Typography.overline,
     color: Colors.brand,

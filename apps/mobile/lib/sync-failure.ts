@@ -92,3 +92,15 @@ export function classifyUploadFailure(error: unknown): FailureClassification {
   // Na dúvida, repetir: perder gravação de campo é pior que insistir.
   return { permanent: false, code: code || 'UNKNOWN', message };
 }
+
+/**
+ * Falha de conexão (sem internet, DNS, servidor inalcançável) ou sem token. Não conta como tentativa: sem
+ * isso, cinco envios feitos sem internet mandariam para a quarentena uma gravação perfeitamente válida.
+ * O `supabase-js` devolve a falha do fetch como `{ message: 'TypeError: Failed to fetch' }`.
+ */
+export function isConnectivityFailure(error: unknown): boolean {
+  if (error instanceof TypeError) return true;
+  const message = errorMessage(error);
+  return /failed to fetch|networkerror|network request failed|load failed|err_internet_disconnected|sem sessão para enviar/i
+    .test(message);
+}

@@ -1,27 +1,23 @@
-import { Slot, useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import { validateMobileAccess } from '../../lib/auth/mobile-access';
+import { Slot } from 'expo-router';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useSessao } from '../../lib/auth/sessao';
+import { Colors } from '../../lib/constants';
 
+// As telas do app só montam com a sessão ativa (online ou aberta offline com a conta do aparelho).
+// Sem sessão, o layout raiz leva para o login.
 export default function AppLayout() {
-  const router = useRouter();
-
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('[AppLayout] getSession ->', session ? `user=${session.user.id}` : 'null → redirecting to login');
-      if (!session) {
-        router.replace('/(auth)/login');
-        return;
-      }
-      const accessError = await validateMobileAccess(session.user.id);
-      if (accessError) {
-        await supabase.auth.signOut();
-        router.replace('/(auth)/login');
-      }
-    }).catch(err => {
-      console.warn('[AppLayout] getSession failed', err);
-    });
-  }, []);
-
-  return <Slot />;
+  const { estado } = useSessao();
+  if (estado.fase === 'ativa') return <Slot />;
+  if (estado.fase === 'iniciando') {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={Colors.brand} />
+      </View>
+    );
+  }
+  return null;
 }
+
+const styles = StyleSheet.create({
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg },
+});

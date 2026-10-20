@@ -1,4 +1,4 @@
-import { useQuery, useStatus } from '@powersync/react-native';
+import { useQuery, useStatus } from '@powersync/react';
 import { useRouter } from 'expo-router';
 import { AlertTriangle, CheckCircle2, RefreshCw, Trash2, WifiOff } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';

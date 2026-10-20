@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useRouter } from 'expo-router';
 import {
   AlertTriangle,
@@ -56,7 +56,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../lib/constants';
-import { supabase } from '../../../../lib/supabase';
+import { useConta } from '../../../../lib/auth/sessao';
 
 interface NcRow {
   id: string;
@@ -163,23 +163,9 @@ export default function NcScreen() {
   const [draftUrgency, setDraftUrgency] = useState<NcUrgency>('all');
   const [draftPriority, setDraftPriority] = useState<NcPriority>('all');
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [perfil, setPerfil] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      setUserId(data.user.id);
-      const { data: usuario } = await supabase
-        .from('usuarios' as never)
-        .select('perfil')
-        .eq('id', data.user.id)
-        .single();
-      if (usuario) setPerfil((usuario as { perfil: string }).perfil);
-    }).catch(err => {
-      console.warn('[NC] getUser failed', err);
-    });
-  }, []);
+  const conta = useConta();
+  const userId = conta?.usuarioId ?? null;
+  const perfil: string | null = conta?.perfil ?? null;
 
   const ready = Boolean(userId && perfil);
   const {

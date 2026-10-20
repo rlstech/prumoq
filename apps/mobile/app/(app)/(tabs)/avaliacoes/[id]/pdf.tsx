@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FileDown, FileText, LoaderCircle } from 'lucide-react-native';
 import { useMemo, useState } from 'react';

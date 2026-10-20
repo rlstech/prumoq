@@ -3,7 +3,7 @@ import {
   CrudEntry,
   PowerSyncBackendConnector,
   UpdateType,
-} from '@powersync/react-native';
+} from '@powersync/common';
 import * as FileSystem from 'expo-file-system';
 import { createEvidenceThumbnail } from './image-normalizer';
 import { supabase } from './supabase';

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { classifyUploadFailure } from './sync-failure';
+import { classifyUploadFailure, isConnectivityFailure } from './sync-failure';
 
 function pg(code: string, message = 'erro') {
   return { code, message };
@@ -55,4 +55,11 @@ test('erro desconhecido repete, para não perder gravação de campo', () => {
   const result = classifyUploadFailure({ mensagem: 'algo estranho' });
   assert.equal(result.permanent, false);
   assert.equal(result.code, 'UNKNOWN');
+});
+
+test('falha de rede não é tentativa nem quarentena', () => {
+  assert.equal(isConnectivityFailure(new TypeError('Failed to fetch')), true);
+  assert.equal(isConnectivityFailure({ message: 'TypeError: Failed to fetch', code: '' }), true);
+  assert.equal(isConnectivityFailure(new Error('Sem sessão para enviar as gravações')), true);
+  assert.equal(isConnectivityFailure({ code: '42501', message: 'new row violates row-level security policy' }), false);
 });

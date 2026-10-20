@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useEffect, useState } from 'react';
 import {
   Alert, Modal, Pressable, ScrollView,
@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
 import { db } from '../lib/powersync';
-import { supabase } from '../lib/supabase';
+import { useConta } from '../lib/auth/sessao';
 
 const purple = Colors.info;
 const purpleBg = Colors.infoBg;
@@ -38,6 +38,7 @@ interface Props {
 }
 
 export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: Props) {
+  const conta = useConta();
   const [motivo, setMotivo]               = useState('');
   const [justificativa, setJustificativa] = useState('');
   const [autorizadoPor, setAutorizadoPor] = useState('');
@@ -67,27 +68,22 @@ export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: P
     if (!validate()) return;
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Sessão expirada.');
-      const { data: profile, error: profileError } = await supabase
-        .from('usuarios')
-        .select('cliente_id')
-        .eq('id', user.id)
-        .single();
-      if (profileError || !profile?.cliente_id) throw new Error('Cliente do usuário não encontrado.');
+      if (!conta) throw new Error('Sessão expirada.');
       const now = new Date().toISOString();
 
-      const { count } = await supabase
-        .from('fvs_reaberturas')
-        .select('*', { count: 'exact', head: true })
-        .eq('fvs_planejada_id', fvsId);
-      const numero = (count ?? 0) + 1;
+      // Contagem no banco local (funciona offline; as reaberturas da FVS são sincronizadas).
+      const contagem = await db.getOptional<{ total: number }>(
+        'SELECT COUNT(*) AS total FROM fvs_reaberturas WHERE fvs_planejada_id = ?',
+        [fvsId],
+      );
+      const numero = (contagem?.total ?? 0) + 1;
 
       await db.execute(
         `INSERT INTO fvs_reaberturas (id, cliente_id, fvs_planejada_id, solicitado_por, autorizado_por, motivo_tipo, justificativa, numero_reabertura, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [uuid(), profile.cliente_id, fvsId, user.id, autorizadoPor, motivo, justificativa, numero, now],
+        [uuid(), conta.clienteId, fvsId, conta.usuarioId, autorizadoPor, motivo, justificativa, numero, now],
       );
-      if (Platform.OS !== 'web') {
+      // Atualização só local (a tela reflete na hora); no servidor o trigger da reabertura muda o status.
+      {
         await db.execute(
           `UPDATE fvs_planejadas
            SET status = ?, concluida_em = ?, ultima_reabertura_em = ?

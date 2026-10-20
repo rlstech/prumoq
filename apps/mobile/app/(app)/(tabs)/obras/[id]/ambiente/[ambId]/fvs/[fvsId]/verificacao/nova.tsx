@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useLocalSearchParams } from 'expo-router';
 import { goBack } from '../../../../../../../../../../lib/navigation';
 import {
@@ -80,7 +80,7 @@ import {
 } from '../../../../../../../../../../lib/constants';
 import { db } from '../../../../../../../../../../lib/powersync';
 import { alertInfo } from '../../../../../../../../../../lib/platform-alert';
-import { supabase } from '../../../../../../../../../../lib/supabase';
+import { useConta } from '../../../../../../../../../../lib/auth/sessao';
 import { draftStore } from '../../../../../../../../../../lib/verification/draftStore';
 import {
   makeDraftId,
@@ -91,7 +91,7 @@ import {
   canConcludeFvs,
   verificationStatusFromResults,
 } from '../../../../../../../../../../lib/verification/controller';
-import { adoptPendingMedia } from '../../../../../../../../../../lib/pending-media';
+import { adoptPendingMedia, nomeArquivoMidia } from '../../../../../../../../../../lib/pending-media';
 import { approveReinspecao, createNc, reprovarReinspecao } from '../../../../../../../../../../services/nc.service';
 import { resolveNcFinancialImpact } from '../../../../../../../../../../services/nc-finance.service';
 import { recordApprovedAdvances } from '../../../../../../../../../../services/measurement.service';
@@ -104,8 +104,7 @@ export default function NovaVerificacaoScreen() {
   const { id, ambId, fvsId } = useLocalSearchParams<{ id: string; ambId: string; fvsId: string }>();
   const scrollRef = useRef<ScrollView>(null);
   const { isTablet } = useResponsiveLayout();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [authResolved, setAuthResolved] = useState(false);
+  const userId = useConta()?.usuarioId ?? null;
 
   // Queries
   const {
@@ -246,23 +245,8 @@ export default function NovaVerificacaoScreen() {
     }, 2200);
   }
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user.id ?? null);
-      setAuthResolved(true);
-    }).catch(err => {
-      console.warn('[NovaVerificacao] getSession failed', err);
-      setAuthResolved(true);
-    });
-    if (Platform.OS === 'web') {
-      supabase.functions.invoke('r2-presign', {
-        body: { filename: '_warmup.jpg', mimeType: 'image/jpeg', contentLength: 1 },
-      }).catch(() => {});
-    }
-  }, []);
-
   const identityReady = !!userId && usuario?.id === userId && !usuarioError;
-  const identityUnavailable = authResolved && (!userId || !!usuarioError);
+  const identityUnavailable = !userId || !!usuarioError;
   const mode: VerificationMode = hasOpenNCs ? 'reinspection' : 'verification';
   const itemIds = useMemo(() => itens.map(item => item.id), [itens]);
   const openNcItemIds = useMemo(() => Object.keys(ncAbertoByItemId), [ncAbertoByItemId]);
@@ -733,7 +717,7 @@ export default function NovaVerificacaoScreen() {
             INSERT INTO verificacao_fotos
               (id, cliente_id, verificacao_id, r2_key, nome_arquivo, mime_type, ordem)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-          `, [uuid(), clienteId, verificacaoId, `pending:${localPath}`, localPath.split('/').pop() ?? 'photo.jpg', 'image/jpeg', i]);
+          `, [uuid(), clienteId, verificacaoId, `pending:${localPath}`, nomeArquivoMidia(localPath), 'image/jpeg', i]);
         }
 
         await tx.execute(
@@ -741,7 +725,8 @@ export default function NovaVerificacaoScreen() {
           [`pending:${verificationSignature.uri}`, now, verificacaoId]
         );
 
-        if (Platform.OS !== 'web' && !shouldConclude && fvs?.status !== 'em_revisao') {
+        // Atualização só local (a tela reflete na hora); no servidor quem muda o status é o trigger.
+        if (!shouldConclude && fvs?.status !== 'em_revisao') {
           await tx.execute(
             `UPDATE fvs_planejadas
              SET status = ?, concluida_em = ?
@@ -762,7 +747,7 @@ export default function NovaVerificacaoScreen() {
             ],
           );
 
-          if (Platform.OS !== 'web') {
+          {
             await tx.execute(
               `UPDATE fvs_planejadas
                SET status = ?, concluida_em = ?, ultima_conclusao_em = ?

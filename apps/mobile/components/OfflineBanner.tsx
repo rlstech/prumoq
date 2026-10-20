@@ -1,4 +1,4 @@
-import { useStatus } from '@powersync/react-native';
+import { useStatus } from '@powersync/react';
 import { StyleSheet, View } from 'react-native';
 import { SyncIndicator } from './ui';
 

@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect, useRouter } from 'expo-router';
 import {
@@ -38,7 +38,7 @@ import {
   Spacing,
   Typography,
 } from '../../../lib/constants';
-import { supabase } from '../../../lib/supabase';
+import { useConta } from '../../../lib/auth/sessao';
 import { VerificationDraftV1 } from '../../../lib/verification/draft.types';
 import { draftStore } from '../../../lib/verification/draftStore';
 import { normalizeVerificationStep, VERIFICATION_STEPS, verificationStepIndex } from '../../../lib/verification/controller';
@@ -169,7 +169,6 @@ interface FvsDraftMetaRow {
  *  nunca pode mais ser retomado. */
 const CONCLUDED_FVS_STATUSES = new Set(['concluida', 'concluida_ressalva', 'conforme']);
 interface UserInfo { nome: string; cargo: string }
-interface UserProfile extends UserInfo { perfil: string }
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -179,28 +178,16 @@ export default function DashboardScreen() {
   // abriria. SafeAreaView de 'react-native' não faz nada no Android — era por
   // isso que a marca aparecia cortada atrás da status bar.
   const insets = useSafeAreaInsets();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [perfil, setPerfil] = useState<string | null>(null);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const conta = useConta();
+  const userId = conta?.usuarioId ?? null;
+  const perfil: string | null = conta?.perfil ?? null;
+  // Nome e cargo vêm do banco local (sincronizado); a conta da sessão cobre o nome antes da 1ª sincronização.
+  const { data: perfilRows } = useQuery<UserInfo>(
+    'SELECT nome, cargo FROM usuarios WHERE id = ? LIMIT 1',
+    [userId ?? ''],
+  );
+  const userInfo: UserInfo | null = perfilRows[0] ?? (conta ? { nome: conta.nome, cargo: '' } : null);
   const [drafts, setDrafts] = useState<VerificationDraftV1[]>([]);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      setUserId(data.user.id);
-      const { data: rawProfile } = await supabase
-        .from('usuarios')
-        .select('nome, cargo, perfil')
-        .eq('id', data.user.id)
-        .single();
-      if (!rawProfile) return;
-      const profile = rawProfile as UserProfile;
-      setPerfil(profile.perfil);
-      setUserInfo({ nome: profile.nome, cargo: profile.cargo });
-    }).catch(err => {
-      console.warn('[Dashboard] getUser failed', err);
-    });
-  }, []);
 
   useFocusEffect(
     useCallback(() => {

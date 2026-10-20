@@ -14,7 +14,7 @@
 import { Appearance, StyleSheet } from 'react-native';
 
 // Inject PWA manifest link and service worker — works in both dev mode and production.
-// In production, +html.tsx already has these; duplicates are harmless.
+// (+html.tsx só vale com `web.output: static`; este app usa `single`, então é aqui que valem.)
 if (typeof document !== 'undefined') {
   if (!document.querySelector('link[rel="manifest"]')) {
     const link = document.createElement('link');
@@ -22,10 +22,14 @@ if (typeof document !== 'undefined') {
     link.href = '/manifest.json';
     document.head.appendChild(link);
   }
+  // Service worker (public/sw.js): guarda o app no aparelho para abrir sem internet. Este módulo é carregado
+  // pelo Expo Router depois do evento `load` da página, então esperar por ele não registrava nunca.
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    const registrar = () => navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('[sw] registro falhou:', err);
     });
+    if (document.readyState === 'complete') registrar();
+    else window.addEventListener('load', registrar, { once: true });
   }
 }
 

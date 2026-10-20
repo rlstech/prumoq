@@ -11,23 +11,29 @@
     "build:android:dev": "eas build --profile development --platform android",
     "build:android:preview": "eas build --profile preview --platform android",
     "update:preview": "eas update --branch preview",
-    "build:web": "expo export --platform web",
+    "build:web": "node scripts/copy-powersync-assets.mjs && expo export --platform web && node scripts/build-sw.mjs",
     "serve:web": "npx serve dist",
-    "typecheck": "tsc --noEmit",
-    "test": "tsx --test \"lib/**/*.test.ts\""
+    "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
+    "test": "tsx --test \"lib/**/*.test.ts\"",
+    "powersync:assets": "node scripts/copy-powersync-assets.mjs",
+    "postinstall": "node scripts/copy-powersync-assets.mjs",
+    "worker:dev": "wrangler dev"
   },
   "dependencies": {
     "@babel/runtime": "7.29.2",
+    "@clerk/clerk-js": "5.128.0",
     "@expo-google-fonts/ibm-plex-mono": "0.4.1",
     "@expo-google-fonts/ibm-plex-sans": "0.4.1",
     "@expo/metro-runtime": "~4.0.1",
-    "@journeyapps/react-native-quick-sqlite": "^2.5.1",
-    "@powersync/common": "^1.12.0",
-    "@powersync/react-native": "^1.4.0",
+    "@journeyapps/wa-sqlite": "^2.0.7",
+    "@powersync/common": "^2.4.0",
+    "@powersync/react": "^2.1.0",
+    "@powersync/web": "^2.5.0",
     "@prumoq/design-system": "workspace:*",
     "@prumoq/shared": "workspace:*",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@supabase/supabase-js": "^2.49.0",
+    "aws4fetch": "1.0.20",
     "expo": "~52.0.0",
     "expo-asset": "~11.0.5",
     "expo-camera": "~16.0.0",
@@ -62,11 +68,13 @@
   "devDependencies": {
     "@babel/core": "^7.25.0",
     "@babel/plugin-transform-react-jsx": "7.28.6",
+    "@cloudflare/workers-types": "4.20260702.1",
     "@types/react": "~18.3.0",
     "@types/react-signature-canvas": "^1.0.6",
     "babel-preset-expo": "~12.0.12",
     "tailwindcss": "^3.4.0",
     "tsx": "^4.20.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "wrangler": "4.146.0"
   }
 }

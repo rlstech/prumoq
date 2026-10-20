@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useLocalSearchParams } from 'expo-router';
 import {
   AlertTriangle,

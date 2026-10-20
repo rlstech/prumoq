@@ -1,7 +1,7 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useRouter } from 'expo-router';
 import { Building2, Key, Mail, PenLine, Phone, RefreshCw, User } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -15,8 +15,9 @@ import { IconBox } from '../../../../components/IconBox';
 import { SignatureField } from '../../../../components/SignatureField';
 import { Breakpoints, Colors, ComponentSize, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
 import { db } from '../../../../lib/powersync';
-import { supabase } from '../../../../lib/supabase';
-import { draftStore } from '../../../../lib/verification/draftStore';
+import { useConta, useSessao } from '../../../../lib/auth/sessao';
+import { adoptPendingMedia } from '../../../../lib/pending-media';
+import { confirmDialog } from '../../../../lib/platform-alert';
 import { signatureStore } from '../../../../lib/signature-store';
 
 function initials(name: string): string {
@@ -59,23 +60,13 @@ const PERFIL_ACCESS: Record<string, string> = {
 export default function PerfilScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [userId, setUserId]     = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [authResolved, setAuthResolved] = useState(false);
+  const conta = useConta();
+  const { sair } = useSessao();
+  const userId = conta?.usuarioId ?? null;
+  const userEmail = conta?.email ?? null;
   const [signing, setSigning] = useState(false);
   const [savingSignature, setSavingSignature] = useState(false);
   const [signatureError, setSignatureError] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user.id ?? null);
-      setUserEmail(session?.user.email ?? null);
-      setAuthResolved(true);
-    }).catch(err => {
-      console.warn('[Perfil] getSession failed', err);
-      setAuthResolved(true);
-    });
-  }, []);
 
   const {
     data: usuarioRows,
@@ -87,7 +78,7 @@ export default function PerfilScreen() {
     userId ? [userId] : [],
   );
   const usuario = usuarioRows[0];
-  const profileUnavailable = authResolved && (!userId || !!usuarioError);
+  const profileUnavailable = !userId || !!usuarioError;
 
   const { data: obrasRows } = useQuery<ObraRow>(
     `SELECT o.id, o.nome, o.municipio, o.uf FROM obras o WHERE o.ativo = 1 ORDER BY o.nome`
@@ -114,12 +105,22 @@ export default function PerfilScreen() {
   }), [obrasRows, totalVerifRows, conformeRows, ncsRows]);
 
   async function handleLogout() {
-    if (userId) {
-      try { await draftStore.deleteForUser(userId); } catch { /* logout must continue */ }
-      try { await signatureStore.clear(userId); } catch { /* logout must continue */ }
-    }
-    try { await db.disconnectAndClear(); } catch { /* ignore */ }
-    await supabase.auth.signOut();
+    // A sessão apaga rascunhos, assinatura local e o banco do aparelho. Gravações ainda não enviadas
+    // só são descartadas com confirmação explícita.
+    const resultado = await sair();
+    if (resultado.ok) return;
+    const n = resultado.pendentes;
+    confirmDialog({
+      title: 'Alterações não enviadas',
+      message: n === 1
+        ? 'Há 1 alteração neste aparelho que ainda não foi enviada ao servidor. Se sair agora, ela será perdida. '
+          + 'Conecte-se à internet e aguarde a sincronização antes de sair.'
+        : `Há ${n} alterações neste aparelho que ainda não foram enviadas ao servidor. Se sair agora, elas serão `
+          + 'perdidas. Conecte-se à internet e aguarde a sincronização antes de sair.',
+      confirmText: 'Sair e descartar',
+      destructive: true,
+      onConfirm: () => { void sair({ descartarPendentes: true }); },
+    });
   }
 
   async function handleSignature(path: string) {
@@ -127,7 +128,7 @@ export default function PerfilScreen() {
     try {
       setSavingSignature(true);
       setSignatureError(null);
-      const localPath = await signatureStore.save(userId, path);
+      const localPath = await adoptPendingMedia(await signatureStore.save(userId, path));
       await db.execute(
         'UPDATE usuarios SET assinatura_padrao_url = ?, assinatura_padrao_atualizada_em = ? WHERE id = ?',
         [`pending:${localPath}`, new Date().toISOString(), userId],

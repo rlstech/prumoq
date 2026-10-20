@@ -41,3 +41,7 @@ Thumbs.db
 .design/
 .impeccable/
 
+
+# Workers/wasm do PowerSync Web (gerados por apps/mobile/scripts/copy-powersync-assets.mjs)
+apps/mobile/public/powersync/
+apps/mobile/.wrangler/

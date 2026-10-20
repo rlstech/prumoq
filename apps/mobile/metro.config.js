@@ -39,7 +39,17 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
-// ── Custom resolver: singleton enforcement + web platform aliases ───
+// ── PowerSync Web ───────────────────────────────────────────────────
+// O @powersync/web publica uma build própria para React Native Web na condição
+// de export `react-native-web` (sem `new URL(..., import.meta.url)`, que o Metro
+// não entende). Os workers vêm de public/powersync (ver lib/powersync.ts).
+config.resolver.unstable_enablePackageExports = true;
+config.resolver.unstable_conditionsByPlatform = {
+  ...config.resolver.unstable_conditionsByPlatform,
+  web: [...(config.resolver.unstable_conditionsByPlatform?.web ?? ['browser']), 'react-native-web'],
+};
+
+// ── Custom resolver: singleton enforcement ──────────────────────────
 const originalResolve = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (ctx, moduleName, platform) => {
   // Force singleton deps to always resolve to the same canonical copy
@@ -50,15 +60,14 @@ config.resolver.resolveRequest = (ctx, moduleName, platform) => {
     };
   }
 
-  if (platform === 'web') {
-    // Replace PowerSync (requires native SQLite) with Supabase-backed shim
-    if (moduleName === '@powersync/react-native') {
-      return {
-        filePath: path.resolve(__dirname, 'lib/powersync-web-shim.ts'),
-        type: 'sourceFile',
-      };
-    }
+  // O @powersync/web importa o wa-sqlite (arquivos .mjs com `import.meta`) só para o modo
+  // sem worker. O app sempre roda o SQLite no worker de public/powersync, e `import.meta`
+  // num bundle clássico do Metro quebra a página inteira ("Cannot use 'import.meta'
+  // outside a module"). Então, no navegador, esses módulos viram vazios.
+  if (platform === 'web' && moduleName.startsWith('@journeyapps/wa-sqlite')) {
+    return { type: 'empty' };
   }
+
   if (originalResolve) {
     return originalResolve(ctx, moduleName, platform);
   }

@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useRouter } from 'expo-router';
 import { Building2, ChevronRight, Search, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
@@ -34,7 +34,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../lib/constants';
-import { supabase } from '../../../../lib/supabase';
+import { useConta } from '../../../../lib/auth/sessao';
 
 interface ObraRow {
   id: string;
@@ -115,23 +115,9 @@ export default function ObrasScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ObraTab>('em_andamento');
   const [search, setSearch] = useState('');
-  const [userId, setUserId] = useState<string | null>(null);
-  const [perfil, setPerfil] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      setUserId(data.user.id);
-      const { data: usuario } = await supabase
-        .from('usuarios' as never)
-        .select('perfil')
-        .eq('id', data.user.id)
-        .single();
-      if (usuario) setPerfil((usuario as { perfil: string }).perfil);
-    }).catch(err => {
-      console.warn('[Obras] getUser failed', err);
-    });
-  }, []);
+  const conta = useConta();
+  const userId = conta?.usuarioId ?? null;
+  const perfil: string | null = conta?.perfil ?? null;
 
   const ready = Boolean(userId && perfil);
   const {
