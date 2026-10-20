@@ -28,9 +28,11 @@ export function createRetryFetch(): typeof fetch {
         if (attempt > 0 && process.env.NEON_RETRY_DEBUG) console.warn(`[neon-retry] resolvido na tentativa ${attempt + 1} (HTTP ${response.status})`);
         return response;
       }
-      // 401 por token inválido/expirado tem outra mensagem e não deve ser repetido
-      const body = await response.clone().text();
-      if (!body.includes('jwt_ausente')) return response;
+      // 401 por token inválido/expirado tem outra mensagem e não deve ser repetido.
+      // HEAD (contagens com `head: true`) não traz corpo: não dá para distinguir, então repete.
+      const isHead = (init?.method ?? 'GET').toUpperCase() === 'HEAD';
+      const body = isHead ? '' : await response.clone().text();
+      if (!isHead && !body.includes('jwt_ausente')) return response;
       if (process.env.NEON_RETRY_DEBUG) {
         // só metadados do token (nunca o valor): ajuda a distinguir token ruim de conexão sem claims
         const auth = new Headers(init?.headers).get('Authorization') ?? '';

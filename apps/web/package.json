@@ -25,12 +25,10 @@
     "lucide-react": "^0.475.0",
     "next": "14.2.29",
     "pg": "^8.13.0",
-    "puppeteer-core": "24.40.0",
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.72.1",
     "recharts": "^3.8.1",
-    "sharp": "^0.33.5",
     "zod": "^3.24.0"
   },
   "devDependencies": {

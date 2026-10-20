@@ -15,7 +15,8 @@ const CONTENT_SECURITY_POLICY = [
   "img-src 'self' data: https:",
   "style-src 'self' 'unsafe-inline'",
   `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${CLERK_HOSTS} https://challenges.cloudflare.com`,
-  `connect-src 'self' ${CLERK_HOSTS} https://clerk-telemetry.com https://*.neon.tech https://*.powersync.journeyapps.com`,
+  // Clerk Protect (anti-bot) sonda subdomínios de client.protect.clerk.com em portas fora do padrão.
+  `connect-src 'self' ${CLERK_HOSTS} https://*.protect.clerk.com:* https://clerk-telemetry.com https://*.neon.tech https://*.powersync.journeyapps.com`,
   "frame-src 'self' https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "font-src 'self' data:",

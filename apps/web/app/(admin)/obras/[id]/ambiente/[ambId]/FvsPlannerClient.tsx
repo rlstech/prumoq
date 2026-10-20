@@ -114,11 +114,11 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
                          </Link>
                        ) : null}
                         <a
-                          href={`/admin/relatorio/fvs/${fvs.id}/pdf`}
+                          href={`/admin/relatorio/fvs/${fvs.id}`}
                           target="_blank"
                           rel="noreferrer"
                           className="p-1 text-txt-3 hover:text-brand rounded transition-colors"
-                          title="Exportar PDF"
+                          title="Imprimir / salvar em PDF"
                         >
                           <FileText size={14} />
                         </a>

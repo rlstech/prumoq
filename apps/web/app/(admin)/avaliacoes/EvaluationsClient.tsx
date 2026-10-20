@@ -73,7 +73,7 @@ export default function EvaluationsClient({evaluations,metrics,models,revisions,
      align: 'right',
      cell: item => (
        <div className="flex items-center justify-end gap-1.5">
-         <a href={`/admin/relatorio/avaliacoes-empreiteiro/${item.id}/pdf`} title="Baixar PDF" className="inline-flex h-7 w-7 items-center justify-center rounded border border-transparent bg-bg-0 text-txt-2 transition-colors hover:bg-bg-2"><FileDown size={14}/></a>
+         <a href={`/admin/relatorio/avaliacoes-empreiteiro/${item.id}`} target="_blank" rel="noreferrer" title="Imprimir / salvar em PDF" className="inline-flex h-7 w-7 items-center justify-center rounded border border-transparent bg-bg-0 text-txt-2 transition-colors hover:bg-bg-2"><FileDown size={14}/></a>
          {canManage && item.status === 'concluida' ? <RowActionIcon tone="warn" title="Reabrir para correção" onClick={() => { setReason(''); setReopenId(item.id); }}><RotateCcw size={14}/></RowActionIcon> : null}
          {canManage && item.status === 'concluida' ? <RowActionIcon tone="ok" title="Aprovar" onClick={() => setApproveId(item.id)}><CheckCircle2 size={14}/></RowActionIcon> : null}
          {canManage && item.status === 'concluida' ? <RowActionIcon tone="nok" title="Invalidar" onClick={() => setInvalidateId(item.id)}><ShieldX size={14}/></RowActionIcon> : null}

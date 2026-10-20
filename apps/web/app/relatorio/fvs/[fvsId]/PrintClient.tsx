@@ -22,70 +22,7 @@ interface Props {
   initialIncludeAttachments: boolean;
 }
 
-export default function PrintClient({
-  fvsId,
-  header,
-  verificacoes,
-  ncs,
-  conclusao,
-  emitidoEm,
-  initialIncludeAttachments,
-}: Props) {
-  const [includeAttachments, setIncludeAttachments] = useState(
-    initialIncludeAttachments,
-  );
-  const [downloading, setDownloading] = useState(false);
-  const [downloadError, setDownloadError] = useState('');
-  const html = renderFvsReportBody({
-    header,
-    verificacoes,
-    ncs,
-    conclusao,
-    emitidoEm,
-  }, { includeAttachments });
-  const attachmentCount = verificacoes.reduce(
-    (total, verification) => total + verification.fotos.length,
-    0,
-  );
-
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('attachments', includeAttachments ? '1' : '0');
-    window.history.replaceState(null, '', url);
-  }, [includeAttachments]);
-
-  async function downloadPdf() {
-    setDownloading(true);
-    setDownloadError('');
-    try {
-      const response = await fetch(
-        `/admin/relatorio/fvs/${fvsId}/pdf?attachments=${includeAttachments ? '1' : '0'}`,
-      );
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as
-          | { error?: string }
-          | null;
-        throw new Error(body?.error || 'Não foi possível gerar o PDF.');
-      }
-      const blob = await response.blob();
-      const href = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = href;
-      anchor.download = `fvs-${fvsId}.pdf`;
-      anchor.click();
-      URL.revokeObjectURL(href);
-    } catch (error) {
-      setDownloadError(
-        error instanceof Error ? error.message : 'Não foi possível gerar o PDF.',
-      );
-    } finally {
-      setDownloading(false);
-    }
-  }
-
-  return (
-    <>
-      <style>{`
+const PRINT_CSS = `
         ${FVS_REPORT_CSS}
         .no-print { display: flex; }
         @media print {
@@ -103,7 +40,63 @@ export default function PrintClient({
           }
           .report-preview .report { padding: 36px 42px; }
         }
-      `}</style>
+      `;
+
+export default function PrintClient({
+  fvsId,
+  header,
+  verificacoes,
+  ncs,
+  conclusao,
+  emitidoEm,
+  initialIncludeAttachments,
+}: Props) {
+  const [includeAttachments, setIncludeAttachments] = useState(
+    initialIncludeAttachments,
+  );
+  const [preparing, setPreparing] = useState(false);
+  const html = renderFvsReportBody({
+    header,
+    verificacoes,
+    ncs,
+    conclusao,
+    emitidoEm,
+  }, { includeAttachments });
+  const attachmentCount = verificacoes.reduce(
+    (total, verification) => total + verification.fotos.length,
+    0,
+  );
+
+  useEffect(() => {
+    // O navegador usa o título como nome sugerido do arquivo PDF.
+    document.title = `fvs-${fvsId}`;
+  }, [fvsId]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('attachments', includeAttachments ? '1' : '0');
+    window.history.replaceState(null, '', url);
+  }, [includeAttachments]);
+
+  // O PDF é gerado pelo próprio navegador ("Salvar como PDF" no diálogo de impressão).
+  // Espera as fotos carregarem para não imprimir anexos em branco.
+  async function printReport() {
+    setPreparing(true);
+    try {
+      const images = Array.from(document.querySelectorAll<HTMLImageElement>('.report-preview img'));
+      await Promise.all(
+        images.map(img => (img.complete ? Promise.resolve() : img.decode().catch(() => undefined))),
+      );
+    } finally {
+      setPreparing(false);
+    }
+    window.print();
+  }
+
+  return (
+    <>
+      {/* dangerouslySetInnerHTML: como filho de texto, as aspas do CSS saem escapadas no HTML do servidor e quebram a hidratação. */}
+      <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
 
       <div
         className="no-print"
@@ -138,8 +131,8 @@ export default function PrintClient({
           Incluir anexos ({attachmentCount})
         </label>
         <button
-          onClick={downloadPdf}
-          disabled={downloading}
+          onClick={printReport}
+          disabled={preparing}
           style={{
             background: '#163B50',
             color: 'white',
@@ -147,12 +140,12 @@ export default function PrintClient({
             padding: '9px 18px',
             borderRadius: 6,
             fontWeight: 600,
-            cursor: downloading ? 'wait' : 'pointer',
+            cursor: preparing ? 'wait' : 'pointer',
             fontSize: 13,
-            opacity: downloading ? 0.65 : 1,
+            opacity: preparing ? 0.65 : 1,
           }}
         >
-          {downloading ? 'Gerando PDF...' : 'Baixar PDF'}
+          {preparing ? 'Carregando fotos...' : 'Imprimir / salvar PDF'}
         </button>
         <button
           onClick={() => window.close()}
@@ -168,11 +161,6 @@ export default function PrintClient({
         >
           Fechar
         </button>
-        {downloadError && (
-          <span style={{ color: '#B23A3A', fontSize: 12 }}>
-            {downloadError}
-          </span>
-        )}
       </div>
 
       <div
