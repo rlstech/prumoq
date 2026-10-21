@@ -65,6 +65,13 @@ function conectar(): void {
   void db.connect(new PrumoqConnector(), SYNC_OPTIONS);
 }
 
+// A internet voltou: reconecta já, sem esperar o intervalo entre tentativas (retryDelayMs, 20 s).
+// Chamar connect() de novo é seguro: o PowerSync encerra a tentativa em andamento antes de abrir outra.
+function reconectarAgora(): void {
+  if (!conectado || db.currentStatus.connected) return;
+  void db.connect(new PrumoqConnector(), SYNC_OPTIONS);
+}
+
 async function contarPendentes(): Promise<number> {
   try {
     return (await db.getUploadQueueStats()).count;
@@ -195,7 +202,10 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    const aoVoltarInternet = () => void tentar();
+    const aoVoltarInternet = () => {
+      void tentar();
+      reconectarAgora();
+    };
     window.addEventListener('online', aoVoltarInternet);
     void tentar();
 

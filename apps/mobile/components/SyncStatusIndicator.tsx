@@ -1,6 +1,7 @@
 import { useQuery, useStatus } from '@powersync/react';
 import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';
+import { useConexaoEstavel } from '../hooks/useConexaoEstavel';
 import { SyncIndicator, SyncIndicatorTone, SyncState } from './ui';
 
 interface Props {
@@ -23,6 +24,7 @@ interface PendingRow { pendentes: number }
 export function SyncStatusIndicator({ tone = 'surface', compact = true }: Props = {}) {
   const router = useRouter();
   const status = useStatus();
+  const conectado = useConexaoEstavel();
   const { data: falhas = [] } = useQuery<PendingRow>(
     'SELECT COUNT(*) AS pendentes FROM sync_falhas',
   );
@@ -38,7 +40,7 @@ export function SyncStatusIndicator({ tone = 'surface', compact = true }: Props 
   if (quarantined > 0) {
     state = 'error';
     label = quarantined === 1 ? '1 envio recusado' : `${quarantined} envios recusados`;
-  } else if (!status.connected) {
+  } else if (!conectado) {
     state = 'offline';
   } else if (failing) {
     state = 'error';

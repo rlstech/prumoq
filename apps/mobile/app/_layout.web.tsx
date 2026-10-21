@@ -7,6 +7,7 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { InstallBanner } from '../components/InstallBanner.web';
+import { NovaVersaoAviso } from '../components/NovaVersaoAviso.web';
 import { PullToRefresh } from '../components/PullToRefresh.web';
 import { carregarClerk } from '../lib/auth/clerk';
 import { SessaoProvider, useSessao } from '../lib/auth/sessao';
@@ -86,6 +87,7 @@ function RootNavigator() {
             >
               <InstallBanner />
               <Slot key={screenRefreshKey} />
+              <NovaVersaoAviso />
             </PullToRefresh>
           )}
         </PowerSyncContext.Provider>
