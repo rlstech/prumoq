@@ -51,6 +51,9 @@ function formatPayload(payload: string): string {
 export default function SincronizacaoScreen() {
   const router = useRouter();
   const status = useStatus();
+  // Motivo de não conectar/baixar/enviar (ex.: sessão expirada, servidor recusou). Ajuda a diagnosticar "Offline" com rede.
+  const erro = status.dataFlowStatus?.downloadError ?? status.dataFlowStatus?.uploadError;
+  const erroConexao = erro ? (erro.message || String(erro)).slice(0, 200) : null;
   const { data: falhas = [] } = useQuery<SyncFalhasRow>(
     'SELECT * FROM sync_falhas ORDER BY criado_em DESC',
   );
@@ -139,6 +142,14 @@ export default function SincronizacaoScreen() {
             value={status.connected ? 'Conectado' : 'Offline'}
             tone={status.connected ? 'success' : 'warning'}
           />
+          <DataRow
+            label="Última sincronização"
+            value={status.lastSyncedAt ? formatDateTime(status.lastSyncedAt.toISOString()) : 'Nunca'}
+            emphasis="mono"
+          />
+          {erroConexao ? (
+            <DataRow label="Erro da conexão" value={erroConexao} tone="danger" />
+          ) : null}
           <DataRow
             label="Aguardando envio"
             value={fila === null ? '—' : `${fila} ${fila === 1 ? 'operação' : 'operações'}`}

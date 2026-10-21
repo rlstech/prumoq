@@ -21,7 +21,6 @@ import { BrandWordmark } from '../../../components/BrandWordmark';
 import { ConformityRing } from '../../../components/ConformityRing';
 import { IconBox } from '../../../components/IconBox';
 import { CanopyBackdrop } from '../../../components/DashboardCanopy';
-import { OfflineBanner } from '../../../components/OfflineBanner';
 import { ProgressBar } from '../../../components/ProgressBar';
 import { BadgeStatus, StatusBadge } from '../../../components/StatusBadge';
 import { SyncStatusIndicator } from '../../../components/SyncStatusIndicator';
@@ -418,7 +417,6 @@ export default function DashboardScreen() {
   return (
     <View style={[styles.safe, { paddingTop: insets.top }]}>
       <StatusBar style="light" backgroundColor={Colors.brand} />
-      <OfflineBanner />
       <ScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
