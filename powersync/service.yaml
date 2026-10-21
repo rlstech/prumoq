@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://unpkg.com/@powersync/cli-schemas@latest/json-schema/service-config.json
-# PowerSync Cloud — instância Development (dev), ligada ao branch Neon `baseline-teste`.
+# PowerSync Cloud — instância Development (dev), ligada ao projeto Supabase de teste `prumoq-teste`.
 # Segredos nunca neste arquivo: PS_DATABASE_PASSWORD vem do ambiente no deploy
 # (no primeiro deploy vira secret na Cloud).
 
@@ -10,10 +10,10 @@ region: br
 replication:
   connections:
     - type: postgresql
-      # Host direto (sem -pooler): replicação lógica não passa pelo PgBouncer.
-      hostname: ep-lively-flower-b60p7tfr.c-2.sa-east-1.aws.neon.tech
+      # Conexão direta (o pooler do Supabase não repassa replicação lógica). No plano gratuito é só IPv6.
+      hostname: db.icghabutrgztkwcktyhe.supabase.co
       port: 5432
-      database: neondb
+      database: postgres
       # Somente leitura nas tabelas da publicação `powersync` (+ REPLICATION/BYPASSRLS).
       username: pq_powersync
       password:

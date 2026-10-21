@@ -2429,6 +2429,10 @@ DROP POLICY IF EXISTS fvs_reaberturas_insert ON public.fvs_reaberturas;
 CREATE POLICY fvs_reaberturas_insert ON public.fvs_reaberturas AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK ((has_fvs_access(fvs_planejada_id) AND (solicitado_por = public.current_usuario_id())));
 DROP POLICY IF EXISTS nc_reinspecoes_insert ON public.nc_reinspecoes;
 CREATE POLICY nc_reinspecoes_insert ON public.nc_reinspecoes AS PERMISSIVE FOR INSERT TO public WITH CHECK (((inspetor_id = public.current_usuario_id()) AND can_edit_verificacao(verificacao_id) AND (EXISTS ( SELECT 1
+   FROM ((nao_conformidades nc
+     JOIN verificacoes origem ON ((origem.id = nc.verificacao_id)))
+     JOIN verificacoes reinspecao ON ((reinspecao.id = nc.verificacao_id)))
+  WHERE ((nc.id = nc_reinspecoes.nc_id) AND (origem.fvs_planejada_id = reinspecao.fvs_planejada_id))))));
 DROP POLICY IF EXISTS usuarios_assinatura_padrao_propria ON public.usuarios;
 CREATE POLICY usuarios_assinatura_padrao_propria ON public.usuarios AS PERMISSIVE FOR UPDATE TO public USING ((id = public.current_usuario_id())) WITH CHECK (((id = public.current_usuario_id()) AND (cliente_id = get_cliente_id())));
 DROP POLICY IF EXISTS usuarios_tenant_select ON public.usuarios;
@@ -2437,6 +2441,8 @@ DROP POLICY IF EXISTS verificacoes_insert ON public.verificacoes;
 CREATE POLICY verificacoes_insert ON public.verificacoes AS PERMISSIVE FOR INSERT TO public WITH CHECK ((has_fvs_access(fvs_planejada_id) AND (inspetor_id = public.current_usuario_id())));
 DROP POLICY IF EXISTS verificacoes_update ON public.verificacoes;
 CREATE POLICY verificacoes_update ON public.verificacoes AS PERMISSIVE FOR UPDATE TO public USING (can_edit_verificacao(id)) WITH CHECK ((has_fvs_access(fvs_planejada_id) AND ((inspetor_id = public.current_usuario_id()) OR ((get_perfil() = ANY (ARRAY['admin'::perfil_usuario, 'gestor'::perfil_usuario])) AND (EXISTS ( SELECT 1
+   FROM usuarios u
+  WHERE ((u.id = verificacoes.inspetor_id) AND (u.cliente_id = get_cliente_id()) AND u.ativo)))))));
 
 -- 5) Funções novas e obra_id do PowerSync
 

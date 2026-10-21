@@ -105,3 +105,18 @@ Limitações conhecidas:
 4 usuários em `auth.users`; 348 `verificacao_itens`, 281 `fvs_padrao_itens`, 145
 `fvs_planejadas`, 85 `verificacoes`, 40 `ambientes`, 7 `obras`, 7 `nao_conformidades`.
 As estatísticas do `list_tables` mostravam 0 linhas (desatualizadas) — usar `count(*)`.
+
+## Volta ao Supabase (2026-10-21)
+
+O banco voltou ao Supabase gratuito (o Neon não dorme com o PowerSync conectado e sai do plano free).
+`build-supabase.mjs` gera `supabase.sql`, um patch idempotente (uma transação) sobre um banco Supabase que já tem
+o schema de `raw/` e os dados: colunas do Clerk em `usuarios` (sem FK para `auth.users`), `current_usuario_id()`
+lendo `auth.jwt()->>'sub'`, todas as funções com `auth.uid()` trocado, as 9 policies que usavam `auth.uid()`
+recriadas, `extra/*.sql` (RPCs novas e `obra_id` do PowerSync) e o heartbeat (`registrar_heartbeat()`, chamado
+pelo Cron do Worker do PWA). `auth.role() = 'service_role'` fica como está (existe no Supabase).
+`supabase-powersync.sql` cria a role `pq_powersync` e a publicação `powersync` (senha definida à parte).
+
+Ensaio no projeto `prumoq-teste` (cópia da produção: schema raw + permissões + dados; 40 tabelas com contagens
+iguais): patch sem erro, 0 `auth.uid()` restantes, 78 policies, 93 funções; API REST com token do Clerk (template
+`neon`) respeita o tenant; session token sem `role` é tratado como anon; PowerSync (conexão direta IPv6) sincroniza
+por obra; painel e PWA publicados passaram nos testes de tela, impressão, escrita e offline.

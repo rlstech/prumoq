@@ -98,14 +98,17 @@ fns = patch('06', fns, '  FROM public.usuarios u\n  JOIN auth.users au ON au.id 
 fns = fns.replace(/-- NEON-TODO: referencia auth\.users[^\n]*\n/g, '')
 
 // --- policies: só as que usam auth.uid() (as demais já chamam funções do banco) ---
-const policies = raw('09_rls_policies.sql').split('\n')
-  .filter((l) => l.startsWith('CREATE POLICY ') && l.includes('auth.uid()'))
-  .map((l) => {
-    const m = l.match(/^CREATE POLICY (\S+) ON (\S+) /)
-    if (!m) throw new Error(`policy sem nome/tabela: ${l.slice(0, 80)}`)
-    return `DROP POLICY IF EXISTS ${m[1]} ON ${m[2]};\n${l}`
+// Uma policy pode ocupar várias linhas: separa por comando (cada um termina em ";" no fim da linha e o
+// próximo começa com CREATE/ALTER).
+const comandos = raw('09_rls_policies.sql').split(/;\s*\n(?=CREATE |ALTER |$)/).map((s) => s.trim()).filter(Boolean)
+if (comandos.filter((c) => c.startsWith('CREATE POLICY ')).length !== 78) throw new Error('esperava 78 policies')
+const policies = comandos
+  .filter((c) => c.startsWith('CREATE POLICY ') && c.includes('auth.uid()'))
+  .map((c) => {
+    const m = c.match(/^CREATE POLICY (\S+) ON (\S+) /)
+    if (!m) throw new Error(`policy sem nome/tabela: ${c.slice(0, 80)}`)
+    return `DROP POLICY IF EXISTS ${m[1]} ON ${m[2]};\n${c.replace(/;$/, '')};`
   })
-if (policies.length !== 9) throw new Error(`esperava 9 policies com auth.uid(), achei ${policies.length}`)
 
 // --- extras do Neon (funções novas e obra_id do PowerSync); o 20_ tem BEGIN/COMMIT próprios ---
 const extra = readdirSync(join(dir, 'extra')).filter((f) => f.endsWith('.sql')).sort()

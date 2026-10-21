@@ -11,11 +11,12 @@ Leia todos os arquivos de spec antes de começar qualquer implementação.
 
 ## Estado Atual do Projeto
 
-**Branch `neon-clerk`: migração Supabase → Neon (banco, Data API + RLS) + Clerk (login) + Cloudflare Workers.**
+**Branch `neon-clerk`: banco no Supabase (plano gratuito, API REST + RLS) + Clerk (login) + Cloudflare Workers.**
+O banco chegou a ir para o Neon, mas voltou ao Supabase: com o PowerSync conectado o Neon nunca dorme e sai do plano gratuito.
 O app nativo foi descartado: o app de campo é só o **PWA** (Expo web, offline com PowerSync Web).
 O painel admin deixou de ser Next.js: é um **SPA estático** (Vite + React Router) servido por um Worker.
-Ambos estão publicados no ambiente de TESTE (`baseline-teste` no Neon, Clerk dev, PowerSync Development);
-a virada para produção ainda não aconteceu (ver memória do projeto e `neon/baseline/README.md`).
+Ambos estão publicados em `https://prumoq.railton.eu.org` no ambiente de TESTE (projeto Supabase `prumoq-teste`,
+Clerk dev, PowerSync Development); a virada para produção ainda não aconteceu (ver memória do projeto).
 
 ```
 prumoq/
@@ -23,25 +24,26 @@ prumoq/
   apps/admin/        ← Painel admin: Vite + React 19 + React Router (SPA em /admin) + Worker em worker/ (contas no Clerk)
   packages/shared/   ← tipos TypeScript (Database) + enums + renderer do relatório de FVS
   packages/design-system/ ← tokens e paleta "Prumo Mineral"
-  neon/              ← baseline do schema (extraído do Supabase) + patches + scripts de migração de dados
+  neon/              ← baseline do schema (extraído do Supabase) + patch Clerk/PowerSync (`baseline/supabase.sql`)
   powersync/         ← configuração do PowerSync Cloud (service.yaml, sync-config.yaml)
-  supabase/          ← migrations históricas (referência; o banco ativo é o Neon)
+  supabase/          ← migrations históricas (referência; o schema atual é raw/ + supabase.sql)
   references/        ← protótipos HTML (não modificar)
 ```
 
 ## Arquitetura
 
-### Banco e segurança (Neon Data API + RLS)
+### Banco e segurança (Supabase + RLS)
 
-Os dois apps falam com o banco pela **Data API do Neon** (PostgREST) usando `supabase-js` só como cliente HTTP,
-com o token do Clerk do template `neon` (`role: authenticated`). **A RLS do banco é a fronteira de segurança**:
-qualquer usuário logado pode chamar a Data API direto, então toda regra de permissão precisa estar nas policies
+Os dois apps falam com o banco pela **API REST do Supabase** (PostgREST) com `supabase-js`, a chave publicável
+(header `apikey`) e o token do Clerk do template `neon` (`role: authenticated`; o Supabase aceita o Clerk via
+"third-party auth"; o nome do template é histórico). **A RLS do banco é a fronteira de segurança**:
+qualquer usuário logado pode chamar a API direto, então toda regra de permissão precisa estar nas policies
 ou nas funções do banco (`criar_usuario`, `plataforma_criar_cliente`, `excluir_obra`...), nunca só no front.
 `current_usuario_id()` mapeia o `sub` do Clerk para `usuarios.id` via `usuarios.clerk_user_id`.
 
-A Data API às vezes recebe a 1ª consulta de uma conexão nova sem o JWT: `current_usuario_id()` responde
-HTTP 401 `jwt_ausente` e os clientes repetem a requisição (`apps/admin/src/lib/neon/retry-fetch.ts`,
-`apps/mobile/lib/neon/retry-fetch.ts`, `dataApi()` nos Workers). Esses 401 no console são esperados.
+O plano gratuito do Supabase pausa o projeto após 7 dias sem atividade: o Worker do PWA tem um Cron Trigger
+diário (`scheduled` em `apps/mobile/worker/index.ts`) que chama `rpc/registrar_heartbeat`.
+Os retries de 401 `jwt_ausente` (`lib/neon/retry-fetch.ts`, `dataApi()` nos Workers) são herança do Neon e não disparam no Supabase.
 
 ### PWA (apps/mobile)
 
@@ -139,10 +141,11 @@ Domínio (teste): `https://prumoq.railton.eu.org` — rota `prumoq.railton.eu.or
 `/api/media/presign` do PWA (`VITE_MEDIA_API_URL` vazio) e o `public/sw.js` do PWA não pode interceptar `/admin`.
 O deploy automático (`.github/workflows/deploy.yml`) publica os dois Workers a cada push no `main`.
 
-### Banco (Neon)
-O schema ativo vem de `neon/baseline/` (extraído do catálogo do Supabase + patches). Leia
-`neon/baseline/README.md` antes de mexer. Funções novas só aparecem na Data API depois de reaplicar a
-configuração da Data API. As migrations em `supabase/migrations` são históricas; várias corrigem RLS e cálculo
+### Banco (Supabase)
+O schema é `neon/baseline/raw/` (extraído do catálogo do Supabase) + `neon/baseline/supabase.sql` (gerado por
+`node neon/baseline/build-supabase.mjs`: identidade do Clerk, policies sem `auth.uid()`, RPCs novas, `obra_id` do
+PowerSync, heartbeat). Replicação do PowerSync: `neon/baseline/supabase-powersync.sql` (senha da role à parte).
+Leia `neon/baseline/README.md` antes de mexer. As migrations em `supabase/migrations` são históricas; várias corrigem RLS e cálculo
 de progresso (ex.: `007_fix_nc_join_inflates_progress.sql`, `010_fix_verificacoes_rls_obra_access.sql`) — área
 sensível, revisar com cautela. O módulo de medições usa triggers autoritativos em `avancos_aprovados_servico`.
 
@@ -152,10 +155,10 @@ Veja `.env.example`. Arquivos `.env.local` só com valores públicos; segredos n
 
 | Variável | Onde |
 |---|---|
-| `EXPO_PUBLIC_POWERSYNC_URL`, `EXPO_PUBLIC_NEON_DATA_API_URL`, `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, `EXPO_PUBLIC_MEDIA_API_URL` | `apps/mobile/.env.local` |
-| `VITE_NEON_DATA_API_URL`, `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_PWA_URL`, `VITE_MEDIA_API_URL` | `apps/admin/.env.local` |
-| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `NEON_DATA_API_URL`, `ALLOWED_ORIGINS` | segredos do Worker `prumoq-pwa` |
-| `CLERK_SECRET_KEY`, `NEON_DATA_API_URL` | segredos do Worker `prumoq-admin` |
+| `EXPO_PUBLIC_POWERSYNC_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, `EXPO_PUBLIC_MEDIA_API_URL` | `apps/mobile/.env.local` |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_PWA_URL`, `VITE_MEDIA_API_URL` | `apps/admin/.env.local` |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `ALLOWED_ORIGINS` | segredos do Worker `prumoq-pwa` |
+| `CLERK_SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | segredos do Worker `prumoq-admin` |
 
 ## Prioridades de Implementação
 
@@ -228,7 +231,7 @@ Veja `.env.example`. Arquivos `.env.local` só com valores públicos; segredos n
 
 ### PowerSync
 - Schema local em `apps/mobile/lib/schema.ts` (15 tabelas)
-- Connector (envio da fila pela Data API do Neon) em `apps/mobile/lib/powersync-connector.ts`
+- Connector (envio da fila pela API REST do Supabase) em `apps/mobile/lib/powersync-connector.ts`
 - `usePowerSyncQuery()` para queries reativas
 - `db.execute()` para writes offline
 - Sempre passar `created_offline: 1` em novos registros
