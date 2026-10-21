@@ -92,7 +92,7 @@ export default async function DashboardPage() {
       <div className="prumo-page-inner">
         <PageHeader
           title="Visão geral"
-          description={`O que exige decisão hoje, seguido do andamento do portfólio em ${new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}.`}
+          description={`O que exige decisão hoje, seguido do andamento do portfólio em ${new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', month: 'long', year: 'numeric' })}.`}
           actions={
             <Link href="/obras" className="prumo-primary-button">
               Abrir portfólio <ArrowRight size={15} />

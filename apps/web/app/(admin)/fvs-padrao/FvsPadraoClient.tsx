@@ -162,7 +162,7 @@ export default function FvsPadraoClient({
     {
       header: 'Última alteração',
       cell: (item) => (
-        <span className="text-xs text-txt-2">{item.updated_at ? new Date(item.updated_at).toLocaleDateString('pt-BR') : '-'}</span>
+        <span className="text-xs text-txt-2">{item.updated_at ? new Date(item.updated_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '-'}</span>
       )
     },
     { 

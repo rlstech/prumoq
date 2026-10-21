@@ -7,8 +7,8 @@ import type { MeasurementDetail } from './actions';
 
 const money = (n: number | null | undefined) => Number(n ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const num = (n: number | null | undefined, digits = 4) => Number(n ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: digits });
-const fmtDate = (d: string | null | undefined) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
-const fmtDateTime = (d: string | null | undefined) => (d ? new Date(d).toLocaleString('pt-BR') : '—');
+const fmtDate = (d: string | null | undefined) => (d ? new Date(d).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—');
+const fmtDateTime = (d: string | null | undefined) => (d ? new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—');
 
 const statusLabel: Record<string, string> = { rascunho: 'Rascunho', aprovada: 'Aprovada', cancelada: 'Cancelada' };
 const statusClass: Record<string, string> = {

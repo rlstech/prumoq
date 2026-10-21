@@ -28,11 +28,7 @@ const nextConfig = {
   output: 'standalone',
   outputFileTracingRoot: path.join(__dirname, '../../'),
   transpilePackages: ['@prumoq/shared', '@prumoq/design-system', 'lucide-react'],
-  modularizeImports: {
-    'lucide-react': {
-      transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
-    },
-  },
+  // lucide-react já está na lista de optimizePackageImports padrão do Next.
   images: {
     remotePatterns: [
       {

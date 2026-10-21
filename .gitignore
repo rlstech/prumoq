@@ -45,3 +45,8 @@ Thumbs.db
 # Workers/wasm do PowerSync Web (gerados por apps/mobile/scripts/copy-powersync-assets.mjs)
 apps/mobile/public/powersync/
 apps/mobile/.wrangler/
+
+# Build do admin para o Cloudflare Workers (OpenNext)
+apps/web/.open-next/
+apps/web/.wrangler/
+apps/web/.dev.vars

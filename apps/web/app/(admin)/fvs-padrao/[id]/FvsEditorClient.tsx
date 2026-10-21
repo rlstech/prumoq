@@ -266,7 +266,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
                         v{log.numero_revisao}
                       </span>
                       <span className="text-[10px] text-txt-3">
-                        {new Date(log.created_at).toLocaleDateString('pt-BR')}
+                        {new Date(log.created_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                       </span>
                     </div>
                     <p className="text-xs text-txt-2 mb-0.5">{log.descricao_alt}</p>

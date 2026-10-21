@@ -3,7 +3,7 @@
 import { useState, useMemo, useTransition } from 'react';
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR');
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
 function formatDateTime(dateStr: string): string {

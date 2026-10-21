@@ -1,6 +1,5 @@
 import 'server-only';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { AwsClient } from 'aws4fetch';
 import type { Database } from '@prumoq/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -11,7 +10,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 const EXPIRES_IN_SECONDS = 900;
 const BATCH_SIZE = 100;
 
-let r2Client: S3Client | null = null;
+let r2Client: AwsClient | null = null;
 
 function getR2() {
   const accountId = process.env.R2_ACCOUNT_ID;
@@ -21,12 +20,11 @@ function getR2() {
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
     throw new Error('Falha ao autorizar anexos: credenciais do R2 não configuradas.');
   }
-  r2Client ??= new S3Client({
-    region: 'auto',
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: { accessKeyId, secretAccessKey },
-  });
-  return { client: r2Client, bucket };
+  // aws4fetch (Web Crypto) em vez do AWS SDK: roda no Cloudflare Workers e é o mesmo do Worker do PWA.
+  r2Client ??= new AwsClient({ accessKeyId, secretAccessKey, service: 's3', region: 'auto' });
+  const objectUrl = (key: string) =>
+    `https://${accountId}.r2.cloudflarestorage.com/${bucket}/${key.split('/').map(encodeURIComponent).join('/')}`;
+  return { client: r2Client, objectUrl };
 }
 
 async function getTenantId(client: SupabaseClient<Database>): Promise<string> {
@@ -101,12 +99,12 @@ export async function signPrivateMedia(
     const allowed = new Set((accessible ?? []) as string[]);
     const permitted = batch.filter((key) => allowed.has(key));
 
-    const signed = await Promise.all(permitted.map(async (key) => [
-      key,
-      await getSignedUrl(r2.client, new GetObjectCommand({ Bucket: r2.bucket, Key: key }), {
-        expiresIn: EXPIRES_IN_SECONDS,
-      }),
-    ] as const));
+    const signed = await Promise.all(permitted.map(async (key) => {
+      const url = new URL(r2.objectUrl(key));
+      url.searchParams.set('X-Amz-Expires', String(EXPIRES_IN_SECONDS));
+      const request = await r2.client.sign(new Request(url, { method: 'GET' }), { aws: { signQuery: true } });
+      return [key, request.url] as const;
+    }));
     for (const [key, url] of signed) result.set(key, url);
   }
   const denied = keys.length - result.size;

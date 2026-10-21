@@ -9,11 +9,12 @@ import { FilterBar, SelectFilter } from '@/components/ui/FilterBar';
 import { useToast } from '@/components/ui/Toast';
 import { approveEvaluation, invalidateEvaluation, reopenEvaluation, saveEvaluationModel } from './actions';
 import Pagination from '@/components/ui/Pagination';
+import { hojeEmBrasilia } from '@/lib/dates';
 
 type Evaluation={id:string;obra_id:string;equipe_id:string;medicao_id:string|null;modelo_revisao_id:string;data_avaliacao:string;percentual:number;pontos_obtidos:number;pontos_possiveis:number;status:'rascunho'|'concluida'|'aguardando_aprovacao'|'aprovada'|'invalidada';avaliador_id:string;motivo_invalidacao:string|null};
 type EvaluationMetric={status:Evaluation['status'];percentual:number};
 type Model={id:string;empresa_id:string|null;nome:string;descricao:string|null;revisao_atual:number;ativo:boolean}; type Revision={id:string;modelo_id:string;numero_revisao:number}; type Criterion={revisao_id:string;ordem:number;titulo:string;peso:number};
-const today=()=>new Date().toISOString().slice(0,10);
+const today=hojeEmBrasilia;
 
 // Status labels/tones for this feature only — StatusBadge.tsx's shared map already
 // uses the key 'concluida' for ObraStatus ("Concluída", ok/green), which would be
@@ -54,7 +55,7 @@ export default function EvaluationsClient({evaluations,metrics,models,revisions,
  const columns: Column<Evaluation>[] = [
    {
      header: 'Empreiteiro / obra',
-     cell: item => <div><b className="text-[13px] text-txt">{name(teams,item.equipe_id)}</b><p className="mt-0.5 text-xs text-txt-3">{name(works,item.obra_id)} · {new Date(`${item.data_avaliacao}T12:00:00`).toLocaleDateString('pt-BR')}</p></div>,
+     cell: item => <div><b className="text-[13px] text-txt">{name(teams,item.equipe_id)}</b><p className="mt-0.5 text-xs text-txt-3">{name(works,item.obra_id)} · {new Date(`${item.data_avaliacao}T12:00:00`).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p></div>,
    },
    {
      header: 'Modelo',

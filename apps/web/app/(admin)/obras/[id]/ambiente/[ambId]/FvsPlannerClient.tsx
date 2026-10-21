@@ -88,7 +88,7 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
                        <div className={`w-2.5 h-2.5 rounded-full ${fvs.ncs_abertas > 0 ? 'bg-nok' : (fvs.status === 'conforme' || fvs.status === 'concluida') ? 'bg-ok' : fvs.status === 'concluida_ressalva' ? 'bg-warn' : 'bg-[var(--br)]'}`} />
                        <div>
                          <h3 className="font-medium text-sm text-txt">{fvs.subservico}</h3>
-                         <p className="text-[11px] text-txt-3">Última verif: {fvs.ultima_verif ? new Date(fvs.ultima_verif).toLocaleDateString('pt-BR') : 'Nenhuma'}</p>
+                         <p className="text-[11px] text-txt-3">Última verif: {fvs.ultima_verif ? new Date(fvs.ultima_verif).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Nenhuma'}</p>
                        </div>
                      </div>
                    </td>

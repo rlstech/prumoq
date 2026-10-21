@@ -9,6 +9,7 @@ import type { Database } from '@prumoq/shared';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { approveMeasurement, cancelMeasurement, discardMeasurement, getMeasurementDetail, loadMeasurementOptions, saveMeasurementDraft, type MeasurementDraftInput } from './actions';
 import MeasurementDetailModal from './MeasurementDetailModal';
+import { hojeEmBrasilia } from '@/lib/dates';
 
 type Work={id:string;nome:string;controle_medicoes_efetivo:boolean};type Team={id:string;nome:string;tipo:string};type WorkTeam={obra_id:string;equipe_id:string};
 type Indicator=Database['public']['Views']['vw_indicadores_medicoes']['Row'];type Measurement=Database['public']['Tables']['medicoes_servico']['Row'];
@@ -16,7 +17,7 @@ type ItemTotal={medicao_id:string;valor_calculado:number;quantidade_periodo:numb
 type Balance=Database['public']['Views']['vw_saldos_medicao_servico']['Row'];type PlannedService={id:string;subservico:string|null};type PendingImpact={id:string;descricao:string;prazo_avaliacao:string|null};
 type Release={id:string;vinculacaoId:string;verificacaoId:string;fvsId:string;service:string;stage:string|null;previous:number;current:number;quantity:number;unit:string;unitPrice:number|null};
 type Rework={ncId:string;vinculacaoId:string;service:string;description:string;value:number;category:string|null};
-const today=()=>new Date().toISOString().slice(0,10);const money=(n:number)=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});const num=(n:number|null|undefined)=>Number(n??0).toLocaleString('pt-BR',{maximumFractionDigits:4});
+const today=hojeEmBrasilia;const money=(n:number)=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});const num=(n:number|null|undefined)=>Number(n??0).toLocaleString('pt-BR',{maximumFractionDigits:4});
 
 export default function MeasurementsClient({works,indicators,measurements,teams,workTeams,itemTotals,balances,plannedServices,pendingImpacts}:{works:Work[];indicators:Indicator[];measurements:Measurement[];teams:Team[];workTeams:WorkTeam[];itemTotals:ItemTotal[];balances:Balance[];plannedServices:PlannedService[];pendingImpacts:PendingImpact[]}){
  const {toast}=useToast();const router=useRouter();const[pending,startTransition]=useTransition();const[open,setOpen]=useState(false);const[obraId,setObraId]=useState(works[0]?.id??'');const[equipeId,setEquipeId]=useState('');const[reference,setReference]=useState('');const[start,setStart]=useState(today());const[end,setEnd]=useState(today());const[date,setDate]=useState(today());const[notes,setNotes]=useState('');const[releases,setReleases]=useState<Release[]>([]);const[rework,setRework]=useState<Rework[]>([]);const[selected,setSelected]=useState<Set<string>>(new Set());const[allocations,setAllocations]=useState<Record<string,string>>({});const[selectedRework,setSelectedRework]=useState<Set<string>>(new Set());const[loading,setLoading]=useState(false);const[cancel,setCancel]=useState<Measurement|null>(null);const[reason,setReason]=useState('');const[detailMeasurement,setDetailMeasurement]=useState<Measurement|null>(null);const[detail,setDetail]=useState<Awaited<ReturnType<typeof getMeasurementDetail>>|null>(null);const[detailLoading,setDetailLoading]=useState(false);

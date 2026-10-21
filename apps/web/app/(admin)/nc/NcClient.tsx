@@ -164,7 +164,7 @@ export default function NcClient({ initialData, page, hasNextPage }: { initialDa
                         }`}>
                           {isLate
                             ? 'Vencida'
-                            : dueDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                            : dueDate.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' })}
                         </span>
                       ) : <span className="text-xs text-txt-3">—</span>}
                     </td>

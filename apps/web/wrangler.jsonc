@@ -1,0 +1,21 @@
+// Worker do painel admin (Next.js via OpenNext). O build gera .open-next/ com `opennextjs-cloudflare build`.
+// Segredos (CLERK_SECRET_KEY, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ACCOUNT_ID) vão por
+// `wrangler secret put`, nunca neste arquivo. Variáveis NEXT_PUBLIC_* entram no build.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "prumoq-admin",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "prumoq-admin" }
+  ],
+  "vars": {
+    "R2_BUCKET_NAME": "prumoq"
+  },
+  "observability": { "enabled": true }
+}
