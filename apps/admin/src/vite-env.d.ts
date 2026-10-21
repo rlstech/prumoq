@@ -1,7 +1,10 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_NEON_DATA_API_URL: string;
+  /** URL do projeto Supabase (ex.: https://xxxx.supabase.co). */
+  readonly VITE_SUPABASE_URL: string;
+  /** Chave publicável do Supabase (header apikey; quem autoriza é o token do Clerk + RLS). */
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY: string;
   readonly VITE_CLERK_PUBLISHABLE_KEY: string;
   /** URL pública do PWA (links de "abrir no app" e redirecionamento de senha). */
   readonly VITE_PWA_URL?: string;

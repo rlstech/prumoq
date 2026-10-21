@@ -1,6 +1,6 @@
 // Worker do painel admin: serve os arquivos estáticos (dist/) e só roda código em /admin/api/*, para o que
-// exige segredo (CLERK_SECRET_KEY): criar/editar contas no Clerk. Todo o resto o painel faz direto na Data API
-// do Neon, com o token do próprio usuário e a RLS do banco.
+// exige segredo (CLERK_SECRET_KEY): criar/editar contas no Clerk. Todo o resto o painel faz direto na API REST
+// do Supabase, com o token do próprio usuário e a RLS do banco.
 //
 // Identidade de quem chama: o token `neon` do Clerk é repassado à Data API (`rpc/current_usuario_id` + perfil em
 // `usuarios`), o mesmo esquema do Worker do PWA (apps/mobile/worker/index.ts). As funções do banco chamadas aqui
@@ -11,7 +11,10 @@ import { minimumPasswordSchema } from '../src/lib/auth/passwords';
 
 export interface Env {
   ASSETS?: Fetcher;
-  NEON_DATA_API_URL: string;
+  /** URL do projeto Supabase (ex.: https://xxxx.supabase.co). */
+  SUPABASE_URL: string;
+  /** Chave publicável do Supabase (header apikey). */
+  SUPABASE_PUBLISHABLE_KEY: string;
   CLERK_SECRET_KEY: string;
 }
 
@@ -30,14 +33,15 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-/** Data API do Neon com o token do usuário. Repete o 401 `jwt_ausente` (ver src/lib/neon/retry-fetch.ts). */
+/** API REST do Supabase com o token do usuário. Repete o 401 `jwt_ausente` (herança do Neon; inofensivo). */
 async function dataApi<T>(env: Env, token: string, path: string, init?: RequestInit): Promise<T> {
-  const base = env.NEON_DATA_API_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const base = env.SUPABASE_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   for (let attempt = 0; ; attempt++) {
     const response = await fetch(`${base}/rest/v1/${path}`, {
       ...init,
       headers: {
         Authorization: `Bearer ${token}`,
+        apikey: env.SUPABASE_PUBLISHABLE_KEY,
         Accept: 'application/json',
         'Content-Type': 'application/json',
         ...(init?.headers ?? {}),

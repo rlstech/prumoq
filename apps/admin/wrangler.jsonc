@@ -1,5 +1,5 @@
 // Worker do painel admin: arquivos estáticos do `vite build` (dist/, painel em dist/admin) + /admin/api/* (worker/index.ts).
-// Segredos (CLERK_SECRET_KEY, NEON_DATA_API_URL) vão por `wrangler secret put`, nunca neste arquivo.
+// Segredos (CLERK_SECRET_KEY, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) vão por `wrangler secret put`, nunca neste arquivo.
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "prumoq-admin",

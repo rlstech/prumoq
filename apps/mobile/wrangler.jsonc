@@ -16,6 +16,8 @@
   // porque o hostname já tem um registro DNS (proxied) do servidor antigo; a rota roda antes da origem.
   "routes": [{ "pattern": "prumoq.railton.eu.org/*", "zone_name": "railton.eu.org" }],
   "workers_dev": true,
+  // Heartbeat diário no Supabase (ver `scheduled` em worker/index.ts): 09:00 UTC = 06:00 em Brasília.
+  "triggers": { "crons": ["0 9 * * *"] },
   "vars": {
     "R2_BUCKET_NAME": "prumoq"
   },

@@ -7,10 +7,17 @@ import { createRetryFetch } from './retry-fetch';
 export const NEON_TOKEN_TEMPLATE = 'neon';
 
 function dataApiUrl(): string {
-  // Base SEM /rest/v1 (o supabase-js acrescenta). Ex.: https://ep-xxx.apirest.c-2.sa-east-1.aws.neon.tech/neondb
-  const url = import.meta.env.VITE_NEON_DATA_API_URL?.trim().replace(/\/+$/, '');
-  if (!url) throw new Error('VITE_NEON_DATA_API_URL não configurada.');
+  // Ex.: https://xxxx.supabase.co (o supabase-js acrescenta /rest/v1).
+  const url = import.meta.env.VITE_SUPABASE_URL?.trim().replace(/\/+$/, '');
+  if (!url) throw new Error('VITE_SUPABASE_URL não configurada.');
   return url;
+}
+
+function publishableKey(): string {
+  // Só identifica o projeto (header apikey); quem autoriza é o token do Clerk + RLS.
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  if (!key) throw new Error('VITE_SUPABASE_PUBLISHABLE_KEY não configurada.');
+  return key;
 }
 
 function jwtExpiry(token: string): number {
@@ -46,7 +53,7 @@ export function memoizeToken(fetchToken: () => Promise<string | null | undefined
 // `client.auth.*` lança erro de propósito. Identidade vem do Clerk.
 export function createDataClient(getToken: () => Promise<string | null>): SupabaseClient<Database> {
   const url = dataApiUrl();
-  return createSupabaseClient<Database>(url, 'neon-data-api', {
+  return createSupabaseClient<Database>(url, publishableKey(), {
     accessToken: getToken,
     global: { fetch: createRetryFetch() },
   }) as unknown as SupabaseClient<Database>;

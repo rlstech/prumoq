@@ -5,9 +5,10 @@ name: Build & Deploy
 #
 # Configurar no GitHub (Settings → Secrets and variables → Actions):
 #   Secrets:   CLOUDFLARE_API_TOKEN (permissão "Workers Scripts: Edit"), CLOUDFLARE_ACCOUNT_ID
-#   Variables: EXPO_PUBLIC_POWERSYNC_URL, EXPO_PUBLIC_NEON_DATA_API_URL, EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
-#              VITE_NEON_DATA_API_URL, VITE_CLERK_PUBLISHABLE_KEY, VITE_PWA_URL  (ex.: https://prumoq.railton.eu.org)
-# Os segredos dos Workers (R2, Clerk, Neon) ficam no Cloudflare (`wrangler secret put`), não aqui.
+#   Variables: EXPO_PUBLIC_POWERSYNC_URL, EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+#              EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY,
+#              VITE_CLERK_PUBLISHABLE_KEY, VITE_PWA_URL  (ex.: https://prumoq.railton.eu.org)
+# Os segredos dos Workers (R2, Clerk, Supabase) ficam no Cloudflare (`wrangler secret put`), não aqui.
 
 on:
   push:
@@ -49,7 +50,8 @@ jobs:
         run: pnpm --filter @prumoq/mobile build:web
         env:
           EXPO_PUBLIC_POWERSYNC_URL: ${{ vars.EXPO_PUBLIC_POWERSYNC_URL }}
-          EXPO_PUBLIC_NEON_DATA_API_URL: ${{ vars.EXPO_PUBLIC_NEON_DATA_API_URL }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           # mesma origem: o Worker do PWA serve a própria rota de mídia
           EXPO_PUBLIC_MEDIA_API_URL: ''
@@ -61,7 +63,8 @@ jobs:
       - name: Build admin
         run: pnpm --filter @prumoq/admin build
         env:
-          VITE_NEON_DATA_API_URL: ${{ vars.VITE_NEON_DATA_API_URL }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ vars.VITE_CLERK_PUBLISHABLE_KEY }}
           VITE_PWA_URL: ${{ vars.VITE_PWA_URL }}
           # mesmo domínio (rotas /admin/* e /api/*): rota de mídia relativa

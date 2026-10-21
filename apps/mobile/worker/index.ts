@@ -6,14 +6,19 @@
  *     { operation: 'download', keys: string[] }                      -> { urls, expiresAt }
  *
  * Substitui a Edge Function `r2-presign` do Supabase, com as mesmas checagens. A identidade vem do token
- * `neon` do Clerk (Bearer): toda consulta vai à Data API do Neon COM esse token, então a assinatura dele é
+ * `neon` do Clerk (Bearer): toda consulta vai à API REST do Supabase COM esse token, então a assinatura dele é
  * validada lá e a RLS vale como para o próprio usuário. O Worker só guarda as credenciais do R2.
+ *
+ * Agendamento diário (`scheduled`): chama `rpc/registrar_heartbeat` para o Supabase gratuito não pausar.
  */
 import { AwsClient } from 'aws4fetch';
 
 export interface Env {
   ASSETS?: Fetcher;
-  NEON_DATA_API_URL: string;
+  /** URL do projeto Supabase (ex.: https://xxxx.supabase.co). */
+  SUPABASE_URL: string;
+  /** Chave publicável do Supabase (header apikey). */
+  SUPABASE_PUBLISHABLE_KEY: string;
   R2_ACCOUNT_ID: string;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
@@ -64,14 +69,15 @@ function json(body: unknown, status: number, cors: Record<string, string>): Resp
   });
 }
 
-/** Data API do Neon com o token do usuário. Repete o 401 `jwt_ausente` (ver apps/admin/src/lib/neon/retry-fetch.ts). */
+/** API REST do Supabase com o token do usuário. Repete o 401 `jwt_ausente` (herança do Neon; inofensivo). */
 async function dataApi<T>(env: Env, token: string, path: string, init?: RequestInit): Promise<T> {
-  const base = env.NEON_DATA_API_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const base = env.SUPABASE_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   for (let attempt = 0; ; attempt++) {
     const response = await fetch(`${base}/rest/v1/${path}`, {
       ...init,
       headers: {
         Authorization: `Bearer ${token}`,
+        apikey: env.SUPABASE_PUBLISHABLE_KEY,
         Accept: 'application/json',
         'Content-Type': 'application/json',
         ...(init?.headers ?? {}),
@@ -221,5 +227,19 @@ export default {
     if (url.pathname.startsWith('/api/')) return new Response('Not found', { status: 404 });
     if (env.ASSETS) return env.ASSETS.fetch(request);
     return new Response('Not found', { status: 404 });
+  },
+
+  // Cron Trigger diário (wrangler.jsonc): uma gravação real na API para o Supabase gratuito não pausar o
+  // projeto por falta de atividade. `registrar_heartbeat()` só grava a hora (liberada para a chave publicável).
+  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    const base = env.SUPABASE_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+    const response = await fetch(`${base}/rest/v1/rpc/registrar_heartbeat`, {
+      method: 'POST',
+      headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    const text = await response.text();
+    if (!response.ok) throw new Error(`heartbeat ${response.status}: ${text.slice(0, 200)}`);
+    console.log('[heartbeat]', text);
   },
 };
