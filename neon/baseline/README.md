@@ -79,7 +79,7 @@ Teste da Data API com JWT real do Clerk dev (2026-10-17, dados de teste já remo
   Não é o compute (ficou 24 min acordado e deu igual), não é cache por token (repetir o mesmo token funciona)
   e aquecer UMA conexão não ajuda: a consulta real cai em outra conexão fria (visto no log do servidor).
   **Correção:** `current_usuario_id()` agora levanta `PT401` (`jwt_ausente`) quando o role é `authenticated` e
-  não há sub; o PostgREST devolve HTTP 401 e o cliente (`apps/web/lib/neon/retry-fetch.ts`) repete a requisição
+  não há sub; o PostgREST devolve HTTP 401 e o cliente (`apps/admin/src/lib/neon/retry-fetch.ts` e o Worker do PWA) repete a requisição
   até 6x. Falha explícita em vez de vazio silencioso. Validado: 10/10, 40/40 e 80/80 consultas simultâneas
   corretas. Dono do banco e sub desconhecido continuam retornando NULL sem erro.
   **Histórico do retry no caso "1ª requisição após 6 min parado" (app real, perfil admin):** 6 tentativas com

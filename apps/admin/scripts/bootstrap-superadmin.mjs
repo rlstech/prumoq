@@ -1,5 +1,6 @@
 // Cria (ou localiza) o superadmin da plataforma: conta no Clerk + linha em `usuarios`.
-// Uso: pnpm --filter @prumoq/web bootstrap:superadmin   (lê apps/web/.env.local)
+// Uso: CLERK_SECRET_KEY=... DATABASE_URL=... SUPERADMIN_EMAIL=... SUPERADMIN_PASSWORD=... pnpm bootstrap:superadmin
+// (variáveis pela linha de comando: segredos não ficam em arquivo)
 // Precisa de DATABASE_URL (dono do banco): `usuarios` não tem policy que permita criar um superadmin pela API.
 import pg from 'pg';
 

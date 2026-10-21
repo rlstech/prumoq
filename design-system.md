@@ -91,7 +91,7 @@ Ele aparece no favicon, ícone do app, splash, login e navegação.
 
 Não desenhar novas variações do símbolo em telas. Usar os ativos canônicos em
 `packages/design-system/assets`, os componentes `BrandMark` e os derivados em
-`apps/web/app/icon.svg` e `apps/mobile/assets`.
+`apps/admin/public/icon.svg` e `apps/mobile/assets`.
 
 ## Componentes
 
@@ -179,6 +179,6 @@ reservados a confirmação, visualização ampla e fluxos concentrados.
 - Tokens: `packages/design-system/src/index.ts`
 - CSS variables: `packages/design-system/src/tokens.css`
 - Adapter mobile: `apps/mobile/lib/constants.ts`
-- Adapter Tailwind: `apps/web/tailwind.config.ts`
+- Adapter Tailwind: `apps/admin/tailwind.config.ts`
 - Primitivas mobile: `apps/mobile/components/ui/`
-- Primitivas web: `apps/web/components/ui/`
+- Primitivas web: `apps/admin/src/components/ui/`

@@ -64,7 +64,7 @@ function json(body: unknown, status: number, cors: Record<string, string>): Resp
   });
 }
 
-/** Data API do Neon com o token do usuário. Repete o 401 `jwt_ausente` (ver apps/web/lib/neon/retry-fetch.ts). */
+/** Data API do Neon com o token do usuário. Repete o 401 `jwt_ausente` (ver apps/admin/src/lib/neon/retry-fetch.ts). */
 async function dataApi<T>(env: Env, token: string, path: string, init?: RequestInit): Promise<T> {
   const base = env.NEON_DATA_API_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   for (let attempt = 0; ; attempt++) {
@@ -149,7 +149,7 @@ async function presignDownloads(env: Env, token: string, body: PresignBody, clie
   if (!requested.length) throw new HttpError(400, 'keys is required');
 
   // Chaves antigas (antes do multi-tenant) usam `fotos/{usuario_id}/...`: valem só se o usuário dono for
-  // do mesmo cliente (mesma regra do painel web, apps/web/lib/media/signed-urls.ts).
+  // do mesmo cliente (mesma regra de antes no painel admin).
   const prefix = `fotos/${clienteId}/`;
   const legacyOwners = [...new Set(requested
     .filter(k => !k.startsWith(prefix) && k.startsWith('fotos/'))

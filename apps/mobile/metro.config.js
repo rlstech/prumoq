@@ -8,15 +8,11 @@ const config = getDefaultConfig(__dirname);
 const monorepoRoot = path.resolve(__dirname, '../..');
 config.watchFolders = [monorepoRoot];
 
-// Exclude apps/web's Next.js build output from Metro's watcher.
-// `.next/` churns constantly during `next dev` (files/dirs created and
-// removed as routes compile) and Metro's FallbackWatcher on Windows can
-// throw ENOENT if a directory disappears between crawl and fs.watch().
-// Since the mobile app never needs to resolve/watch anything under
-// apps/web, block it outright rather than let the two dev servers race.
+// O PWA não usa nada do painel admin: ficam fora do watcher do Metro o build do Vite e os temporários do
+// wrangler, que mudam o tempo todo (no Windows, uma pasta que some entre a varredura e o fs.watch() derruba o Metro).
 config.resolver.blockList = [
   config.resolver.blockList,
-  /[\\/]apps[\\/]web[\\/]\.next[\\/].*/,
+  /[\\/]apps[\\/]admin[\\/](dist|\.wrangler)[\\/].*/,
 ].filter(Boolean);
 
 // ── React 18 do PWA ─────────────────────────────────────────────────

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "worker:dev": "wrangler dev",
-    "deploy": "pnpm build && wrangler deploy"
+    "deploy": "pnpm build && wrangler deploy",
+    "bootstrap:superadmin": "node scripts/bootstrap-superadmin.mjs"
   },
   "dependencies": {
     "@clerk/clerk-react": "5.61.3",
@@ -42,6 +43,7 @@
     "tsx": "^4.20.0",
     "typescript": "^5.7.0",
     "vite": "8.3.4",
-    "wrangler": "4.151.3"
+    "wrangler": "4.151.3",
+    "pg": "^8.13.0"
   }
 }

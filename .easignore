@@ -18,10 +18,8 @@ node_modules/
 apps/mobile/.expo/
 apps/mobile/dist/
 
-# Next.js
-apps/web/.next/
-apps/web/out/
-apps/web/.next-*/
+# Painel admin
+apps/admin/
 
 # TypeScript
 *.tsbuildinfo

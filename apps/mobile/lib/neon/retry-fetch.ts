@@ -1,4 +1,4 @@
-// Mesma correção do painel web (apps/web/lib/neon/retry-fetch.ts). A Data API do Neon mantém um pool de
+// Mesma correção do painel admin (apps/admin/src/lib/neon/retry-fetch.ts). A Data API do Neon mantém um pool de
 // conexões, e a PRIMEIRA consulta de cada conexão nova chega ao banco sem o JWT. current_usuario_id()
 // transforma isso em HTTP 401 `jwt_ausente` em vez de a RLS devolver uma lista vazia; aqui a requisição é
 // repetida e cai numa conexão já aquecida. Nada foi gravado na tentativa que falhou. Ver neon/baseline/README.md.
