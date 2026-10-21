@@ -1,0 +1,24 @@
+import { createClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/context';
+import ObrasClient from './ObrasClient';
+
+export default async function ObrasPage() {
+  const supabase = await createClient();
+  const authContext = await getAuthContext();
+
+  const [
+    { data: obras },
+    { data: empresas }
+  ] = await Promise.all([
+    supabase.rpc('get_obras_com_fvs'), // Will fail if RPC not returning proper type but we type it, actually it's fine.
+    supabase.from('empresas').select('id, nome, cnpj').eq('ativo', true).order('nome')
+  ]);
+
+  return (
+    <ObrasClient
+      initialObras={obras || []}
+      empresas={empresas || []}
+      canDelete={authContext?.perfil === 'admin'}
+    />
+  );
+}

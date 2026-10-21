@@ -50,3 +50,7 @@ apps/mobile/.wrangler/
 apps/web/.open-next/
 apps/web/.wrangler/
 apps/web/.dev.vars
+
+# Painel admin (Vite + Worker)
+apps/admin/dist/
+apps/admin/.wrangler/

@@ -40,6 +40,8 @@ type PresignBody = {
   contentType?: string;
   contentLength?: number;
   keys?: string[];
+  /** Download: devolve só as chaves autorizadas em vez de recusar o lote inteiro (usado pelo painel admin). */
+  partial?: boolean;
 };
 
 function corsHeaders(request: Request, env: Env): Record<string, string> {
@@ -160,20 +162,24 @@ async function presignDownloads(env: Env, token: string, body: PresignBody, clie
     );
     for (const row of rows) sameTenant.add(row.id);
   }
-  if (requested.some(k => !k.startsWith(prefix) && !sameTenant.has(k.split('/')[1]))) {
+  const inTenant = (k: string) => k.startsWith(prefix) || sameTenant.has(k.split('/')[1]);
+  if (!body.partial && requested.some(k => !inTenant(k))) {
     throw new HttpError(403, 'Invalid tenant media key');
   }
+  const candidates = requested.filter(inTenant);
+  if (!candidates.length) return { urls: {}, expiresAt: new Date(Date.now() + EXPIRES_IN_SECONDS * 1000).toISOString() };
 
   // RLS por obra: só passam chaves referenciadas por linhas que o usuário enxerga.
   const accessible = await dataApi<string[] | Array<{ get_accessible_media_keys: string }>>(
-    env, token, 'rpc/get_accessible_media_keys', { method: 'POST', body: JSON.stringify({ p_keys: requested }) },
+    env, token, 'rpc/get_accessible_media_keys', { method: 'POST', body: JSON.stringify({ p_keys: candidates }) },
   );
   const allowed = new Set(accessible.map(item => (typeof item === 'string' ? item : item.get_accessible_media_keys)));
-  if (requested.some(k => !allowed.has(k))) throw new HttpError(403, 'Media access denied');
+  if (!body.partial && candidates.some(k => !allowed.has(k))) throw new HttpError(403, 'Media access denied');
+  const permitted = candidates.filter(k => allowed.has(k));
 
   const { client, objectUrl } = r2(env);
   const urls: Record<string, string> = {};
-  await Promise.all(requested.map(async key => {
+  await Promise.all(permitted.map(async key => {
     const url = new URL(objectUrl(key));
     url.searchParams.set('X-Amz-Expires', String(EXPIRES_IN_SECONDS));
     urls[key] = (await client.sign(new Request(url, { method: 'GET' }), { aws: { signQuery: true } })).url;
