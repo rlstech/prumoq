@@ -21,10 +21,10 @@ interface NcQueryRecord {
   } | null;
 }
 
-export default async function NcPage({ searchParams }: { searchParams?: { page?: string | string[] } }) {
+export default async function NcPage({ searchParams }: { searchParams?: Promise<{ page?: string | string[] }> }) {
   const supabase = await createClient();
   const context = await getAuthContext();
-  const page = pageFromSearchParam(searchParams?.page);
+  const page = pageFromSearchParam((await searchParams)?.page);
   const { from, to } = pageRange(page);
   const { data: ncsData } = await supabase
     .from('nao_conformidades')

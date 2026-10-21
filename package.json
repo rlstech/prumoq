@@ -20,6 +20,11 @@
     "pnpm": ">=9"
   },
   "devDependencies": {
-    "sharp": "^0.35.3"
-  }
+    "sharp": "^0.35.3",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7"
+  },
+  "//": "react/react-dom 19 ficam na raiz para o Next (admin). O PWA (Expo 52) usa a cópia 18.3 em apps/mobile/node_modules; o metro.config.js e o tsconfig do mobile apontam para ela."
 }

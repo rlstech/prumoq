@@ -17,12 +17,13 @@ const TOOLBAR_HTML =
 
 const escapeTitle = (value: string) => value.replace(/[<>&"]/g, '');
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
-    const report = await loadContractorEvaluationReport(await createClient(), params.id);
+    const report = await loadContractorEvaluationReport(await createClient(), id);
     if (!report) return new Response('Avaliação não encontrada.', { status: 404 });
 
-    const title = `<title>avaliacao-empreiteiro-${escapeTitle(params.id)}</title>`;
+    const title = `<title>avaliacao-empreiteiro-${escapeTitle(id)}</title>`;
     const html = renderContractorEvaluationHtml(report)
       .replace('</head>', `${title}${TOOLBAR_CSS}</head>`)
       .replace('<body>', `<body>${TOOLBAR_HTML}`);

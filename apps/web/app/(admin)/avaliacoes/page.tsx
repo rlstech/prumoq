@@ -7,10 +7,10 @@ import { pageFromSearchParam, pageRange, pageSlice } from '@/lib/pagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EvaluationsPage({ searchParams }: { searchParams?: { page?: string | string[] } }) {
+export default async function EvaluationsPage({ searchParams }: { searchParams?: Promise<{ page?: string | string[] }> }) {
   const supabase = await createClient();
   const context = await getAuthContext();
-  const page = pageFromSearchParam(searchParams?.page);
+  const page = pageFromSearchParam((await searchParams)?.page);
   const { from, to } = pageRange(page);
   const [{ data: evaluations }, { data: metrics }, { data: models }, { data: revisions }, { data: criteria }, { data: works }, { data: teams }, { data: companies }, { data: users }] = await Promise.all([
     supabase.from('avaliacoes_empreiteiro').select('*').eq('cliente_id', context?.clienteId ?? '').order('data_avaliacao', { ascending: false }).range(from, to),

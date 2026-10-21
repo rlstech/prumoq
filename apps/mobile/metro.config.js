@@ -1,7 +1,6 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const { withNativeWind } = require('nativewind/metro');
 const path = require('path');
-const fs = require('fs');
 
 const config = getDefaultConfig(__dirname);
 
@@ -20,18 +19,13 @@ config.resolver.blockList = [
   /[\\/]apps[\\/]web[\\/]\.next[\\/].*/,
 ].filter(Boolean);
 
-// ── Deduplicate singleton packages (pnpm creates multiple copies) ───
-// Resolve to the REAL path (not symlink) so Metro sees one canonical location
-const singletonDeps = ['react', 'react-dom', 'react-native', 'react-native-web'];
-const singletonMap = {};
-for (const dep of singletonDeps) {
-  const depPath = path.resolve(__dirname, 'node_modules', dep);
-  try {
-    singletonMap[dep] = fs.realpathSync(depPath);
-  } catch {
-    // dep not installed (e.g. react-dom may not exist) — skip
-  }
-}
+// ── React 18 do PWA ─────────────────────────────────────────────────
+// A raiz do monorepo tem React 19 (admin Next 15); o Expo 52 precisa da cópia 18.3 que fica em
+// apps/mobile/node_modules. Bibliotecas hoisted na raiz (expo-router, react-native-web...) achariam o 19,
+// então `react`, `react-dom` e seus subcaminhos (react/jsx-runtime, react-dom/client...) são sempre
+// resolvidos a partir deste app.
+const singletonDeps = ['react', 'react-dom'];
+const isSingleton = (name) => singletonDeps.some((dep) => name === dep || name.startsWith(dep + '/'));
 
 // Ensure Metro can resolve modules from both the app and monorepo root
 config.resolver.nodeModulesPaths = [
@@ -52,12 +46,9 @@ config.resolver.unstable_conditionsByPlatform = {
 // ── Custom resolver: singleton enforcement ──────────────────────────
 const originalResolve = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (ctx, moduleName, platform) => {
-  // Force singleton deps to always resolve to the same canonical copy
-  if (singletonMap[moduleName]) {
-    return {
-      filePath: path.join(singletonMap[moduleName], 'index.js'),
-      type: 'sourceFile',
-    };
+  // Resolve direto pelo Node (sem os paths do tsconfig, que apontam `react` para os tipos @types/react).
+  if (isSingleton(moduleName)) {
+    return { type: 'sourceFile', filePath: require.resolve(moduleName, { paths: [__dirname] }) };
   }
 
   // O @powersync/web importa o wa-sqlite (arquivos .mjs com `import.meta`) só para o modo

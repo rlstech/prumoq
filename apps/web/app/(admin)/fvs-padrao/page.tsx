@@ -7,10 +7,10 @@ import { ClipboardList } from 'lucide-react';
 import { pageFromSearchParam, pageRange, pageSlice } from '@/lib/pagination';
 import { getAuthContext } from '@/lib/auth/context';
 
-export default async function FvsPadraoPage({ searchParams }: { searchParams?: { page?: string | string[] } }) {
+export default async function FvsPadraoPage({ searchParams }: { searchParams?: Promise<{ page?: string | string[] }> }) {
   const supabase = await createClient();
   const context = await getAuthContext();
-  const page = pageFromSearchParam(searchParams?.page);
+  const page = pageFromSearchParam((await searchParams)?.page);
   const { from, to } = pageRange(page);
 
   const [

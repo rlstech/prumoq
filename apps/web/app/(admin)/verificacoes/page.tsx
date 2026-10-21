@@ -7,10 +7,10 @@ import { getAuthContext } from '@/lib/auth/context';
 
 export const dynamic = 'force-dynamic';
 
-export default async function VerificacoesPage({ searchParams }: { searchParams?: { page?: string | string[] } }) {
+export default async function VerificacoesPage({ searchParams }: { searchParams?: Promise<{ page?: string | string[] }> }) {
   const supabase = await createClient();
   const context = await getAuthContext();
-  const page = pageFromSearchParam(searchParams?.page);
+  const page = pageFromSearchParam((await searchParams)?.page);
   const { from, to } = pageRange(page);
   const { data: verifs } = await supabase
     .from('verificacoes' as any)

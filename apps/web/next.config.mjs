@@ -26,9 +26,7 @@ const CONTENT_SECURITY_POLICY = [
 const nextConfig = {
   basePath: '/admin',
   output: 'standalone',
-  experimental: {
-    outputFileTracingRoot: path.join(__dirname, '../../'),
-  },
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   transpilePackages: ['@prumoq/shared', '@prumoq/design-system', 'lucide-react'],
   modularizeImports: {
     'lucide-react': {

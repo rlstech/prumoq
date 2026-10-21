@@ -13,7 +13,6 @@ import type {
 } from '@/lib/reports/fvs';
 
 interface Props {
-  fvsId: string;
   header: FvsReportHeader;
   verificacoes: FvsReportVerification[];
   ncs: FvsReportNc[];
@@ -43,7 +42,6 @@ const PRINT_CSS = `
       `;
 
 export default function PrintClient({
-  fvsId,
   header,
   verificacoes,
   ncs,
@@ -66,11 +64,6 @@ export default function PrintClient({
     (total, verification) => total + verification.fotos.length,
     0,
   );
-
-  useEffect(() => {
-    // O navegador usa o título como nome sugerido do arquivo PDF.
-    document.title = `fvs-${fvsId}`;
-  }, [fvsId]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
