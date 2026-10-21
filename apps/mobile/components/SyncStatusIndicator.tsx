@@ -24,7 +24,7 @@ interface PendingRow { pendentes: number }
 export function SyncStatusIndicator({ tone = 'surface', compact = true }: Props = {}) {
   const router = useRouter();
   const status = useStatus();
-  const conectado = useConexaoEstavel();
+  const conexao = useConexaoEstavel();
   const { data: falhas = [] } = useQuery<PendingRow>(
     'SELECT COUNT(*) AS pendentes FROM sync_falhas',
   );
@@ -40,8 +40,12 @@ export function SyncStatusIndicator({ tone = 'surface', compact = true }: Props 
   if (quarantined > 0) {
     state = 'error';
     label = quarantined === 1 ? '1 envio recusado' : `${quarantined} envios recusados`;
-  } else if (!conectado) {
+  } else if (conexao === 'offline') {
     state = 'offline';
+  } else if (conexao === 'conectando') {
+    // Abrindo o app ou entre tentativas de reconexão, com rede: não é "offline".
+    state = 'syncing';
+    label = 'Conectando…';
   } else if (failing) {
     state = 'error';
     label = 'Falha ao enviar';

@@ -52,7 +52,8 @@ function formatPayload(payload: string): string {
 export default function SincronizacaoScreen() {
   const router = useRouter();
   const status = useStatus();
-  const conectado = useConexaoEstavel();
+  const conexao = useConexaoEstavel();
+  const conectado = conexao === 'conectado';
   // Motivo de não conectar/baixar/enviar (ex.: sessão expirada, servidor recusou). Ajuda a diagnosticar "Offline" com rede.
   const erro = status.dataFlowStatus?.downloadError ?? status.dataFlowStatus?.uploadError;
   const erroConexao = erro ? (erro.message || String(erro)).slice(0, 200) : null;
@@ -141,8 +142,8 @@ export default function SincronizacaoScreen() {
         <ListSurface>
           <DataRow
             label="Conexão"
-            value={conectado ? 'Conectado' : 'Offline'}
-            tone={conectado ? 'success' : 'warning'}
+            value={conectado ? 'Conectado' : conexao === 'conectando' ? 'Conectando…' : 'Offline'}
+            tone={conectado ? 'success' : conexao === 'conectando' ? 'info' : 'warning'}
           />
           <DataRow
             label="Última sincronização"
