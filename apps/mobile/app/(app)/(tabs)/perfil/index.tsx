@@ -19,6 +19,7 @@ import { useConta, useSessao } from '../../../../lib/auth/sessao';
 import { adoptPendingMedia } from '../../../../lib/pending-media';
 import { confirmDialog } from '../../../../lib/platform-alert';
 import { signatureStore } from '../../../../lib/signature-store';
+import { versaoDoApp } from '../../../../lib/versao';
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -292,6 +293,8 @@ export default function PerfilScreen() {
         <TouchableOpacity style={s.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
           <Text style={s.logoutText}>Sair do sistema</Text>
         </TouchableOpacity>
+
+        <Text style={s.versao} selectable>Versão {versaoDoApp()}</Text>
       </ScrollView>
       <SignatureField visible={signing} onSign={handleSignature} onCancel={() => setSigning(false)} />
     </SafeAreaView>
@@ -439,4 +442,5 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   logoutText: { ...Typography.label, color: Colors.nok },
+  versao: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'center', marginTop: Spacing.lg },
 });

@@ -11,7 +11,7 @@
     "build:android:dev": "eas build --profile development --platform android",
     "build:android:preview": "eas build --profile preview --platform android",
     "update:preview": "eas update --branch preview",
-    "build:web": "node scripts/copy-powersync-assets.mjs && expo export --platform web && node scripts/build-sw.mjs",
+    "build:web": "node scripts/copy-powersync-assets.mjs && expo export --platform web --clear && node scripts/build-sw.mjs",
     "serve:web": "npx serve dist",
     "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
     "test": "tsx --test \"lib/**/*.test.ts\"",

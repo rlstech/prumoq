@@ -48,6 +48,17 @@ for (const rel of arquivos) {
   hash.update(rel).update('\0').update(conteudo);
 }
 const versao = hash.digest('hex').slice(0, 16);
+
+// Identificação da versão dentro do próprio index.html (lida por lib/versao.ts e mostrada no Perfil): é sempre a
+// versão que está rodando, inclusive offline. Gravada depois do hash; refazer o script substitui a anterior.
+const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8'));
+const geradoEm = new Date().toLocaleString('pt-BR', {
+  timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+});
+const meta = `<meta name="prumoq-versao" content="${pkg.version} · ${versao.slice(0, 8)} · ${geradoEm}">`;
+const indexPath = join(dist, 'index.html');
+const indexHtml = readFileSync(indexPath, 'utf8').replace(/<meta name="prumoq-versao"[^>]*>/, '');
+writeFileSync(indexPath, indexHtml.replace('<head>', `<head>${meta}`));
 // index.html é guardado como `/`: o servidor de arquivos do Worker redireciona /index.html para /, e uma
 // resposta de redirecionamento não pode responder a uma navegação.
 const urls = arquivos.map((rel) => (rel === 'index.html' ? '/' : encodeURI(`/${rel}`)));

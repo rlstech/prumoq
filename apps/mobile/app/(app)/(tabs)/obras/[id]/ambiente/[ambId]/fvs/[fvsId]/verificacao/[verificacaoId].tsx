@@ -55,6 +55,7 @@ import {
 } from '../../../../../../../../../../lib/constants';
 import { goBack } from '../../../../../../../../../../lib/navigation';
 import { usePrivateMediaUris } from '../../../../../../../../../../hooks/usePrivateMediaUris';
+import { useEnvioPendente } from '../../../../../../../../../../hooks/useEnvioPendente';
 import {
   formatDateOnly,
   formatDateTime,
@@ -307,6 +308,8 @@ export default function VerificationDetailScreen() {
     () => reinspectionPhotos.map(photo => photo.key),
     [reinspectionPhotos],
   );
+  // Na fila de envio do aparelho (a própria verificação, itens, fotos ou NCs dela).
+  const envioPendente = useEnvioPendente(verificacaoId);
   const pendingMediaCount = useMemo(() => {
     const photoKeys = [
       ...generalPhotoKeys,
@@ -377,7 +380,7 @@ export default function VerificationDetailScreen() {
 
   const registeredAt = formatDateTime(verification.created_at);
   const signedAt = formatDateTime(verification.assinada_em);
-  const isPendingSync = verification.created_offline === 1 || verification.created_offline === true;
+  const isPendingSync = envioPendente;
 
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
