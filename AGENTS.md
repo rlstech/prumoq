@@ -134,6 +134,9 @@ cd apps/admin && npx wrangler deploy         # depois de `pnpm build:admin`
 # Segredos (nunca em arquivo): npx wrangler secret put <NOME>
 # Dev local do admin com a API: npx wrangler dev --port 8788 --var CLERK_SECRET_KEY:... --var NEON_DATA_API_URL:...
 ```
+Domínio (teste): `https://prumoq.railton.eu.org` — rota `prumoq.railton.eu.org/*` no `prumoq-pwa` e
+`prumoq.railton.eu.org/admin*` no `prumoq-admin` (a mais específica vence). Mesma origem: o admin usa
+`/api/media/presign` do PWA (`VITE_MEDIA_API_URL` vazio) e o `public/sw.js` do PWA não pode interceptar `/admin`.
 O deploy automático (`.github/workflows/deploy.yml`) publica os dois Workers a cada push no `main`.
 
 ### Banco (Neon)

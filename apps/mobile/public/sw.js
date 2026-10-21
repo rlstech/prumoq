@@ -49,8 +49,10 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  // /api/: dados; /sw.js: o próprio service worker, que precisa sempre vir do servidor.
+  // /api/: dados; /sw.js: o próprio service worker, que precisa sempre vir do servidor;
+  // /admin: painel admin, outro app servido por outro Worker no mesmo domínio.
   if (url.pathname.startsWith('/api/') || url.pathname === '/sw.js') return;
+  if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {

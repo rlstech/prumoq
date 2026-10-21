@@ -6,7 +6,7 @@ name: Build & Deploy
 # Configurar no GitHub (Settings → Secrets and variables → Actions):
 #   Secrets:   CLOUDFLARE_API_TOKEN (permissão "Workers Scripts: Edit"), CLOUDFLARE_ACCOUNT_ID
 #   Variables: EXPO_PUBLIC_POWERSYNC_URL, EXPO_PUBLIC_NEON_DATA_API_URL, EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
-#              VITE_NEON_DATA_API_URL, VITE_CLERK_PUBLISHABLE_KEY, VITE_PWA_URL
+#              VITE_NEON_DATA_API_URL, VITE_CLERK_PUBLISHABLE_KEY, VITE_PWA_URL  (ex.: https://prumoq.railton.eu.org)
 # Os segredos dos Workers (R2, Clerk, Neon) ficam no Cloudflare (`wrangler secret put`), não aqui.
 
 on:

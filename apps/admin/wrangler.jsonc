@@ -12,5 +12,9 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/admin/api/*"]
   },
+  // Mesmo domínio do PWA (rota prumoq.railton.eu.org/* no prumoq-pwa); esta rota, mais específica, fica com /admin*.
+  // A rota de mídia (/api/media/presign) fica no Worker do PWA, na mesma origem.
+  "routes": [{ "pattern": "prumoq.railton.eu.org/admin*", "zone_name": "railton.eu.org" }],
+  "workers_dev": false,
   "observability": { "enabled": true }
 }

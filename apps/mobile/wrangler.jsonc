@@ -11,6 +11,11 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
+  // Domínio próprio: o PWA atende o domínio inteiro; /admin* vai para o Worker prumoq-admin
+  // (rota em apps/admin/wrangler.jsonc; a rota mais específica vence). São rotas, não "custom domain",
+  // porque o hostname já tem um registro DNS (proxied) do servidor antigo; a rota roda antes da origem.
+  "routes": [{ "pattern": "prumoq.railton.eu.org/*", "zone_name": "railton.eu.org" }],
+  "workers_dev": true,
   "vars": {
     "R2_BUCKET_NAME": "prumoq"
   },
