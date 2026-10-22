@@ -188,10 +188,10 @@ const styles = StyleSheet.create({
   icon: {
     width: 32,
     height: 32,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.brandLight,
-    borderWidth: 1,
-    borderColor: Colors.brandSignature,
+    borderWidth: BorderWidth.card,
+    borderColor: Colors.text,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,

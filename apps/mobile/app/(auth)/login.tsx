@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMark } from '../../components/BrandMark';
+import { BrandWordmark } from '../../components/BrandWordmark';
 import { Button, ErrorBanner, Field } from '../../components/ui';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 import { confirmarCodigo, entrarComSenha, mensagemDoErro, type ResultadoEtapa } from '../../lib/auth/fluxo-login';
@@ -23,6 +24,7 @@ import {
   Elevation,
   FontFamily,
   FontSizes,
+  Palette,
   Radius,
   Spacing,
   Typography,
@@ -110,7 +112,7 @@ export default function LoginScreen() {
             <View style={[styles.hero, isTablet && styles.heroTablet]}>
               <View style={styles.brand}>
                 <BrandMark size={38} variant="onBrand" />
-                <Text style={styles.logo}>PrumoQ</Text>
+                <BrandWordmark fontSize={28} variant="onBrand" />
               </View>
               <View style={styles.heroCopy}>
                 <View style={styles.heroIcon}>
@@ -270,18 +272,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  logo: {
-    color: Colors.surface,
-    fontFamily: FontFamily.bold,
-    fontSize: FontSizes.xxl,
-    letterSpacing: -0.6,
-  },
   heroCopy: { gap: Spacing.sm, maxWidth: 500 },
   heroIcon: {
     width: 58,
     height: 58,
-    borderRadius: Radius.lg,
-    backgroundColor: 'rgba(216,229,104,0.12)',
+    borderRadius: Radius.xs,
+    borderWidth: BorderWidth.card,
+    borderColor: Palette.onBrandLine,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
@@ -293,10 +290,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
   },
   heroTitle: {
-    fontFamily: FontFamily.bold,
-    fontSize: 34,
+    fontFamily: FontFamily.display,
+    fontSize: 38,
     lineHeight: 40,
-    letterSpacing: -0.9,
+    letterSpacing: 0,
     color: Colors.surface,
   },
   heroDescription: {
@@ -309,8 +306,9 @@ const styles = StyleSheet.create({
   trustIcon: {
     width: 34,
     height: 34,
-    borderRadius: Radius.md,
-    backgroundColor: 'rgba(216,229,104,0.10)',
+    borderRadius: Radius.xs,
+    borderWidth: BorderWidth.card,
+    borderColor: Palette.onBrandLine,
     alignItems: 'center',
     justifyContent: 'center',
   },

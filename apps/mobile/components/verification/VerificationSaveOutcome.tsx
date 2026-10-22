@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   radioSelected: {
-    borderColor: Colors.brandSignature,
-    backgroundColor: Colors.brandSignature,
+    borderColor: Colors.text,
+    backgroundColor: Colors.text,
   },
 });

@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
   stateIcon: {
     width: 56,
     height: 56,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.warnBg,
     alignItems: 'center',
     justifyContent: 'center',
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
   metricIcon: {
     width: 36,
     height: 36,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
   identityIcon: {
     width: 40,
     height: 40,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.brandLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
   itemOrder: {
     width: 32,
     height: 32,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1109,7 +1109,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.okBg,
   },
   signedBadgeText: {

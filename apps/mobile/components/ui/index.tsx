@@ -1678,7 +1678,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: Radius.md,
   },
-  calendarDayToday: { borderWidth: 1, borderColor: Colors.brandSignature },
+  calendarDayToday: { borderWidth: BorderWidth.card, borderColor: Colors.text },
   calendarDaySelected: { backgroundColor: Colors.brand },
   calendarDayPressed: { backgroundColor: Colors.brandLight },
   calendarDayDisabled: { opacity: 0.35 },
@@ -1700,7 +1700,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  selectTriggerSelected: { borderColor: Colors.brandSignature, backgroundColor: Colors.brandLight },
+  selectTriggerSelected: { borderColor: Colors.text, backgroundColor: Colors.brandLight },
   // A locked value is data, not a control: it drops the lime datum and the
   // affordances so it stops competing with the fields the user can still set.
   selectTriggerLocked: { backgroundColor: Colors.surface2, borderColor: Colors.border },
@@ -1718,7 +1718,7 @@ const styles = StyleSheet.create({
   selectIcon: {
     width: 32,
     height: 32,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.surface,
@@ -1803,7 +1803,7 @@ const styles = StyleSheet.create({
   chip: {
     minHeight: ComponentSize.touch,
     paddingHorizontal: Spacing.md,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
@@ -1812,7 +1812,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  chipSelected: { backgroundColor: Colors.brandLight, borderColor: Colors.brandSignature },
+  chipSelected: { backgroundColor: Colors.brandLight, borderColor: Colors.text },
   chipText: { ...Typography.caption, color: Colors.textSecondary, fontFamily: FontFamily.medium },
   chipTextSelected: { color: Colors.brand, fontFamily: FontFamily.semibold },
   stepper: {
@@ -1914,7 +1914,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     minHeight: 28,
     paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',

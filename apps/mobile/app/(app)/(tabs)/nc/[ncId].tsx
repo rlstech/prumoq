@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.surface2,
     paddingHorizontal: Spacing.md,
   },

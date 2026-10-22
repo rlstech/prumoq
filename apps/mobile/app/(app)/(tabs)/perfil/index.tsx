@@ -309,15 +309,14 @@ const s = StyleSheet.create({
   avatar: {
     width: 64,
     height: 64,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.brandLight,
-    borderWidth: 1,
-    borderColor: Colors.brandSignature,
+    borderRadius: Radius.xs,
+    // Avatar quadrado em amarelo trena, igual ao da tela de Início.
+    backgroundColor: Colors.brandSignature,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.xs,
   },
-  avatarText: { color: Colors.brand, fontSize: 22, fontFamily: FontFamily.bold },
+  avatarText: { color: Colors.text, fontSize: 22, fontFamily: FontFamily.monoBold },
   heroName:   { color: Colors.text, fontSize: FontSizes.xl, fontFamily: FontFamily.bold },
   heroRole:   { color: Colors.textSecondary, fontSize: FontSizes.sm, fontFamily: FontFamily.regular },
 
@@ -413,7 +412,7 @@ const s = StyleSheet.create({
   obraCardRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   obraNome:     { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text, flex: 1, marginRight: 8 },
   obraLocation: { fontSize: FontSizes.sm, color: Colors.textSecondary, marginTop: 2 },
-  ativoBadge:   { backgroundColor: Colors.progressBg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.full },
+  ativoBadge:   { backgroundColor: Colors.progressBg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.xs },
   ativoText:    { fontSize: FontSizes.tiny - 1, fontWeight: '500', color: Colors.progress },
 
   // Account actions
