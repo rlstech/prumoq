@@ -1,4 +1,4 @@
-import { AlertCircle, Images } from 'lucide-react-native';
+import { AlertCircle, Images } from '../../lib/icons';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Badge, Button, Chip, Field, InlineDateField, ModalSheet, PhotoSlot } from '../ui';

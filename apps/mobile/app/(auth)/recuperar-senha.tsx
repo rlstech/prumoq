@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { KeyRound, Mail } from 'lucide-react-native';
+import { KeyRound, Mail } from '../../lib/icons';
 import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,

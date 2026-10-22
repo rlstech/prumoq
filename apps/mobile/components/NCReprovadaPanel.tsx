@@ -1,4 +1,4 @@
-import { Camera, XCircle } from 'lucide-react-native';
+import { Camera, XCircle } from '../lib/icons';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';

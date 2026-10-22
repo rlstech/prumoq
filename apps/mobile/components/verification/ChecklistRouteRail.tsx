@@ -1,4 +1,4 @@
-import { AlertCircle, Check, Circle, ListChecks } from 'lucide-react-native';
+import { AlertCircle, Check, Circle, ListChecks } from '../../lib/icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../lib/constants';
 import { getRoutePriorityId, type ItemRow, type NcAbertaRow, type Resultado } from './types';

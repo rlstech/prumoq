@@ -19,7 +19,7 @@ import {
   UserRound,
   UsersRound,
   Wrench,
-} from 'lucide-react-native';
+} from '../../../../lib/icons';
 import { useMemo, useState } from 'react';
 import {
   Pressable,

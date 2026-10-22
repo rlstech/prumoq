@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { ClipboardCheck, HardHat, ShieldCheck, WifiOff } from 'lucide-react-native';
+import { ClipboardCheck, HardHat, ShieldCheck, WifiOff } from '../../lib/icons';
 import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,

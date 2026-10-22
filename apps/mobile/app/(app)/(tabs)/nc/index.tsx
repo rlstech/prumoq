@@ -10,7 +10,7 @@ import {
   Search,
   SlidersHorizontal,
   X,
-} from 'lucide-react-native';
+} from '../../../../lib/icons';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,

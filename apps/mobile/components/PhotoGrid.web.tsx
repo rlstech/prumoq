@@ -1,4 +1,4 @@
-import { Plus, X } from 'lucide-react-native';
+import { Plus, X } from '../lib/icons';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors, FontFamily, Radius, Spacing } from '../lib/constants';
 import { usePrivateMediaUris } from '../hooks/usePrivateMediaUris';

@@ -1,4 +1,4 @@
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft } from '../lib/icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   Breakpoints,

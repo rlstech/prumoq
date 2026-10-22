@@ -1,4 +1,4 @@
-import { AlertCircle, Check, ChevronDown, ChevronRight, ChevronUp, LockKeyhole, Search, UsersRound, X } from 'lucide-react-native';
+import { AlertCircle, Check, ChevronDown, ChevronRight, ChevronUp, LockKeyhole, Search, UsersRound, X } from '../../lib/icons';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {

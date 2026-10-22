@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, LockKeyhole, MinusCircle, XCircle } from 'lucide-react-native';
+import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, LockKeyhole, MinusCircle, XCircle } from '../../lib/icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Badge, ResultToggle } from '../ui';

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { KeyRound, ShieldCheck } from 'lucide-react-native';
+import { KeyRound, ShieldCheck } from '../../lib/icons';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,

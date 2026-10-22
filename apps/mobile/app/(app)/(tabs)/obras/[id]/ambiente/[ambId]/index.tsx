@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronRight, Layers3, Search, X } from 'lucide-react-native';
+import { ChevronRight, Layers3, Search, X } from '../../../../../../../lib/icons';
 import { useMemo, useState } from 'react';
 import {
   Pressable,

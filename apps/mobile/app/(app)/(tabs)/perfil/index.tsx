@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react';
 import { useRouter } from 'expo-router';
-import { Building2, Key, Mail, PenLine, Phone, RefreshCw, User } from 'lucide-react-native';
+import { Building2, Key, Mail, PenLine, Phone, RefreshCw, User } from '../../../../lib/icons';
 import { useMemo, useState } from 'react';
 import {
   ScrollView,

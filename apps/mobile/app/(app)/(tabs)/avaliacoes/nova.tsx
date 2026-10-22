@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Check, ClipboardCheck, LockKeyhole, PenLine } from 'lucide-react-native';
+import { Check, ClipboardCheck, LockKeyhole, PenLine } from '../../../../lib/icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,

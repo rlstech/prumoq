@@ -12,7 +12,7 @@ import {
   Plus,
   UserRound,
   WifiOff,
-} from 'lucide-react-native';
+} from '../../../../../../../../../lib/icons';
 import { AppHeader } from '../../../../../../../../../components/AppHeader';
 import { goBack } from '../../../../../../../../../lib/navigation';
 import { useMemo, useState } from 'react';

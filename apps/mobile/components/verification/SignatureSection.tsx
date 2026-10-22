@@ -1,4 +1,4 @@
-import { CheckCircle2, PenLine } from 'lucide-react-native';
+import { CheckCircle2, PenLine } from '../../lib/icons';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { DataRow } from '../ui';
 import { SignatureField } from '../SignatureField';

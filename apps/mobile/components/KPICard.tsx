@@ -1,11 +1,11 @@
-import { LucideIcon } from 'lucide-react-native';
+import { IconComponent } from '../lib/icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
 
 interface Props {
   label: string;
   value: number | string;
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
   color?: string;
   bgColor?: string;
   onPress?: () => void;

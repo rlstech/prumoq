@@ -1,5 +1,5 @@
 import { router, Tabs } from 'expo-router';
-import { AlertTriangle, Building2, ClipboardCheck, LayoutGrid, User } from 'lucide-react-native';
+import { AlertTriangle, Building2, ClipboardCheck, LayoutGrid, User } from '../../../lib/icons';
 import { StyleSheet } from 'react-native';
 import { useResponsiveLayout } from '../../../hooks/useResponsiveLayout';
 import {

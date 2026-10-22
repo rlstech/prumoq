@@ -1,4 +1,4 @@
-import { X } from 'lucide-react-native';
+import { X } from '../lib/icons';
 import { FlatList, Image, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Colors } from '../lib/constants';
 import { usePrivateMediaUris } from '../hooks/usePrivateMediaUris';

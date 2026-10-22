@@ -12,7 +12,7 @@ import {
   FileClock,
   Trash2,
   XCircle,
-} from 'lucide-react-native';
+} from '../../../lib/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

@@ -1,4 +1,4 @@
-import { AlertCircle, CalendarDays, Camera, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ListFilter, LockKeyhole, LucideIcon, MinusCircle, RefreshCw, Search, WifiOff, X, XCircle } from 'lucide-react-native';
+import { AlertCircle, CalendarDays, Camera, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ListFilter, LockKeyhole, IconComponent, MinusCircle, RefreshCw, Search, WifiOff, X, XCircle } from '../../lib/icons';
 import { ReactNode, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -341,7 +341,7 @@ export function Button({
 }: {
   label: string;
   onPress: () => void;
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
   variant?: ButtonVariant;
   disabled?: boolean;
   loading?: boolean;
@@ -397,7 +397,7 @@ export function IconButton({
 }: {
   label: string;
   onPress: () => void;
-  Icon: LucideIcon;
+  Icon: IconComponent;
   selected?: boolean;
   disabled?: boolean;
   accessibilityHint?: string;
@@ -646,7 +646,7 @@ export function SelectField({
   value: string;
   options: readonly SelectOption[];
   onChange: (id: string) => void;
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
   placeholder?: string;
   hint?: string;
   emptyText?: string;
@@ -861,7 +861,7 @@ export function SegmentedControl<T extends string>({
   accessibilityLabel,
 }: {
   value: T;
-  options: { value: T; label: string; Icon?: LucideIcon }[];
+  options: { value: T; label: string; Icon?: IconComponent }[];
   onChange: (value: T) => void;
   accessibilityLabel: string;
 }) {
@@ -905,7 +905,7 @@ export interface ChoiceToggleOption<T extends string> {
   tone: ChoiceToggleTone;
   accessibilityLabel?: string;
   /** Circle glyph: outline while unchosen, solid-filled once chosen. */
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
 }
 
 /**
@@ -1051,7 +1051,7 @@ export function Chip({
   label: string;
   selected?: boolean;
   onPress?: () => void;
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
 }) {
   const content = (
     <>
@@ -1169,7 +1169,7 @@ export function EmptyState({
 }: {
   title: string;
   description?: string;
-  Icon: LucideIcon;
+  Icon: IconComponent;
   actionLabel?: string;
   onAction?: () => void;
 }) {
@@ -1234,7 +1234,7 @@ export function Badge({
 }: {
   label: string;
   tone?: BadgeTone;
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
   size?: 'sm' | 'md';
   accessibilityLabel?: string;
 }) {
@@ -1414,7 +1414,7 @@ const progressPalette: Record<BadgeTone, string> = {
   info: Colors.info,
 };
 
-const syncConfig: Record<SyncState, { color: string; background: string; label: string; shortLabel: string; Icon: LucideIcon }> = {
+const syncConfig: Record<SyncState, { color: string; background: string; label: string; shortLabel: string; Icon: IconComponent }> = {
   synced: { color: Colors.ok, background: Colors.okBg, label: 'Sincronizado', shortLabel: 'Sincronizado', Icon: CheckCircle2 },
   syncing: { color: Colors.info, background: Colors.infoBg, label: 'Sincronizando…', shortLabel: 'Sincronizando\u2026', Icon: RefreshCw },
   offline: { color: Colors.warn, background: Colors.warnBg, label: 'Offline — salvo neste dispositivo', shortLabel: 'Offline', Icon: WifiOff },
@@ -1438,7 +1438,7 @@ Object.assign(syncConfig, {
   error: { color: Colors.nok, background: Colors.nokBg, label: 'Falha na sincroniza\u00e7\u00e3o', shortLabel: 'Falha', Icon: AlertCircle },
 });
 
-const toastPalette: Record<ToastTone, { color: string; background: string; border: string; Icon: LucideIcon }> = {
+const toastPalette: Record<ToastTone, { color: string; background: string; border: string; Icon: IconComponent }> = {
   neutral: { color: Colors.text, background: Colors.surface, border: Colors.border, Icon: AlertCircle },
   success: { color: Colors.ok, background: Colors.okBg, border: Colors.ok, Icon: CheckCircle2 },
   danger: { color: Colors.nok, background: Colors.nokBg, border: Colors.nok, Icon: AlertCircle },

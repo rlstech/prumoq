@@ -1,6 +1,6 @@
 import { useQuery } from '@powersync/react';
 import { useRouter } from 'expo-router';
-import { ChevronRight, ClipboardCheck, FileDown, Plus } from 'lucide-react-native';
+import { ChevronRight, ClipboardCheck, FileDown, Plus } from '../../../../lib/icons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';

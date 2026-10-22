@@ -1,4 +1,4 @@
-import { CircleAlert, Landmark } from 'lucide-react-native';
+import { CircleAlert, Landmark } from '../../lib/icons';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NcFinancialDeclaration, NcMeasurementBlock } from '../../lib/nc-finance';

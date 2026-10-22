@@ -6,7 +6,7 @@ import {
   Printer,
   RotateCcw,
   UserRound,
-} from 'lucide-react-native';
+} from '../lib/icons';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Badge, Button, DatumCard } from './ui';
 import { Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../lib/constants';

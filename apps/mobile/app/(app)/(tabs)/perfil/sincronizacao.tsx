@@ -1,6 +1,6 @@
 import { useQuery, useStatus } from '@powersync/react';
 import { useRouter } from 'expo-router';
-import { AlertTriangle, CheckCircle2, RefreshCw, Trash2, WifiOff } from 'lucide-react-native';
+import { AlertTriangle, CheckCircle2, RefreshCw, Trash2, WifiOff } from '../../../../lib/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

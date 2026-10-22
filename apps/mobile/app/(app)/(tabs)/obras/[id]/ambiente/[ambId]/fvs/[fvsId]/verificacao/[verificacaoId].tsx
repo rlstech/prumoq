@@ -16,7 +16,7 @@ import {
   UserRound,
   UsersRound,
   XCircle,
-} from 'lucide-react-native';
+} from '../../../../../../../../../../lib/icons';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,

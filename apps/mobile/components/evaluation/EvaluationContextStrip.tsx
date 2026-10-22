@@ -6,7 +6,7 @@ import {
   ClipboardList,
   HardHat,
   LockKeyhole,
-} from 'lucide-react-native';
+} from '../../lib/icons';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Badge, InlineDateField, SelectField, SelectOption } from '../ui';
