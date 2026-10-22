@@ -1,4 +1,116 @@
-# PrumoQ — Design System “Prumo Mineral”
+# PrumoQ — Design System
+
+O PrumoQ tem duas identidades visuais, com tokens no mesmo pacote
+(`packages/design-system`):
+
+| App | Identidade | Tokens |
+|---|---|---|
+| PWA de campo (`apps/mobile`) | **Trena** (desde out/2026) | `trenaPalette`, `trenaColors`, `trenaRadius`, `trenaBorder`, `faceSymbolGeometry` |
+| Painel admin (`apps/admin`) | **Prumo Mineral** (a migrar) | `mineralPalette`, `mineralColors`, `mineralRadius`, `prumoSymbolGeometry`, `tokens.css` |
+
+A seção Trena vem primeiro. A partir de "Prumo Mineral (admin)", o texto vale
+para o painel; as seções de layout e acessibilidade valem para os dois.
+
+# Trena (PWA)
+
+## Conceito
+
+Ferramenta de obra, não SaaS genérico. A referência é o que o inspetor carrega
+no canteiro: trena amarela, nível, régua e o **prumo de face** (taco e peso
+cilíndrico com a mesma largura). O app é usado sob sol, com luva e pressa, então
+a prioridade é contraste máximo e alvos grandes.
+
+- Grafite e amarelo de trena; fundo cinza-concreto e cards brancos.
+- Bordas no lugar de sombras; cantos quase retos (3–6px).
+- Números em fonte mono, grandes.
+- Amarelo é escasso: ação principal, item ativo, destaque. Texto sobre amarelo
+  é sempre grafite.
+
+## Cores
+
+| Token (`trenaPalette`) | Valor | Uso |
+|---|---:|---|
+| `graphite` | `#1C1F22` | Marca, cabeçalho, menu inferior, texto principal |
+| `tapeYellow` | `#FFC21A` | Ação principal, item ativo, foco, peso do logo |
+| `tapeYellowSoft` | `#FFF3CC` | Fundo de seleção |
+| `concrete` | `#ECEAE6` | Canvas |
+| `white` | `#FFFFFF` | Cards e formulários |
+| `steel` | `#5B6168` | Texto secundário |
+| `joint` | `#CFCBC3` | Bordas e divisores |
+| `graphiteLine` | `#3A3F44` | Bordas sobre o grafite |
+| `steelLight` | `#B9BEC3` | Texto secundário sobre o grafite |
+
+| Estado | Principal | Fundo |
+|---|---:|---:|
+| Conforme | `#1F7A3A` | `#E6F2E9` |
+| Não conforme | `#C8281E` | `#FBE9E7` |
+| Atenção | `#B85400` | `#FFF0E0` |
+| Sync/informação | `#2459A8` | `#E7EEF8` |
+| Sincronizado sobre o grafite | `#4CC06E` | — |
+
+No código do PWA, use `Palette`/`Colors` de `apps/mobile/lib/constants.ts`
+(`Palette.accent`, `Palette.onAccent`, `Palette.onBrandLine`, `Palette.onBrandMuted`,
+`Palette.successOnBrand`). `Colors.brandSignature` é o amarelo: não usar como texto
+ou borda sobre fundo claro (contraste baixo); para seleção sobre branco, borda
+grafite (`Colors.text`).
+
+## Tipografia
+
+Fontes empacotadas no app (`lib/theme/ThemeProvider.tsx`, `@expo-google-fonts`):
+
+- **Barlow Condensed** 600/700 (`FontFamily.display`): títulos, botões, rótulos
+  de seção, nomes de obra. Botões e rótulos em caixa alta.
+- **Barlow** 400–700: texto.
+- **JetBrains Mono** 500–700 (`FontFamily.mono*`): números, percentuais, prazos,
+  códigos.
+
+Estilos em `Typography`: `displayCaps` (saudação, títulos em caixa alta),
+`metric` (números de destaque), `button`, `overline`.
+
+## Forma
+
+- Raios (`Radius`): `xs`/`sm` 3px (controles, etiquetas, avatares), `md`/`lg`
+  4px (cards), `xl` 6px (menu inferior, superfícies grandes). Círculo só para
+  pontos de status, rádio e botões sobre foto.
+- Bordas (`BorderWidth`): 1,5px em cards e controles. Sem sombra em card
+  (`Elevation.card` é nula); sombra só no que flutua.
+- Botão principal: 52px de altura.
+
+## Ícones
+
+Sempre de `apps/mobile/lib/icons.tsx`, nunca direto de `lucide-react-native`.
+Os mais visíveis são desenhados para o app (traço reto, cantos vivos, capacete
+no Perfil); os demais vêm do Lucide com traço 2,3 e pontas retas. Mesma API do
+Lucide. Ícone novo: adicione o nome ali.
+
+## Marca: Q de face
+
+O Q do nome com a perninha trocada por um prumo de face pendurado: cordão, taco
+deitado e peso cilíndrico de fundo reto, **com a mesma largura do taco** (é o que
+identifica a ferramenta; o de ponta cônica é o prumo de centro). Q, cordão e taco
+na cor da tinta; peso sempre amarelo; frisos do peso só a partir de 40px.
+
+- Geometria: `faceSymbolGeometry` (grade de 64).
+- Componentes: `BrandMark` e `BrandWordmark` ("PRUMOQ", Q amarelo sobre o grafite).
+- SVG: `packages/design-system/assets/prumoq-face.svg` (ladrilho) e
+  `prumoq-face-mark.svg` (sem fundo).
+- Ícones do app e favicon: `corepack pnpm brand:assets`
+  (`apps/mobile/scripts/generate-brand-assets.mjs`, sem dependências; repete a
+  geometria, então mude os dois juntos).
+
+## Componentes de assinatura
+
+- **Capa do Início** (`DashboardCanopy`): grafite chapado, régua na borda de
+  baixo, prumo de face pendurado à direita.
+- **Anel de conformidade** (`ConformityRing`): mostrador com arco amarelo e marcas
+  a cada 5%.
+- **Trena** (`ProgressBar`): fundo branco com borda grafite, preenchimento amarelo
+  (verde quando 100%) e marcas a cada 5%/10%.
+- **Etiquetas** (`StatusBadge`, prazos): retas, ponto quadrado, caixa alta. Prazo
+  vencido em vermelho cheio, até 3 dias em amarelo, depois só contorno.
+- **Menu inferior**: grafite, bloco amarelo atrás do ícone ativo.
+
+# Prumo Mineral (admin)
 
 ## Conceito
 
@@ -145,11 +257,13 @@ aparecem inline e também em resumos navegáveis para formulários longos.
 No admin, formulários simples abrem em side sheet. Modais centrais ficam
 reservados a confirmação, visualização ampla e fluxos concentrados.
 
+# Layout e acessibilidade (os dois apps)
+
 ## Layout mobile/PWA
 
-- Header claro com marca, contexto e sincronização.
+- Header com marca, contexto e sincronização (no Início, a capa grafite).
 - Navegação inferior escura e compacta; em tablet vira rail.
-- Canvas Calcário com conteúdo máximo de `1440px` no PWA.
+- Canvas com conteúdo máximo de `1440px` no PWA.
 - Dashboard ordena: Hoje, ações necessárias, obras e atividade.
 - Busca e filtros principais aparecem juntos; filtros avançados usam sheet.
 - Nova Verificação usa duas etapas: Vistoria (contexto + checklist) e Fechamento (evidências, resultado, assinatura).

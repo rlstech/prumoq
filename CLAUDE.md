@@ -23,7 +23,7 @@ prumoq/
   apps/mobile/       ← PWA: Expo 52 (web) + Expo Router + PowerSync Web + Clerk; Worker em worker/ (rota de mídia R2)
   apps/admin/        ← Painel admin: Vite + React 19 + React Router (SPA em /admin) + Worker em worker/ (contas no Clerk)
   packages/shared/   ← tipos TypeScript (Database) + enums + renderer do relatório de FVS
-  packages/design-system/ ← tokens e paleta "Prumo Mineral"
+  packages/design-system/ ← tokens: "Trena" (PWA) e "Prumo Mineral" (admin); símbolos da marca
   neon/              ← baseline do schema (extraído do Supabase) + patch Clerk/PowerSync (`baseline/supabase.sql`)
   powersync/         ← configuração do PowerSync Cloud (service.yaml, sync-config.yaml)
   supabase/          ← migrations históricas (referência; o schema atual é raw/ + supabase.sql)
@@ -261,21 +261,29 @@ Veja `.env.example`. Arquivos `.env.local` só com valores públicos; segredos n
 
 ## Design
 
-**O sistema “Prumo Mineral” em `design-system.md` e `packages/design-system/` é
-a referência visual definitiva.** Os protótipos HTML em `references/` continuam
-válidos para conteúdo e fluxos, não para cores, tipografia ou shell.
+**`design-system.md` e `packages/design-system/` são a referência visual definitiva.**
+São duas identidades: **Trena** no PWA (grafite + amarelo de trena, logo "Q de face") e
+**Prumo Mineral** no admin (azul prumo + cal viva), que ainda não migrou. Os protótipos
+HTML em `references/` continuam válidos para conteúdo e fluxos, não para cores,
+tipografia ou shell.
 
 Ao implementar qualquer tela:
 1. Consulte o fluxo no HTML de referência correspondente (`prumoq_mobile_inspector.html` para mobile, `fvs_admin_prumoq.html` para web)
-2. Use os tokens de `packages/design-system/` e os padrões de `design-system.md`
-3. Reproduza a linguagem Prumo Mineral usando os componentes canônicos
-4. Use Lucide React/React Native para ícones (não emoji)
+2. Use os tokens de `packages/design-system/` (via `apps/mobile/lib/constants.ts` no PWA) e os padrões de `design-system.md`
+3. Use os componentes canônicos de cada app
+4. Ícones: no PWA, sempre de `apps/mobile/lib/icons.tsx` (nunca direto de `lucide-react-native`); no admin, Lucide React. Nada de emoji
+5. PWA: texto sobre o amarelo é sempre grafite (`Palette.onAccent`); não usar o amarelo como texto ou borda sobre fundo claro
 
-Cores principais para consulta rápida (também em `apps/mobile/lib/constants.ts` e `apps/admin/tailwind.config.ts`):
+Cores principais do PWA (Trena; `trenaPalette`):
+- Brand / Grafite: `#1C1F22`
+- Accent / Amarelo Trena: `#FFC21A`
+- Canvas / Concreto: `#ECEAE6`
+- OK/Conforme: `#1F7A3A`
+- NOK/Não conforme: `#C8281E`
+- Sync/Em andamento: `#2459A8`
+- Warn/Prazo: `#B85400`
+
+Cores principais do admin (Prumo Mineral; `apps/admin/tailwind.config.ts`):
 - Brand / Azul Prumo: `#163B50`
 - Accent / Cal Viva: `#D8E568`
 - Canvas / Calcário: `#F4F1E8`
-- OK/Conforme: `#2E7D32`
-- NOK/Não conforme: `#C62828`
-- Progress/Em andamento: `#1565C0`
-- Warn/Prazo: `#E65100`
