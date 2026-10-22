@@ -1,43 +1,52 @@
 import {
   mineralBreakpoints,
-  mineralColors,
   mineralMotion,
-  mineralPalette,
-  mineralRadius,
+  trenaBorder,
+  trenaColors,
+  trenaPalette,
+  trenaRadius,
 } from '@prumoq/design-system';
 
-/** Native adapter for the shared Prumo Mineral design system. */
+/** Adaptador do PWA para a identidade Trena (packages/design-system). */
 export const Palette = {
-  brand: mineralColors.brand,
-  action: mineralColors.brand,
-  actionPressed: mineralColors.brandPressed,
-  actionSoft: mineralColors.accentSoft,
+  brand: trenaColors.brand,
+  action: trenaColors.brand,
+  actionPressed: trenaColors.brandPressed,
+  actionSoft: trenaColors.accentSoft,
 
-  ink: mineralColors.text,
-  inkSecondary: mineralColors.textSecondary,
-  inkTertiary: mineralColors.textMuted,
+  ink: trenaColors.text,
+  inkSecondary: trenaColors.textSecondary,
+  inkTertiary: trenaColors.textMuted,
 
-  canvas: mineralColors.canvas,
-  surface: mineralColors.surface,
-  surfaceMuted: mineralColors.surfaceSecondary,
-  border: mineralColors.border,
-  borderStrong: mineralColors.borderStrong,
+  canvas: trenaColors.canvas,
+  surface: trenaColors.surface,
+  surfaceMuted: trenaColors.surfaceSecondary,
+  border: trenaColors.border,
+  borderStrong: trenaColors.borderStrong,
 
-  success: mineralColors.success,
-  successSoft: mineralColors.successSoft,
-  danger: mineralColors.danger,
-  dangerSoft: mineralColors.dangerSoft,
-  warning: mineralColors.warning,
-  warningSoft: mineralColors.warningSoft,
-  info: mineralColors.info,
-  infoSoft: mineralColors.infoSoft,
-  neutral: mineralColors.neutral,
-  neutralSoft: mineralColors.neutralSoft,
+  success: trenaColors.success,
+  successSoft: trenaColors.successSoft,
+  danger: trenaColors.danger,
+  dangerSoft: trenaColors.dangerSoft,
+  warning: trenaColors.warning,
+  warningSoft: trenaColors.warningSoft,
+  info: trenaColors.info,
+  infoSoft: trenaColors.infoSoft,
+  neutral: trenaColors.neutral,
+  neutralSoft: trenaColors.neutralSoft,
 
-  white: mineralPalette.white,
-  black: mineralPalette.black,
-  focus: mineralColors.focus,
-  overlay: mineralColors.overlay,
+  white: trenaPalette.white,
+  black: trenaPalette.black,
+  focus: trenaColors.focus,
+  overlay: trenaColors.overlay,
+
+  /** Amarelo trena: só ação principal, item ativo e destaque. Texto sobre ele é sempre grafite. */
+  accent: trenaColors.accent,
+  accentPressed: trenaPalette.tapeYellowPressed,
+  onAccent: trenaPalette.graphite,
+  /** Linhas e texto secundário sobre o grafite (cabeçalho, menu inferior). */
+  onBrandLine: trenaPalette.graphiteLine,
+  onBrandMuted: trenaPalette.steelLight,
 } as const;
 
 /** A named colour from the semantic palette. Prefer these tokens to literals
@@ -47,7 +56,7 @@ export type ColorToken = keyof typeof Palette;
 
 export const Colors = {
   brand: Palette.action,
-  brandSignature: mineralColors.accent,
+  brandSignature: trenaColors.accent,
   action: Palette.action,
   actionPressed: Palette.actionPressed,
   actionSoft: Palette.actionSoft,
@@ -57,7 +66,7 @@ export const Colors = {
 
   ok: Palette.success,
   okBg: Palette.successSoft,
-  okMid: mineralColors.success,
+  okMid: trenaColors.success,
   nok: Palette.danger,
   nokBg: Palette.dangerSoft,
   progress: Palette.info,
@@ -109,12 +118,12 @@ export const SemanticColors = {
 } as const;
 
 export const Radius = {
-  xs: mineralRadius.control,
-  sm: mineralRadius.control,
-  md: mineralRadius.card,
-  lg: mineralRadius.card,
-  xl: mineralRadius.feature,
-  full: mineralRadius.full,
+  xs: trenaRadius.control,
+  sm: trenaRadius.control,
+  md: trenaRadius.card,
+  lg: trenaRadius.card,
+  xl: trenaRadius.feature,
+  full: trenaRadius.full,
 } as const;
 
 export const Spacing = {
@@ -171,13 +180,21 @@ export const Typography = {
   },
 } as const;
 
+/** Espessura das bordas: na identidade Trena os cards se separam por borda, não por sombra. */
+export const BorderWidth = {
+  hairline: trenaBorder.hairline,
+  card: trenaBorder.card,
+  control: trenaBorder.control,
+} as const;
+
 export const Elevation = {
+  /** Sem sombra: o card se destaca pela borda (BorderWidth.card). */
   card: {
     shadowColor: Palette.ink,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   floating: {
     shadowColor: Palette.ink,

@@ -8,7 +8,7 @@ import {
   InlineDateField,
   ModalSheet,
 } from '../ui';
-import { Colors, ComponentSize, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../lib/constants';
+import { Colors, ComponentSize, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography, BorderWidth } from '../../lib/constants';
 import { EquipeRow, getInitials } from './types';
 
 interface Props {
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     ...Elevation.card,
   },

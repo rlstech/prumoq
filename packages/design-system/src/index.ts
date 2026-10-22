@@ -132,7 +132,95 @@ export const prumoSymbolGeometry = {
   visualBounds: { top: 6.15, bottom: 28.7, left: 8.95, right: 23.05 },
 } as const;
 
+/**
+ * Trena — identidade do PWA de campo.
+ *
+ * Grafite e amarelo de trena: o máximo de contraste para ler sob sol. O admin
+ * continua no Prumo Mineral; as chaves de `trenaColors` espelham as de
+ * `mineralColors` para que o adaptador de cada app troque uma pela outra.
+ */
+export const trenaPalette = {
+  graphite: '#1C1F22',
+  graphiteDeep: '#141618',
+  graphitePressed: '#0F1112',
+  graphiteLine: '#3A3F44',
+  tapeYellow: '#FFC21A',
+  tapeYellowPressed: '#E6AC00',
+  tapeYellowSoft: '#FFF3CC',
+
+  steel: '#5B6168',
+  steelMuted: '#6B7178',
+  steelLight: '#B9BEC3',
+
+  concrete: '#ECEAE6',
+  concreteDeep: '#E3E0DA',
+  white: '#FFFFFF',
+  joint: '#CFCBC3',
+  jointStrong: '#9C978E',
+
+  success: '#1F7A3A',
+  successSoft: '#E6F2E9',
+  danger: '#C8281E',
+  dangerSoft: '#FBE9E7',
+  warning: '#B85400',
+  warningSoft: '#FFF0E0',
+  info: '#2459A8',
+  infoSoft: '#E7EEF8',
+  neutral: '#5B6168',
+  neutralSoft: '#E9E8E4',
+
+  black: '#000000',
+  overlay: 'rgba(28, 31, 34, 0.62)',
+} as const;
+
+export const trenaColors = {
+  brand: trenaPalette.graphite,
+  brandDeep: trenaPalette.graphiteDeep,
+  brandPressed: trenaPalette.graphitePressed,
+  accent: trenaPalette.tapeYellow,
+  accentSoft: trenaPalette.tapeYellowSoft,
+
+  canvas: trenaPalette.concrete,
+  surface: trenaPalette.white,
+  surfaceSecondary: trenaPalette.concreteDeep,
+  border: trenaPalette.joint,
+  borderStrong: trenaPalette.jointStrong,
+
+  text: trenaPalette.graphite,
+  textSecondary: trenaPalette.steel,
+  textMuted: trenaPalette.steelMuted,
+
+  success: trenaPalette.success,
+  successSoft: trenaPalette.successSoft,
+  danger: trenaPalette.danger,
+  dangerSoft: trenaPalette.dangerSoft,
+  warning: trenaPalette.warning,
+  warningSoft: trenaPalette.warningSoft,
+  info: trenaPalette.info,
+  infoSoft: trenaPalette.infoSoft,
+  neutral: trenaPalette.neutral,
+  neutralSoft: trenaPalette.neutralSoft,
+  focus: trenaPalette.tapeYellow,
+  overlay: trenaPalette.overlay,
+} as const satisfies Record<keyof typeof mineralColors, string>;
+
+/** Cantos quase retos: bordas no lugar de sombras. */
+export const trenaRadius = {
+  control: 3,
+  card: 4,
+  feature: 6,
+  full: 9999,
+} as const;
+
+/** Espessura das bordas de cards e controles. */
+export const trenaBorder = {
+  hairline: 1,
+  card: 1.5,
+  control: 2,
+} as const;
+
 export type MineralColorToken = keyof typeof mineralColors;
+export type TrenaColorToken = keyof typeof trenaColors;
 export type StatusTone = typeof statusTones[keyof typeof statusTones];
 
 export interface PrumoTheme {

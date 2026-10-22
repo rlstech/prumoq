@@ -27,6 +27,7 @@ import {
   Radius,
   Spacing,
   Typography,
+  BorderWidth,
 } from '../../lib/constants';
 import {
   formatDate,
@@ -1492,7 +1493,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     padding: Spacing.lg,
     ...Elevation.card,
@@ -1503,7 +1504,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     ...Elevation.card,
   },
@@ -1798,7 +1799,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  segmentSelected: { backgroundColor: Colors.surface, ...Elevation.card },
+  segmentSelected: { backgroundColor: Colors.surface, borderWidth: BorderWidth.card, borderColor: Colors.text },
   segmentPressed: { backgroundColor: Colors.border },
   segmentText: { ...Typography.caption, color: Colors.textSecondary, fontFamily: FontFamily.medium },
   segmentTextSelected: { color: Colors.brand, fontFamily: FontFamily.semibold },

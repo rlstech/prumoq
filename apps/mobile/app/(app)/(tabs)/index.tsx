@@ -36,6 +36,7 @@ import {
   Radius,
   Spacing,
   Typography,
+  BorderWidth,
 } from '../../../lib/constants';
 import { useConta } from '../../../lib/auth/sessao';
 import { VerificationDraftV1 } from '../../../lib/verification/draft.types';
@@ -1053,7 +1054,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
-    borderWidth: 1,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     overflow: 'hidden',
     ...Elevation.card,

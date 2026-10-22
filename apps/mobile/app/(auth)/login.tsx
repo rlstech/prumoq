@@ -26,6 +26,7 @@ import {
   Radius,
   Spacing,
   Typography,
+  BorderWidth,
 } from '../../lib/constants';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -319,7 +320,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     padding: Spacing.xxl,
     gap: Spacing.xl,
-    borderWidth: 1,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     ...Elevation.card,
   },

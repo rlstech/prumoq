@@ -10,7 +10,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Badge, InlineDateField, SelectField, SelectOption } from '../ui';
-import { Colors, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../lib/constants';
+import { Colors, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography, BorderWidth } from '../../lib/constants';
 
 interface Props {
   /** True when the evaluation was opened from a medição, which already names
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     ...Elevation.card,
   },
