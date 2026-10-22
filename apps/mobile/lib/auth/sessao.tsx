@@ -72,6 +72,23 @@ function reconectarAgora(): void {
   void db.connect(new PrumoqConnector(), SYNC_OPTIONS);
 }
 
+// Voltou para a tela: com a tela desligada o Android congela o app e a conexão cai. Sem isto, ao voltar o
+// PowerSync esperava o retryDelayMs (20 s). Depois de um tempo longe, reconecta mesmo marcado como conectado:
+// a conexão pode ter morrido sem o PowerSync perceber.
+const LONGE_MS = 60_000;
+let escondidoDesde: number | null = null;
+function aoMudarVisibilidade(): void {
+  if (document.visibilityState === 'hidden') {
+    escondidoDesde = Date.now();
+    return;
+  }
+  const ficouLonge = escondidoDesde !== null && Date.now() - escondidoDesde > LONGE_MS;
+  escondidoDesde = null;
+  if (!conectado || (db.currentStatus.connected && !ficouLonge)) return;
+  void db.connect(new PrumoqConnector(), SYNC_OPTIONS);
+}
+if (typeof document !== 'undefined') document.addEventListener('visibilitychange', aoMudarVisibilidade);
+
 async function contarPendentes(): Promise<number> {
   try {
     return (await db.getUploadQueueStats()).count;

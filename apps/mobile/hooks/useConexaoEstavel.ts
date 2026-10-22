@@ -10,6 +10,14 @@ const LIMITE_CONECTANDO_MS = 25_000;
 // Compartilhado entre todas as telas: trocar de tela (e montar o indicador de novo) não reinicia a contagem.
 let desconectadoDesde: number | null = Date.now();
 
+// Voltou para a tela depois de um tempo apagada: a conexão caiu enquanto o app estava congelado, e o app
+// reconecta agora (lib/auth/sessao.tsx). A contagem recomeça para mostrar "Conectando…", não "Offline".
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && desconectadoDesde !== null) desconectadoDesde = Date.now();
+  });
+}
+
 function semRede(): boolean {
   return typeof navigator !== 'undefined' && navigator.onLine === false;
 }
@@ -42,10 +50,12 @@ export function useConexaoEstavel(): EstadoConexao {
     const timer = connected ? null : setInterval(atualizar, 1_000);
     window.addEventListener('online', atualizar);
     window.addEventListener('offline', atualizar);
+    document.addEventListener('visibilitychange', atualizar);
     return () => {
       if (timer) clearInterval(timer);
       window.removeEventListener('online', atualizar);
       window.removeEventListener('offline', atualizar);
+      document.removeEventListener('visibilitychange', atualizar);
     };
   }, [connected]);
 
