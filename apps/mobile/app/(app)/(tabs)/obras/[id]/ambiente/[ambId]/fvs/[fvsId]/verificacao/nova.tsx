@@ -78,7 +78,7 @@ import {
   Typography,
   ZIndex,
 } from '../../../../../../../../../../lib/constants';
-import { db } from '../../../../../../../../../../lib/powersync';
+import { criadoOffline, db } from '../../../../../../../../../../lib/powersync';
 import { alertInfo } from '../../../../../../../../../../lib/platform-alert';
 import { useConta } from '../../../../../../../../../../lib/auth/sessao';
 import { draftStore } from '../../../../../../../../../../lib/verification/draftStore';
@@ -625,7 +625,7 @@ export default function NovaVerificacaoScreen() {
         `, [
           verificacaoId, clienteId, fvsId, proximoNumero,
           inspectorId, selectedEquipeId, dataVerif,
-          verificationStatus, observacoes, 1, now,
+          verificationStatus, observacoes, criadoOffline(), now,
         ]);
 
         for (const item of itens) {

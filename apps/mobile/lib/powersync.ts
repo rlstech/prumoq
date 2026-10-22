@@ -23,3 +23,9 @@ export const db = new PowerSyncDatabase({
     worker: WORKER_URL,
   },
 });
+
+/** Valor de `created_offline` de um registro novo: 1 só quando nasce sem conexão com o servidor
+ *  (selo "Criada offline"), 0 quando o app está conectado. */
+export function criadoOffline(): 0 | 1 {
+  return db.currentStatus.connected ? 0 : 1;
+}

@@ -47,7 +47,7 @@ import {
   Typography,
   ZIndex,
 } from '../../../../lib/constants';
-import { db } from '../../../../lib/powersync';
+import { criadoOffline, db } from '../../../../lib/powersync';
 import { useConta } from '../../../../lib/auth/sessao';
 import { now, today, uuid } from '../../../../lib/uuid';
 import { ensureDefaultSignature } from '../../../../lib/signature-defaults';
@@ -426,7 +426,7 @@ export default function NewEvaluationScreen() {
               effectiveMedicaoId || null,
               effectiveWorkId,
               effectiveTeamId,
-              date || at.slice(0, 10),
+              date || today(),
               notifications.trim() || null,
               actions.trim() || null,
               at,
@@ -470,14 +470,14 @@ export default function NewEvaluationScreen() {
               effectiveTeamId,
               selectedModel.revisao_id,
               userId,
-              date || at.slice(0, 10),
+              date || today(),
               'rascunho',
               0,
               total,
               0,
               notifications.trim() || null,
               actions.trim() || null,
-              1,
+              criadoOffline(),
               at,
               at,
             ],
