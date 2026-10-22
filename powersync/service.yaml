@@ -11,7 +11,7 @@ replication:
   connections:
     - type: postgresql
       # Conexão direta (o pooler do Supabase não repassa replicação lógica). No plano gratuito é só IPv6.
-      hostname: db.icghabutrgztkwcktyhe.supabase.co
+      hostname: db.ymmtknfaznxoylzkvbnj.supabase.co
       port: 5432
       database: postgres
       # Somente leitura nas tabelas da publicação `powersync` (+ REPLICATION/BYPASSRLS).
