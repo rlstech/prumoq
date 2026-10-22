@@ -154,30 +154,51 @@ export const FontSizes = {
 } as const;
 
 export const FontFamily = {
-  regular: 'IBMPlexSans_400Regular',
-  medium: 'IBMPlexSans_500Medium',
-  semibold: 'IBMPlexSans_600SemiBold',
-  bold: 'IBMPlexSans_700Bold',
-  mono: 'IBMPlexMono_500Medium',
-  monoSemibold: 'IBMPlexMono_600SemiBold',
+  regular: 'Barlow_400Regular',
+  medium: 'Barlow_500Medium',
+  semibold: 'Barlow_600SemiBold',
+  bold: 'Barlow_700Bold',
+  /** Títulos, botões e rótulos de seção (Barlow Condensed, geralmente em caixa alta). */
+  display: 'BarlowCondensed_700Bold',
+  displaySemibold: 'BarlowCondensed_600SemiBold',
+  mono: 'JetBrainsMono_500Medium',
+  monoSemibold: 'JetBrainsMono_600SemiBold',
+  monoBold: 'JetBrainsMono_700Bold',
 } as const;
 
 export const Typography = {
-  display: { fontFamily: FontFamily.bold, fontSize: FontSizes.display, lineHeight: 48, letterSpacing: -1.2 },
-  title: { fontFamily: FontFamily.bold, fontSize: FontSizes.xxl, lineHeight: 32, letterSpacing: -0.5 },
-  heading: { fontFamily: FontFamily.semibold, fontSize: FontSizes.xl, lineHeight: 28, letterSpacing: -0.25 },
+  // Títulos em Barlow Condensed: a condensada é mais estreita, por isso os tamanhos sobem um pouco.
+  display: { fontFamily: FontFamily.display, fontSize: 44, lineHeight: 46, letterSpacing: 0 },
+  title: { fontFamily: FontFamily.display, fontSize: 30, lineHeight: 32, letterSpacing: 0 },
+  heading: { fontFamily: FontFamily.display, fontSize: 24, lineHeight: 28, letterSpacing: 0.1 },
   body: { fontFamily: FontFamily.regular, fontSize: FontSizes.md, lineHeight: 24 },
   bodyMedium: { fontFamily: FontFamily.medium, fontSize: FontSizes.md, lineHeight: 24 },
   label: { fontFamily: FontFamily.semibold, fontSize: FontSizes.sm, lineHeight: 20 },
   caption: { fontFamily: FontFamily.regular, fontSize: FontSizes.xs, lineHeight: 18 },
-  button: { fontFamily: FontFamily.semibold, fontSize: FontSizes.md, lineHeight: 20 },
-  overline: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.tiny,
-    lineHeight: 16,
-    letterSpacing: 0.8,
+  button: {
+    fontFamily: FontFamily.display,
+    fontSize: 17,
+    lineHeight: 20,
+    letterSpacing: 0.4,
     textTransform: 'uppercase' as const,
   },
+  overline: {
+    fontFamily: FontFamily.display,
+    fontSize: FontSizes.sm,
+    lineHeight: 18,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase' as const,
+  },
+  /** Título em caixa alta: saudação, nomes de obra, cabeçalhos de card. */
+  displayCaps: {
+    fontFamily: FontFamily.display,
+    fontSize: 32,
+    lineHeight: 34,
+    letterSpacing: 0.2,
+    textTransform: 'uppercase' as const,
+  },
+  /** Números de destaque (KPIs, percentuais, prazos). */
+  metric: { fontFamily: FontFamily.monoBold, fontSize: 22, lineHeight: 26, letterSpacing: -0.3 },
 } as const;
 
 /** Espessura das bordas: na identidade Trena os cards se separam por borda, não por sombra. */

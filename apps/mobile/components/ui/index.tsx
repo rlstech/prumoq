@@ -234,7 +234,7 @@ export function DataRow({
   accessibilityLabel?: string;
   /** 'row' = label left / value right (dense, 44px) · 'stack' = overline label above value */
   align?: 'row' | 'stack';
-  /** 'strong' = semibold value · 'mono' = IBM Plex Mono value */
+  /** 'strong' = semibold value · 'mono' = JetBrains Mono value */
   emphasis?: 'default' | 'strong' | 'mono';
   tone?: BadgeTone;
   /** Suppresses the bottom hairline — set on the last row of a group. */
