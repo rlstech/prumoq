@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { AppHeader } from './AppHeader';
 import { captureNcPhoto } from '../hooks/useNcPhoto';
 import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
+import { getTodayIso } from '../lib/calendar';
 import { createNc } from '../services/nc.service';
 
 interface Props {
@@ -39,7 +40,7 @@ export function NCReprovadaPanel({
   const [dataVerif, setDataVerif] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    return d.toISOString().slice(0, 10);
+    return getTodayIso(d);
   });
   const [foto, setFoto] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);

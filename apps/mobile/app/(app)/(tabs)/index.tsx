@@ -41,6 +41,7 @@ import { useConta } from '../../../lib/auth/sessao';
 import { VerificationDraftV1 } from '../../../lib/verification/draft.types';
 import { draftStore } from '../../../lib/verification/draftStore';
 import { normalizeVerificationStep, VERIFICATION_STEPS, verificationStepIndex } from '../../../lib/verification/controller';
+import { getTodayIso } from '../../../lib/calendar';
 
 const WEEKDAY_ABBR = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTH_ABBR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -52,13 +53,13 @@ function initials(name: string): string {
 }
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return getTodayIso();
 }
 
 function inDays(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+  return getTodayIso(date);
 }
 
 function weekAgo(): string {
