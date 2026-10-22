@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="58" height="58" viewBox="-3 4 58 58">
+  <title>PrumoQ</title>
+  <circle cx="25" cy="23" r="15" fill="none" stroke="#1C1F22" stroke-width="7"/>
+  <path d="M38 33V39M38 45V48" stroke="#1C1F22" stroke-width="2.6"/>
+  <rect x="30.5" y="38.5" width="15" height="6.5" rx="2.4" fill="#1C1F22"/>
+  <path d="M30.5 48H45.5V59.5Q45.5 61.5 43.5 61.5H32.5Q30.5 61.5 30.5 59.5Z" fill="#FFC21A"/>
+  <path d="M30.5 52.5H45.5M30.5 57H45.5" stroke="#1C1F22" stroke-width="1.1"/>
+</svg>

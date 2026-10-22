@@ -17,7 +17,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#163B50"
+      "backgroundColor": "#1C1F22"
     },
     "plugins": [
       "expo-router",
@@ -39,7 +39,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#163B50"
+        "backgroundColor": "#1C1F22"
       },
       "package": "br.com.prumoq.app",
       "permissions": [
@@ -58,8 +58,8 @@
       "name": "PrumoQ",
       "shortName": "PrumoQ",
       "description": "Gestão da Qualidade para Obras",
-      "themeColor": "#163B50",
-      "backgroundColor": "#F4F1E8",
+      "themeColor": "#1C1F22",
+      "backgroundColor": "#1C1F22",
       "display": "standalone",
       "orientation": "any",
       "icons": [

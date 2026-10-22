@@ -219,6 +219,32 @@ export const trenaBorder = {
   control: 2,
 } as const;
 
+/**
+ * Símbolo "Q de face" (PWA), numa grade de 64 unidades.
+ *
+ * O Q do nome com a perninha trocada por um prumo de face: cordão, taco
+ * deitado e peso cilíndrico de fundo reto, com a mesma largura do taco (é o
+ * que identifica a ferramenta). Fio e taco seguem a cor do Q; o peso é sempre
+ * amarelo trena. Os frisos do peso só aparecem em tamanhos grandes.
+ *
+ * `apps/mobile/scripts/generate-brand-assets.mjs` repete estes números (roda
+ * em node puro): se mudar aqui, mude lá.
+ */
+export const faceSymbolGeometry = {
+  grid: 64,
+  ring: { cx: 25, cy: 23, radius: 15, strokeWidth: 7 },
+  cordTop: { x: 38, top: 33, bottom: 39, strokeWidth: 2.6 },
+  taco: { x: 30.5, y: 38.5, width: 15, height: 6.5, radius: 2.4 },
+  cordBottom: { x: 38, top: 45, bottom: 48, strokeWidth: 2.6 },
+  weight: { x: 30.5, y: 48, width: 15, height: 13.5, bottomRadius: 2 },
+  ribs: { y: [52.5, 57], strokeWidth: 1.1 },
+  weightPath: 'M30.5 48H45.5V59.5Q45.5 61.5 43.5 61.5H32.5Q30.5 61.5 30.5 59.5Z',
+  /** Caixa desenhada: do anel (6.5, 4.5) ao peso (45.5, 61.5). */
+  visualBounds: { left: 6.5, right: 45.5, top: 4.5, bottom: 61.5 },
+  /** viewBox quadrado centrado na caixa desenhada (centro 26, 33). */
+  fittedViewBox: '-3 4 58 58',
+} as const;
+
 export type MineralColorToken = keyof typeof mineralColors;
 export type TrenaColorToken = keyof typeof trenaColors;
 export type StatusTone = typeof statusTones[keyof typeof statusTones];

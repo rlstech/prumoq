@@ -7,7 +7,7 @@
     "mobile": "pnpm --filter @prumoq/mobile start",
     "mobile:web": "pnpm --filter @prumoq/mobile web",
     "mobile:build:web": "pnpm --filter @prumoq/mobile build:web",
-    "brand:assets": "node scripts/generate-brand-assets.mjs",
+    "brand:assets": "node apps/mobile/scripts/generate-brand-assets.mjs",
     "bootstrap:superadmin": "pnpm --filter @prumoq/admin bootstrap:superadmin",
     "seed:rvix": "node scripts/seed-rvix-ambientes-fvs.mjs",
     "typecheck": "pnpm -r typecheck",

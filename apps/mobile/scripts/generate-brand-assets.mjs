@@ -1,12 +1,11 @@
 /**
- * Gera os ícones da marca PrumoQ a partir da MESMA geometria de
- * `prumoSymbolGeometry` (packages/design-system) — grade de 32 unidades, anel
- * de raio 6 centrado em (16, 13.2), fio até 23.4 e peso entre 23.2 e 28.7.
+ * Gera os ícones do PWA com o símbolo "Q de face" a partir da MESMA geometria de
+ * `faceSymbolGeometry` (packages/design-system), numa grade de 64 unidades.
  * Os valores estão repetidos aqui porque este script roda em node puro, sem
  * passar pelo TypeScript do workspace; se a geometria mudar lá, atualize aqui.
  *
- * Rode depois de qualquer mudança na marca:
- *   node scripts/generate-brand-assets.mjs
+ * Rode depois de qualquer mudança na marca (na raiz: `corepack pnpm brand:assets`):
+ *   node apps/mobile/scripts/generate-brand-assets.mjs
  *
  * Sem dependências: rasteriza com supersampling 4×4 e escreve PNG via zlib.
  */
@@ -18,32 +17,62 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MOBILE = resolve(HERE, '..');
 
-const PLUMB = [0x16, 0x3b, 0x50];
-const LIME = [0xd8, 0xe5, 0x68];
+const GRAPHITE = [0x1c, 0x1f, 0x22];
+const YELLOW = [0xff, 0xc2, 0x1a];
 const WHITE = [0xff, 0xff, 0xff];
 
-/** Caixa visual da marca dentro da grade de 32: o anel começa em y=6.15 e o
- *  peso termina em 28.7, então o centro óptico não é 16 — é 17.425. */
-const GLYPH_HEIGHT_UNITS = 22.55;
-const GLYPH_CENTER_Y = 17.425;
+// faceSymbolGeometry
+const RING = { cx: 25, cy: 23, r: 15, half: 3.5 };
+const CORD_TOP = { x: 38, top: 33, bottom: 39, half: 1.3 };
+const TACO = { x: 30.5, y: 38.5, w: 15, h: 6.5, r: 2.4 };
+const CORD_BOTTOM = { x: 38, top: 45, bottom: 48, half: 1.3 };
+const WEIGHT = { x: 30.5, y: 48, w: 15, h: 13.5, r: 2 };
+const RIBS = { y: [52.5, 57], half: 0.55 };
+/** Caixa desenhada: (6.5, 4.5) a (45.5, 61.5); centro (26, 33). */
+const BOUNDS = { left: 6.5, right: 45.5, top: 4.5, bottom: 61.5 };
+const GLYPH_HEIGHT_UNITS = BOUNDS.bottom - BOUNDS.top;
+const CENTER_X = (BOUNDS.left + BOUNDS.right) / 2;
+const CENTER_Y = (BOUNDS.top + BOUNDS.bottom) / 2;
 const SAMPLES = 4;
+/** Frisos do peso só quando cada unidade da grade tem ao menos 3 px. */
+const RIBS_MIN_SCALE = 3;
+
+/** Retângulo com cantos arredondados (só os de baixo, se bottomOnly). */
+function inRoundRect(x, y, { x: rx, y: ry, w, h, r }, bottomOnly = false) {
+  if (x < rx || x > rx + w || y < ry || y > ry + h) return false;
+  const cx = Math.min(Math.max(x, rx + r), rx + w - r);
+  const top = bottomOnly ? ry : ry + r;
+  const cy = Math.min(Math.max(y, top), ry + h - r);
+  if (bottomOnly && y < ry + h - r) return true;
+  return Math.hypot(x - cx, y - cy) <= r;
+}
 
 function coverage(px, py, scale, offsetX, offsetY) {
-  let ring = 0;
-  let line = 0;
-  let bob = 0;
+  let ink = 0;
+  let weight = 0;
+  let rib = 0;
+  const ribs = scale >= RIBS_MIN_SCALE;
   for (let sy = 0; sy < SAMPLES; sy++) {
     for (let sx = 0; sx < SAMPLES; sx++) {
       const gx = (px + (sx + 0.5) / SAMPLES - offsetX) / scale;
       const gy = (py + (sy + 0.5) / SAMPLES - offsetY) / scale;
-      const r = Math.hypot(gx - 16, gy - 13.2);
-      if (Math.abs(r - 6) <= 1.05) ring++;
-      if (Math.abs(gx - 16) <= 0.85 && gy >= 19.2 && gy <= 23.4) line++;
-      if (Math.abs(gx - 16) / 2.3 + Math.abs(gy - 25.95) / 2.75 <= 1) bob++;
+      const inCord =
+        (Math.abs(gx - CORD_TOP.x) <= CORD_TOP.half && gy >= CORD_TOP.top && gy <= CORD_TOP.bottom) ||
+        (Math.abs(gx - CORD_BOTTOM.x) <= CORD_BOTTOM.half && gy >= CORD_BOTTOM.top && gy <= CORD_BOTTOM.bottom);
+      if (inRoundRect(gx, gy, WEIGHT, true)) {
+        if (ribs && RIBS.y.some((y) => Math.abs(gy - y) <= RIBS.half)) rib++;
+        else weight++;
+      } else if (
+        Math.abs(Math.hypot(gx - RING.cx, gy - RING.cy) - RING.r) <= RING.half ||
+        inCord ||
+        inRoundRect(gx, gy, TACO)
+      ) {
+        ink++;
+      }
     }
   }
   const total = SAMPLES * SAMPLES;
-  return { ring: ring / total, line: line / total, bob: bob / total };
+  return { ink: ink / total, weight: weight / total, rib: rib / total };
 }
 
 function blend(dst, i, color, alpha) {
@@ -59,7 +88,7 @@ function blend(dst, i, color, alpha) {
   dst[i + 3] = Math.round(outA * 255);
 }
 
-function render({ width, height, background, glyphHeight, ringColor, lineColor, bobColor }) {
+function render({ width, height, background, glyphHeight, inkColor }) {
   const rgba = Buffer.alloc(width * height * 4);
   if (background) {
     for (let i = 0; i < rgba.length; i += 4) {
@@ -71,23 +100,23 @@ function render({ width, height, background, glyphHeight, ringColor, lineColor, 
   }
 
   const scale = glyphHeight / GLYPH_HEIGHT_UNITS;
-  const offsetX = width / 2 - 16 * scale;
-  const offsetY = height / 2 - GLYPH_CENTER_Y * scale;
+  const offsetX = width / 2 - CENTER_X * scale;
+  const offsetY = height / 2 - CENTER_Y * scale;
 
-  // Só varre a caixa da marca — o resto da tela é fundo puro.
-  const x0 = Math.max(0, Math.floor(offsetX + 8.5 * scale) - 2);
-  const x1 = Math.min(width, Math.ceil(offsetX + 23.5 * scale) + 2);
-  const y0 = Math.max(0, Math.floor(offsetY + 5.8 * scale) - 2);
-  const y1 = Math.min(height, Math.ceil(offsetY + 29.1 * scale) + 2);
+  // Só varre a caixa da marca; o resto é fundo puro.
+  const x0 = Math.max(0, Math.floor(offsetX + BOUNDS.left * scale) - 2);
+  const x1 = Math.min(width, Math.ceil(offsetX + BOUNDS.right * scale) + 2);
+  const y0 = Math.max(0, Math.floor(offsetY + BOUNDS.top * scale) - 2);
+  const y1 = Math.min(height, Math.ceil(offsetY + BOUNDS.bottom * scale) + 2);
 
   for (let y = y0; y < y1; y++) {
     for (let x = x0; x < x1; x++) {
-      const { ring, line, bob } = coverage(x, y, scale, offsetX, offsetY);
-      if (ring === 0 && line === 0 && bob === 0) continue;
+      const { ink, weight, rib } = coverage(x, y, scale, offsetX, offsetY);
+      if (ink === 0 && weight === 0 && rib === 0) continue;
       const i = (y * width + x) * 4;
-      blend(rgba, i, ringColor, ring);
-      blend(rgba, i, lineColor, line);
-      blend(rgba, i, bobColor, bob);
+      blend(rgba, i, inkColor, ink);
+      blend(rgba, i, YELLOW, weight);
+      blend(rgba, i, GRAPHITE, rib);
     }
   }
   return rgba;
@@ -138,18 +167,18 @@ function encodePng(width, height, rgba) {
   ]);
 }
 
-const onPlumb = { ringColor: WHITE, lineColor: LIME, bobColor: LIME };
+const onGraphite = { inkColor: WHITE };
 
 const targets = [
-  // iOS/loja: sangra até a borda, a máscara do sistema arredonda.
-  { file: 'assets/icon.png', width: 1024, height: 1024, background: PLUMB, glyphHeight: 512, ...onPlumb },
-  // Android adaptativo: fundo vem do app.json, a marca fica na zona segura.
-  { file: 'assets/adaptive-icon.png', width: 1024, height: 1024, background: null, glyphHeight: 410, ...onPlumb },
-  { file: 'assets/favicon.png', width: 64, height: 64, background: PLUMB, glyphHeight: 36, ...onPlumb },
-  { file: 'assets/splash.png', width: 2048, height: 2732, background: PLUMB, glyphHeight: 420, ...onPlumb },
-  // PWA "any maskable": conteúdo dentro dos 80% centrais.
-  { file: 'public/icon-192.png', width: 192, height: 192, background: PLUMB, glyphHeight: 80, ...onPlumb },
-  { file: 'public/icon-512.png', width: 512, height: 512, background: PLUMB, glyphHeight: 214, ...onPlumb },
+  // Ícone cheio: sangra até a borda, a máscara do sistema arredonda.
+  { file: 'assets/icon.png', width: 1024, height: 1024, background: GRAPHITE, glyphHeight: 600, ...onGraphite },
+  // Android adaptativo: fundo vem do app.json; a marca fica no círculo seguro (66%).
+  { file: 'assets/adaptive-icon.png', width: 1024, height: 1024, background: null, glyphHeight: 540, ...onGraphite },
+  { file: 'assets/favicon.png', width: 64, height: 64, background: GRAPHITE, glyphHeight: 52, ...onGraphite },
+  { file: 'assets/splash.png', width: 2048, height: 2732, background: GRAPHITE, glyphHeight: 520, ...onGraphite },
+  // PWA "any maskable": a marca inteira cabe no círculo de 80% do centro.
+  { file: 'public/icon-192.png', width: 192, height: 192, background: GRAPHITE, glyphHeight: 116, ...onGraphite },
+  { file: 'public/icon-512.png', width: 512, height: 512, background: GRAPHITE, glyphHeight: 310, ...onGraphite },
 ];
 
 for (const target of targets) {
