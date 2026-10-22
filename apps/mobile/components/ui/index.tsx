@@ -1421,11 +1421,11 @@ const syncConfig: Record<SyncState, { color: string; background: string; label: 
   error: { color: Colors.nok, background: Colors.nokBg, label: 'Falha na sincronização', shortLabel: 'Falha', Icon: AlertCircle },
 };
 
-/** Sobre o azul da capa as cores semanticas escuras somem: aqui entram as
- *  variantes claras dos mesmos tokens, com a cal viva nos estados saudaveis. */
+/** Sobre o grafite da capa as cores semanticas escuras somem: aqui entram as
+ *  variantes claras, com verde no sincronizado e amarelo trena enquanto envia. */
 const onBrandSyncColor: Record<SyncState, string> = {
-  synced: Colors.brandSignature,
-  syncing: Colors.brandSignature,
+  synced: Palette.successOnBrand,
+  syncing: Palette.accent,
   offline: Colors.warnBg,
   error: Colors.nokBg,
 };
@@ -1474,8 +1474,9 @@ const metricPalette: Record<BadgeTone, string> = {
 };
 
 const buttonPalette: Record<ButtonVariant, { background: string; pressed: string; border: string; text: string }> = {
-  primary: { background: Colors.brand, pressed: Colors.brandDark, border: Colors.brand, text: '#FFFFFF' },
-  secondary: { background: Colors.surface, pressed: Colors.surface2, border: Colors.borderNormal, text: Colors.text },
+  // Ação principal em amarelo trena com texto grafite (nunca branco sobre o amarelo).
+  primary: { background: Palette.accent, pressed: Palette.accentPressed, border: Palette.accent, text: Palette.onAccent },
+  secondary: { background: Colors.surface, pressed: Colors.surface2, border: Colors.text, text: Colors.text },
   ghost: { background: 'transparent', pressed: Colors.surface2, border: 'transparent', text: Colors.textSecondary },
   danger: { background: Colors.nok, pressed: Colors.text, border: Colors.nok, text: Colors.surface },
 };
@@ -1598,8 +1599,8 @@ const styles = StyleSheet.create({
   },
   button: {
     minHeight: ComponentSize.button,
-    borderRadius: Radius.md,
-    borderWidth: 1,
+    borderRadius: Radius.xs,
+    borderWidth: BorderWidth.card,
     paddingHorizontal: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1615,11 +1616,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 0 },
   },
-  buttonText: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.md,
-    lineHeight: 20,
-  },
+  buttonText: { ...Typography.button },
   iconButton: {
     width: ComponentSize.touch,
     height: ComponentSize.touch,
@@ -1947,7 +1944,7 @@ const styles = StyleSheet.create({
   sync: {
     minHeight: 28,
     paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
@@ -1955,9 +1952,9 @@ const styles = StyleSheet.create({
   },
   syncCompact: { width: 28, height: 28, paddingHorizontal: 0, justifyContent: 'center' },
   syncOnBrand: {
-    backgroundColor: 'rgba(255,255,255,0.11)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: 'transparent',
+    borderWidth: BorderWidth.card,
+    borderColor: Palette.onBrandLine,
   },
   syncText: { ...Typography.caption, fontFamily: FontFamily.medium },
   modalBackdrop: {

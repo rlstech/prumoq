@@ -47,6 +47,7 @@ export const Palette = {
   /** Linhas e texto secundário sobre o grafite (cabeçalho, menu inferior). */
   onBrandLine: trenaPalette.graphiteLine,
   onBrandMuted: trenaPalette.steelLight,
+  successOnBrand: trenaPalette.successOnDark,
 } as const;
 
 /** A named colour from the semantic palette. Prefer these tokens to literals
@@ -243,7 +244,8 @@ export const Breakpoints = {
 export const ComponentSize = {
   touch: 44,
   input: 48,
-  button: 48,
+  /** Botões maiores para uso com luva. */
+  button: 52,
   /** Joined answer control (ChoiceToggle): icon over label needs the extra
    * height, and it buys an equal-thirds target of ~118×56 on a 390pt screen. */
   choice: 56,

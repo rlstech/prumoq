@@ -64,9 +64,10 @@ export function StatusBadge({ status, size = 'md' }: Props) {
 }
 
 const styles = StyleSheet.create({
+  // Etiqueta reta: cantos de 3px, ponto quadrado e rótulo em caixa alta.
   badge: {
     alignSelf: 'flex-start',
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     flexDirection: 'row',
@@ -79,15 +80,15 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: FontSizes.xs,
-    fontFamily: FontFamily.semibold,
-    letterSpacing: 0.1,
+    fontFamily: FontFamily.bold,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   labelSm: {
-    fontSize: FontSizes.tiny,
+    fontSize: 11,
   },
   dot: {
     width: 6,
     height: 6,
-    borderRadius: Radius.full,
   },
 });

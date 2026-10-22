@@ -160,6 +160,8 @@ export const trenaPalette = {
 
   success: '#1F7A3A',
   successSoft: '#E6F2E9',
+  /** Verde legível sobre o grafite (indicador de sync no cabeçalho). */
+  successOnDark: '#4CC06E',
   danger: '#C8281E',
   dangerSoft: '#FBE9E7',
   warning: '#B85400',
