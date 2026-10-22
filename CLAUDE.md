@@ -234,7 +234,7 @@ Veja `.env.example`. Arquivos `.env.local` só com valores públicos; segredos n
 - Connector (envio da fila pela API REST do Supabase) em `apps/mobile/lib/powersync-connector.ts`
 - `usePowerSyncQuery()` para queries reativas
 - `db.execute()` para writes offline
-- Sempre passar `created_offline: 1` em novos registros
+- `created_offline` em novos registros: usar `criadoOffline()` (`lib/powersync.ts`), 1 só quando salvo sem conexão (selo "Criada offline")
 - Checar `db.currentStatus.connected` para status offline
 - Ao fazer logout: `db.disconnectAndClear()` (não `disconnect()` + `clearLocal()` separados)
 - Bucket definitions (YAML) configuradas no PowerSync Dashboard — ver `sync-rules.md`
