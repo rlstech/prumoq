@@ -1,0 +1,20 @@
+// Worker do painel admin: arquivos estáticos do `vite build` (dist/, painel em dist/admin) + /admin/api/* (worker/index.ts).
+// Segredos (CLERK_SECRET_KEY, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) vão por `wrangler secret put`, nunca neste arquivo.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "prumoq-admin",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/admin/api/*"]
+  },
+  // Mesmo domínio do PWA (rota prumoq.railton.eu.org/* no prumoq-pwa); esta rota, mais específica, fica com /admin*.
+  // A rota de mídia (/api/media/presign) fica no Worker do PWA, na mesma origem.
+  "routes": [{ "pattern": "prumoq.railton.eu.org/admin*", "zone_name": "railton.eu.org" }],
+  "workers_dev": false,
+  "observability": { "enabled": true }
+}

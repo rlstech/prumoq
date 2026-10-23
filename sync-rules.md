@@ -1,5 +1,10 @@
 # PrumoQ — Regras de Sincronização (PowerSync)
 
+> **Substituído (2026-10-19).** A configuração válida está em `powersync/sync-config.yaml`
+> (Sync Streams, edição 3, Neon + Clerk). Os blocos YAML abaixo são históricos e **não** são
+> sintaxe válida do PowerSync (`table:`/`where:` com JOINs nunca existiu). Use este arquivo só
+> como contexto de negócio.
+
 ## Regra definitiva de multitenancy (migrations 026+)
 
 Os exemplos históricos abaixo antecedem o modo SaaS. A configuração de produção

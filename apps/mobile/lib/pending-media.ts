@@ -43,3 +43,10 @@ export async function adoptPendingMedia(uri: string): Promise<string> {
   if (uri.startsWith(PENDING_MEDIA_DIRECTORY)) return uri;
   return storePendingMedia(uri, 'photo', uri.toLowerCase().endsWith('.png') ? 'png' : 'jpg');
 }
+
+/** Nome de arquivo para gravar junto da foto (`nome_arquivo`). */
+export function nomeArquivoMidia(referencia: string, prefixo = 'foto'): string {
+  const tipo = referencia.match(/^data:image\/(\w+)/)?.[1];
+  if (tipo) return `${prefixo}_${Date.now()}.${tipo === 'jpeg' ? 'jpg' : tipo}`;
+  return referencia.split('/').pop() || `${prefixo}.jpg`;
+}

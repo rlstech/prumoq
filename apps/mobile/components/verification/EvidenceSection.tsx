@@ -1,4 +1,4 @@
-import { Camera, Image as ImageIcon } from 'lucide-react-native';
+import { Camera, Image as ImageIcon } from '../../lib/icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button, Field, PhotoSlot } from '../ui';
 import { PhotoGrid } from '../PhotoGrid';

@@ -1,6 +1,6 @@
-import { useQuery, useStatus } from '@powersync/react-native';
+import { useQuery, useStatus } from '@powersync/react';
 import { useRouter } from 'expo-router';
-import { AlertTriangle, CheckCircle2, RefreshCw, Trash2, WifiOff } from 'lucide-react-native';
+import { AlertTriangle, CheckCircle2, RefreshCw, Trash2, WifiOff } from '../../../../lib/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../.
 import { db } from '../../../../lib/powersync';
 import type { SyncFalhasRow } from '../../../../lib/schema';
 import { discardQuarantined, retryQuarantined } from '../../../../lib/sync-quarantine';
+import { useConexaoEstavel } from '../../../../hooks/useConexaoEstavel';
 
 /** Rótulos legíveis para os códigos que a quarentena grava. */
 const CODE_LABELS: Record<string, string> = {
@@ -51,6 +52,11 @@ function formatPayload(payload: string): string {
 export default function SincronizacaoScreen() {
   const router = useRouter();
   const status = useStatus();
+  const conexao = useConexaoEstavel();
+  const conectado = conexao === 'conectado';
+  // Motivo de não conectar/baixar/enviar (ex.: sessão expirada, servidor recusou). Ajuda a diagnosticar "Offline" com rede.
+  const erro = status.dataFlowStatus?.downloadError ?? status.dataFlowStatus?.uploadError;
+  const erroConexao = erro ? (erro.message || String(erro)).slice(0, 200) : null;
   const { data: falhas = [] } = useQuery<SyncFalhasRow>(
     'SELECT * FROM sync_falhas ORDER BY criado_em DESC',
   );
@@ -136,9 +142,17 @@ export default function SincronizacaoScreen() {
         <ListSurface>
           <DataRow
             label="Conexão"
-            value={status.connected ? 'Conectado' : 'Offline'}
-            tone={status.connected ? 'success' : 'warning'}
+            value={conectado ? 'Conectado' : conexao === 'conectando' ? 'Conectando…' : 'Offline'}
+            tone={conectado ? 'success' : conexao === 'conectando' ? 'info' : 'warning'}
           />
+          <DataRow
+            label="Última sincronização"
+            value={status.lastSyncedAt ? formatDateTime(status.lastSyncedAt.toISOString()) : 'Nunca'}
+            emphasis="mono"
+          />
+          {erroConexao ? (
+            <DataRow label="Erro da conexão" value={erroConexao} tone="danger" />
+          ) : null}
           <DataRow
             label="Aguardando envio"
             value={fila === null ? '—' : `${fila} ${fila === 1 ? 'operação' : 'operações'}`}
@@ -155,10 +169,10 @@ export default function SincronizacaoScreen() {
 
         {falhas.length === 0 ? (
           <EmptyState
-            Icon={status.connected ? CheckCircle2 : WifiOff}
-            title={status.connected ? 'Nada travado' : 'Sem conexão'}
+            Icon={conectado ? CheckCircle2 : WifiOff}
+            title={conectado ? 'Nada travado' : 'Sem conexão'}
             description={
-              status.connected
+              conectado
                 ? 'Todos os registros criados no aparelho foram aceitos pelo servidor.'
                 : 'Os registros ficam guardados no aparelho e sobem assim que houver rede.'
             }

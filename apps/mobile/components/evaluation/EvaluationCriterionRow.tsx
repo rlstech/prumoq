@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle } from 'lucide-react-native';
+import { CheckCircle2, XCircle } from '../../lib/icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { ChoiceToggle, ChoiceToggleOption, Field } from '../ui';
 import { Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../lib/constants';

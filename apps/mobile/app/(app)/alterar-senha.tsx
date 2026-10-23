@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { KeyRound, ShieldCheck } from 'lucide-react-native';
+import { KeyRound, ShieldCheck } from '../../lib/icons';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -11,12 +11,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/AppHeader';
-import { Button, Card, ErrorBanner, Field } from '../../components/ui';
-import {
-  getPasswordAuthErrorMessage,
-  markPasswordChanged,
-  validateNewPassword,
-} from '../../lib/auth/passwords';
+import { Button, Card, ErrorBanner, Field, Toast } from '../../components/ui';
+import { clerkCarregado } from '../../lib/auth/clerk';
+import { isClerkAPIResponseError } from '@clerk/clerk-js/headless';
+import { mensagemDoErro } from '../../lib/auth/fluxo-login';
+import { validateNewPassword } from '../../lib/auth/passwords';
 import {
   Breakpoints,
   Colors,
@@ -25,9 +24,6 @@ import {
   Spacing,
   Typography,
 } from '../../lib/constants';
-import { db } from '../../lib/powersync';
-import { supabase } from '../../lib/supabase';
-import { draftStore } from '../../lib/verification/draftStore';
 
 export default function ChangePasswordScreen() {
   const router = useRouter();
@@ -37,36 +33,6 @@ export default function ChangePasswordScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
-
-  async function finishGlobalSignOut() {
-    setLoading(true);
-    setError(null);
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user.id) {
-      try {
-        await draftStore.deleteForUser(session.user.id);
-      } catch {
-        // Password security must not be blocked by stale local drafts.
-      }
-    }
-    try {
-      await db.disconnectAndClear();
-    } catch {
-      // The auth session still needs to be revoked if local cleanup fails.
-    }
-
-    const { error: signOutError } = await supabase.auth.signOut({ scope: 'global' });
-    if (signOutError) {
-      setError(
-        'A senha foi alterada, mas não foi possível encerrar todas as sessões. Tente novamente.',
-      );
-      setLoading(false);
-      return;
-    }
-
-    router.replace('/(auth)/login');
-  }
 
   async function handleSubmit() {
     const validationError = validateNewPassword(
@@ -83,21 +49,25 @@ export default function ChangePasswordScreen() {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: newPassword,
-      current_password: currentPassword,
-    });
-    if (updateError) {
-      setError(getPasswordAuthErrorMessage(updateError.message));
-      setLoading(false);
+    const user = clerkCarregado()?.user;
+    if (!user) {
+      setError('É necessário estar online para alterar a senha.');
       return;
     }
 
-    await markPasswordChanged();
-    setPasswordChanged(true);
-    await finishGlobalSignOut();
+    setLoading(true);
+    setError(null);
+    try {
+      // Mantém esta sessão (e os dados locais); encerra a conta nos outros aparelhos.
+      await user.updatePassword({ currentPassword, newPassword, signOutOfOtherSessions: true });
+      setPasswordChanged(true);
+    } catch (err) {
+      const senhaAtualErrada = isClerkAPIResponseError(err)
+        && ['form_password_incorrect', 'form_password_validation_failed'].includes(err.errors[0]?.code ?? '');
+      setError(senhaAtualErrada ? 'A senha atual está incorreta.' : mensagemDoErro(err));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -169,19 +139,17 @@ export default function ChangePasswordScreen() {
             <View style={styles.securityNotice}>
               <ShieldCheck size={18} color={Colors.textSecondary} />
               <Text style={styles.securityText}>
-                Depois da alteração, será necessário entrar novamente em todos os dispositivos.
+                Depois da alteração, os outros aparelhos conectados com esta conta precisarão entrar de novo.
               </Text>
             </View>
 
             {error ? <ErrorBanner message={error} /> : null}
 
             {passwordChanged ? (
-              <Button
-                label="Encerrar sessões e voltar ao login"
-                onPress={finishGlobalSignOut}
-                loading={loading}
-                fullWidth
-              />
+              <>
+                <Toast message="Senha alterada." tone="success" />
+                <Button label="Voltar" onPress={() => router.back()} fullWidth />
+              </>
             ) : (
               <Button
                 label="Alterar senha"

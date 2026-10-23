@@ -1,10 +1,10 @@
-import { LucideIcon } from 'lucide-react-native';
+import { ICON_STROKE, IconComponent } from '../lib/icons';
 import { StyleSheet, View } from 'react-native';
 
 /**
- * Ícone Lucide dentro de uma caixa de tamanho declarado.
+ * Ícone (lib/icons) dentro de uma caixa de tamanho declarado.
  *
- * `lucide-react-native` repassa `size` como props `width`/`height` do `<Svg>`.
+ * Os ícones repassam `size` como props `width`/`height` do `<Svg>`.
  * Sob a Nova Arquitetura o `react-native-svg` acaba informando ao Yoga um
  * tamanho intrínseco diferente do que pinta, e o texto vizinho na mesma linha
  * recebe menos largura do que existe — foi assim que "SUAS OBRAS" virou "SUAS"
@@ -18,9 +18,9 @@ export function IconBox({
   icon: LucideGlyph,
   size,
   color,
-  strokeWidth = 2,
+  strokeWidth = ICON_STROKE,
 }: {
-  icon: LucideIcon;
+  icon: IconComponent;
   size: number;
   color: string;
   strokeWidth?: number;

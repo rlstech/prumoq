@@ -1,5 +1,5 @@
 import { signatureStore } from './signature-store';
-import { supabase } from './supabase';
+import { assinarDownloads } from './media-api';
 
 /**
  * The default signature lives on whichever device it was captured on until
@@ -25,11 +25,7 @@ export async function ensureDefaultSignature(
   if (!assinaturaPadraoUrl || assinaturaPadraoUrl.startsWith('pending:')) return null;
 
   try {
-    const { data, error } = await supabase.functions.invoke('r2-presign', {
-      body: { operation: 'download', keys: [assinaturaPadraoUrl] },
-    });
-    if (error) return null;
-    const downloadUrl = (data as { urls?: Record<string, string> } | null)?.urls?.[assinaturaPadraoUrl];
+    const downloadUrl = (await assinarDownloads([assinaturaPadraoUrl]))[assinaturaPadraoUrl];
     if (!downloadUrl) return null;
     return await signatureStore.restoreFromRemote(userId, downloadUrl);
   } catch {

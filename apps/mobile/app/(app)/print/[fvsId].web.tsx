@@ -16,6 +16,7 @@ import type {
 } from '@prumoq/shared';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { assinarDownloads } from '../../../lib/media-api';
 import { supabase } from '../../../lib/supabase';
 
 type RawVerification = Omit<FvsPrintableVerification, 'items' | 'fotos'>;
@@ -198,11 +199,7 @@ export default function FvsPrintPage() {
           ...verifications.map(verification => verification.assinatura_url).filter((value): value is string => Boolean(value)),
           ...((conclusaoRes.data ?? []) as Array<{ assinatura_url: string | null }>).map(row => row.assinatura_url).filter((value): value is string => Boolean(value)),
         ].filter(key => !key.startsWith('http') && !key.startsWith('data:') && !key.startsWith('pending:') && !key.startsWith('blob:'))));
-        const { data: signedResult, error: signedError } = mediaKeys.length
-          ? await supabase.functions.invoke('r2-presign', { body: { operation: 'download', keys: mediaKeys } })
-          : { data: { urls: {} }, error: null };
-        if (signedError) throw signedError;
-        const signedMedia = (signedResult as { urls?: Record<string, string> } | null)?.urls ?? {};
+        const signedMedia = await assinarDownloads(mediaKeys);
 
         const photosMap = new Map<string, FvsPrintablePhoto[]>();
         for (const photo of photoRows) {

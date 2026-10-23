@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { usePWAInstall } from '../hooks/usePWAInstall';
-import { Colors, Radius, Spacing } from '../lib/constants';
+import { Colors, FontFamily, Palette, Radius, Spacing } from '../lib/constants';
 
 export function InstallBanner() {
   const { canInstall, install } = usePWAInstall();
@@ -22,28 +22,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.progressBg,
+    backgroundColor: Colors.brand,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomWidth: 0,
     gap: Spacing.md,
   },
   text: {
     fontSize: 13,
-    color: Colors.progress,
-    fontWeight: '500',
+    color: Palette.white,
+    fontFamily: FontFamily.medium,
     flex: 1,
   },
   btn: {
-    backgroundColor: Colors.progress,
-    borderRadius: Radius.md,
+    backgroundColor: Palette.accent,
+    borderRadius: Radius.xs,
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
   },
   btnText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
+    color: Palette.onAccent,
+    fontSize: 14,
+    fontFamily: FontFamily.display,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
 });

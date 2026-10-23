@@ -12,6 +12,7 @@ import type {
   VerificationResult,
   VerificationStep,
 } from './draft.types';
+import { getTodayIso } from '../calendar';
 import { collectVerificationErrors } from './validation';
 import type { VerificationValidationInput } from './validation';
 
@@ -53,7 +54,7 @@ export function stepForVerificationError(key: string): VerificationFlowStep {
   return 'checklist';
 }
 
-export function emptyVerificationFormState(today = new Date().toISOString().slice(0, 10)): VerificationFormState {
+export function emptyVerificationFormState(today = getTodayIso()): VerificationFormState {
   return {
     dataVerif: today,
     selectedEquipeId: null,

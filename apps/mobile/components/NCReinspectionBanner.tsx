@@ -1,4 +1,4 @@
-import { RotateCcw } from 'lucide-react-native';
+import { RotateCcw } from '../lib/icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors, FontFamily, Radius, Spacing, Typography } from '../lib/constants';
 

@@ -1,4 +1,4 @@
-import { AlertCircle, ChevronDown } from 'lucide-react-native';
+import { AlertCircle, ChevronDown } from '../../lib/icons';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Badge, Chip, DataRow, Field, InlineDateField, ListSurface, ModalSheet } from '../ui';

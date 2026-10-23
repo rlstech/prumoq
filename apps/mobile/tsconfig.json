@@ -6,7 +6,9 @@
     "paths": {
       "@/*": [
         "./*"
-      ]
+      ],
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"]
     }
   },
   "include": [
@@ -14,5 +16,9 @@
     "**/*.tsx",
     ".expo/types/**/*.d.ts",
     "nativewind-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "worker"
   ]
 }

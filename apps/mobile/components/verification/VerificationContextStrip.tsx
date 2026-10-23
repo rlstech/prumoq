@@ -1,4 +1,4 @@
-import { AlertCircle, Check, ChevronDown, ChevronRight, ChevronUp, LockKeyhole, Search, UsersRound, X } from 'lucide-react-native';
+import { AlertCircle, Check, ChevronDown, ChevronRight, ChevronUp, LockKeyhole, Search, UsersRound, X } from '../../lib/icons';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
@@ -8,7 +8,7 @@ import {
   InlineDateField,
   ModalSheet,
 } from '../ui';
-import { Colors, ComponentSize, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../lib/constants';
+import { Colors, ComponentSize, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography, BorderWidth } from '../../lib/constants';
 import { EquipeRow, getInitials } from './types';
 
 interface Props {
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     ...Elevation.card,
   },
@@ -287,10 +287,10 @@ const styles = StyleSheet.create({
   avatar: {
     width: 32,
     height: 32,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.brandLight,
-    borderWidth: 1,
-    borderColor: Colors.brandSignature,
+    borderWidth: BorderWidth.card,
+    borderColor: Colors.text,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -305,12 +305,12 @@ const styles = StyleSheet.create({
   field: { gap: 6 },
   fieldLabel: { ...Typography.label, color: Colors.text },
   teamTrigger: { minHeight: 64, position: 'relative', overflow: 'hidden', borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderNormal, backgroundColor: Colors.surface, paddingHorizontal: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  teamTriggerSelected: { borderColor: Colors.brandSignature, backgroundColor: Colors.brandLight },
-  teamTriggerPending: { borderColor: Colors.brandSignature },
+  teamTriggerSelected: { borderColor: Colors.text, backgroundColor: Colors.brandLight },
+  teamTriggerPending: { borderColor: Colors.text },
   teamTriggerError: { borderColor: Colors.nok, borderWidth: 1.5 },
   teamTriggerPressed: { backgroundColor: Colors.surface2 },
   teamTriggerDatum: { position: 'absolute', width: 3, backgroundColor: Colors.brandSignature, left: 0, top: Spacing.sm, bottom: Spacing.sm },
-  teamTriggerIcon: { width: 32, height: 32, borderRadius: Radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surface },
+  teamTriggerIcon: { width: 32, height: 32, borderRadius: Radius.xs, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surface },
   teamTriggerBody: { flex: 1, minWidth: 0, gap: 1 },
   teamTriggerValue: { ...Typography.label, color: Colors.text },
   teamTriggerPlaceholder: { color: Colors.brand },
@@ -320,8 +320,8 @@ const styles = StyleSheet.create({
   searchField: { minHeight: ComponentSize.input, borderWidth: 1, borderColor: Colors.borderNormal, borderRadius: Radius.md, paddingLeft: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   searchInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', color: Colors.text, fontFamily: FontFamily.regular, fontSize: FontSizes.md },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  filter: { minHeight: 36, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: Spacing.md, alignItems: 'center', justifyContent: 'center' },
-  filterSelected: { borderColor: Colors.brandSignature, backgroundColor: Colors.brandLight },
+  filter: { minHeight: 36, borderRadius: Radius.xs, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: Spacing.md, alignItems: 'center', justifyContent: 'center' },
+  filterSelected: { borderColor: Colors.text, backgroundColor: Colors.brandLight },
   filterPressed: { backgroundColor: Colors.surface2 },
   filterText: { ...Typography.caption, color: Colors.textSecondary, fontFamily: FontFamily.medium },
   filterTextSelected: { color: Colors.brand, fontFamily: FontFamily.semibold },
@@ -333,8 +333,8 @@ const styles = StyleSheet.create({
   teamOption: { minHeight: 64, backgroundColor: Colors.surface, paddingHorizontal: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border },
   teamOptionSelected: { backgroundColor: Colors.brandLight },
   teamOptionPressed: { backgroundColor: Colors.surface2 },
-  teamAvatar: { width: 32, height: 32, borderRadius: Radius.full, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center' },
-  teamAvatarSelected: { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.brandSignature },
+  teamAvatar: { width: 32, height: 32, borderRadius: Radius.xs, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center' },
+  teamAvatarSelected: { backgroundColor: Colors.surface, borderWidth: BorderWidth.card, borderColor: Colors.text },
   teamAvatarText: { fontFamily: FontFamily.semibold, fontSize: FontSizes.tiny, color: Colors.brand },
   teamOptionBody: { flex: 1, minWidth: 0, gap: 1 },
   teamOptionName: { ...Typography.label, color: Colors.text },

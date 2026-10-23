@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://unpkg.com/@powersync/cli-schemas@latest/json-schema/service-config.json
+# PowerSync Cloud — instância Development (dev), ligada ao projeto Supabase de teste `prumoq-teste`.
+# Segredos nunca neste arquivo: PS_DATABASE_PASSWORD vem do ambiente no deploy
+# (no primeiro deploy vira secret na Cloud).
+
+_type: cloud
+name: Development
+region: br
+
+replication:
+  connections:
+    - type: postgresql
+      # Conexão direta (o pooler do Supabase não repassa replicação lógica). No plano gratuito é só IPv6.
+      hostname: db.ymmtknfaznxoylzkvbnj.supabase.co
+      port: 5432
+      database: postgres
+      # Somente leitura nas tabelas da publicação `powersync` (+ REPLICATION/BYPASSRLS).
+      username: pq_powersync
+      password:
+        secret: !env PS_DATABASE_PASSWORD
+      sslmode: verify-full
+
+client_auth:
+  # Clerk (instância dev). O token vem do JWT template `powersync`, com aud = URL desta instância.
+  jwks_uri: https://novel-ibex-9771.clerk.accounts.dev/.well-known/jwks.json
+  additional_audiences: []
+  allow_temporary_tokens: false

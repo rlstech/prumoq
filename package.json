@@ -7,19 +7,25 @@
     "mobile": "pnpm --filter @prumoq/mobile start",
     "mobile:web": "pnpm --filter @prumoq/mobile web",
     "mobile:build:web": "pnpm --filter @prumoq/mobile build:web",
-    "web": "pnpm --filter @prumoq/web dev",
-    "build:web": "pnpm --filter @prumoq/web build",
-    "brand:assets": "node scripts/generate-brand-assets.mjs",
-    "bootstrap:superadmin": "pnpm --filter @prumoq/web bootstrap:superadmin",
+    "brand:assets": "node apps/mobile/scripts/generate-brand-assets.mjs",
+    "bootstrap:superadmin": "pnpm --filter @prumoq/admin bootstrap:superadmin",
     "seed:rvix": "node scripts/seed-rvix-ambientes-fvs.mjs",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "admin": "pnpm --filter @prumoq/admin dev",
+    "build:admin": "pnpm --filter @prumoq/admin build",
+    "deploy:admin": "pnpm --filter @prumoq/admin deploy"
   },
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"
   },
   "devDependencies": {
-    "sharp": "^0.35.3"
-  }
+    "sharp": "^0.35.3",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7"
+  },
+  "//": "react/react-dom 19 ficam na raiz para o painel admin (apps/admin). O PWA (Expo 52) usa a cópia 18.3 em apps/mobile/node_modules; o metro.config.js e o tsconfig do mobile apontam para ela."
 }

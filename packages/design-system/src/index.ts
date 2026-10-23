@@ -132,7 +132,123 @@ export const prumoSymbolGeometry = {
   visualBounds: { top: 6.15, bottom: 28.7, left: 8.95, right: 23.05 },
 } as const;
 
+/**
+ * Trena — identidade do PWA de campo.
+ *
+ * Grafite e amarelo de trena: o máximo de contraste para ler sob sol. O admin
+ * continua no Prumo Mineral; as chaves de `trenaColors` espelham as de
+ * `mineralColors` para que o adaptador de cada app troque uma pela outra.
+ */
+export const trenaPalette = {
+  graphite: '#1C1F22',
+  graphiteDeep: '#141618',
+  graphitePressed: '#0F1112',
+  graphiteLine: '#3A3F44',
+  tapeYellow: '#FFC21A',
+  tapeYellowPressed: '#E6AC00',
+  tapeYellowSoft: '#FFF3CC',
+
+  steel: '#5B6168',
+  steelMuted: '#6B7178',
+  steelLight: '#B9BEC3',
+
+  concrete: '#ECEAE6',
+  concreteDeep: '#E3E0DA',
+  white: '#FFFFFF',
+  joint: '#CFCBC3',
+  jointStrong: '#9C978E',
+
+  success: '#1F7A3A',
+  successSoft: '#E6F2E9',
+  /** Verde legível sobre o grafite (indicador de sync no cabeçalho). */
+  successOnDark: '#4CC06E',
+  danger: '#C8281E',
+  dangerSoft: '#FBE9E7',
+  warning: '#B85400',
+  warningSoft: '#FFF0E0',
+  info: '#2459A8',
+  infoSoft: '#E7EEF8',
+  neutral: '#5B6168',
+  neutralSoft: '#E9E8E4',
+
+  black: '#000000',
+  overlay: 'rgba(28, 31, 34, 0.62)',
+} as const;
+
+export const trenaColors = {
+  brand: trenaPalette.graphite,
+  brandDeep: trenaPalette.graphiteDeep,
+  brandPressed: trenaPalette.graphitePressed,
+  accent: trenaPalette.tapeYellow,
+  accentSoft: trenaPalette.tapeYellowSoft,
+
+  canvas: trenaPalette.concrete,
+  surface: trenaPalette.white,
+  surfaceSecondary: trenaPalette.concreteDeep,
+  border: trenaPalette.joint,
+  borderStrong: trenaPalette.jointStrong,
+
+  text: trenaPalette.graphite,
+  textSecondary: trenaPalette.steel,
+  textMuted: trenaPalette.steelMuted,
+
+  success: trenaPalette.success,
+  successSoft: trenaPalette.successSoft,
+  danger: trenaPalette.danger,
+  dangerSoft: trenaPalette.dangerSoft,
+  warning: trenaPalette.warning,
+  warningSoft: trenaPalette.warningSoft,
+  info: trenaPalette.info,
+  infoSoft: trenaPalette.infoSoft,
+  neutral: trenaPalette.neutral,
+  neutralSoft: trenaPalette.neutralSoft,
+  focus: trenaPalette.tapeYellow,
+  overlay: trenaPalette.overlay,
+} as const satisfies Record<keyof typeof mineralColors, string>;
+
+/** Cantos quase retos: bordas no lugar de sombras. */
+export const trenaRadius = {
+  control: 3,
+  card: 4,
+  feature: 6,
+  full: 9999,
+} as const;
+
+/** Espessura das bordas de cards e controles. */
+export const trenaBorder = {
+  hairline: 1,
+  card: 1.5,
+  control: 2,
+} as const;
+
+/**
+ * Símbolo "Q de face" (PWA), numa grade de 64 unidades.
+ *
+ * O Q do nome com a perninha trocada por um prumo de face: cordão, taco
+ * deitado e peso cilíndrico de fundo reto, com a mesma largura do taco (é o
+ * que identifica a ferramenta). Fio e taco seguem a cor do Q; o peso é sempre
+ * amarelo trena. Os frisos do peso só aparecem em tamanhos grandes.
+ *
+ * `apps/mobile/scripts/generate-brand-assets.mjs` repete estes números (roda
+ * em node puro): se mudar aqui, mude lá.
+ */
+export const faceSymbolGeometry = {
+  grid: 64,
+  ring: { cx: 25, cy: 23, radius: 15, strokeWidth: 7 },
+  cordTop: { x: 38, top: 33, bottom: 39, strokeWidth: 2.6 },
+  taco: { x: 30.5, y: 38.5, width: 15, height: 6.5, radius: 2.4 },
+  cordBottom: { x: 38, top: 45, bottom: 48, strokeWidth: 2.6 },
+  weight: { x: 30.5, y: 48, width: 15, height: 13.5, bottomRadius: 2 },
+  ribs: { y: [52.5, 57], strokeWidth: 1.1 },
+  weightPath: 'M30.5 48H45.5V59.5Q45.5 61.5 43.5 61.5H32.5Q30.5 61.5 30.5 59.5Z',
+  /** Caixa desenhada: do anel (6.5, 4.5) ao peso (45.5, 61.5). */
+  visualBounds: { left: 6.5, right: 45.5, top: 4.5, bottom: 61.5 },
+  /** viewBox quadrado centrado na caixa desenhada (centro 26, 33). */
+  fittedViewBox: '-3 4 58 58',
+} as const;
+
 export type MineralColorToken = keyof typeof mineralColors;
+export type TrenaColorToken = keyof typeof trenaColors;
 export type StatusTone = typeof statusTones[keyof typeof statusTones];
 
 export interface PrumoTheme {

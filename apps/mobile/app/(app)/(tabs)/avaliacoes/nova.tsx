@@ -1,6 +1,6 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Check, ClipboardCheck, LockKeyhole, PenLine } from 'lucide-react-native';
+import { Check, ClipboardCheck, LockKeyhole, PenLine } from '../../../../lib/icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -47,8 +47,8 @@ import {
   Typography,
   ZIndex,
 } from '../../../../lib/constants';
-import { db } from '../../../../lib/powersync';
-import { supabase } from '../../../../lib/supabase';
+import { criadoOffline, db } from '../../../../lib/powersync';
+import { useConta } from '../../../../lib/auth/sessao';
 import { now, today, uuid } from '../../../../lib/uuid';
 import { ensureDefaultSignature } from '../../../../lib/signature-defaults';
 import { signatureStore } from '../../../../lib/signature-store';
@@ -99,7 +99,7 @@ export default function NewEvaluationScreen() {
   const rowOffsets = useRef<Record<string, number>>({});
   const blockOffsets = useRef<Record<string, number>>({});
 
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = useConta()?.usuarioId ?? null;
   const [step, setStep] = useState<Step>('avaliacao');
   const [workId, setWorkId] = useState('');
   const [teamId, setTeamId] = useState('');
@@ -125,15 +125,7 @@ export default function NewEvaluationScreen() {
   const [reopenError, setReopenError] = useState<string | null>(null);
   const isEditing = !!avaliacaoId;
 
-  useEffect(() => {
-    void supabase.auth.getUser()
-      .then(({ data }) => setUserId(data.user?.id ?? null))
-      .catch(err => console.warn('[NovaAvaliacao] getUser failed', err));
-  }, []);
-
   // ── Queries ─────────────────────────────────────────────────────────────────
-  // The SQL text below is matched fragment-by-fragment by powersync-web-shim.ts
-  // so the PWA can serve the same screens — keep the wording in sync with it.
   const { data: existingEval, isLoading: existingEvalLoading } = useQuery<ExistingEvaluation>(
     `SELECT a.obra_id,a.equipe_id,a.medicao_id,a.modelo_revisao_id,a.data_avaliacao,a.status,a.avaliador_id,a.notificacoes_ocorridas,a.providencias_tomadas,r.numero_revisao,r.modelo_id,mo.nome modelo_nome,mo.empresa_id modelo_empresa_id FROM avaliacoes_empreiteiro a JOIN modelo_avaliacao_empreiteiro_revisoes r ON r.id=a.modelo_revisao_id JOIN modelos_avaliacao_empreiteiro mo ON mo.id=r.modelo_id WHERE a.id=?`,
     [avaliacaoId ?? ''],
@@ -434,7 +426,7 @@ export default function NewEvaluationScreen() {
               effectiveMedicaoId || null,
               effectiveWorkId,
               effectiveTeamId,
-              date || at.slice(0, 10),
+              date || today(),
               notifications.trim() || null,
               actions.trim() || null,
               at,
@@ -478,14 +470,14 @@ export default function NewEvaluationScreen() {
               effectiveTeamId,
               selectedModel.revisao_id,
               userId,
-              date || at.slice(0, 10),
+              date || today(),
               'rascunho',
               0,
               total,
               0,
               notifications.trim() || null,
               actions.trim() || null,
-              1,
+              criadoOffline(),
               at,
               at,
             ],

@@ -6,11 +6,11 @@ import {
   ClipboardList,
   HardHat,
   LockKeyhole,
-} from 'lucide-react-native';
+} from '../../lib/icons';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Badge, InlineDateField, SelectField, SelectOption } from '../ui';
-import { Colors, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../lib/constants';
+import { Colors, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography, BorderWidth } from '../../lib/constants';
 
 interface Props {
   /** True when the evaluation was opened from a medição, which already names
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     ...Elevation.card,
   },
@@ -188,10 +188,10 @@ const styles = StyleSheet.create({
   icon: {
     width: 32,
     height: 32,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.brandLight,
-    borderWidth: 1,
-    borderColor: Colors.brandSignature,
+    borderWidth: BorderWidth.card,
+    borderColor: Colors.text,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,

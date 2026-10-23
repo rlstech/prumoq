@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowRight, CheckCircle2, Circle } from 'lucide-react-native';
+import { AlertCircle, ArrowRight, CheckCircle2, Circle } from '../../lib/icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { Badge, DatumCard, Progress } from '../ui';
 import { Colors, FontFamily, Spacing, Typography } from '../../lib/constants';

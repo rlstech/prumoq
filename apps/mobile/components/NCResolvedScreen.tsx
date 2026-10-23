@@ -1,4 +1,4 @@
-import { Check, CheckCircle2, FileDown } from 'lucide-react-native';
+import { Check, CheckCircle2, FileDown } from '../lib/icons';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from './AppHeader';

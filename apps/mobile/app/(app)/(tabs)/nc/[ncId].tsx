@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AlertTriangle,
@@ -19,7 +19,7 @@ import {
   UserRound,
   UsersRound,
   Wrench,
-} from 'lucide-react-native';
+} from '../../../../lib/icons';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.surface2,
     paddingHorizontal: Spacing.md,
   },

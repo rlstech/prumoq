@@ -2694,7 +2694,10 @@ export type Database = {
           avatar_url: string | null
           cargo: string | null
           cliente_id: string | null
+          clerk_user_id: string | null
+          convite_enviado_em: string | null
           created_at: string
+          email: string | null
           id: string
           nome: string
           onboarding_concluido_em: string | null
@@ -2709,8 +2712,11 @@ export type Database = {
           avatar_url?: string | null
           cargo?: string | null
           cliente_id?: string | null
+          clerk_user_id?: string | null
+          convite_enviado_em?: string | null
           created_at?: string
-          id: string
+          email?: string | null
+          id?: string
           nome: string
           onboarding_concluido_em?: string | null
           perfil?: Database["public"]["Enums"]["perfil_usuario"]
@@ -2724,7 +2730,10 @@ export type Database = {
           avatar_url?: string | null
           cargo?: string | null
           cliente_id?: string | null
+          clerk_user_id?: string | null
+          convite_enviado_em?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           nome?: string
           onboarding_concluido_em?: string | null
@@ -3246,6 +3255,57 @@ export type Database = {
         Returns: undefined
       }
       concluir_onboarding: { Args: never; Returns: string }
+      criar_usuario: {
+        Args: {
+          p_cargo: string
+          p_clerk_user_id: string
+          p_email: string
+          p_nome: string
+          p_obras: string[]
+          p_perfil: Database["public"]["Enums"]["perfil_usuario"]
+        }
+        Returns: string
+      }
+      current_usuario_id: { Args: never; Returns: string }
+      excluir_obra: {
+        Args: { p_obra_id: string }
+        Returns: {
+          ambientes: number
+          deleted: boolean
+          equipes: number
+          usuarios: number
+        }
+      }
+      plataforma_atualizar_cliente: {
+        Args: {
+          p_contato_email: string
+          p_contato_nome: string
+          p_contato_telefone: string
+          p_detalhes: Json
+          p_id: string
+          p_limite_empresas: number | null
+          p_limite_obras: number | null
+          p_limite_usuarios: number | null
+          p_nome: string
+          p_slug: string
+          p_status: Database["public"]["Enums"]["status_cliente"]
+        }
+        Returns: undefined
+      }
+      plataforma_criar_cliente: {
+        Args: {
+          p_admin_clerk_id: string
+          p_contato_email: string
+          p_contato_nome: string
+          p_contato_telefone: string
+          p_limite_empresas: number | null
+          p_limite_obras: number | null
+          p_limite_usuarios: number | null
+          p_nome: string
+          p_slug: string
+        }
+        Returns: string
+      }
       criar_modelos_medicao_empresa: {
         Args: { p_cliente: string; p_empresa: string; p_usuario?: string }
         Returns: undefined

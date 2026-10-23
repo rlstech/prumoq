@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect, useRouter } from 'expo-router';
 import {
@@ -12,7 +12,7 @@ import {
   FileClock,
   Trash2,
   XCircle,
-} from 'lucide-react-native';
+} from '../../../lib/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,7 +21,6 @@ import { BrandWordmark } from '../../../components/BrandWordmark';
 import { ConformityRing } from '../../../components/ConformityRing';
 import { IconBox } from '../../../components/IconBox';
 import { CanopyBackdrop } from '../../../components/DashboardCanopy';
-import { OfflineBanner } from '../../../components/OfflineBanner';
 import { ProgressBar } from '../../../components/ProgressBar';
 import { BadgeStatus, StatusBadge } from '../../../components/StatusBadge';
 import { SyncStatusIndicator } from '../../../components/SyncStatusIndicator';
@@ -37,11 +36,13 @@ import {
   Radius,
   Spacing,
   Typography,
+  BorderWidth,
 } from '../../../lib/constants';
-import { supabase } from '../../../lib/supabase';
+import { useConta } from '../../../lib/auth/sessao';
 import { VerificationDraftV1 } from '../../../lib/verification/draft.types';
 import { draftStore } from '../../../lib/verification/draftStore';
 import { normalizeVerificationStep, VERIFICATION_STEPS, verificationStepIndex } from '../../../lib/verification/controller';
+import { getTodayIso } from '../../../lib/calendar';
 
 const WEEKDAY_ABBR = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTH_ABBR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -53,13 +54,13 @@ function initials(name: string): string {
 }
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return getTodayIso();
 }
 
 function inDays(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+  return getTodayIso(date);
 }
 
 function weekAgo(): string {
@@ -90,7 +91,18 @@ function relativeDate(dateStr: string): string {
 
 /** Prazo da reinspeção, já em tom semântico: vencida é vermelha, hoje/amanhã
  *  são alerta de prazo, o resto é neutro. */
-function deadline(dateStr: string): { label: string; color: string; bg: string } {
+interface Deadline {
+  label: string;
+  /** Ícone e ladrilho da linha. */
+  color: string;
+  bg: string;
+  /** Etiqueta: vencida em vermelho, até 3 dias em amarelo, depois só contorno. */
+  chipBg: string;
+  chipText: string;
+  chipBorder: string;
+}
+
+function deadline(dateStr: string): Deadline {
   const target = new Date(dateStr.length === 10 ? `${dateStr}T00:00:00` : dateStr);
   const diff = Math.round(
     (target.setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86_400_000,
@@ -101,11 +113,29 @@ function deadline(dateStr: string): { label: string; color: string; bg: string }
       label: late === 1 ? 'Vencida ontem' : `Vencida há ${late} dias`,
       color: Colors.nok,
       bg: Colors.nokBg,
+      chipBg: Colors.nok,
+      chipText: Palette.white,
+      chipBorder: Colors.nok,
     };
   }
-  if (diff === 0) return { label: 'Vence hoje', color: Colors.warn, bg: Colors.warnBg };
-  if (diff === 1) return { label: 'Amanhã', color: Colors.warn, bg: Colors.warnBg };
-  return { label: `${diff} dias`, color: Colors.textSecondary, bg: Colors.surface2 };
+  const soon = {
+    color: Colors.warn,
+    bg: Colors.warnBg,
+    chipBg: Palette.accent,
+    chipText: Palette.onAccent,
+    chipBorder: Palette.accent,
+  };
+  if (diff === 0) return { label: 'Vence hoje', ...soon };
+  if (diff === 1) return { label: 'Amanhã', ...soon };
+  if (diff <= 3) return { label: `${diff} dias`, ...soon };
+  return {
+    label: `${diff} dias`,
+    color: Colors.warn,
+    bg: Colors.warnBg,
+    chipBg: 'transparent',
+    chipText: Colors.text,
+    chipBorder: Colors.text,
+  };
 }
 
 function formatDraftTime(updatedAt: string): string {
@@ -169,7 +199,6 @@ interface FvsDraftMetaRow {
  *  nunca pode mais ser retomado. */
 const CONCLUDED_FVS_STATUSES = new Set(['concluida', 'concluida_ressalva', 'conforme']);
 interface UserInfo { nome: string; cargo: string }
-interface UserProfile extends UserInfo { perfil: string }
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -179,28 +208,16 @@ export default function DashboardScreen() {
   // abriria. SafeAreaView de 'react-native' não faz nada no Android — era por
   // isso que a marca aparecia cortada atrás da status bar.
   const insets = useSafeAreaInsets();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [perfil, setPerfil] = useState<string | null>(null);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const conta = useConta();
+  const userId = conta?.usuarioId ?? null;
+  const perfil: string | null = conta?.perfil ?? null;
+  // Nome e cargo vêm do banco local (sincronizado); a conta da sessão cobre o nome antes da 1ª sincronização.
+  const { data: perfilRows } = useQuery<UserInfo>(
+    'SELECT nome, cargo FROM usuarios WHERE id = ? LIMIT 1',
+    [userId ?? ''],
+  );
+  const userInfo: UserInfo | null = perfilRows[0] ?? (conta ? { nome: conta.nome, cargo: '' } : null);
   const [drafts, setDrafts] = useState<VerificationDraftV1[]>([]);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      setUserId(data.user.id);
-      const { data: rawProfile } = await supabase
-        .from('usuarios')
-        .select('nome, cargo, perfil')
-        .eq('id', data.user.id)
-        .single();
-      if (!rawProfile) return;
-      const profile = rawProfile as UserProfile;
-      setPerfil(profile.perfil);
-      setUserInfo({ nome: profile.nome, cargo: profile.cargo });
-    }).catch(err => {
-      console.warn('[Dashboard] getUser failed', err);
-    });
-  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -431,7 +448,6 @@ export default function DashboardScreen() {
   return (
     <View style={[styles.safe, { paddingTop: insets.top }]}>
       <StatusBar style="light" backgroundColor={Colors.brand} />
-      <OfflineBanner />
       <ScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -448,8 +464,8 @@ export default function DashboardScreen() {
           <View style={styles.canopyInner}>
             <View style={styles.topRow}>
               <View style={styles.brandRow}>
-                <BrandMark size={34} variant="onBrand" tile />
-                <BrandWordmark fontSize={FontSizes.md} variant="onBrand" />
+                <BrandMark size={30} variant="onBrand" />
+                <BrandWordmark fontSize={21} variant="onBrand" />
               </View>
               <View style={styles.headerActions}>
                 <SyncStatusIndicator tone="onBrand" compact={false} />
@@ -554,7 +570,7 @@ function SectionHeader({
           style={({ pressed }) => [styles.sectionLink, pressed && styles.pressed]}
         >
           <Text style={styles.sectionLinkText}>{actionLabel}</Text>
-          <IconBox icon={ChevronRight} size={14} color={Colors.brand} strokeWidth={2.4} />
+          <IconBox icon={ChevronRight} size={14} color={Colors.text} />
         </Pressable>
       ) : null}
     </View>
@@ -794,8 +810,8 @@ function ReinspectionPanel({
                     onPress={() => onOpenNc(nc.id)}
                     style={({ pressed }) => [styles.queueRow, pressed && styles.rowPressed]}
                   >
-                    <View style={[styles.tile, { backgroundColor: due.bg }]}>
-                      <AlertTriangle size={17} color={due.color} strokeWidth={2.1} />
+                    <View style={[styles.tile, { backgroundColor: due.bg, borderColor: due.color }]}>
+                      <AlertTriangle size={17} color={due.color} />
                     </View>
                     <View style={styles.queueBody}>
                       <Text style={styles.queueTitle} numberOfLines={2}>{nc.item_titulo}</Text>
@@ -803,9 +819,8 @@ function ReinspectionPanel({
                         {nc.obra_nome} · {nc.ambiente_nome}
                       </Text>
                     </View>
-                    <View style={[styles.chip, { backgroundColor: due.bg }]}>
-                      <View style={[styles.chipDot, { backgroundColor: due.color }]} />
-                      <Text style={[styles.chipText, { color: due.color }]}>{due.label}</Text>
+                    <View style={[styles.chip, { backgroundColor: due.chipBg, borderColor: due.chipBorder }]}>
+                      <Text style={[styles.chipText, { color: due.chipText }]}>{due.label}</Text>
                     </View>
                   </Pressable>
                 </View>
@@ -823,7 +838,7 @@ function ReinspectionPanel({
                   <Text style={styles.cardFootText}>
                     Mais {remaining} {remaining === 1 ? 'reinspeção' : 'reinspeções'} na fila
                   </Text>
-                  <IconBox icon={ChevronRight} size={15} color={Colors.brand} strokeWidth={2.4} />
+                  <IconBox icon={ChevronRight} size={15} color={Colors.text} />
                 </Pressable>
               </>
             ) : null}
@@ -903,8 +918,8 @@ function WorksPanel({
                 onPress={() => onOpenWork(work.id)}
                 style={({ pressed }) => [styles.workRow, pressed && styles.rowPressed]}
               >
-                <View style={[styles.tile, { backgroundColor: done ? Colors.okBg : Colors.infoBg }]}>
-                  <Building2 size={19} color={done ? Colors.ok : Colors.info} strokeWidth={1.9} />
+                <View style={[styles.tile, done && { backgroundColor: Colors.okBg, borderColor: Colors.ok }]}>
+                  <Building2 size={19} color={done ? Colors.ok : Colors.text} />
                 </View>
                 <View style={styles.workBody}>
                   <View style={styles.workTop}>
@@ -915,8 +930,7 @@ function WorksPanel({
                     <View style={styles.progress}>
                       <ProgressBar
                         value={percentage}
-                        height={6}
-                        color={done ? Colors.ok : Colors.brand}
+                        color={done ? Colors.ok : Palette.accent}
                       />
                     </View>
                     <Text style={styles.progressText}>{Math.round(percentage)}%</Text>
@@ -982,10 +996,6 @@ function ActivityPanel({
   );
 }
 
-/** Raio da capa — maior que Radius.xl de propósito: é a única superfície de
- *  tela cheia do app e acompanha o arredondamento do aparelho. */
-const CANOPY_RADIUS = 28;
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.brand },
   scroll: { backgroundColor: Colors.bg },
@@ -994,8 +1004,6 @@ const styles = StyleSheet.create({
   // ── Capa ────────────────────────────────────────────────────────────
   canopy: {
     backgroundColor: Colors.brand,
-    borderBottomLeftRadius: CANOPY_RADIUS,
-    borderBottomRightRadius: CANOPY_RADIUS,
     overflow: 'hidden',
     paddingBottom: 64,
   },
@@ -1019,21 +1027,24 @@ const styles = StyleSheet.create({
   avatar: {
     width: 34,
     height: 34,
-    borderRadius: Radius.full,
-    backgroundColor: 'rgba(216,229,104,0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(216,229,104,0.45)',
+    borderRadius: Radius.xs,
+    backgroundColor: Palette.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    color: Colors.brandSignature,
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.tiny,
+    color: Palette.onAccent,
+    fontFamily: FontFamily.monoBold,
+    fontSize: 13,
   },
   greetingBlock: { gap: 6 },
-  greeting: { ...Typography.title, color: Palette.white },
-  headerSub: { ...Typography.overline, color: Palette.white, opacity: 0.6 },
+  greeting: { ...Typography.displayCaps, color: Palette.white },
+  headerSub: {
+    ...Typography.overline,
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.tiny,
+    color: Palette.onBrandMuted,
+  },
 
   // ── Estrutura ───────────────────────────────────────────────────────
   content: {
@@ -1056,24 +1067,32 @@ const styles = StyleSheet.create({
   },
   // flex: 1 dá ao título a largura restante da linha em vez de deixá-la ser
   // negociada com o link ao lado; flexShrink: 0 no link protege "Ver as N".
-  sectionTitle: { ...Typography.overline, color: Colors.textTertiary, flex: 1, minWidth: 0 },
-  sectionLink: { flexDirection: 'row', alignItems: 'center', gap: 2, flexShrink: 0 },
+  sectionTitle: { ...Typography.overline, color: Colors.text, flex: 1, minWidth: 0 },
+  // Link sublinhado em amarelo trena.
+  sectionLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    flexShrink: 0,
+    borderBottomWidth: 2,
+    borderBottomColor: Palette.accent,
+  },
   sectionLinkText: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSizes.xs,
-    color: Colors.brand,
+    color: Colors.text,
   },
 
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    borderWidth: 1,
+    borderRadius: Radius.md,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     overflow: 'hidden',
     ...Elevation.card,
   },
-  cardDivider: { height: 1, backgroundColor: Colors.border },
-  rowDivider: { height: 1, backgroundColor: Colors.border, marginLeft: 68 },
+  cardDivider: { height: BorderWidth.card, backgroundColor: Colors.border },
+  rowDivider: { height: BorderWidth.card, backgroundColor: Colors.border, marginLeft: 68 },
   cardFoot: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1089,7 +1108,10 @@ const styles = StyleSheet.create({
   tile: {
     width: 38,
     height: 38,
-    borderRadius: Radius.md,
+    borderRadius: Radius.xs,
+    borderWidth: BorderWidth.card,
+    borderColor: Colors.text,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1098,22 +1120,22 @@ const styles = StyleSheet.create({
   rowPressed: { backgroundColor: Colors.surface2 },
 
   // ── Cartão da semana ────────────────────────────────────────────────
+  // Único card com borda grafite: é o que abre a tela.
   heroCard: {
     marginTop: -52,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: Radius.md,
+    borderWidth: BorderWidth.card,
+    borderColor: Colors.text,
     padding: Spacing.lg,
-    ...Elevation.floating,
   },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
   heroBody: { flex: 1, minWidth: 0, gap: 4 },
   heroHeadline: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.lg,
-    lineHeight: 24,
-    letterSpacing: -0.3,
+    fontFamily: FontFamily.display,
+    fontSize: 23,
+    lineHeight: 25,
+    textTransform: 'uppercase',
     color: Colors.text,
   },
   heroCaption: {
@@ -1125,12 +1147,11 @@ const styles = StyleSheet.create({
   heroDivider: { marginHorizontal: -Spacing.lg },
   stat: { flex: 1, gap: 2, paddingLeft: Spacing.md },
   statFirst: { paddingLeft: 0 },
-  statDivider: { width: 1, height: 26, backgroundColor: Colors.border },
+  statDivider: { width: BorderWidth.card, height: 26, backgroundColor: Colors.border },
   statValue: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSizes.lg,
+    fontFamily: FontFamily.monoBold,
+    fontSize: 20,
     lineHeight: 24,
-    letterSpacing: -0.4,
     color: Colors.text,
   },
   statLabel: {
@@ -1151,7 +1172,7 @@ const styles = StyleSheet.create({
   draftIcon: {
     width: 38,
     height: 38,
-    borderRadius: Radius.md,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.brandLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1172,12 +1193,13 @@ const styles = StyleSheet.create({
   },
   stepChip: {
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 5,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.naBg,
+    paddingVertical: 4,
+    borderRadius: Radius.xs,
+    borderWidth: BorderWidth.card,
+    borderColor: Colors.text,
   },
   stepChipText: {
-    fontFamily: FontFamily.semibold,
+    fontFamily: FontFamily.monoBold,
     fontSize: FontSizes.tiny,
     color: Colors.textSecondary,
   },
@@ -1185,11 +1207,10 @@ const styles = StyleSheet.create({
     height: 5,
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.md,
-    borderRadius: Radius.full,
     backgroundColor: Colors.border,
     overflow: 'hidden',
   },
-  draftFill: { height: 5, borderRadius: Radius.full, backgroundColor: Colors.brand },
+  draftFill: { height: 5, backgroundColor: Colors.brand },
   draftActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1199,26 +1220,21 @@ const styles = StyleSheet.create({
   },
   cta: {
     flex: 1,
-    height: ComponentSize.touch,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.brandSignature,
+    height: ComponentSize.button,
+    borderRadius: Radius.xs,
+    backgroundColor: Palette.accent,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
   },
   ctaPressed: { opacity: 0.85 },
-  ctaText: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.md,
-    letterSpacing: -0.2,
-    color: Colors.text,
-  },
+  ctaText: { ...Typography.button, color: Palette.onAccent },
   ghostButton: {
-    width: ComponentSize.touch,
-    height: ComponentSize.touch,
-    borderRadius: Radius.md,
-    borderWidth: 1,
+    width: ComponentSize.button,
+    height: ComponentSize.button,
+    borderRadius: Radius.xs,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1227,8 +1243,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderRadius: Radius.md,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     paddingRight: Spacing.sm,
   },
@@ -1270,7 +1286,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xs,
     paddingVertical: Spacing.xs,
   },
-  bandDivider: { width: 1, backgroundColor: Colors.border, marginVertical: Spacing.xs },
+  bandDivider: { width: BorderWidth.card, backgroundColor: Colors.border, marginVertical: Spacing.xs },
   bandValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1278,10 +1294,9 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   bandValue: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSizes.xxl,
+    fontFamily: FontFamily.monoBold,
+    fontSize: 24,
     lineHeight: 30,
-    letterSpacing: -1,
   },
   bandLabel: {
     width: '100%',
@@ -1316,13 +1331,12 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 5,
-    borderRadius: Radius.full,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: Radius.xs,
+    borderWidth: BorderWidth.card,
   },
-  chipDot: { width: 5, height: 5, borderRadius: Radius.full },
-  chipText: { fontFamily: FontFamily.semibold, fontSize: FontSizes.tiny },
+  chipText: { fontFamily: FontFamily.monoBold, fontSize: 11.5 },
 
   // ── Obras ───────────────────────────────────────────────────────────
   workRow: {
@@ -1337,17 +1351,19 @@ const styles = StyleSheet.create({
   workName: {
     flex: 1,
     minWidth: 0,
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.sm,
-    letterSpacing: -0.2,
+    fontFamily: FontFamily.display,
+    fontSize: 17,
+    lineHeight: 20,
+    textTransform: 'uppercase',
     color: Colors.text,
   },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   progress: { flex: 1 },
   progressText: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSizes.tiny,
-    letterSpacing: -0.2,
+    fontFamily: FontFamily.monoBold,
+    fontSize: FontSizes.sm,
+    minWidth: 38,
+    textAlign: 'right',
     color: Colors.text,
   },
   workMeta: {

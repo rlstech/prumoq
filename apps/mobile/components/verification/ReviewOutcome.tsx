@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, ChevronRight } from 'lucide-react-native';
+import { AlertCircle, CheckCircle2, ChevronRight } from '../../lib/icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { Badge, DataRow, DatumCard, ErrorBanner, ListSurface, MetricBlock } from '../ui';
 import { Colors, FontFamily, FontSizes, Spacing, Typography } from '../../lib/constants';

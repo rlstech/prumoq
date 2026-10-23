@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system';
-import { ArrowLeft, Check, RotateCcw } from 'lucide-react-native';
+import { ArrowLeft, Check, RotateCcw } from '../lib/icons';
 import { ComponentRef, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import SignatureCanvas from 'react-native-signature-canvas';

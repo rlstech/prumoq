@@ -1,43 +1,53 @@
 import {
   mineralBreakpoints,
-  mineralColors,
   mineralMotion,
-  mineralPalette,
-  mineralRadius,
+  trenaBorder,
+  trenaColors,
+  trenaPalette,
+  trenaRadius,
 } from '@prumoq/design-system';
 
-/** Native adapter for the shared Prumo Mineral design system. */
+/** Adaptador do PWA para a identidade Trena (packages/design-system). */
 export const Palette = {
-  brand: mineralColors.brand,
-  action: mineralColors.brand,
-  actionPressed: mineralColors.brandPressed,
-  actionSoft: mineralColors.accentSoft,
+  brand: trenaColors.brand,
+  action: trenaColors.brand,
+  actionPressed: trenaColors.brandPressed,
+  actionSoft: trenaColors.accentSoft,
 
-  ink: mineralColors.text,
-  inkSecondary: mineralColors.textSecondary,
-  inkTertiary: mineralColors.textMuted,
+  ink: trenaColors.text,
+  inkSecondary: trenaColors.textSecondary,
+  inkTertiary: trenaColors.textMuted,
 
-  canvas: mineralColors.canvas,
-  surface: mineralColors.surface,
-  surfaceMuted: mineralColors.surfaceSecondary,
-  border: mineralColors.border,
-  borderStrong: mineralColors.borderStrong,
+  canvas: trenaColors.canvas,
+  surface: trenaColors.surface,
+  surfaceMuted: trenaColors.surfaceSecondary,
+  border: trenaColors.border,
+  borderStrong: trenaColors.borderStrong,
 
-  success: mineralColors.success,
-  successSoft: mineralColors.successSoft,
-  danger: mineralColors.danger,
-  dangerSoft: mineralColors.dangerSoft,
-  warning: mineralColors.warning,
-  warningSoft: mineralColors.warningSoft,
-  info: mineralColors.info,
-  infoSoft: mineralColors.infoSoft,
-  neutral: mineralColors.neutral,
-  neutralSoft: mineralColors.neutralSoft,
+  success: trenaColors.success,
+  successSoft: trenaColors.successSoft,
+  danger: trenaColors.danger,
+  dangerSoft: trenaColors.dangerSoft,
+  warning: trenaColors.warning,
+  warningSoft: trenaColors.warningSoft,
+  info: trenaColors.info,
+  infoSoft: trenaColors.infoSoft,
+  neutral: trenaColors.neutral,
+  neutralSoft: trenaColors.neutralSoft,
 
-  white: mineralPalette.white,
-  black: mineralPalette.black,
-  focus: mineralColors.focus,
-  overlay: mineralColors.overlay,
+  white: trenaPalette.white,
+  black: trenaPalette.black,
+  focus: trenaColors.focus,
+  overlay: trenaColors.overlay,
+
+  /** Amarelo trena: só ação principal, item ativo e destaque. Texto sobre ele é sempre grafite. */
+  accent: trenaColors.accent,
+  accentPressed: trenaPalette.tapeYellowPressed,
+  onAccent: trenaPalette.graphite,
+  /** Linhas e texto secundário sobre o grafite (cabeçalho, menu inferior). */
+  onBrandLine: trenaPalette.graphiteLine,
+  onBrandMuted: trenaPalette.steelLight,
+  successOnBrand: trenaPalette.successOnDark,
 } as const;
 
 /** A named colour from the semantic palette. Prefer these tokens to literals
@@ -47,7 +57,7 @@ export type ColorToken = keyof typeof Palette;
 
 export const Colors = {
   brand: Palette.action,
-  brandSignature: mineralColors.accent,
+  brandSignature: trenaColors.accent,
   action: Palette.action,
   actionPressed: Palette.actionPressed,
   actionSoft: Palette.actionSoft,
@@ -57,7 +67,7 @@ export const Colors = {
 
   ok: Palette.success,
   okBg: Palette.successSoft,
-  okMid: mineralColors.success,
+  okMid: trenaColors.success,
   nok: Palette.danger,
   nokBg: Palette.dangerSoft,
   progress: Palette.info,
@@ -109,12 +119,12 @@ export const SemanticColors = {
 } as const;
 
 export const Radius = {
-  xs: mineralRadius.control,
-  sm: mineralRadius.control,
-  md: mineralRadius.card,
-  lg: mineralRadius.card,
-  xl: mineralRadius.feature,
-  full: mineralRadius.full,
+  xs: trenaRadius.control,
+  sm: trenaRadius.control,
+  md: trenaRadius.card,
+  lg: trenaRadius.card,
+  xl: trenaRadius.feature,
+  full: trenaRadius.full,
 } as const;
 
 export const Spacing = {
@@ -145,39 +155,68 @@ export const FontSizes = {
 } as const;
 
 export const FontFamily = {
-  regular: 'IBMPlexSans_400Regular',
-  medium: 'IBMPlexSans_500Medium',
-  semibold: 'IBMPlexSans_600SemiBold',
-  bold: 'IBMPlexSans_700Bold',
-  mono: 'IBMPlexMono_500Medium',
-  monoSemibold: 'IBMPlexMono_600SemiBold',
+  regular: 'Barlow_400Regular',
+  medium: 'Barlow_500Medium',
+  semibold: 'Barlow_600SemiBold',
+  bold: 'Barlow_700Bold',
+  /** Títulos, botões e rótulos de seção (Barlow Condensed, geralmente em caixa alta). */
+  display: 'BarlowCondensed_700Bold',
+  displaySemibold: 'BarlowCondensed_600SemiBold',
+  mono: 'JetBrainsMono_500Medium',
+  monoSemibold: 'JetBrainsMono_600SemiBold',
+  monoBold: 'JetBrainsMono_700Bold',
 } as const;
 
 export const Typography = {
-  display: { fontFamily: FontFamily.bold, fontSize: FontSizes.display, lineHeight: 48, letterSpacing: -1.2 },
-  title: { fontFamily: FontFamily.bold, fontSize: FontSizes.xxl, lineHeight: 32, letterSpacing: -0.5 },
-  heading: { fontFamily: FontFamily.semibold, fontSize: FontSizes.xl, lineHeight: 28, letterSpacing: -0.25 },
+  // Títulos em Barlow Condensed: a condensada é mais estreita, por isso os tamanhos sobem um pouco.
+  display: { fontFamily: FontFamily.display, fontSize: 44, lineHeight: 46, letterSpacing: 0 },
+  title: { fontFamily: FontFamily.display, fontSize: 30, lineHeight: 32, letterSpacing: 0 },
+  heading: { fontFamily: FontFamily.display, fontSize: 24, lineHeight: 28, letterSpacing: 0.1 },
   body: { fontFamily: FontFamily.regular, fontSize: FontSizes.md, lineHeight: 24 },
   bodyMedium: { fontFamily: FontFamily.medium, fontSize: FontSizes.md, lineHeight: 24 },
   label: { fontFamily: FontFamily.semibold, fontSize: FontSizes.sm, lineHeight: 20 },
   caption: { fontFamily: FontFamily.regular, fontSize: FontSizes.xs, lineHeight: 18 },
-  button: { fontFamily: FontFamily.semibold, fontSize: FontSizes.md, lineHeight: 20 },
-  overline: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.tiny,
-    lineHeight: 16,
-    letterSpacing: 0.8,
+  button: {
+    fontFamily: FontFamily.display,
+    fontSize: 17,
+    lineHeight: 20,
+    letterSpacing: 0.4,
     textTransform: 'uppercase' as const,
   },
+  overline: {
+    fontFamily: FontFamily.display,
+    fontSize: FontSizes.sm,
+    lineHeight: 18,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase' as const,
+  },
+  /** Título em caixa alta: saudação, nomes de obra, cabeçalhos de card. */
+  displayCaps: {
+    fontFamily: FontFamily.display,
+    fontSize: 32,
+    lineHeight: 34,
+    letterSpacing: 0.2,
+    textTransform: 'uppercase' as const,
+  },
+  /** Números de destaque (KPIs, percentuais, prazos). */
+  metric: { fontFamily: FontFamily.monoBold, fontSize: 22, lineHeight: 26, letterSpacing: -0.3 },
+} as const;
+
+/** Espessura das bordas: na identidade Trena os cards se separam por borda, não por sombra. */
+export const BorderWidth = {
+  hairline: trenaBorder.hairline,
+  card: trenaBorder.card,
+  control: trenaBorder.control,
 } as const;
 
 export const Elevation = {
+  /** Sem sombra: o card se destaca pela borda (BorderWidth.card). */
   card: {
     shadowColor: Palette.ink,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   floating: {
     shadowColor: Palette.ink,
@@ -205,7 +244,8 @@ export const Breakpoints = {
 export const ComponentSize = {
   touch: 44,
   input: 48,
-  button: 48,
+  /** Botões maiores para uso com luva. */
+  button: 52,
   /** Joined answer control (ChoiceToggle): icon over label needs the extra
    * height, and it buys an equal-thirds target of ~118×56 on a 390pt screen. */
   choice: 56,

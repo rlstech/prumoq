@@ -1,10 +1,11 @@
-import { Camera, XCircle } from 'lucide-react-native';
+import { Camera, XCircle } from '../lib/icons';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { AppHeader } from './AppHeader';
 import { captureNcPhoto } from '../hooks/useNcPhoto';
 import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
+import { getTodayIso } from '../lib/calendar';
 import { createNc } from '../services/nc.service';
 
 interface Props {
@@ -39,7 +40,7 @@ export function NCReprovadaPanel({
   const [dataVerif, setDataVerif] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    return d.toISOString().slice(0, 10);
+    return getTodayIso(d);
   });
   const [foto, setFoto] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -238,7 +239,7 @@ const st = StyleSheet.create({
   ncAnteriorCard:  { backgroundColor: Colors.surface, borderRadius: Radius.md, borderWidth: 0.5, borderColor: Colors.borderNormal, padding: Spacing.md, gap: 6 },
   ncAnteriorLabel: { fontSize: FontSizes.sm, fontWeight: '600', color: Colors.text },
   ncAnteriorDesc:  { fontSize: FontSizes.sm, color: Colors.textSecondary, lineHeight: 18 },
-  encerradaBadge:  { alignSelf: 'flex-start', backgroundColor: Colors.surface2, borderRadius: Radius.full, paddingHorizontal: 8, paddingVertical: 2, marginTop: 2 },
+  encerradaBadge:  { alignSelf: 'flex-start', backgroundColor: Colors.surface2, borderRadius: Radius.xs, paddingHorizontal: 8, paddingVertical: 2, marginTop: 2 },
   encerradaText:   { fontSize: 10, color: Colors.textTertiary },
 
   formCard:        { backgroundColor: Colors.surface, borderRadius: Radius.md, borderWidth: 0.5, borderColor: Colors.borderNormal, overflow: 'hidden' },
@@ -262,7 +263,7 @@ const st = StyleSheet.create({
   financeTitle: { fontSize: FontSizes.sm, fontWeight: '700', color: Colors.text },
   financeHelper: { fontSize: FontSizes.xs, color: Colors.textSecondary, lineHeight: 17 },
   managerList: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
-  managerOption: { borderWidth: 1, borderColor: Colors.borderNormal, borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, backgroundColor: Colors.surface },
+  managerOption: { borderWidth: 1, borderColor: Colors.borderNormal, borderRadius: Radius.xs, paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, backgroundColor: Colors.surface },
   managerOptionActive: { borderColor: Colors.brand, backgroundColor: Colors.brandLight },
   managerText: { fontSize: FontSizes.xs, color: Colors.textSecondary },
   managerTextActive: { color: Colors.brand, fontWeight: '700' },

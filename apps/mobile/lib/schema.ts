@@ -1,4 +1,4 @@
-import { column, Schema, Table } from '@powersync/react-native';
+import { column, Schema, Table } from '@powersync/common';
 
 // All columns are text or integer — PowerSync uses SQLite types.
 // UUIDs, dates, and enums are stored as text.

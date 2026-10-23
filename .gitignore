@@ -12,11 +12,6 @@ node_modules/
 apps/mobile/.expo/
 apps/mobile/dist/
 
-# Next.js
-apps/web/.next/
-apps/web/out/
-apps/web/.next-*/
-
 # TypeScript
 *.tsbuildinfo
 
@@ -41,3 +36,11 @@ Thumbs.db
 .design/
 .impeccable/
 
+
+# Workers/wasm do PowerSync Web (gerados por apps/mobile/scripts/copy-powersync-assets.mjs)
+apps/mobile/public/powersync/
+apps/mobile/.wrangler/
+
+# Painel admin (Vite + Worker)
+apps/admin/dist/
+apps/admin/.wrangler/

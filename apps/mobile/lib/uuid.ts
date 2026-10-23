@@ -1,3 +1,4 @@
+import { getTodayIso } from './calendar';
 /**
  * Client-side identifiers for offline-first writes.
  *
@@ -22,7 +23,7 @@ export function now(): string {
   return new Date().toISOString();
 }
 
-/** `YYYY-MM-DD` for `date` columns, derived from the same instant as `now()`. */
+/** `YYYY-MM-DD` de hoje no fuso do aparelho (não UTC: depois das 21h em Brasília o UTC já é o dia seguinte). */
 export function today(): string {
-  return now().slice(0, 10);
+  return getTodayIso();
 }

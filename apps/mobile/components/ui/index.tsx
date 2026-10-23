@@ -1,4 +1,4 @@
-import { AlertCircle, CalendarDays, Camera, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ListFilter, LockKeyhole, LucideIcon, MinusCircle, RefreshCw, Search, WifiOff, X, XCircle } from 'lucide-react-native';
+import { AlertCircle, CalendarDays, Camera, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ListFilter, LockKeyhole, IconComponent, MinusCircle, RefreshCw, Search, WifiOff, X, XCircle } from '../../lib/icons';
 import { ReactNode, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,6 +27,7 @@ import {
   Radius,
   Spacing,
   Typography,
+  BorderWidth,
 } from '../../lib/constants';
 import {
   formatDate,
@@ -233,7 +234,7 @@ export function DataRow({
   accessibilityLabel?: string;
   /** 'row' = label left / value right (dense, 44px) · 'stack' = overline label above value */
   align?: 'row' | 'stack';
-  /** 'strong' = semibold value · 'mono' = IBM Plex Mono value */
+  /** 'strong' = semibold value · 'mono' = JetBrains Mono value */
   emphasis?: 'default' | 'strong' | 'mono';
   tone?: BadgeTone;
   /** Suppresses the bottom hairline — set on the last row of a group. */
@@ -340,7 +341,7 @@ export function Button({
 }: {
   label: string;
   onPress: () => void;
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
   variant?: ButtonVariant;
   disabled?: boolean;
   loading?: boolean;
@@ -396,7 +397,7 @@ export function IconButton({
 }: {
   label: string;
   onPress: () => void;
-  Icon: LucideIcon;
+  Icon: IconComponent;
   selected?: boolean;
   disabled?: boolean;
   accessibilityHint?: string;
@@ -645,7 +646,7 @@ export function SelectField({
   value: string;
   options: readonly SelectOption[];
   onChange: (id: string) => void;
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
   placeholder?: string;
   hint?: string;
   emptyText?: string;
@@ -860,7 +861,7 @@ export function SegmentedControl<T extends string>({
   accessibilityLabel,
 }: {
   value: T;
-  options: { value: T; label: string; Icon?: LucideIcon }[];
+  options: { value: T; label: string; Icon?: IconComponent }[];
   onChange: (value: T) => void;
   accessibilityLabel: string;
 }) {
@@ -904,7 +905,7 @@ export interface ChoiceToggleOption<T extends string> {
   tone: ChoiceToggleTone;
   accessibilityLabel?: string;
   /** Circle glyph: outline while unchosen, solid-filled once chosen. */
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
 }
 
 /**
@@ -1050,7 +1051,7 @@ export function Chip({
   label: string;
   selected?: boolean;
   onPress?: () => void;
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
 }) {
   const content = (
     <>
@@ -1168,7 +1169,7 @@ export function EmptyState({
 }: {
   title: string;
   description?: string;
-  Icon: LucideIcon;
+  Icon: IconComponent;
   actionLabel?: string;
   onAction?: () => void;
 }) {
@@ -1233,7 +1234,7 @@ export function Badge({
 }: {
   label: string;
   tone?: BadgeTone;
-  Icon?: LucideIcon;
+  Icon?: IconComponent;
   size?: 'sm' | 'md';
   accessibilityLabel?: string;
 }) {
@@ -1413,18 +1414,18 @@ const progressPalette: Record<BadgeTone, string> = {
   info: Colors.info,
 };
 
-const syncConfig: Record<SyncState, { color: string; background: string; label: string; shortLabel: string; Icon: LucideIcon }> = {
+const syncConfig: Record<SyncState, { color: string; background: string; label: string; shortLabel: string; Icon: IconComponent }> = {
   synced: { color: Colors.ok, background: Colors.okBg, label: 'Sincronizado', shortLabel: 'Sincronizado', Icon: CheckCircle2 },
   syncing: { color: Colors.info, background: Colors.infoBg, label: 'Sincronizando…', shortLabel: 'Sincronizando\u2026', Icon: RefreshCw },
   offline: { color: Colors.warn, background: Colors.warnBg, label: 'Offline — salvo neste dispositivo', shortLabel: 'Offline', Icon: WifiOff },
   error: { color: Colors.nok, background: Colors.nokBg, label: 'Falha na sincronização', shortLabel: 'Falha', Icon: AlertCircle },
 };
 
-/** Sobre o azul da capa as cores semanticas escuras somem: aqui entram as
- *  variantes claras dos mesmos tokens, com a cal viva nos estados saudaveis. */
+/** Sobre o grafite da capa as cores semanticas escuras somem: aqui entram as
+ *  variantes claras, com verde no sincronizado e amarelo trena enquanto envia. */
 const onBrandSyncColor: Record<SyncState, string> = {
-  synced: Colors.brandSignature,
-  syncing: Colors.brandSignature,
+  synced: Palette.successOnBrand,
+  syncing: Palette.accent,
   offline: Colors.warnBg,
   error: Colors.nokBg,
 };
@@ -1437,7 +1438,7 @@ Object.assign(syncConfig, {
   error: { color: Colors.nok, background: Colors.nokBg, label: 'Falha na sincroniza\u00e7\u00e3o', shortLabel: 'Falha', Icon: AlertCircle },
 });
 
-const toastPalette: Record<ToastTone, { color: string; background: string; border: string; Icon: LucideIcon }> = {
+const toastPalette: Record<ToastTone, { color: string; background: string; border: string; Icon: IconComponent }> = {
   neutral: { color: Colors.text, background: Colors.surface, border: Colors.border, Icon: AlertCircle },
   success: { color: Colors.ok, background: Colors.okBg, border: Colors.ok, Icon: CheckCircle2 },
   danger: { color: Colors.nok, background: Colors.nokBg, border: Colors.nok, Icon: AlertCircle },
@@ -1473,8 +1474,9 @@ const metricPalette: Record<BadgeTone, string> = {
 };
 
 const buttonPalette: Record<ButtonVariant, { background: string; pressed: string; border: string; text: string }> = {
-  primary: { background: Colors.brand, pressed: Colors.brandDark, border: Colors.brand, text: '#FFFFFF' },
-  secondary: { background: Colors.surface, pressed: Colors.surface2, border: Colors.borderNormal, text: Colors.text },
+  // Ação principal em amarelo trena com texto grafite (nunca branco sobre o amarelo).
+  primary: { background: Palette.accent, pressed: Palette.accentPressed, border: Palette.accent, text: Palette.onAccent },
+  secondary: { background: Colors.surface, pressed: Colors.surface2, border: Colors.text, text: Colors.text },
   ghost: { background: 'transparent', pressed: Colors.surface2, border: 'transparent', text: Colors.textSecondary },
   danger: { background: Colors.nok, pressed: Colors.text, border: Colors.nok, text: Colors.surface },
 };
@@ -1492,7 +1494,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     padding: Spacing.lg,
     ...Elevation.card,
@@ -1503,7 +1505,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderWidth: BorderWidth.card,
     borderColor: Colors.border,
     ...Elevation.card,
   },
@@ -1597,8 +1599,8 @@ const styles = StyleSheet.create({
   },
   button: {
     minHeight: ComponentSize.button,
-    borderRadius: Radius.md,
-    borderWidth: 1,
+    borderRadius: Radius.xs,
+    borderWidth: BorderWidth.card,
     paddingHorizontal: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1614,11 +1616,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 0 },
   },
-  buttonText: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.md,
-    lineHeight: 20,
-  },
+  buttonText: { ...Typography.button },
   iconButton: {
     width: ComponentSize.touch,
     height: ComponentSize.touch,
@@ -1680,7 +1678,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: Radius.md,
   },
-  calendarDayToday: { borderWidth: 1, borderColor: Colors.brandSignature },
+  calendarDayToday: { borderWidth: BorderWidth.card, borderColor: Colors.text },
   calendarDaySelected: { backgroundColor: Colors.brand },
   calendarDayPressed: { backgroundColor: Colors.brandLight },
   calendarDayDisabled: { opacity: 0.35 },
@@ -1702,7 +1700,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  selectTriggerSelected: { borderColor: Colors.brandSignature, backgroundColor: Colors.brandLight },
+  selectTriggerSelected: { borderColor: Colors.text, backgroundColor: Colors.brandLight },
   // A locked value is data, not a control: it drops the lime datum and the
   // affordances so it stops competing with the fields the user can still set.
   selectTriggerLocked: { backgroundColor: Colors.surface2, borderColor: Colors.border },
@@ -1720,7 +1718,7 @@ const styles = StyleSheet.create({
   selectIcon: {
     width: 32,
     height: 32,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.surface,
@@ -1798,14 +1796,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  segmentSelected: { backgroundColor: Colors.surface, ...Elevation.card },
+  segmentSelected: { backgroundColor: Colors.surface, borderWidth: BorderWidth.card, borderColor: Colors.text },
   segmentPressed: { backgroundColor: Colors.border },
   segmentText: { ...Typography.caption, color: Colors.textSecondary, fontFamily: FontFamily.medium },
   segmentTextSelected: { color: Colors.brand, fontFamily: FontFamily.semibold },
   chip: {
     minHeight: ComponentSize.touch,
     paddingHorizontal: Spacing.md,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
@@ -1814,7 +1812,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  chipSelected: { backgroundColor: Colors.brandLight, borderColor: Colors.brandSignature },
+  chipSelected: { backgroundColor: Colors.brandLight, borderColor: Colors.text },
   chipText: { ...Typography.caption, color: Colors.textSecondary, fontFamily: FontFamily.medium },
   chipTextSelected: { color: Colors.brand, fontFamily: FontFamily.semibold },
   stepper: {
@@ -1916,7 +1914,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     minHeight: 28,
     paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1946,7 +1944,7 @@ const styles = StyleSheet.create({
   sync: {
     minHeight: 28,
     paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
@@ -1954,9 +1952,9 @@ const styles = StyleSheet.create({
   },
   syncCompact: { width: 28, height: 28, paddingHorizontal: 0, justifyContent: 'center' },
   syncOnBrand: {
-    backgroundColor: 'rgba(255,255,255,0.11)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: 'transparent',
+    borderWidth: BorderWidth.card,
+    borderColor: Palette.onBrandLine,
   },
   syncText: { ...Typography.caption, fontFamily: FontFamily.medium },
   modalBackdrop: {

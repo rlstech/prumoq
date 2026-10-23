@@ -1,4 +1,4 @@
-import { Check, LockKeyhole, Save } from 'lucide-react-native';
+import { Check, LockKeyhole, Save } from '../../lib/icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   radioSelected: {
-    borderColor: Colors.brandSignature,
-    backgroundColor: Colors.brandSignature,
+    borderColor: Colors.text,
+    backgroundColor: Colors.text,
   },
 });

@@ -11,130 +11,89 @@ Leia todos os arquivos de spec antes de começar qualquer implementação.
 
 ## Estado Atual do Projeto
 
-**Fase 1 concluída** — infraestrutura do monorepo criada.  
-**Fase 2 concluída** — todas as 9 telas mobile implementadas com queries reais, offline-first, upload de fotos e assinatura digital. App também roda como PWA no browser via shim.  
-**Fase 3 em andamento** — painel admin Next.js com login, dashboard, obras, FVS, equipes, usuários e verificações implementados.
+**Branch `neon-clerk`: banco no Supabase (plano gratuito, API REST + RLS) + Clerk (login) + Cloudflare Workers.**
+O banco chegou a ir para o Neon, mas voltou ao Supabase: com o PowerSync conectado o Neon nunca dorme e sai do plano gratuito.
+O app nativo foi descartado: o app de campo é só o **PWA** (Expo web, offline com PowerSync Web).
+O painel admin deixou de ser Next.js: é um **SPA estático** (Vite + React Router) servido por um Worker.
+Ambos estão publicados em `https://prumoq.railton.eu.org` no ambiente de TESTE (projeto Supabase `prumoq-teste`,
+Clerk dev, PowerSync Development); a virada para produção ainda não aconteceu (ver memória do projeto).
 
 ```
 prumoq/
-  apps/mobile/       ← Expo 52 + Expo Router + PowerSync (9 telas completas + PWA)
-  apps/web/          ← Next.js 14 + Tailwind (Fase 3 em andamento)
-  packages/shared/   ← tipos TypeScript + enums (todos os 15 tipos do schema)
-  supabase/
-    migrations/001_initial_schema.sql
-    migrations/002_web_views_and_rpcs.sql   ← RPCs usados pelo web shim
-    functions/r2-presign/   ← Edge Function Cloudflare R2
+  apps/mobile/       ← PWA: Expo 52 (web) + Expo Router + PowerSync Web + Clerk; Worker em worker/ (rota de mídia R2)
+  apps/admin/        ← Painel admin: Vite + React 19 + React Router (SPA em /admin) + Worker em worker/ (contas no Clerk)
+  packages/shared/   ← tipos TypeScript (Database) + enums + renderer do relatório de FVS
+  packages/design-system/ ← tokens: "Trena" (PWA) e "Prumo Mineral" (admin); símbolos da marca
+  neon/              ← baseline do schema (extraído do Supabase) + patch Clerk/PowerSync (`baseline/supabase.sql`)
+  powersync/         ← configuração do PowerSync Cloud (service.yaml, sync-config.yaml)
+  supabase/          ← migrations históricas (referência; o schema atual é raw/ + supabase.sql)
   references/        ← protótipos HTML (não modificar)
 ```
 
 ## Arquitetura
 
-### Mobile — Roteamento e Auth
+### Banco e segurança (Supabase + RLS)
 
-O Expo Router usa dois grupos de rotas no diretório `apps/mobile/app/`:
+Os dois apps falam com o banco pela **API REST do Supabase** (PostgREST) com `supabase-js`, a chave publicável
+(header `apikey`) e o token do Clerk do template `neon` (`role: authenticated`; o Supabase aceita o Clerk via
+"third-party auth"; o nome do template é histórico). **A RLS do banco é a fronteira de segurança**:
+qualquer usuário logado pode chamar a API direto, então toda regra de permissão precisa estar nas policies
+ou nas funções do banco (`criar_usuario`, `plataforma_criar_cliente`, `excluir_obra`...), nunca só no front.
+`current_usuario_id()` mapeia o `sub` do Clerk para `usuarios.id` via `usuarios.clerk_user_id`.
 
-```
-app/
-  _layout.native.tsx   ← Root layout nativo: inicializa PowerSync, escuta auth state
-  _layout.web.tsx      ← Root layout web: importa setup-rn-web.ts PRIMEIRO, sem PowerSync
-  _layout.tsx          ← Fallback (não deve ser alcançado — native/web são resolvidos antes)
-  (auth)/login.tsx
-  (app)/
-    _layout.tsx        ← Redireciona para login se não autenticado
-    (tabs)/
-      _layout.tsx      ← Tab bar (Dashboard, Obras, NCs, Perfil)
-      index.tsx        ← Dashboard
-      obras/
-        index.tsx
-        [id]/index.tsx
-        [id]/ambiente/[ambId]/index.tsx
-        [id]/ambiente/[ambId]/fvs/[fvsId]/index.tsx         ← Histórico FVS
-        [id]/ambiente/[ambId]/fvs/[fvsId]/verificacao/nova.tsx  ← Nova Verificação
-      nc/index.tsx
-      perfil/index.tsx
-  print/[fvsId].tsx        ← Impressão/exportação de FVS (print-to-PDF do navegador)
-  print/[fvsId].web.tsx
-```
+O plano gratuito do Supabase pausa o projeto após 7 dias sem atividade: o Worker do PWA tem um Cron Trigger
+diário (`scheduled` em `apps/mobile/worker/index.ts`) que chama `rpc/registrar_heartbeat`.
+Os retries de 401 `jwt_ausente` (`lib/neon/retry-fetch.ts`, `dataApi()` nos Workers) são herança do Neon e não disparam no Supabase.
 
-O `_layout.native.tsx` é o ponto central nativo: inicializa `db.init()`, chama `db.connect(new SupabaseConnector())` ao fazer login e `db.disconnectAndClear()` ao fazer logout.
+### PWA (apps/mobile)
 
-**Row types do PowerSync** — exportados de `apps/mobile/lib/schema.ts`:
-`ObrasRow`, `AmbientesRow`, `VerificacoesRow`, `NaoConformidadesRow`, etc.
+- Root layout web: `app/_layout.web.tsx` (importa `lib/setup-rn-web.ts` PRIMEIRO — corrige o NativeWind no web).
+- Login e sessão: `lib/auth/clerk.ts` (clerk-js headless), `lib/auth/sessao.tsx` (`SessaoProvider`, `useSessao`,
+  `useConta`); a conta do aparelho fica em localStorage e permite abrir offline.
+- Banco local: `lib/powersync.ts` (`@powersync/web`, OPFS), schema em `lib/schema.ts`, regras de sync em
+  `powersync/sync-config.yaml` (Sync Streams por obra). Envio da fila: `lib/powersync-connector.ts` (Data API).
+- Mídia: fotos pendentes como `data:` URL na linha local; envio por `lib/media-envio.ts`; assinatura de URLs
+  pela rota `POST /api/media/presign` do Worker (`worker/index.ts`, R2 via `aws4fetch`).
+- Offline: `public/sw.js` com precache do build (`scripts/build-sw.mjs` roda depois do `expo export`).
+- React: o PWA usa React 18.3 (cópia em `apps/mobile/node_modules`); a raiz tem React 19 para o admin.
+  `metro.config.js` resolve `react`/`react-dom` sempre a partir do app e o `tsconfig` aponta os tipos para a 18.
+- **Ao adicionar uma tabela/coluna**: schema local (`lib/schema.ts`), `powersync/sync-config.yaml`, publicação
+  `powersync` no Postgres e, se for escrita, o connector.
 
-### Mobile — Arquivos de Plataforma
+### Painel admin (apps/admin)
 
-Metro resolve automaticamente variantes por plataforma na ordem:
-1. `arquivo.native.tsx` → nativo (iOS/Android)
-2. `arquivo.web.tsx` → web/PWA
-3. `arquivo.tsx` → fallback
+SPA estático em `/admin`. O Worker (`worker/index.ts`) serve `dist/` sem rodar código e só executa em
+`/admin/api/*` (plano gratuito do Workers: 10 ms de CPU por requisição — por isso não há render no servidor).
 
-Arquivos com split de plataforma em `apps/mobile/lib/`:
-- `powersync.ts` / `powersync.web.ts` — nativo usa `PowerSyncDatabase`; web re-exporta do shim
-- `schema.ts` / `schema.web.ts` — nativo usa schema PowerSync completo; web exporta `{}`
-- `supabase.ts` / `supabase.web.ts` — mesma API, cliente browser no web
-- `powersync-web-shim.ts` — substitui PowerSync no browser, mapeando SQL para Supabase REST/RPCs
+- Telas em `src/app/**` (mesma organização do antigo Next: `page.tsx` + `*Client.tsx` + `actions.ts`), rotas
+  declaradas em `src/router.tsx`. As `page.tsx` são funções assíncronas que buscam os dados e devolvem JSX;
+  `src/lib/compat/server-component.tsx` as executa dentro do TanStack Query.
+- `src/lib/compat/` imita a API do Next usada pelo código: `navigation.ts` (`useRouter`, `usePathname`,
+  `useSearchParams`, `redirect`, `notFound`), `link.tsx`, `cache.ts` (`revalidatePath` → recarrega as consultas).
+- `actions.ts` rodam no navegador com o token do usuário (`@/lib/supabase/server` devolve o cliente do navegador).
+  `requireTenantRole`/`getAuthContext` (`src/lib/auth/context.ts`) são checagens de interface; quem autoriza é a RLS.
+- O que exige segredo vai para o Worker (`src/lib/admin-api.ts` → `/admin/api/*`): criar usuário, atualizar
+  nome/e-mail da conta e criar cliente no Clerk. Fotos: `src/lib/media/signed-urls.ts` usa a rota de mídia do
+  Worker do PWA com `partial: true`.
+- Guarda de sessão: `src/auth/RequireSignedIn.tsx`; perfil/inspetor/suspenso nos layouts `src/app/(admin)/layout.tsx`
+  e `src/app/(platform)/layout.tsx`. Inspetor não acessa o painel.
+- Componentes canônicos: `src/components/ui/` (`DataTable`, `Modal`, `ConfirmDialog`, `KPICard`, `ProgressBar`,
+  `StatusBadge`, `Toast`, `ToggleSwitch`...) e `src/components/layout/` (`Sidebar`, `Header`, `PageHeader`).
+- Datas: o servidor do Worker roda em UTC; formatar com `timeZone: 'America/Sao_Paulo'` e usar
+  `hojeEmBrasilia()` (`src/lib/dates.ts`) para "hoje".
+- CSP e cache: `apps/admin/_headers` (copiado para `dist/` pelo `scripts/postbuild.mjs`).
 
-Hooks em `apps/mobile/hooks/` seguem a mesma convenção de split `.native`/`.web` (ex.: `usePhotoCapture`, `useNcPhoto`, `usePWAInstall`).
+### Print / PDF
 
-### Mobile — PWA / Web Shim
-
-O app mobile roda como PWA no browser. O arquivo `apps/mobile/lib/powersync-web-shim.ts` (~600 linhas) implementa a mesma interface de `db` e `usePowerSyncQuery`, mas despacha para Supabase REST diretamente. Cada tela usa o mesmo código; o shim recebe as queries SQL e as mapeia para chamadas Supabase. Internamente contém:
-- Um dispatcher `fetchFromSupabase` com ~30 branches de pattern-matching de fragmentos SQL específicos de cada tela — **frágil por natureza**, precisa ser atualizado manualmente a cada nova query/tela no mobile.
-- Um cache client-side de permissão por obra (`getAllowedObraIds`, TTL 30s, dedupe de chamadas em andamento) que replica no browser o escopo de RLS por obra.
-- Helpers de upload R2 (`uploadBlobToR2`, `uploadDataUrlToR2`) que duplicam, para o caminho web, a lógica de upload que no nativo passa pela camada de sync.
-
-**Ao adicionar uma nova tela/query no mobile**, também é preciso adicionar o padrão correspondente em `powersync-web-shim.ts` para que a versão web funcione. Queries complexas com JOINs usam RPCs definidas em `supabase/migrations/002_web_views_and_rpcs.sql`.
-
-**`apps/mobile/lib/setup-rn-web.ts`** — DEVE ser o primeiro import em `_layout.web.tsx`. Corrige crash do NativeWind no web ao inicializar o dark mode antes que o MutationObserver do React Native Web seja registrado.
-
-### Mobile/Web — Print / PDF
-
-Dois pontos de impressão/exportação de FVS existem hoje, ambos dependendo de print-to-PDF do navegador (não de geração server-side):
-- Mobile: `apps/mobile/app/(app)/print/[fvsId].tsx` / `.web.tsx`
-- Web: rota pública (fora do painel admin) `apps/web/app/relatorio/fvs/[fvsId]/page.tsx` + `PrintClient.tsx`
-
-Existe também `pupp/` na raiz do repo (fora do workspace pnpm, não referenciado em `.github/workflows/deploy.yml`) contendo apenas um `package.json` com a dependência `puppeteer` e nenhum código — corresponde ao item "PDF | React PDF (client) + Puppeteer (server)" do `SPEC.md`, mas **ainda não implementado**. Não assuma que existe geração de PDF server-side funcionando.
-
-### Web — Clientes Supabase
-
-Três padrões distintos em `apps/web/lib/supabase/`:
-
-- `server.ts` — usa `@supabase/ssr` com cookies do Next.js. Use em Server Components e Server Actions.
-- `client.ts` — cliente browser padrão. Use em Client Components (`'use client'`).
-- `admin.ts` — cliente com `SUPABASE_SERVICE_ROLE_KEY`, para operações admin (`auth.admin.*`) — veja `apps/web/app/(admin)/usuarios/actions.ts` como modelo.
-
-Todos tipados com `Database` de `@prumoq/shared`.
-
-`middleware.ts` protege as rotas admin. Como o Next usa `basePath: '/admin'`, o middleware já recebe os paths **sem** esse prefixo — fonte comum de confusão ao adicionar novas checagens de rota.
-
-### Web — Server Actions
-
-Server Actions ficam em `actions.ts` dentro da pasta da rota (convenção do projeto):
-- `apps/web/app/(admin)/usuarios/actions.ts` — CRUD de usuários (usa service role key)
-- `apps/web/app/(auth)/login/actions.ts` — login; bloqueia perfil `inspetor` (uso restrito ao mobile)
-- `apps/web/app/(admin)/equipes/actions.ts` — CRUD de equipes
-- `apps/web/app/(admin)/obras/[id]/actions.ts` — operações sobre obra específica (ambientes, associações)
-- `apps/web/app/(admin)/obras/actions.ts` — operações sobre a lista de obras (separado do anterior)
-- `apps/web/app/(admin)/empresas/actions.ts` — CRUD de empresas
-- `apps/web/app/(admin)/verificacoes/actions.ts` — operações sobre verificações
-
-Perfis `inspetor` são impedidos de acessar o painel web — o `loginAction` retorna erro e faz signOut.
-
-Não há `actions.ts` em `fvs-padrao/`, `nc/` ou `relatorios/` — essas áreas usam outros caminhos de dados (client components, etc.) em vez de Server Actions.
-
-### Web — Componentes de UI
-
-`apps/web/components/ui/` é a camada reutilizável canônica para telas admin: `DataTable`, `Modal`, `ConfirmDialog`, `KPICard`, `ProgressBar`, `StatusBadge`, `Toast`, `ToggleSwitch`. `apps/web/components/layout/` tem `Header.tsx` e `Sidebar.tsx`. Há também um `ChecklistEditor.tsx` standalone notável.
-
-`@tanstack/react-query` está configurado (`lib/query-provider.tsx`, montado em `(admin)/layout.tsx`) mas praticamente não é usado no restante do app — não assuma que é um padrão ativo de state management.
+Não há geração de PDF no servidor. Os relatórios abrem uma página de impressão e o usuário usa
+"Salvar como PDF" do navegador:
+- Admin: `src/app/relatorio/fvs/[fvsId]` (renderer de `@prumoq/shared`) e `src/app/relatorio/avaliacoes-empreiteiro/[id]` (iframe com a folha A4).
+- PWA: `apps/mobile/app/(app)/print/[fvsId].web.tsx`.
 
 ### Shared Package
 
-`@prumoq/shared` exporta apenas:
-- `Database` — tipos gerados pelo Supabase (regenerar após migrations com `supabase gen types`)
-- Enums (`StatusObra`, `PerfilUsuario`, etc.)
-
-Não há Zod schemas no shared ainda — validação fica em cada app.
+`@prumoq/shared` exporta `Database` (tipos do schema), enums (`StatusObra`, `PerfilUsuario`...) e o renderer do
+relatório de FVS (`renderFvsReportBody`, `FVS_REPORT_CSS`). Validação (Zod) fica em cada app.
 
 ## Arquivos de referência (ler nesta ordem antes de implementar)
 
@@ -142,83 +101,64 @@ Não há Zod schemas no shared ainda — validação fica em cada app.
 2. `schema.sql` — Schema completo do banco Supabase (já copiado para `supabase/migrations/001_initial_schema.sql`)
 3. `design-system.md` — Cores, tipografia, componentes, padrões visuais
 4. `screens-mobile.md` — Especificação de todas as telas do app React Native
-5. `screens-admin.md` — Especificação de todas as telas do painel Next.js
+5. `screens-admin.md` — Especificação de todas as telas do painel admin
 6. `sync-rules.md` — Schema PowerSync, regras de sync, upload de fotos offline
 7. `references/prumoq_mobile_inspector.html` — Protótipo visual do app mobile **(REFERÊNCIA DE DESIGN)**
 8. `references/fvs_admin_prumoq.html` — Protótipo visual do painel admin **(REFERÊNCIA DE DESIGN)**
 
 ## Comandos
 
-### Pré-requisitos (instalar uma vez)
+### Pré-requisitos
 ```bash
-# Node.js 20+ — https://nodejs.org
-# pnpm 9+
-npm install -g pnpm
+# Node.js 22+; pnpm via corepack (nesta máquina `pnpm` não está no PATH: use `corepack pnpm ...`)
+corepack enable
 ```
 
 ### Desenvolvimento
 ```bash
 pnpm install              # instala todas as dependências do monorepo
 
-pnpm mobile               # inicia Expo (apps/mobile)
-pnpm mobile:web           # inicia Expo no browser (PWA)
-pnpm mobile:build:web     # build do PWA
-pnpm web                  # inicia Next.js dev server (apps/web)
-pnpm build:web            # build de produção do painel web
+pnpm mobile:web           # PWA no navegador (Expo)
+pnpm mobile:build:web     # build do PWA (dist/ + service worker)
+pnpm admin                # painel admin em http://localhost:5173/admin/ (Vite)
+pnpm build:admin          # build do painel (apps/admin/dist)
 
-pnpm typecheck            # typecheck em todos os workspaces
-pnpm lint                 # lint (somente apps/web — mobile não tem lint script)
+pnpm typecheck            # typecheck em todos os workspaces (inclui os Workers)
+pnpm --filter @prumoq/admin test   # testes unitários do admin
 ```
 
-### Supabase
+### Workers (Cloudflare)
 ```bash
-# Executar schema no Supabase:
-# Colar supabase/migrations/001_initial_schema.sql no SQL Editor do Supabase Dashboard
-# Colar supabase/migrations/002_web_views_and_rpcs.sql também
-# Existem migrations adicionais 003-058 (obra_equipes, correções de RLS, ciclo de
-# vida de FVS, reinspeção de NC, RPC get_fvs_header, módulo de medições 038-058) —
-# aplicar todas em ordem.
-# Várias são correções de bugs em RLS/cálculo de progresso (ex.:
-# 007_fix_nc_join_inflates_progress.sql, 010_fix_verificacoes_rls_obra_access.sql) —
-# essa área é sensível, revisar com cautela extra ao alterá-la.
-# O módulo de medições (038+) usa triggers autoritativos em
-# avancos_aprovados_servico: validação com rebase do delta no saldo real (058),
-# imutabilidade de histórico (052) e status de etapa + auditoria via trigger (057).
-
-# Gerar tipos TypeScript após aplicar o schema:
-npx supabase gen types typescript --project-id <id> \
-  > packages/shared/src/database.types.ts
-
-# Deploy da Edge Function:
-supabase functions deploy r2-presign
-
-# Definir secrets da Edge Function:
-supabase secrets set \
-  R2_ACCOUNT_ID=... \
-  R2_ACCESS_KEY_ID=... \
-  R2_SECRET_ACCESS_KEY=... \
-  R2_BUCKET_NAME=prumoq-fotos
+# PWA: apps/mobile → Worker prumoq-pwa (assets + /api/media/presign)
+cd apps/mobile && npx wrangler deploy        # depois de `pnpm mobile:build:web`
+# Admin: apps/admin → Worker prumoq-admin (assets + /admin/api/*)
+cd apps/admin && npx wrangler deploy         # depois de `pnpm build:admin`
+# Segredos (nunca em arquivo): npx wrangler secret put <NOME>
+# Dev local do admin com a API: npx wrangler dev --port 8788 --var CLERK_SECRET_KEY:... --var NEON_DATA_API_URL:...
 ```
+Domínio (teste): `https://prumoq.railton.eu.org` — rota `prumoq.railton.eu.org/*` no `prumoq-pwa` e
+`prumoq.railton.eu.org/admin*` no `prumoq-admin` (a mais específica vence). Mesma origem: o admin usa
+`/api/media/presign` do PWA (`VITE_MEDIA_API_URL` vazio) e o `public/sw.js` do PWA não pode interceptar `/admin`.
+O deploy automático (`.github/workflows/deploy.yml`) publica os dois Workers a cada push no `main`.
+
+### Banco (Supabase)
+O schema é `neon/baseline/raw/` (extraído do catálogo do Supabase) + `neon/baseline/supabase.sql` (gerado por
+`node neon/baseline/build-supabase.mjs`: identidade do Clerk, policies sem `auth.uid()`, RPCs novas, `obra_id` do
+PowerSync, heartbeat). Replicação do PowerSync: `neon/baseline/supabase-powersync.sql` (senha da role à parte).
+Leia `neon/baseline/README.md` antes de mexer. As migrations em `supabase/migrations` são históricas; várias corrigem RLS e cálculo
+de progresso (ex.: `007_fix_nc_join_inflates_progress.sql`, `010_fix_verificacoes_rls_obra_access.sql`) — área
+sensível, revisar com cautela. O módulo de medições usa triggers autoritativos em `avancos_aprovados_servico`.
 
 ## Variáveis de Ambiente
 
-Copie `.env.example` e preencha:
+Veja `.env.example`. Arquivos `.env.local` só com valores públicos; segredos nos Workers.
 
-| Variável | Onde usar |
+| Variável | Onde |
 |---|---|
-| `EXPO_PUBLIC_SUPABASE_URL` | `apps/mobile/.env` |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `apps/mobile/.env` |
-| `EXPO_PUBLIC_POWERSYNC_URL` | `apps/mobile/.env` |
-| `EXPO_PUBLIC_R2_PUBLIC_URL` | `apps/mobile/.env` |
-| `NEXT_PUBLIC_SUPABASE_URL` | `apps/web/.env.local` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `apps/web/.env.local` |
-| `NEXT_PUBLIC_R2_PUBLIC_URL` | `apps/web/.env.local` |
-| `SUPABASE_SERVICE_ROLE_KEY` | `apps/web/.env.local` |
-| `POWERSYNC_URL` | `apps/web/.env.local` |
-| `R2_ACCOUNT_ID` | Supabase secrets (Edge Function) |
-| `R2_ACCESS_KEY_ID` | Supabase secrets (Edge Function) |
-| `R2_SECRET_ACCESS_KEY` | Supabase secrets (Edge Function) |
-| `R2_BUCKET_NAME` | Supabase secrets (Edge Function) |
+| `EXPO_PUBLIC_POWERSYNC_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, `EXPO_PUBLIC_MEDIA_API_URL` | `apps/mobile/.env.local` |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_PWA_URL`, `VITE_MEDIA_API_URL` | `apps/admin/.env.local` |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `ALLOWED_ORIGINS` | segredos do Worker `prumoq-pwa` |
+| `CLERK_SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | segredos do Worker `prumoq-admin` |
 
 ## Prioridades de Implementação
 
@@ -262,7 +202,7 @@ Copie `.env.example` e preencha:
 - Tipar tudo — sem `any`
 - Usar tipos de `@prumoq/shared` (package compartilhado)
 - Zod para validação em runtime
-- Após aplicar o schema no Supabase, regerar os tipos com `supabase gen types`
+- Após mudar o schema, regerar `packages/shared/src/database.types.ts`
 
 ### React Native
 - Expo SDK 52
@@ -271,13 +211,11 @@ Copie `.env.example` e preencha:
 - `SafeAreaView` em todas as telas
 - Testar em iOS e Android
 
-### Next.js
-- App Router (não Pages Router)
-- Server Components por padrão
-- Client Components só quando necessário (`'use client'`)
-- Tailwind CSS — tokens de cor em `tailwind.config.ts`
-- Middleware (`middleware.ts`) protege todas as rotas admin
-- Server Actions em `actions.ts` junto à rota que as usa
+### Painel admin
+- SPA estático: nada de render no servidor; dados buscados no navegador (TanStack Query)
+- Nova tela: `src/app/<rota>/page.tsx` (+ `*Client.tsx`) e registrar em `src/router.tsx`
+- Escritas em `actions.ts` junto à rota, rodando no navegador; o que exige segredo vai para `apps/admin/worker`
+- Tailwind CSS — tokens de cor em `apps/admin/tailwind.config.ts`
 
 ### Banco de Dados
 - Usar `@prumoq/shared` — client tipado com `Database`
@@ -293,10 +231,10 @@ Copie `.env.example` e preencha:
 
 ### PowerSync
 - Schema local em `apps/mobile/lib/schema.ts` (15 tabelas)
-- `SupabaseConnector` em `apps/mobile/lib/supabase-connector.ts`
+- Connector (envio da fila pela API REST do Supabase) em `apps/mobile/lib/powersync-connector.ts`
 - `usePowerSyncQuery()` para queries reativas
 - `db.execute()` para writes offline
-- Sempre passar `created_offline: 1` em novos registros
+- `created_offline` em novos registros: usar `criadoOffline()` (`lib/powersync.ts`), 1 só quando salvo sem conexão (selo "Criada offline")
 - Checar `db.currentStatus.connected` para status offline
 - Ao fazer logout: `db.disconnectAndClear()` (não `disconnect()` + `clearLocal()` separados)
 - Bucket definitions (YAML) configuradas no PowerSync Dashboard — ver `sync-rules.md`
@@ -323,21 +261,29 @@ Copie `.env.example` e preencha:
 
 ## Design
 
-**O sistema “Prumo Mineral” em `design-system.md` e `packages/design-system/` é
-a referência visual definitiva.** Os protótipos HTML em `references/` continuam
-válidos para conteúdo e fluxos, não para cores, tipografia ou shell.
+**`design-system.md` e `packages/design-system/` são a referência visual definitiva.**
+São duas identidades: **Trena** no PWA (grafite + amarelo de trena, logo "Q de face") e
+**Prumo Mineral** no admin (azul prumo + cal viva), que ainda não migrou. Os protótipos
+HTML em `references/` continuam válidos para conteúdo e fluxos, não para cores,
+tipografia ou shell.
 
 Ao implementar qualquer tela:
 1. Consulte o fluxo no HTML de referência correspondente (`prumoq_mobile_inspector.html` para mobile, `fvs_admin_prumoq.html` para web)
-2. Use os tokens de `packages/design-system/` e os padrões de `design-system.md`
-3. Reproduza a linguagem Prumo Mineral usando os componentes canônicos
-4. Use Lucide React/React Native para ícones (não emoji)
+2. Use os tokens de `packages/design-system/` (via `apps/mobile/lib/constants.ts` no PWA) e os padrões de `design-system.md`
+3. Use os componentes canônicos de cada app
+4. Ícones: no PWA, sempre de `apps/mobile/lib/icons.tsx` (nunca direto de `lucide-react-native`); no admin, Lucide React. Nada de emoji
+5. PWA: texto sobre o amarelo é sempre grafite (`Palette.onAccent`); não usar o amarelo como texto ou borda sobre fundo claro
 
-Cores principais para consulta rápida (também em `apps/mobile/lib/constants.ts` e `apps/web/tailwind.config.ts`):
+Cores principais do PWA (Trena; `trenaPalette`):
+- Brand / Grafite: `#1C1F22`
+- Accent / Amarelo Trena: `#FFC21A`
+- Canvas / Concreto: `#ECEAE6`
+- OK/Conforme: `#1F7A3A`
+- NOK/Não conforme: `#C8281E`
+- Sync/Em andamento: `#2459A8`
+- Warn/Prazo: `#B85400`
+
+Cores principais do admin (Prumo Mineral; `apps/admin/tailwind.config.ts`):
 - Brand / Azul Prumo: `#163B50`
 - Accent / Cal Viva: `#D8E568`
 - Canvas / Calcário: `#F4F1E8`
-- OK/Conforme: `#2E7D32`
-- NOK/Não conforme: `#C62828`
-- Progress/Em andamento: `#1565C0`
-- Warn/Prazo: `#E65100`

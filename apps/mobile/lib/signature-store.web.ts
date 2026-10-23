@@ -52,9 +52,18 @@ export const signatureStore: SignatureStore = {
     const blob = await storedBlob(userId);
     return blob ? URL.createObjectURL(blob) : null;
   },
+  // A cópia vai para a linha da verificação/avaliação como `pending:`: precisa sobreviver a um recarregamento
+  // da página até subir ao R2, por isso `data:` URL e não `blob:` (ver pending-media.web.ts).
   async snapshot(userId) {
     const blob = await storedBlob(userId);
-    return blob ? { uri: URL.createObjectURL(blob.slice(0, blob.size, 'image/png')) } : null;
+    if (!blob) return null;
+    const uri = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error ?? new Error('Falha ao ler a assinatura.'));
+      reader.readAsDataURL(blob.slice(0, blob.size, 'image/png'));
+    });
+    return { uri };
   },
   async restoreFromRemote(userId, downloadUri) {
     try {

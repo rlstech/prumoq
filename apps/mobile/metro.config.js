@@ -1,7 +1,6 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const { withNativeWind } = require('nativewind/metro');
 const path = require('path');
-const fs = require('fs');
 
 const config = getDefaultConfig(__dirname);
 
@@ -9,29 +8,20 @@ const config = getDefaultConfig(__dirname);
 const monorepoRoot = path.resolve(__dirname, '../..');
 config.watchFolders = [monorepoRoot];
 
-// Exclude apps/web's Next.js build output from Metro's watcher.
-// `.next/` churns constantly during `next dev` (files/dirs created and
-// removed as routes compile) and Metro's FallbackWatcher on Windows can
-// throw ENOENT if a directory disappears between crawl and fs.watch().
-// Since the mobile app never needs to resolve/watch anything under
-// apps/web, block it outright rather than let the two dev servers race.
+// O PWA não usa nada do painel admin: ficam fora do watcher do Metro o build do Vite e os temporários do
+// wrangler, que mudam o tempo todo (no Windows, uma pasta que some entre a varredura e o fs.watch() derruba o Metro).
 config.resolver.blockList = [
   config.resolver.blockList,
-  /[\\/]apps[\\/]web[\\/]\.next[\\/].*/,
+  /[\\/]apps[\\/]admin[\\/](dist|\.wrangler)[\\/].*/,
 ].filter(Boolean);
 
-// ── Deduplicate singleton packages (pnpm creates multiple copies) ───
-// Resolve to the REAL path (not symlink) so Metro sees one canonical location
-const singletonDeps = ['react', 'react-dom', 'react-native', 'react-native-web'];
-const singletonMap = {};
-for (const dep of singletonDeps) {
-  const depPath = path.resolve(__dirname, 'node_modules', dep);
-  try {
-    singletonMap[dep] = fs.realpathSync(depPath);
-  } catch {
-    // dep not installed (e.g. react-dom may not exist) — skip
-  }
-}
+// ── React 18 do PWA ─────────────────────────────────────────────────
+// A raiz do monorepo tem React 19 (admin Next 15); o Expo 52 precisa da cópia 18.3 que fica em
+// apps/mobile/node_modules. Bibliotecas hoisted na raiz (expo-router, react-native-web...) achariam o 19,
+// então `react`, `react-dom` e seus subcaminhos (react/jsx-runtime, react-dom/client...) são sempre
+// resolvidos a partir deste app.
+const singletonDeps = ['react', 'react-dom'];
+const isSingleton = (name) => singletonDeps.some((dep) => name === dep || name.startsWith(dep + '/'));
 
 // Ensure Metro can resolve modules from both the app and monorepo root
 config.resolver.nodeModulesPaths = [
@@ -39,26 +29,32 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
-// ── Custom resolver: singleton enforcement + web platform aliases ───
+// ── PowerSync Web ───────────────────────────────────────────────────
+// O @powersync/web publica uma build própria para React Native Web na condição
+// de export `react-native-web` (sem `new URL(..., import.meta.url)`, que o Metro
+// não entende). Os workers vêm de public/powersync (ver lib/powersync.ts).
+config.resolver.unstable_enablePackageExports = true;
+config.resolver.unstable_conditionsByPlatform = {
+  ...config.resolver.unstable_conditionsByPlatform,
+  web: [...(config.resolver.unstable_conditionsByPlatform?.web ?? ['browser']), 'react-native-web'],
+};
+
+// ── Custom resolver: singleton enforcement ──────────────────────────
 const originalResolve = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (ctx, moduleName, platform) => {
-  // Force singleton deps to always resolve to the same canonical copy
-  if (singletonMap[moduleName]) {
-    return {
-      filePath: path.join(singletonMap[moduleName], 'index.js'),
-      type: 'sourceFile',
-    };
+  // Resolve direto pelo Node (sem os paths do tsconfig, que apontam `react` para os tipos @types/react).
+  if (isSingleton(moduleName)) {
+    return { type: 'sourceFile', filePath: require.resolve(moduleName, { paths: [__dirname] }) };
   }
 
-  if (platform === 'web') {
-    // Replace PowerSync (requires native SQLite) with Supabase-backed shim
-    if (moduleName === '@powersync/react-native') {
-      return {
-        filePath: path.resolve(__dirname, 'lib/powersync-web-shim.ts'),
-        type: 'sourceFile',
-      };
-    }
+  // O @powersync/web importa o wa-sqlite (arquivos .mjs com `import.meta`) só para o modo
+  // sem worker. O app sempre roda o SQLite no worker de public/powersync, e `import.meta`
+  // num bundle clássico do Metro quebra a página inteira ("Cannot use 'import.meta'
+  // outside a module"). Então, no navegador, esses módulos viram vazios.
+  if (platform === 'web' && moduleName.startsWith('@journeyapps/wa-sqlite')) {
+    return { type: 'empty' };
   }
+
   if (originalResolve) {
     return originalResolve(ctx, moduleName, platform);
   }

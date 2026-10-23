@@ -4,25 +4,39 @@
 import '../lib/setup-rn-web';
 import '../global.css';
 import { Slot, useRouter, useSegments } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { InstallBanner } from '../components/InstallBanner.web';
+import { NovaVersaoAviso } from '../components/NovaVersaoAviso.web';
 import { PullToRefresh } from '../components/PullToRefresh.web';
-import {
-  clearPasswordRecoverySession,
-  isMarkedPasswordRecoverySession,
-  markPasswordRecoverySession,
-} from '../lib/auth/passwords';
+import { carregarClerk } from '../lib/auth/clerk';
+import { SessaoProvider, useSessao } from '../lib/auth/sessao';
+import { PowerSyncContext } from '@powersync/react';
 import { isPullToRefreshEnabled } from '../lib/pull-to-refresh';
+import { db } from '../lib/powersync';
+import { assinarDownloads } from '../lib/media-api';
 import { supabase } from '../lib/supabase';
 import { ThemeProvider } from '../lib/theme/ThemeProvider';
 
+// Só em desenvolvimento (ou num build de teste com EXPO_PUBLIC_E2E=1): acesso ao banco local e ao Clerk pelo
+// console do navegador, usado pelos testes automatizados. No build normal o bloco some do bundle.
+if ((__DEV__ || process.env.EXPO_PUBLIC_E2E === '1') && typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__prumoqDev = { db, carregarClerk, supabase, assinarDownloads };
+}
+
 export default function RootLayout() {
+  return (
+    <SessaoProvider>
+      <RootNavigator />
+    </SessaoProvider>
+  );
+}
+
+function RootNavigator() {
   const router = useRouter();
   const segments = useSegments();
   const isPrintRoute = segments.some((segment) => segment === 'print');
   const pullToRefreshEnabled = isPullToRefreshEnabled(segments as string[]);
-  const segmentsRef = useRef(segments);
   const [ready, setReady] = useState(false);
   const [screenRefreshKey, setScreenRefreshKey] = useState(0);
 
@@ -37,69 +51,25 @@ export default function RootLayout() {
     document.documentElement.lang = 'pt-BR';
   }, []);
 
-  // Keep ref current on every render so the auth listener always sees the
-  // latest segments WITHOUT being a dependency (avoids re-subscribing on navigation).
-  segmentsRef.current = segments;
-
   useEffect(() => {
-    // Avoid "Attempted to navigate before mounting the Root Layout component"
-    // by ensuring initial mount completes before listening to auth state.
+    // Avoid "Attempted to navigate before mounting the Root Layout component".
     const timer = setTimeout(() => setReady(true), 100);
     return () => clearTimeout(timer);
   }, []);
 
+  // Leva para o login quem não tem sessão e para o app quem acabou de entrar. Rotas de (auth) são públicas
+  // (login e recuperação de senha); uma rota profunda aberta com sessão ativa permanece onde está.
+  const { estado } = useSessao();
   useEffect(() => {
     if (!ready) return;
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      const currentSegments = segmentsRef.current as string[];
-      const onAuthRoute = currentSegments[0] === '(auth)';
-      const authScreen = currentSegments[1];
-      const onPasswordReset = onAuthRoute && authScreen === 'redefinir-senha';
-
-      if (event === 'PASSWORD_RECOVERY' && session) {
-        markPasswordRecoverySession(session.user.id);
-        if (!onPasswordReset) router.replace('/(auth)/redefinir-senha');
-        return;
-      }
-
-      // INITIAL_SESSION: restore existing session on page load/refresh
-      if (event === 'INITIAL_SESSION') {
-        if (session && isMarkedPasswordRecoverySession(session.user.id)) {
-          if (!onPasswordReset) router.replace('/(auth)/redefinir-senha');
-          return;
-        }
-
-        // The recovery page owns validation of the temporary recovery session.
-        // Navigating away here would consume a valid e-mail link before the
-        // user has a chance to choose a new password.
-        if (onPasswordReset) return;
-
-        if (session) {
-          // Só redireciona para o dashboard se estiver numa rota de auth ou na raiz.
-          // Se o usuário atualizou a página em uma rota profunda (ex: /obras/.../fvs/...),
-          // permanece nela — não volta para o dashboard.
-          const onAuthOrRoot = onAuthRoute || !currentSegments[0];
-          if (onAuthOrRoot) router.replace('/(app)/(tabs)');
-        } else {
-          // Login and password-recovery request are intentionally public.
-          if (!onAuthRoute) router.replace('/(auth)/login');
-        }
-        return;
-      }
-      // SIGNED_IN navigation is handled by the login screen after profile check
-      if (event === 'SIGNED_OUT') {
-        clearPasswordRecoverySession();
-        // Don't redirect if already on the login screen — avoids remounting the
-        // login component and silently clearing its error state (e.g. after a
-        // profile-restriction signOut from inside the login handler itself).
-        const onLogin = currentSegments[0] === '(auth)';
-        if (!onLogin) router.replace('/(auth)/login');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [ready]); // segments deliberately excluded — use segmentsRef instead
+    const currentSegments = segments as string[];
+    const onAuthRoute = currentSegments[0] === '(auth)';
+    if (estado.fase === 'ativa') {
+      if (onAuthRoute || !currentSegments[0]) router.replace('/(app)/(tabs)');
+    } else if (estado.fase === 'deslogado' || estado.fase === 'expirada') {
+      if (!onAuthRoute) router.replace('/(auth)/login');
+    }
+  }, [ready, estado.fase, segments, router]);
 
   // Mesmo provider do nativo: as telas usam SafeAreaView do safe-area-context,
   // que exige um provider acima. No browser os insets vêm de env(safe-area-*),
@@ -107,17 +77,20 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        {isPrintRoute ? (
-          <Slot />
-        ) : (
-          <PullToRefresh
-            enabled={pullToRefreshEnabled}
-            onRefresh={refreshCurrentScreen}
-          >
-            <InstallBanner />
-            <Slot key={screenRefreshKey} />
-          </PullToRefresh>
-        )}
+        <PowerSyncContext.Provider value={db}>
+          {isPrintRoute ? (
+            <Slot />
+          ) : (
+            <PullToRefresh
+              enabled={pullToRefreshEnabled}
+              onRefresh={refreshCurrentScreen}
+            >
+              <InstallBanner />
+              <Slot key={screenRefreshKey} />
+              <NovaVersaoAviso />
+            </PullToRefresh>
+          )}
+        </PowerSyncContext.Provider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

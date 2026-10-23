@@ -1,4 +1,4 @@
-import { useQuery } from '@powersync/react-native';
+import { useQuery } from '@powersync/react';
 import { useLocalSearchParams } from 'expo-router';
 import {
   AlertTriangle,
@@ -16,7 +16,7 @@ import {
   UserRound,
   UsersRound,
   XCircle,
-} from 'lucide-react-native';
+} from '../../../../../../../../../../lib/icons';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -55,6 +55,7 @@ import {
 } from '../../../../../../../../../../lib/constants';
 import { goBack } from '../../../../../../../../../../lib/navigation';
 import { usePrivateMediaUris } from '../../../../../../../../../../hooks/usePrivateMediaUris';
+import { useEnvioPendente } from '../../../../../../../../../../hooks/useEnvioPendente';
 import {
   formatDateOnly,
   formatDateTime,
@@ -307,6 +308,8 @@ export default function VerificationDetailScreen() {
     () => reinspectionPhotos.map(photo => photo.key),
     [reinspectionPhotos],
   );
+  // Na fila de envio do aparelho (a própria verificação, itens, fotos ou NCs dela).
+  const envioPendente = useEnvioPendente(verificacaoId);
   const pendingMediaCount = useMemo(() => {
     const photoKeys = [
       ...generalPhotoKeys,
@@ -377,7 +380,7 @@ export default function VerificationDetailScreen() {
 
   const registeredAt = formatDateTime(verification.created_at);
   const signedAt = formatDateTime(verification.assinada_em);
-  const isPendingSync = verification.created_offline === 1 || verification.created_offline === true;
+  const isPendingSync = envioPendente;
 
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
@@ -774,7 +777,7 @@ const styles = StyleSheet.create({
   stateIcon: {
     width: 56,
     height: 56,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.warnBg,
     alignItems: 'center',
     justifyContent: 'center',
@@ -868,7 +871,7 @@ const styles = StyleSheet.create({
   metricIcon: {
     width: 36,
     height: 36,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -904,7 +907,7 @@ const styles = StyleSheet.create({
   identityIcon: {
     width: 40,
     height: 40,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.brandLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -993,7 +996,7 @@ const styles = StyleSheet.create({
   itemOrder: {
     width: 32,
     height: 32,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1106,7 +1109,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
-    borderRadius: Radius.full,
+    borderRadius: Radius.xs,
     backgroundColor: Colors.okBg,
   },
   signedBadgeText: {

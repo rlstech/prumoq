@@ -1,15 +1,26 @@
 import { router, Tabs } from 'expo-router';
-import { AlertTriangle, Building2, ClipboardCheck, LayoutGrid, User } from 'lucide-react-native';
-import { StyleSheet } from 'react-native';
+import { AlertTriangle, Building2, ClipboardCheck, LayoutGrid, User } from '../../../lib/icons';
+import { StyleSheet, View } from 'react-native';
 import { useResponsiveLayout } from '../../../hooks/useResponsiveLayout';
+import type { IconComponent } from '../../../lib/icons';
 import {
   Colors,
   ComponentSize,
   FontFamily,
   FontSizes,
+  Palette,
   Radius,
   Spacing,
 } from '../../../lib/constants';
+
+/** Ícone da aba: o item ativo ganha o bloco amarelo atrás do ícone. */
+function TabIcon({ Icon, color, focused }: { Icon: IconComponent; color: string; focused: boolean }) {
+  return (
+    <View style={[styles.iconSlot, focused && styles.iconSlotActive]}>
+      <Icon size={20} color={focused ? Palette.onAccent : color} />
+    </View>
+  );
+}
 
 export default function TabsLayout() {
   const { isTablet } = useResponsiveLayout();
@@ -20,8 +31,8 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarPosition: isTablet ? 'left' : 'bottom',
-        tabBarActiveTintColor: Colors.brandSignature,
-        tabBarInactiveTintColor: isTablet ? Colors.textSecondary : 'rgba(255,255,255,0.58)',
+        tabBarActiveTintColor: Palette.accent,
+        tabBarInactiveTintColor: Palette.onBrandMuted,
         tabBarStyle: [styles.tabBar, isTablet && styles.navigationRail],
         tabBarItemStyle: [styles.tabItem, isTablet && styles.railItem],
         tabBarLabelStyle: styles.tabLabel,
@@ -34,7 +45,7 @@ export default function TabsLayout() {
         options={{
           title: 'Início',
           tabBarAccessibilityLabel: 'Início',
-          tabBarIcon: ({ color }) => <LayoutGrid size={21} color={color} strokeWidth={2.1} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon Icon={LayoutGrid} color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -49,7 +60,7 @@ export default function TabsLayout() {
           title: 'Obras',
           tabBarAccessibilityLabel: 'Obras',
           popToTopOnBlur: true,
-          tabBarIcon: ({ color }) => <Building2 size={21} color={color} strokeWidth={2.1} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon Icon={Building2} color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -57,7 +68,7 @@ export default function TabsLayout() {
         options={{
           title: 'NCs',
           tabBarAccessibilityLabel: 'Não conformidades',
-          tabBarIcon: ({ color }) => <AlertTriangle size={21} color={color} strokeWidth={2.1} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon Icon={AlertTriangle} color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -68,7 +79,7 @@ export default function TabsLayout() {
           // fica no rótulo de acessibilidade.
           title: 'Avaliar',
           tabBarAccessibilityLabel: 'Avaliações de empreiteiros',
-          tabBarIcon: ({ color }) => <ClipboardCheck size={21} color={color} strokeWidth={2.1} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon Icon={ClipboardCheck} color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen name="avaliacoes/nova" options={{ href: null }} />
@@ -87,7 +98,7 @@ export default function TabsLayout() {
         options={{
           title: 'Perfil',
           tabBarAccessibilityLabel: 'Perfil',
-          tabBarIcon: ({ color }) => <User size={21} color={color} strokeWidth={2.1} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon Icon={User} color={color} focused={focused} />,
         }}
       />
     </Tabs>
@@ -100,8 +111,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xs,
     paddingBottom: Spacing.sm,
     borderTopWidth: 0,
-    // Mesma família do azul da capa do dashboard: a pílula flutuante lê como
-    // a mesma superfície da marca, não como uma barra preta genérica.
+    // Mesmo grafite da capa do dashboard.
     backgroundColor: Colors.brand,
     // 8dp em vez de 12dp de margem lateral: devolve 8dp para os rótulos, que em
     // aparelhos de 360dp era a diferença entre caber e cortar.
@@ -120,7 +130,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.lg,
     borderTopWidth: 0,
     borderRightWidth: 1,
-    borderRightColor: Colors.brandDark,
+    borderRightColor: Palette.onBrandLine,
   },
   tabItem: {
     minHeight: 52,
@@ -140,8 +150,17 @@ const styles = StyleSheet.create({
     // mantém o alinhamento.
     alignSelf: 'stretch',
     textAlign: 'center',
-    fontFamily: FontFamily.medium,
+    fontFamily: FontFamily.semibold,
     fontSize: FontSizes.tiny,
   },
-  tabIcon: { marginTop: 1 },
+  // O contêiner padrão do ícone tem 31×28: o bloco do item ativo é mais largo.
+  tabIcon: { marginTop: 1, width: 36, height: 26 },
+  iconSlot: {
+    width: 36,
+    height: 26,
+    borderRadius: Radius.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconSlotActive: { backgroundColor: Palette.accent },
 });

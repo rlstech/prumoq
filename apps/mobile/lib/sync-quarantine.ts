@@ -1,4 +1,4 @@
-import { AbstractPowerSyncDatabase, CrudEntry, UpdateType } from '@powersync/react-native';
+import { AbstractPowerSyncDatabase, CrudEntry, UpdateType } from '@powersync/common';
 import { AppSchema, SyncFalhasRow } from './schema';
 import { FailureClassification } from './sync-failure';
 

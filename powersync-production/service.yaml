@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://unpkg.com/@powersync/cli-schemas@latest/json-schema/service-config.json
+# PowerSync Cloud — instância Production (prod), ligada ao Supabase de produção `prumoq` (xdeyoxdtfbueuymvbsbl).
+# As regras de sync são as mesmas da Development: deploy com
+#   npx -y powersync@0.10.2 deploy --directory powersync-production --sync-config-file-path powersync/sync-config.yaml
+# PS_DATABASE_PASSWORD vem do ambiente (a mesma senha que `virada.mjs powersync` grava na role pq_powersync).
+
+_type: cloud
+name: Production
+region: br
+
+replication:
+  connections:
+    - type: postgresql
+      # Conexão direta (o pooler do Supabase não repassa replicação lógica). No plano gratuito é só IPv6.
+      hostname: db.xdeyoxdtfbueuymvbsbl.supabase.co
+      port: 5432
+      database: postgres
+      username: pq_powersync
+      password:
+        secret: !env PS_DATABASE_PASSWORD
+      sslmode: verify-full
+
+client_auth:
+  # Clerk de PRODUÇÃO. Conferir o domínio do Frontend API no painel do Clerk antes do deploy.
+  jwks_uri: https://clerk.railton.eu.org/.well-known/jwks.json
+  additional_audiences: []
+  allow_temporary_tokens: false
