@@ -22,6 +22,6 @@ replication:
 
 client_auth:
   # Clerk de PRODUÇÃO. Conferir o domínio do Frontend API no painel do Clerk antes do deploy.
-  jwks_uri: https://clerk.prumoq.railton.eu.org/.well-known/jwks.json
+  jwks_uri: https://clerk.railton.eu.org/.well-known/jwks.json
   additional_audiences: []
   allow_temporary_tokens: false

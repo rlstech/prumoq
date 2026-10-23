@@ -16,11 +16,11 @@ Nunca colar no chat. Todos os comandos rodam com `node --env-file=C:/Users/Railt
 ## 1. Antes (só você, nos painéis)
 
 1. **Clerk: criar a instância de produção** (Configure → "Create production instance", clonando a dev).
-   - Domínio: `prumoq.railton.eu.org`. O Clerk mostra 5 registros CNAME (`clerk.`, `accounts.`, `clkmail.`,
+   - Domínio: `railton.eu.org` (o app fica no subdomínio `prumoq`). O Clerk mostra 5 registros CNAME (`clerk.`, `accounts.`, `clkmail.`,
      `clk._domainkey.`, `clk2._domainkey.`): criar na zona `railton.eu.org` do Cloudflare com **proxy desligado**
      (nuvem cinza) e esperar o Clerk validar e emitir os certificados.
    - Senha mínima: **8** (User & authentication → Password).
-   - Conferir que o Frontend API ficou `clerk.prumoq.railton.eu.org`. Se ficar outro, ajustar
+   - Conferir que o Frontend API ficou `clerk.railton.eu.org`. Se ficar outro, ajustar
      `powersync-production/service.yaml` (`jwks_uri`) e a CSP em `apps/admin/_headers`.
    - Copiar `sk_live_...` e `pk_live_...` para o arquivo de segredos.
 2. **Senha da role do PowerSync:** gerar uma senha forte e colocar em `PS_DATABASE_PASSWORD` no mesmo arquivo.
