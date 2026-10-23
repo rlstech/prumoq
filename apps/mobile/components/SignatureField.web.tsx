@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import SignatureCanvas from 'react-signature-canvas';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { ArrowLeft, Check, RotateCcw, Trash2 } from '../lib/icons';
 import { Colors, FontFamily, Radius, Spacing, Typography } from '../lib/constants';
 import { Button, IconButton } from './ui';
@@ -84,8 +85,8 @@ function useSignaturePad() {
         ref={padRef}
         clearOnResize={false}
         penColor={Colors.text}
-        minWidth={0.9}
-        maxWidth={2.8}
+        minWidth={1.4}
+        maxWidth={3.6}
         velocityFilterWeight={0.6}
         onEnd={() => setStrokes(padRef.current?.toData().length ?? 0)}
         canvasProps={{
@@ -252,7 +253,8 @@ function OverlayPad({
 
   const message = localError ?? error;
 
-  return (
+  // Portal no <body>: dentro da tela da aba a posição fixa fica presa ao container e a barra de abas cobre o rodapé.
+  return createPortal(
     <div style={overlay} role="dialog" aria-modal="true" aria-label={title}>
       <View style={styles.header}>
         <IconButton label="Voltar" Icon={ArrowLeft} onPress={onCancel} disabled={busy} style={styles.back} />
@@ -265,11 +267,11 @@ function OverlayPad({
       {currentUri ? (
         <View style={styles.current}>
           <Text style={styles.currentLabel}>Atual</Text>
-          <Image source={{ uri: currentUri }} style={styles.currentImage} resizeMode="contain" accessibilityLabel="Assinatura atual" />
+          <img src={currentUri} alt="Assinatura atual" style={currentImage} />
         </View>
       ) : null}
 
-      <View style={styles.canvasCard}>{surface}</View>
+      <div style={canvasCard}>{surface}</div>
 
       <View style={styles.tools}>
         <Button label="Desfazer" Icon={RotateCcw} variant="ghost" onPress={undo} disabled={empty || busy} />
@@ -282,11 +284,14 @@ function OverlayPad({
         </View>
       ) : null}
 
+      <View style={styles.spacer} />
+
       <View style={styles.footer}>
         <Button label="Cancelar" variant="secondary" onPress={onCancel} disabled={busy} style={styles.cancel} />
         <Button label={confirmLabel} Icon={Check} onPress={() => void save()} disabled={empty} loading={busy} style={styles.confirm} />
       </View>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -297,8 +302,29 @@ const overlay: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   backgroundColor: Colors.bg,
+  // Celular deitado: o conteúdo passa da altura da tela e o rodapé precisa ser alcançável.
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
   paddingTop: 'env(safe-area-inset-top)',
   paddingBottom: 'env(safe-area-inset-bottom)',
+};
+
+// Proporção de assinatura (mais larga que alta): até 340 px, menos em telas baixas (celular deitado).
+const canvasCard: React.CSSProperties = {
+  height: 'min(340px, 46vh)',
+  minHeight: 160,
+  margin: '0 16px',
+  borderRadius: 32,
+  overflow: 'hidden',
+  backgroundColor: Colors.surface,
+  flexShrink: 0,
+};
+
+const currentImage: React.CSSProperties = {
+  display: 'block',
+  width: '100%',
+  height: 64,
+  objectFit: 'contain',
 };
 
 const padBox: React.CSSProperties = {
@@ -347,26 +373,16 @@ const styles = StyleSheet.create({
   title: { ...Typography.heading, color: Colors.text },
   description: { ...Typography.caption, color: Colors.textSecondary },
   current: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
+    gap: Spacing.xs,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.lg,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surface,
   },
   currentLabel: { ...Typography.caption, color: Colors.textSecondary, fontFamily: FontFamily.semibold },
-  currentImage: { flex: 1, height: 44 },
-  canvasCard: {
-    flex: 1,
-    minHeight: 200,
-    marginHorizontal: Spacing.lg,
-    borderRadius: Radius.xl,
-    backgroundColor: Colors.surface,
-    overflow: 'hidden',
-  },
+  spacer: { flex: 1 },
   tools: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.sm, paddingTop: Spacing.sm },
   error: { marginHorizontal: Spacing.lg, marginTop: Spacing.xs, padding: Spacing.md, borderRadius: Radius.md, backgroundColor: Colors.nokBg },
   errorText: { ...Typography.caption, color: Colors.nok, fontFamily: FontFamily.semibold },
