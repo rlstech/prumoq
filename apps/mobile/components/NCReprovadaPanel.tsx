@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { AppHeader } from './AppHeader';
 import { captureNcPhoto } from '../hooks/useNcPhoto';
-import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
+import { Colors, FontSizes, Radius, Spacing, FontFamily } from '../lib/constants';
 import { getTodayIso } from '../lib/calendar';
 import { createNc } from '../services/nc.service';
 
@@ -102,13 +102,13 @@ export function NCReprovadaPanel({
     }
   }
 
-  const anteriorLabel = `NC ${String(ocorrencia - 1).padStart(3, '0')} — VERIFICAÇÃO ${ncAnteriorVerifNum}`;
-  const novaLabel = `NC ${String(ocorrencia).padStart(3, '0')} — VERIFICAÇÃO ${ncAnteriorVerifNum + 1}`;
+  const anteriorLabel = `NC ${String(ocorrencia - 1).padStart(3, '0')} · verificação ${ncAnteriorVerifNum}`;
+  const novaLabel = `NC ${String(ocorrencia).padStart(3, '0')} · verificação ${ncAnteriorVerifNum + 1}`;
 
   return (
     <View style={st.overlay}>
       <SafeAreaView edges={['top']} style={st.safe}>
-        <AppHeader title="RE-INSPEÇÃO" subtitle="Item reprovado novamente" showBack={false} />
+        <AppHeader title="Reinspeção" subtitle="Item reprovado novamente" showBack={false} />
         <ScrollView contentContainerStyle={st.content}>
           <View style={st.hero}>
             <View style={st.heroCircle}>
@@ -129,7 +129,7 @@ export function NCReprovadaPanel({
             </View>
           </View>
 
-          <Text style={[st.secTitle, { marginTop: Spacing.lg }]}>NOVA NC GERADA — PREENCHER</Text>
+          <Text style={[st.secTitle, { marginTop: Spacing.lg }]}>Nova NC gerada · preencher</Text>
           <View style={st.formCard}>
             <View style={st.formHeader}>
               <Text style={st.formHeaderLabel}>{novaLabel}</Text>
@@ -230,46 +230,46 @@ const st = StyleSheet.create({
   content: { padding: Spacing.lg, paddingBottom: 20 },
 
   hero:         { alignItems: 'center', paddingVertical: Spacing.xl },
-  heroCircle:   { width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.nokBg, borderWidth: 2, borderColor: Colors.nok, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
-  heroTitle:    { fontSize: FontSizes.xl, fontWeight: '700', color: Colors.nok },
+  heroCircle:   { width: 80, height: 80, borderRadius: Radius.full, backgroundColor: Colors.nokBg, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
+  heroTitle:    { fontFamily: FontFamily.display, fontSize: 26, letterSpacing: -0.5, color: Colors.nok },
   heroSubtitle: { fontSize: FontSizes.sm, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' },
 
-  secTitle: { fontSize: 11, fontWeight: '600', color: Colors.textTertiary, letterSpacing: 0.5, marginBottom: Spacing.sm },
+  secTitle: { fontFamily: FontFamily.bold, fontSize: FontSizes.md, color: Colors.text, marginBottom: Spacing.sm, paddingHorizontal: Spacing.xs },
 
-  ncAnteriorCard:  { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md, gap: 6 },
-  ncAnteriorLabel: { fontSize: FontSizes.sm, fontWeight: '600', color: Colors.text },
+  ncAnteriorCard:  { backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.xl, gap: 8 },
+  ncAnteriorLabel: { fontSize: FontSizes.sm, fontFamily: FontFamily.semibold, color: Colors.text },
   ncAnteriorDesc:  { fontSize: FontSizes.sm, color: Colors.textSecondary, lineHeight: 18 },
-  encerradaBadge:  { alignSelf: 'flex-start', backgroundColor: Colors.surface2, borderRadius: Radius.xs, paddingHorizontal: 8, paddingVertical: 2, marginTop: 2 },
-  encerradaText:   { fontSize: 10, color: Colors.textTertiary },
+  encerradaBadge:  { alignSelf: 'flex-start', backgroundColor: Colors.bg, borderRadius: Radius.full, paddingHorizontal: 10, paddingVertical: 4, marginTop: 2 },
+  encerradaText:   { fontFamily: FontFamily.semibold, fontSize: FontSizes.tiny, color: Colors.textSecondary },
 
-  formCard:        { backgroundColor: Colors.surface, borderRadius: Radius.lg, overflow: 'hidden' },
-  formHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.surface2, padding: Spacing.md, borderBottomWidth: 0.5, borderBottomColor: Colors.borderNormal },
-  formHeaderLabel: { fontSize: FontSizes.sm, fontWeight: '600', color: Colors.text },
+  formCard:        { backgroundColor: Colors.surface, borderRadius: Radius.xl, overflow: 'hidden', paddingBottom: Spacing.md },
+  formHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.lg, paddingBottom: Spacing.xs },
+  formHeaderLabel: { fontSize: FontSizes.sm, fontFamily: FontFamily.semibold, color: Colors.text },
   obrigBadge:      { backgroundColor: Colors.brandLight, borderRadius: Radius.full, paddingHorizontal: 8, paddingVertical: 2 },
-  obrigText:       { fontSize: 9, fontWeight: '700', color: Colors.brand, letterSpacing: 0.3 },
+  obrigText:       { fontFamily: FontFamily.bold, fontSize: FontSizes.tiny, color: Colors.brand },
 
   input: { margin: Spacing.md, marginBottom: 0, backgroundColor: Colors.surface, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.borderNormal, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, fontSize: FontSizes.base, color: Colors.text, minHeight: 48 },
 
-  photoBtn:    { margin: Spacing.md, marginBottom: 0, minHeight: 76, borderRadius: Radius.md, borderWidth: 1, borderColor: '#F2B8B2', borderStyle: 'dashed', backgroundColor: Colors.nokBg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  photoBtn:    { margin: Spacing.md, marginBottom: 0, minHeight: 96, borderRadius: Radius.md, backgroundColor: Colors.nokBg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   photoThumb:  { width: '100%', height: '100%' },
   photoBtnText: { fontSize: FontSizes.sm, color: Colors.textSecondary },
   photoPlaceholder: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
 
   twoCol:      { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.md },
-  fieldLabel:  { fontSize: FontSizes.xs, fontWeight: '500', color: Colors.textSecondary, marginBottom: 4 },
-  altaBadgeBox: { backgroundColor: Colors.nokBg, borderRadius: Radius.sm, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, alignItems: 'center', justifyContent: 'center', height: 38 },
-  altaText:    { fontSize: FontSizes.sm, color: Colors.nok, fontWeight: '600' },
-  financeBox: { margin: Spacing.md, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.warn, backgroundColor: Colors.warnBg, gap: Spacing.sm },
-  financeTitle: { fontSize: FontSizes.sm, fontWeight: '700', color: Colors.text },
+  fieldLabel:  { fontSize: FontSizes.xs, fontFamily: FontFamily.medium, color: Colors.textSecondary, marginBottom: 4 },
+  altaBadgeBox: { backgroundColor: Colors.nokBg, borderRadius: Radius.full, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, alignItems: 'center', justifyContent: 'center', height: 48 },
+  altaText:    { fontSize: FontSizes.sm, color: Colors.nok, fontFamily: FontFamily.semibold },
+  financeBox: { margin: Spacing.md, padding: Spacing.lg, borderRadius: Radius.md, backgroundColor: Colors.warnBg, gap: Spacing.sm },
+  financeTitle: { fontSize: FontSizes.sm, fontFamily: FontFamily.bold, color: Colors.text },
   financeHelper: { fontSize: FontSizes.xs, color: Colors.textSecondary, lineHeight: 17 },
   managerList: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
   managerOption: { borderWidth: 1, borderColor: Colors.borderNormal, borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, backgroundColor: Colors.surface },
   managerOptionActive: { borderColor: Colors.brand, backgroundColor: Colors.brandLight },
   managerText: { fontSize: FontSizes.xs, color: Colors.textSecondary },
-  managerTextActive: { color: Colors.brand, fontWeight: '700' },
+  managerTextActive: { color: Colors.brand, fontFamily: FontFamily.bold },
   financeError: { fontSize: FontSizes.xs, color: Colors.nok },
 
-  footer:       { padding: Spacing.md, paddingBottom: Spacing.xl, borderTopWidth: 0.5, borderTopColor: Colors.border, backgroundColor: Colors.surface },
-  btnSalvar:    { backgroundColor: Colors.brand, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
-  btnSalvarText: { color: '#fff', fontSize: FontSizes.md, fontWeight: '600' },
+  footer:       { padding: Spacing.lg, paddingBottom: Spacing.xl, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, backgroundColor: Colors.surface },
+  btnSalvar:    { backgroundColor: Colors.brand, borderRadius: Radius.full, minHeight: 56, alignItems: 'center', justifyContent: 'center' },
+  btnSalvarText: { color: Colors.surface, fontSize: FontSizes.md, fontFamily: FontFamily.bold },
 });

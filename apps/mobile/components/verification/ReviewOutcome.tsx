@@ -1,7 +1,7 @@
-import { AlertCircle, CheckCircle2, ChevronRight } from '../../lib/icons';
-import { StyleSheet, Text, View } from 'react-native';
-import { Badge, DataRow, DatumCard, ErrorBanner, ListSurface, MetricBlock } from '../ui';
-import { Colors, FontFamily, FontSizes, Spacing, Typography } from '../../lib/constants';
+import { AlertCircle, CheckCircle2, ChevronRight, XCircle } from '../../lib/icons';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { IconTile, Pill } from '../ui';
+import { Colors, FontFamily, FontSizes, Radius, Spacing } from '../../lib/constants';
 
 interface Props {
   conformCount: number;
@@ -15,56 +15,55 @@ interface Props {
 }
 
 /**
- * Asymmetric result hero: the outcome reads first and largest, the three
- * item counts sit secondary — replaces the old row of three identical
- * metric cards, which design-system.md calls out as an anti-pattern.
+ * Resultado da verificação (Trena Suave): o veredito primeiro e grande, as
+ * contagens em pílulas logo abaixo, e as pendências como linhas tocáveis que
+ * levam direto ao campo.
  */
 export function ReviewOutcome({ conformCount, ncCount, naCount, hasNonConformity, errors, onFixError }: Props) {
   const entries = Object.entries(errors);
   return (
     <View style={styles.wrap}>
-      <DatumCard tone={hasNonConformity ? 'danger' : 'success'}>
+      <View style={styles.card}>
         <View style={styles.hero}>
-          <View style={styles.primary}>
-            <Text style={styles.overline}>Resultado desta verificação</Text>
-            <View style={styles.resultRow}>
-              {hasNonConformity
-                ? <AlertCircle size={20} color={Colors.nok} />
-                : <CheckCircle2 size={20} color={Colors.ok} />}
-              <Text style={[styles.resultText, { color: hasNonConformity ? Colors.nok : Colors.ok }]}>
-                {hasNonConformity ? 'Não conforme' : 'Conforme'}
-              </Text>
-            </View>
-            <Text style={styles.caption}>Calculado a partir dos itens do checklist.</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.facts}>
-            <MetricBlock label="Conformes" value={conformCount} tone="success" />
-            <MetricBlock label="NC" value={ncCount} tone="danger" />
-            <MetricBlock label="N/A" value={naCount} tone="neutral" />
+          <IconTile Icon={hasNonConformity ? XCircle : CheckCircle2} tone={hasNonConformity ? 'danger' : 'success'} size={56} />
+          <View style={styles.heroText}>
+            <Text style={styles.label}>Resultado desta verificação</Text>
+            <Text style={[styles.result, { color: hasNonConformity ? Colors.nok : Colors.ok }]}>
+              {hasNonConformity ? 'Não conforme' : 'Conforme'}
+            </Text>
           </View>
         </View>
-      </DatumCard>
+        <View style={styles.pills}>
+          <Pill label={`${conformCount} conforme${conformCount === 1 ? '' : 's'}`} tone="success" dot />
+          <Pill label={`${ncCount} NC`} tone={ncCount > 0 ? 'danger' : 'neutral'} dot onSurface />
+          <Pill label={`${naCount} N/A`} tone="neutral" dot onSurface />
+        </View>
+        <Text style={styles.caption}>Calculado a partir dos itens do checklist.</Text>
+      </View>
 
       {entries.length > 0 ? (
-        <View style={styles.pending}>
-          <ErrorBanner message="Existem informações obrigatórias pendentes antes do salvamento." />
-          <ListSurface>
-            {entries.map(([key, message], index) => (
-              <DataRow
-                key={key}
-                label={message}
-                value="Corrigir"
-                onPress={() => onFixError(key)}
-                accessibilityLabel={`Corrigir: ${message}`}
-                trailing={<ChevronRight size={18} color={Colors.brand} />}
-                last={index === entries.length - 1}
-              />
-            ))}
-          </ListSurface>
+        <View style={styles.card}>
+          <View style={styles.pendingHead}>
+            <AlertCircle size={18} color={Colors.nok} />
+            <Text style={styles.pendingTitle}>Falta preencher antes de salvar</Text>
+          </View>
+          {entries.map(([key, message]) => (
+            <Pressable
+              key={key}
+              accessibilityRole="button"
+              accessibilityLabel={`Corrigir: ${message}`}
+              onPress={() => onFixError(key)}
+              style={({ pressed }) => [styles.pendingRow, pressed && styles.pressed]}
+            >
+              <View style={styles.pendingDot} />
+              <Text style={styles.pendingText} numberOfLines={2}>{message}</Text>
+              <Text style={styles.fix}>Corrigir</Text>
+              <ChevronRight size={16} color={Colors.textSecondary} />
+            </Pressable>
+          ))}
         </View>
       ) : (
-        <Badge tone="success" size="sm" label="Preenchimento completo" Icon={CheckCircle2} />
+        <Pill label="Preenchimento completo" tone="success" Icon={CheckCircle2} />
       )}
     </View>
   );
@@ -72,13 +71,26 @@ export function ReviewOutcome({ conformCount, ncCount, naCount, hasNonConformity
 
 const styles = StyleSheet.create({
   wrap: { gap: Spacing.md },
-  hero: { flexDirection: 'row', alignItems: 'center', minHeight: 80 },
-  primary: { flex: 1.5, minWidth: 180, gap: 4 },
-  overline: { ...Typography.overline, color: Colors.textTertiary },
-  resultRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  resultText: { fontFamily: FontFamily.semibold, fontSize: FontSizes.xl },
-  caption: { ...Typography.caption, color: Colors.textSecondary },
-  divider: { width: 1, alignSelf: 'stretch', backgroundColor: Colors.border, marginHorizontal: Spacing.lg },
-  facts: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
-  pending: { gap: Spacing.sm },
+  card: { backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
+  heroText: { flex: 1, minWidth: 0, gap: 2 },
+  label: { fontFamily: FontFamily.semibold, fontSize: FontSizes.xs, color: Colors.textSecondary },
+  result: { fontFamily: FontFamily.display, fontSize: 26, lineHeight: 30, letterSpacing: -0.5 },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  caption: { fontFamily: FontFamily.regular, fontSize: FontSizes.tiny, color: Colors.textTertiary },
+  pendingHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  pendingTitle: { fontFamily: FontFamily.bold, fontSize: FontSizes.sm, color: Colors.nok },
+  pendingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    minHeight: 48,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.bg,
+  },
+  pendingDot: { width: 6, height: 6, borderRadius: Radius.full, backgroundColor: Colors.nok },
+  pendingText: { flex: 1, minWidth: 0, fontFamily: FontFamily.medium, fontSize: FontSizes.sm, color: Colors.text },
+  fix: { fontFamily: FontFamily.semibold, fontSize: FontSizes.xs, color: Colors.textSecondary },
+  pressed: { opacity: 0.7 },
 });

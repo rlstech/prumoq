@@ -1,5 +1,5 @@
 import { AlertCircle, Check, Circle, ListChecks } from '../../lib/icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../lib/constants';
 import { getRoutePriorityId, type ItemRow, type NcAbertaRow, type Resultado } from './types';
 
@@ -10,6 +10,11 @@ interface Props {
   itemResults: Readonly<Record<string, Resultado>>;
   openNcs: readonly NcAbertaRow[];
   mode: RouteMode;
+  /** Item em foco no modo "item a item" (destacado no trilho). */
+  currentId?: string | null;
+  lockedIds?: ReadonlySet<string>;
+  /** Com esta função, as linhas do trilho viram atalhos para o item. */
+  onSelectItem?: (itemId: string) => void;
 }
 
 /**
@@ -17,7 +22,7 @@ interface Props {
  * every state from the verification draft, so it cannot diverge from offline
  * data or change the existing checklist controller.
  */
-export function ChecklistRouteRail({ items, itemResults, openNcs, mode }: Props) {
+export function ChecklistRouteRail({ items, itemResults, openNcs, mode, currentId, lockedIds, onSelectItem }: Props) {
   if (items.length === 0) return null;
 
   const priorityNc = openNcs[0];
@@ -68,7 +73,28 @@ export function ChecklistRouteRail({ items, itemResults, openNcs, mode }: Props)
         {priorityNc ? 'A reinspeção aberta determina a próxima parada.' : 'A sequência acompanha a classificação dos itens.'}
       </Text>
       <View style={styles.railRoute}>
-        {items.map(item => <RoutePoint key={item.id} item={item} result={itemResults[item.id]} priorityId={priorityId} />)}
+        {items.map(item => {
+          const point = (
+            <RoutePoint
+              item={item}
+              result={itemResults[item.id]}
+              priorityId={currentId ?? priorityId}
+            />
+          );
+          if (!onSelectItem || lockedIds?.has(item.id)) return <View key={item.id}>{point}</View>;
+          return (
+            <Pressable
+              key={item.id}
+              accessibilityRole="button"
+              accessibilityState={{ selected: item.id === currentId }}
+              accessibilityLabel={`Ir para o item ${item.ordem}: ${item.titulo}`}
+              onPress={() => onSelectItem(item.id)}
+              style={({ pressed }) => [styles.routePress, pressed && styles.routePressPressed]}
+            >
+              {point}
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -127,6 +153,8 @@ function RoutePoint({
 }
 
 const styles = StyleSheet.create({
+  routePress: { borderRadius: Radius.sm },
+  routePressPressed: { backgroundColor: Colors.surface2 },
   doneDatum: {
     position: 'absolute',
     top: 0,

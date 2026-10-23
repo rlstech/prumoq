@@ -3,7 +3,7 @@ import { ArrowLeft, Check, RotateCcw } from '../lib/icons';
 import { ComponentRef, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import SignatureCanvas from 'react-native-signature-canvas';
-import { Colors, Radius, Spacing } from '../lib/constants';
+import { Colors, Radius, Spacing, FontFamily } from '../lib/constants';
 
 function uuid(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -127,8 +127,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface2,
   },
   backBtn: { width: 80, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  backText: { fontSize: 14, fontWeight: '500', color: Colors.brand },
-  title: { fontSize: 15, fontWeight: '600', color: Colors.text },
+  backText: { fontSize: 14, fontFamily: FontFamily.medium, color: Colors.brand },
+  title: { fontSize: 15, fontFamily: FontFamily.semibold, color: Colors.text },
   hint: {
     paddingVertical: 8,
     paddingHorizontal: Spacing.md,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  btnClearText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
+  btnClearText: { fontSize: 14, fontFamily: FontFamily.semibold, color: Colors.textSecondary },
   btnSave: {
     flex: 0.65,
     borderRadius: Radius.md,
@@ -170,5 +170,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  btnSaveText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  btnSaveText: { fontSize: 14, fontFamily: FontFamily.semibold, color: '#fff' },
 });

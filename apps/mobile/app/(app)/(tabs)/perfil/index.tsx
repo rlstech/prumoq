@@ -43,7 +43,7 @@ function StatCard({
 }
 const sc = StyleSheet.create({
   card: { flex: 1, borderRadius: Radius.lg, padding: 13 },
-  val:  { fontSize: 26, fontWeight: '500' },
+  val:  { fontSize: 26, fontFamily: FontFamily.medium },
   lbl:  { fontSize: FontSizes.tiny - 1, marginTop: 2 },
 });
 
@@ -381,7 +381,7 @@ const s = StyleSheet.create({
   },
   pfInfo: { flex: 1 },
   pfLbl:  { fontSize: FontSizes.tiny - 1, color: Colors.textSecondary },
-  pfVal:  { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.text, marginTop: 2 },
+  pfVal:  { fontSize: FontSizes.sm, fontFamily: FontFamily.medium, color: Colors.text, marginTop: 2 },
 
   // Divider
   divider: {
@@ -401,10 +401,10 @@ const s = StyleSheet.create({
     marginBottom: 9,
   },
   obraCardRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  obraNome:     { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text, flex: 1, marginRight: 8 },
+  obraNome:     { fontSize: FontSizes.base, fontFamily: FontFamily.medium, color: Colors.text, flex: 1, marginRight: 8 },
   obraLocation: { fontSize: FontSizes.sm, color: Colors.textSecondary, marginTop: 2 },
   ativoBadge:   { backgroundColor: Colors.progressBg, paddingHorizontal: 10, paddingVertical: 3, borderRadius: Radius.full },
-  ativoText:    { fontSize: FontSizes.tiny - 1, fontWeight: '500', color: Colors.progress },
+  ativoText:    { fontSize: FontSizes.tiny - 1, fontFamily: FontFamily.medium, color: Colors.progress },
 
   // Account actions
   passwordBtn: {

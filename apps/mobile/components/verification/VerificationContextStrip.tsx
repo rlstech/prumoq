@@ -56,6 +56,14 @@ export function VerificationContextStrip({
     if (equipeError) setExpanded(true);
   }, [equipeError]);
 
+  // Escolhida a equipe, o cartão recolhe para o checklist ganhar a tela.
+  const selectedEquipeId = selectedEquipe?.id ?? null;
+  const [lastEquipeId, setLastEquipeId] = useState(selectedEquipeId);
+  if (selectedEquipeId !== lastEquipeId) {
+    setLastEquipeId(selectedEquipeId);
+    if (selectedEquipeId && !lastEquipeId) setExpanded(false);
+  }
+
   const equipeLabel = selectedEquipe ? selectedEquipe.nome : 'Equipe pendente';
   const dateLabel = formatDateLabel(dataVerif);
   const normalizedSearch = normalize(search);

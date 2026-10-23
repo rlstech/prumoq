@@ -23,7 +23,7 @@ interface Props {
 export function SignatureSection({ signerName, signaturePath, error, onSign, onRefazer, onOpenModal, standard = false }: Props) {
   return (
     <View style={styles.section}>
-      <Text style={styles.overline}>ASSINATURA DIGITAL *</Text>
+      <Text style={styles.overline}>Assinatura digital *</Text>
       <Text style={styles.responsavel}>
         Responsável: <Text style={styles.responsavelName}>{signerName}</Text>
       </Text>
@@ -68,8 +68,8 @@ export function SignatureSection({ signerName, signaturePath, error, onSign, onR
 }
 
 const styles = StyleSheet.create({
-  section: { gap: Spacing.sm },
-  overline: { ...Typography.overline, color: Colors.textTertiary },
+  section: { gap: Spacing.sm, backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.xl },
+  overline: { ...Typography.heading, color: Colors.text },
   responsavel: { ...Typography.caption, color: Colors.textSecondary },
   responsavelName: { color: Colors.text, fontFamily: FontFamily.semibold },
   error: { ...Typography.caption, color: Colors.nok, fontFamily: FontFamily.semibold },
@@ -77,16 +77,13 @@ const styles = StyleSheet.create({
   refazer: { ...Typography.label, color: Colors.brand },
   area: {
     height: 88,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    borderStyle: 'dashed',
+    backgroundColor: Colors.bg,
+    borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.xs,
   },
-  areaError: { borderColor: Colors.nok },
+  areaError: { backgroundColor: Colors.nokBg },
   hint: { ...Typography.label, color: Colors.brand },
   hintError: { color: Colors.nok },
 });

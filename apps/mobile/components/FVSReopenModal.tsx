@@ -4,7 +4,7 @@ import {
   Alert, Modal, Pressable, ScrollView,
   Platform, StyleSheet, Text, TextInput, View,
 } from 'react-native';
-import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
+import { Colors, FontSizes, Radius, Spacing, FontFamily } from '../lib/constants';
 import { db } from '../lib/powersync';
 import { useConta } from '../lib/auth/sessao';
 
@@ -213,12 +213,12 @@ const st = StyleSheet.create({
   sheet:   { backgroundColor: Colors.bg, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, maxHeight: '90%' },
   header:  { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.lg, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl },
   headerIcon:  { fontSize: 20, color: '#fff' },
-  headerTitle: { fontSize: FontSizes.md, fontWeight: '700', color: '#fff' },
+  headerTitle: { fontSize: FontSizes.md, fontFamily: FontFamily.bold, color: '#fff' },
   body: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
   infoBanner:  { borderWidth: 1, borderRadius: Radius.md, padding: Spacing.md },
   infoText:    { fontSize: FontSizes.sm, lineHeight: 20 },
   field:       { gap: Spacing.xs },
-  label:       { fontSize: FontSizes.sm, fontWeight: '600', color: Colors.text },
+  label:       { fontSize: FontSizes.sm, fontFamily: FontFamily.semibold, color: Colors.text },
   optionsList: { gap: Spacing.xs },
   option: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
@@ -240,7 +240,7 @@ const st = StyleSheet.create({
   emptyMsg:   { fontSize: FontSizes.sm, color: Colors.textSecondary, fontStyle: 'italic' },
   footer: { padding: Spacing.lg, gap: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.border },
   btn:          { padding: Spacing.md, borderRadius: Radius.md, alignItems: 'center' },
-  btnText:      { color: '#fff', fontWeight: '600', fontSize: FontSizes.sm },
+  btnText:      { color: '#fff', fontFamily: FontFamily.semibold, fontSize: FontSizes.sm },
   btnGhost:     { backgroundColor: Colors.surface2 },
-  btnGhostText: { color: Colors.text, fontWeight: '500', fontSize: FontSizes.sm },
+  btnGhostText: { color: Colors.text, fontFamily: FontFamily.medium, fontSize: FontSizes.sm },
 });

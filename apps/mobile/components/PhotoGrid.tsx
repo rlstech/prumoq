@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   },
   overflowText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.textSecondary,
   },
 });
