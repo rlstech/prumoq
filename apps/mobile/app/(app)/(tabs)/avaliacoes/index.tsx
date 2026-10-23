@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
 import { Badge, type BadgeTone, Button, EmptyState, ListSurface, OperationalRow } from '../../../../components/ui';
-import { Breakpoints, Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
+import { Breakpoints, Colors, FontFamily, FontSizes, Radius, Spacing, Typography, Palette } from '../../../../lib/constants';
 import { formatDateOnly } from '../../../../lib/verification-detail';
 
 type Row = { id:string; obra_id:string; equipe_id:string; medicao_id:string|null; data_avaliacao:string; status:string; percentual:string; obra_nome:string; equipe_nome:string; referencia:string|null };
@@ -48,14 +48,15 @@ export default function EvaluationsScreen() {
       <AppHeader title="Avaliações" subtitle="Fornecedores de serviço" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          <View>
-            <Text style={styles.heroTitle}>Avaliações em campo</Text>
-            <Text style={styles.heroCopy}>
-              {pending.length} {pending.length === 1 ? 'medição aguardando avaliação' : 'medições aguardando avaliação'}
-            </Text>
+          <View style={styles.heroBody}>
+            <Text style={styles.heroTitle}>Aguardando avaliação</Text>
+            <View style={styles.heroNumberRow}>
+              <Text style={styles.heroNumber}>{pending.length}</Text>
+              <Text style={styles.heroCopy}>{pending.length === 1 ? 'medição' : 'medições'}</Text>
+            </View>
           </View>
           <View style={styles.heroBadge}>
-            <ClipboardCheck size={22} color={Colors.brand} />
+            <ClipboardCheck size={26} color={Palette.onAccent} />
           </View>
         </View>
 
@@ -205,25 +206,28 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
-    padding: Spacing.lg,
-    paddingBottom: 110,
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.xxl,
     gap: Spacing.xl,
   },
   hero: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  heroTitle: { ...Typography.heading, color: Colors.text },
-  heroCopy: { ...Typography.caption, color: Colors.textSecondary, marginTop: 4 },
+  heroBody: { flex: 1, minWidth: 0 },
+  heroTitle: { fontFamily: FontFamily.semibold, fontSize: FontSizes.xs, color: Colors.textSecondary },
+  heroNumberRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
+  heroNumber: { fontFamily: FontFamily.display, fontSize: 52, lineHeight: 58, letterSpacing: -2, color: Colors.text },
+  heroCopy: { fontFamily: FontFamily.medium, fontSize: FontSizes.md, color: Colors.textSecondary },
   heroBadge: {
-    width: 46,
-    height: 46,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.brandLight,
+    width: 56,
+    height: 56,
+    borderRadius: Radius.full,
+    backgroundColor: Palette.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -268,7 +272,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radius.md,
-    backgroundColor: Colors.brandLight,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.bg,
   },
 });

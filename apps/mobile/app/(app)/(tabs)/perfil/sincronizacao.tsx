@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
-import { Badge, Button, DataRow, EmptyState, ListSurface } from '../../../../components/ui';
+import { Badge, Button, DataRow, EmptyState, IconTile, ListSurface } from '../../../../components/ui';
 import { Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
 import { db } from '../../../../lib/powersync';
 import type { SyncFalhasRow } from '../../../../lib/schema';
@@ -139,6 +139,24 @@ export default function SincronizacaoScreen() {
       />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <View style={styles.hero}>
+          <IconTile
+            Icon={falhas.length ? AlertTriangle : conectado ? CheckCircle2 : conexao === 'conectando' ? RefreshCw : WifiOff}
+            tone={falhas.length ? 'danger' : conectado ? 'success' : conexao === 'conectando' ? 'info' : 'warning'}
+            size={64}
+          />
+          <View style={styles.heroText}>
+            <Text style={styles.heroTitle}>
+              {falhas.length
+                ? `${falhas.length} ${falhas.length === 1 ? 'registro recusado' : 'registros recusados'}`
+                : conectado ? 'Tudo em dia' : conexao === 'conectando' ? 'Conectando…' : 'Sem conexão'}
+            </Text>
+            <Text style={styles.heroText2}>
+              {fila ? `${fila} ${fila === 1 ? 'operação aguardando' : 'operações aguardando'} envio` : 'Nenhuma alteração na fila de envio'}
+            </Text>
+          </View>
+        </View>
+
         <ListSurface>
           <DataRow
             label="Conexão"
@@ -253,11 +271,22 @@ export default function SincronizacaoScreen() {
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+    padding: Spacing.xl,
+    borderRadius: Radius.xl,
+    backgroundColor: Colors.surface,
+  },
+  heroText: { flex: 1, minWidth: 0, gap: 2 },
+  heroTitle: { ...Typography.title, fontSize: 22, lineHeight: 26, color: Colors.text },
+  heroText2: { fontFamily: FontFamily.regular, fontSize: FontSizes.sm, color: Colors.textSecondary },
   safe: { flex: 1, backgroundColor: Colors.bg },
   scroll: { flex: 1 },
-  content: { padding: Spacing.lg, gap: Spacing.xl, paddingBottom: 104 },
+  content: { paddingHorizontal: Spacing.xl, gap: Spacing.lg, paddingBottom: Spacing.xxl },
   list: { gap: Spacing.md },
-  overline: { ...Typography.overline, color: Colors.textTertiary },
+  overline: { ...Typography.heading, color: Colors.text },
   help: { ...Typography.caption, color: Colors.textSecondary },
   card: {
     backgroundColor: Colors.surface,
