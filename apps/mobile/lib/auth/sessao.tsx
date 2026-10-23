@@ -15,7 +15,7 @@ import {
   salvarContaLocal,
   type ContaLocal,
 } from './conta-local';
-import { ErroLogin } from './fluxo-login';
+import { ErroLogin, MSG_BANCO_EM_USO } from './fluxo-login';
 import { buscarPerfilOnline } from './mobile-access';
 
 // Sessão do app (offline-first):
@@ -136,7 +136,16 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
           + `enviadas. Entre com a conta ${anterior.email ?? 'anterior'} para enviá-las.`,
         );
       }
-      if (pendentes === 0) await limparDadosLocais(anterior);
+      if (pendentes === 0) {
+        try {
+          await limparDadosLocais(anterior);
+        } catch (err) {
+          // Quase sempre o banco local está aberto em outra aba/janela do PrumoQ (o OPFS só aceita um dono).
+          console.error('[login] falha ao limpar o banco local', err);
+          await clerk.signOut().catch(() => undefined);
+          throw new ErroLogin(MSG_BANCO_EM_USO);
+        }
+      }
     }
     salvarContaLocal(nova);
     // Mesmo efeito do login do painel: marca o onboarding do admin como concluído (idempotente).

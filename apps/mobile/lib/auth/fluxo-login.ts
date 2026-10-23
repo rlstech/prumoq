@@ -23,6 +23,16 @@ async function clerkOnline(): Promise<ClerkInstance> {
 
 export class ErroLogin extends Error {}
 
+export const MSG_BANCO_EM_USO =
+  'O PrumoQ está aberto em outra aba ou janela deste navegador. Feche as outras e tente novamente.';
+
+/** O banco local (OPFS) só aceita um dono: outra aba/janela do app aberta impede abrir ou limpar. */
+function bancoLocalEmUso(err: unknown): boolean {
+  const e = err as { name?: string; message?: string } | null;
+  return e?.name === 'NoModificationAllowedError'
+    || /createSyncAccessHandle|unable to open database file|Access Handle/i.test(e?.message ?? '');
+}
+
 async function seguir(resposta: RespostaSignIn): Promise<ResultadoEtapa> {
   atual = resposta;
   if (resposta.status === 'complete' && resposta.createdSessionId) {
@@ -89,8 +99,11 @@ export function mensagemDoErro(err: unknown): string {
     if (code === 'too_many_requests') return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
     if (code === 'user_locked') return 'Conta temporariamente bloqueada por excesso de tentativas.';
   }
+  if (bancoLocalEmUso(err)) return MSG_BANCO_EM_USO;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     return 'Sem conexão. Conecte-se à internet e tente novamente.';
   }
+  // Erro inesperado: fica no console para diagnóstico (a tela mostra só a mensagem genérica).
+  console.error('[login] erro inesperado', err);
   return 'Não foi possível concluir a operação. Tente novamente.';
 }
