@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { ClipboardCheck, HardHat, ShieldCheck, WifiOff } from '../../lib/icons';
+import { Plumb } from '../../lib/icons';
 import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -12,30 +12,27 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BrandMark } from '../../components/BrandMark';
+
 import { BrandWordmark } from '../../components/BrandWordmark';
 import { Button, ErrorBanner, Field } from '../../components/ui';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 import { confirmarCodigo, entrarComSenha, mensagemDoErro, type ResultadoEtapa } from '../../lib/auth/fluxo-login';
 import { useSessao } from '../../lib/auth/sessao';
 import {
-  Breakpoints,
   Colors,
-  Elevation,
+
   FontFamily,
   FontSizes,
   Palette,
   Radius,
   Spacing,
   Typography,
-  BorderWidth,
+
 } from '../../lib/constants';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { isTablet } = useResponsiveLayout();
   const { estado, concluirLogin } = useSessao();
   const contaDoAparelho = estado.fase === 'expirada' ? estado.conta : null;
   const avisoSessao = estado.fase === 'expirada' || estado.fase === 'deslogado' ? estado.aviso : null;
@@ -103,42 +100,23 @@ export default function LoginScreen() {
         style={styles.safe}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <StatusBar style={isTablet ? 'light' : 'dark'} />
+        <StatusBar style="dark" />
         <ScrollView
-          contentContainerStyle={[styles.scroll, isTablet && styles.scrollTablet]}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.shell, isTablet && styles.shellTablet]}>
-            <View style={[styles.hero, isTablet && styles.heroTablet]}>
-              <View style={styles.brand}>
-                <BrandMark size={38} variant="onBrand" />
-                <BrandWordmark fontSize={28} variant="onBrand" />
+          <View style={styles.shell}>
+            <View style={styles.brand}>
+              <View style={styles.plumbMark}>
+                <Plumb size={44} color={Palette.accent} strokeWidth={1.7} />
               </View>
-              <View style={styles.heroCopy}>
-                <View style={styles.heroIcon}>
-                  <HardHat size={30} color={Colors.brandSignature} />
-                </View>
-                <Text style={styles.eyebrow}>Qualidade em campo</Text>
-                <Text style={styles.heroTitle}>Verificações claras, mesmo sem conexão.</Text>
-                <Text style={styles.heroDescription}>
-                  Registre serviços, evidências e não conformidades com segurança durante toda a inspeção.
-                </Text>
-              </View>
-              <View style={styles.trustList}>
-                <TrustItem Icon={ClipboardCheck} text="Fluxo guiado de verificação" />
-                <TrustItem Icon={WifiOff} text="Trabalho offline com sincronização" />
-                <TrustItem Icon={ShieldCheck} text="Dados protegidos por obra" />
-              </View>
+              <BrandWordmark fontSize={30} />
             </View>
 
-            <View style={[styles.formPanel, isTablet && styles.formPanelTablet]}>
-              <View style={styles.formHeader}>
-                <Text style={styles.formEyebrow}>Acesso do inspetor</Text>
-                <Text style={styles.formTitle}>Entrar na conta</Text>
-                <Text style={styles.formDescription}>
-                  Use suas credenciais do PrumoQ para continuar o trabalho de campo.
-                </Text>
-              </View>
+            <View style={styles.formPanel}>
+              <Text style={styles.formTitle} accessibilityRole="header">
+                {etapa === 'codigo' ? 'Confirme o código' : 'Entrar'}
+              </Text>
 
               {etapa === 'entrar' ? (
                 <View style={styles.fields}>
@@ -186,7 +164,7 @@ export default function LoginScreen() {
 
               {etapa === 'entrar' ? (
                 <Button
-                  label="Entrar no PrumoQ"
+                  label="Entrar"
                   onPress={handleLogin}
                   loading={loading}
                   fullWidth
@@ -218,9 +196,6 @@ export default function LoginScreen() {
                 </Text>
               </TouchableOpacity>
 
-              <Text style={styles.support}>
-                Outros problemas com o acesso? Fale com o administrador da sua empresa.
-              </Text>
             </View>
           </View>
         </ScrollView>
@@ -229,133 +204,46 @@ export default function LoginScreen() {
   );
 }
 
-function TrustItem({ Icon, text }: { Icon: typeof ClipboardCheck; text: string }) {
-  return (
-    <View style={styles.trustItem}>
-      <View style={styles.trustIcon}><Icon size={17} color={Colors.brandSignature} /></View>
-      <Text style={styles.trustText}>{text}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: Spacing.lg },
-  scrollTablet: { backgroundColor: Colors.text, padding: Spacing.xxxl },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
+  // Só o essencial: marca, título, campos e o botão.
   shell: {
     width: '100%',
-    maxWidth: 520,
+    maxWidth: 420,
     alignSelf: 'center',
-    gap: Spacing.xl,
-  },
-  shellTablet: {
-    maxWidth: Breakpoints.maxContent,
-    minHeight: 680,
-    flexDirection: 'row',
-    gap: 0,
-    borderRadius: Radius.xl,
-    overflow: 'hidden',
-    backgroundColor: Colors.surface,
-    ...Elevation.floating,
-  },
-  hero: {
-    borderRadius: Radius.xl,
-    backgroundColor: Colors.text,
-    padding: Spacing.xxl,
     gap: Spacing.xxl,
-    overflow: 'hidden',
   },
-  heroTablet: {
-    flex: 1.08,
-    borderRadius: 0,
-    padding: 48,
-    justifyContent: 'space-between',
-  },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  heroCopy: { gap: Spacing.sm, maxWidth: 500 },
-  heroIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: Radius.xs,
-    borderWidth: BorderWidth.card,
-    borderColor: Palette.onBrandLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.sm,
-  },
-  eyebrow: {
-    ...Typography.caption,
-    color: Colors.brandSignature,
-    fontFamily: FontFamily.bold,
-    letterSpacing: 0,
-  },
-  heroTitle: {
-    fontFamily: FontFamily.display,
-    fontSize: 38,
-    lineHeight: 40,
-    letterSpacing: 0,
-    color: Colors.surface,
-  },
-  heroDescription: {
-    ...Typography.body,
-    color: Colors.borderNormal,
-    maxWidth: 460,
-  },
-  trustList: { gap: Spacing.sm },
-  trustItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  trustIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: Radius.xs,
-    borderWidth: BorderWidth.card,
-    borderColor: Palette.onBrandLine,
+  brand: { alignItems: 'center', gap: Spacing.md },
+  plumbMark: {
+    width: 72,
+    height: 72,
+    borderRadius: Radius.full,
+    backgroundColor: Palette.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  trustText: { ...Typography.caption, color: Colors.border, fontFamily: FontFamily.medium },
   formPanel: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     padding: Spacing.xxl,
     gap: Spacing.xl,
-    ...Elevation.card,
-  },
-  formPanelTablet: {
-    flex: 0.92,
-    borderRadius: 0,
-    borderWidth: 0,
-    padding: 56,
-    justifyContent: 'center',
-  },
-  formHeader: { gap: 6 },
-  formEyebrow: {
-    ...Typography.caption,
-    color: Colors.brand,
-    fontFamily: FontFamily.bold,
-    letterSpacing: 0,
   },
   formTitle: {
-    fontFamily: FontFamily.bold,
-    fontSize: 30,
-    lineHeight: 38,
+    ...Typography.title,
     color: Colors.text,
-    letterSpacing: -0.7,
   },
   formDescription: { ...Typography.body, color: Colors.textSecondary },
   fields: { gap: Spacing.lg },
   recoveryLink: {
-    minHeight: 36,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   recoveryLinkText: {
-    color: Colors.brand,
+    color: Colors.text,
     fontFamily: FontFamily.semibold,
     fontSize: FontSizes.sm,
-  },
-  support: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
-    textAlign: 'center',
+    textDecorationLine: 'underline',
   },
 });

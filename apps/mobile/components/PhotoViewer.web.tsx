@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, X } from '../lib/icons';
 import { useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Colors } from '../lib/constants';
+import { Colors, FontFamily } from '../lib/constants';
 import { usePrivateMediaUris } from '../hooks/usePrivateMediaUris';
 
 interface Props {
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   counter: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
     flex: 1,
     textAlign: 'center',
   },

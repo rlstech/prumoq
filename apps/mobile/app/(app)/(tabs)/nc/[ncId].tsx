@@ -22,6 +22,7 @@ import {
 } from '../../../../lib/icons';
 import { useMemo, useState } from 'react';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -32,6 +33,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
 import { PhotoGrid } from '../../../../components/PhotoGrid';
 import { PhotoViewer } from '../../../../components/PhotoViewer';
+import { usePrivateMediaUris } from '../../../../hooks/usePrivateMediaUris';
 import {
   Badge,
   type BadgeTone,
@@ -40,6 +42,7 @@ import {
   Card,
   EmptyState,
   ErrorBanner,
+  Pill,
   Skeleton,
 } from '../../../../components/ui';
 import {
@@ -219,6 +222,10 @@ export default function NcDetailScreen() {
     [photoQuery.data],
   );
   const evidenceKeys = useMemo(() => evidence.map(photo => photo.key), [evidence]);
+  // Capa do herói: a primeira foto da abertura (miniatura quando existir).
+  const coverKey = evidence[0] ? (evidence[0].thumbnailKey ?? evidence[0].key) : '';
+  const resolveCover = usePrivateMediaUris(coverKey ? [coverKey] : []);
+  const coverUri = coverKey ? resolveCover(coverKey) : '';
   const actionable = nc ? isActionableNc(nc.status) : false;
   const timing = getNcTiming(nc?.data_nova_verif);
   const loading = detailQuery.isLoading;
@@ -293,19 +300,32 @@ export default function NcDetailScreen() {
         {error ? <ErrorBanner message="Alguns detalhes não puderam ser carregados." /> : null}
 
         <Card style={styles.hero}>
-          <View style={styles.heroTop}>
-            <View style={styles.heroText}>
-              <Text style={styles.title}>{nc.item_titulo}</Text>
-              <Text style={styles.service}>{nc.subservico}</Text>
-            </View>
-            <Badge
+          {evidence.length ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Abrir a foto da abertura"
+              onPress={() => openViewer(evidenceKeys, 0)}
+              style={styles.cover}
+            >
+              {coverUri ? (
+                <Image source={{ uri: coverUri }} style={styles.coverImage} resizeMode="cover" accessibilityIgnoresInvertColors />
+              ) : (
+                <Camera size={28} color={Colors.textSecondary} />
+              )}
+              {evidence.length > 1 ? (
+                <View style={styles.coverCount}>
+                  <Text style={styles.coverCountText}>{evidence.length} fotos</Text>
+                </View>
+              ) : null}
+            </Pressable>
+          ) : null}
+          <View style={styles.heroPills}>
+            <Pill
               label={ncStatusLabel(nc.status)}
               tone={statusTone(nc.status)}
               Icon={nc.status === 'resolvida' ? CheckCircle2 : AlertTriangle}
+              onSurface
             />
-          </View>
-          <Text style={styles.heroDescription}>{nc.descricao}</Text>
-          <View style={styles.heroMeta}>
             <MetaPill
               Icon={CalendarDays}
               label={
@@ -317,7 +337,13 @@ export default function NcDetailScreen() {
               }
               tone={deadlineColor(timing.bucket, actionable)}
             />
+            {nc.prioridade ? <Pill label={`Prioridade ${ncPriorityLabel(nc.prioridade).toLowerCase()}`} tone={nc.prioridade === 'alta' ? 'danger' : 'neutral'} onSurface /> : null}
           </View>
+          <View style={styles.heroText}>
+            <Text style={styles.title}>{nc.item_titulo}</Text>
+            <Text style={styles.service}>{nc.subservico}</Text>
+          </View>
+          <Text style={styles.heroDescription}>{nc.descricao}</Text>
         </Card>
 
         <Section title="Correção programada" Icon={Wrench}>
@@ -765,7 +791,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
     paddingBottom: 48,
     gap: Spacing.lg,
   },
@@ -787,24 +813,47 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     gap: Spacing.lg,
   },
-  hero: { gap: Spacing.lg },
+  hero: { gap: Spacing.md, padding: Spacing.lg },
+  cover: {
+    height: 200,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverImage: { width: '100%', height: '100%' },
+  coverCount: {
+    position: 'absolute',
+    right: Spacing.md,
+    bottom: Spacing.md,
+    minHeight: 28,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.full,
+    backgroundColor: 'rgba(28, 31, 34, 0.72)',
+    justifyContent: 'center',
+  },
+  coverCountText: { fontFamily: FontFamily.bold, fontSize: FontSizes.tiny, color: Colors.surface },
+  heroPills: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, paddingHorizontal: 4 },
   heroTop: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: Spacing.md,
   },
-  heroText: { flex: 1, gap: 3 },
+  heroText: { gap: 3, paddingHorizontal: 4 },
   title: {
-    ...Typography.heading,
+    ...Typography.title,
+    fontSize: 24,
+    lineHeight: 29,
     color: Colors.text,
-    marginTop: 3,
   },
   service: { ...Typography.caption, color: Colors.textSecondary },
   heroDescription: {
     ...Typography.body,
     color: Colors.text,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: 4,
+    paddingBottom: Spacing.xs,
   },
   heroMeta: {
     flexDirection: 'row',
@@ -815,16 +864,16 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.border,
   },
   metaPill: {
-    minHeight: 34,
+    minHeight: 28,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: Radius.xs,
-    backgroundColor: Colors.surface2,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.bg,
     paddingHorizontal: Spacing.md,
   },
   metaPillText: {
-    fontFamily: FontFamily.semibold,
+    fontFamily: FontFamily.bold,
     fontSize: FontSizes.xs,
   },
   section: { gap: Spacing.lg },
@@ -843,12 +892,12 @@ const styles = StyleSheet.create({
     height: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radius.md,
-    backgroundColor: Colors.brandLight,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.bg,
   },
   sectionEyebrow: { ...Typography.overline, color: Colors.textTertiary },
   sectionTitle: {
-    fontFamily: FontFamily.semibold,
+    fontFamily: FontFamily.bold,
     fontSize: FontSizes.lg,
     color: Colors.text,
   },
@@ -858,8 +907,6 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderRadius: Radius.md,
     backgroundColor: Colors.nokBg,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.nok,
   },
   detailLabel: { ...Typography.overline, color: Colors.textTertiary },
   detailValue: { ...Typography.body, color: Colors.textSecondary },
@@ -873,7 +920,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     padding: Spacing.md,
     borderRadius: Radius.md,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.bg,
   },
   detailFieldBody: { flex: 1, gap: 2 },
   detailFieldValue: {

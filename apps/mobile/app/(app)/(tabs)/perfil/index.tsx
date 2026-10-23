@@ -1,19 +1,19 @@
 import { useQuery } from '@powersync/react';
 import { useRouter } from 'expo-router';
-import { Building2, Key, Mail, PenLine, Phone, RefreshCw, User } from '../../../../lib/icons';
+import { Building2, ChevronRight, Key, Mail, PenLine, Phone, RefreshCw, User, type IconComponent } from '../../../../lib/icons';
 import { useMemo, useState } from 'react';
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
-import { IconBox } from '../../../../components/IconBox';
+import { IconTile, SectionHead, type TrenaTone } from '../../../../components/ui';
 import { SignatureField } from '../../../../components/SignatureField';
-import { Breakpoints, Colors, ComponentSize, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
+import { Breakpoints, Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../lib/constants';
 import { db } from '../../../../lib/powersync';
 import { useConta, useSessao } from '../../../../lib/auth/sessao';
 import { adoptPendingMedia } from '../../../../lib/pending-media';
@@ -31,22 +31,6 @@ interface UsuarioRow { id: string; nome: string; cargo: string; perfil: string; 
 interface ObraRow    { id: string; nome: string; municipio: string; uf: string }
 interface CountRow   { count: number }
 
-function StatCard({
-  value, label, bg, color,
-}: { value: number; label: string; bg: string; color: string }) {
-  return (
-    <View style={[sc.card, { backgroundColor: bg }]}>
-      <Text style={[sc.val, { color }]}>{value}</Text>
-      <Text style={[sc.lbl, { color: color === Colors.text ? Colors.textSecondary : color }]}>{label}</Text>
-    </View>
-  );
-}
-const sc = StyleSheet.create({
-  card: { flex: 1, borderRadius: Radius.lg, padding: 13 },
-  val:  { fontSize: 26, fontWeight: '500' },
-  lbl:  { fontSize: FontSizes.tiny - 1, marginTop: 2 },
-});
-
 const PERFIL_LABEL: Record<string, string> = {
   admin:    'Administrador',
   gestor:   'Gestor',
@@ -60,7 +44,6 @@ const PERFIL_ACCESS: Record<string, string> = {
 
 export default function PerfilScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const conta = useConta();
   const { sair } = useSessao();
   const userId = conta?.usuarioId ?? null;
@@ -142,11 +125,6 @@ export default function PerfilScreen() {
     }
   }
 
-  const heroRole = [
-    usuario?.cargo,
-    PERFIL_LABEL[usuario?.perfil ?? ''],
-  ].filter(Boolean).join(' · ');
-
   const infoRows = [
     { icon: User,     label: 'Nome completo',   value: usuario?.nome },
     { icon: Building2,label: 'Empresa',          value: undefined as string | undefined },  // empresa not synced
@@ -155,30 +133,20 @@ export default function PerfilScreen() {
     { icon: Key,      label: 'Perfil de acesso',  value: usuario ? (PERFIL_ACCESS[usuario.perfil] ?? usuario.perfil) : undefined },
   ].filter(r => !!r.value);
 
+  const heroRole = [
+    usuario?.cargo,
+    PERFIL_LABEL[usuario?.perfil ?? ''],
+  ].filter(Boolean).join(' · ');
+  const hasSignature = !!usuario?.assinatura_padrao_url;
+
   return (
     <SafeAreaView edges={['top']} style={s.safe}>
-      {/* Hero */}
-      <AppHeader>
-        <View style={s.hero}>
-          <View style={s.avatar}>
-            <Text style={s.avatarText}>{usuario ? initials(usuario.nome) : 'IN'}</Text>
-          </View>
-          <Text style={s.heroName}>
-            {profileUnavailable ? 'Perfil indisponível' : (usuario?.nome ?? 'Carregando...')}
-          </Text>
-          {heroRole ? <Text style={s.heroRole}>{heroRole}</Text> : null}
-        </View>
-      </AppHeader>
+      <AppHeader title="Perfil" />
 
       <ScrollView
         style={s.body}
         showsVerticalScrollIndicator={false}
-        // Reserva a altura da barra de abas flutuante mais o inset do gesto,
-        // senao o ultimo bloco fica embaixo dela sem como rolar.
-        contentContainerStyle={[
-          s.bodyContent,
-          { paddingBottom: ComponentSize.tabBar + Spacing.sm + Spacing.xxl + insets.bottom },
-        ]}
+        contentContainerStyle={s.bodyContent}
       >
         {profileUnavailable ? (
           <View style={s.errorCard}>
@@ -188,111 +156,77 @@ export default function PerfilScreen() {
           </View>
         ) : null}
 
-        {/* Dados do usuário */}
-        <Text style={s.sectionLabel}>Dados do usuário</Text>
-        <View style={s.dataCard}>
-          {infoRows.map((row, idx) => {
-            const Icon = row.icon;
-            return (
-              <View
-                key={row.label}
-                style={[s.pfRow, idx === infoRows.length - 1 && s.pfRowLast]}
-              >
-                <View style={s.pfIcon}>
-                  <Icon size={16} color={Colors.textSecondary} />
-                </View>
-                <View style={s.pfInfo}>
-                  <Text style={s.pfLbl}>{row.label}</Text>
-                  <Text style={s.pfVal}>{row.value}</Text>
-                </View>
-              </View>
-            );
-          })}
+        <View style={s.heroCard}>
+          <View style={s.avatar}>
+            <Text style={s.avatarText}>{usuario ? initials(usuario.nome) : 'IN'}</Text>
+          </View>
+          <Text style={s.heroName} numberOfLines={2}>
+            {profileUnavailable ? 'Perfil indisponível' : (usuario?.nome ?? 'Carregando…')}
+          </Text>
+          {heroRole ? <Text style={s.heroRole}>{heroRole}</Text> : null}
+          <View style={s.stats}>
+            <Stat value={stats.obras} label="Obras" />
+            <Stat value={stats.total} label="Verificações" />
+            <Stat value={stats.conformes} label="Conformes" color={Colors.ok} />
+            <Stat value={stats.ncsAbertas} label="NCs abertas" color={stats.ncsAbertas > 0 ? Colors.nok : undefined} />
+          </View>
         </View>
 
-        <View style={s.divider} />
-        <Text style={s.sectionLabel}>Assinatura padrão</Text>
-        <View style={s.signatureCard}>
-          <View style={s.pfIcon}><PenLine size={16} color={Colors.brand} /></View>
-          <View style={s.pfInfo}>
-            <Text style={s.pfLbl}>Assinatura digital</Text>
-            <Text style={s.pfVal}>{usuario?.assinatura_padrao_url ? 'Configurada para novas assinaturas' : 'Ainda não cadastrada'}</Text>
-          </View>
-          <TouchableOpacity
-            accessibilityRole="button"
+        <SectionHead title="Conta" />
+        <View style={s.list}>
+          {infoRows.map(row => (
+            <Row key={row.label} Icon={row.icon} label={row.label} value={row.value ?? ''} />
+          ))}
+          <Row
+            Icon={PenLine}
+            label="Assinatura padrão" strongLabel
+            value={hasSignature ? 'Configurada para novas assinaturas' : 'Ainda não cadastrada'}
+            tone={hasSignature ? 'success' : 'warning'}
+            action={hasSignature ? 'Alterar' : 'Cadastrar'}
             disabled={!userId || savingSignature}
             onPress={() => setSigning(true)}
-            style={s.signatureAction}
-          >
-            <Text style={s.signatureActionText}>{usuario?.assinatura_padrao_url ? 'Alterar' : 'Cadastrar'}</Text>
-          </TouchableOpacity>
+          />
+          <Row
+            Icon={RefreshCw}
+            label="Sincronização" strongLabel
+            value="Fila de envio e registros recusados"
+            onPress={() => router.push('/(app)/(tabs)/perfil/sincronizacao')}
+          />
+          <Row
+            Icon={Key}
+            label="Alterar senha" strongLabel
+            value="Troca a senha e encerra os outros aparelhos"
+            onPress={() => router.push('/(app)/alterar-senha')}
+            last
+          />
         </View>
         {signatureError ? <Text style={s.signatureError}>{signatureError}</Text> : null}
 
-        {/* Divider */}
-        <View style={s.divider} />
-
-        {/* Minhas estatísticas */}
-        <Text style={s.sectionLabel}>Minhas estatísticas</Text>
-        <View style={s.statsGrid}>
-          <StatCard value={stats.obras}      label="Obras ativas"  bg={Colors.progressBg} color={Colors.progress} />
-          <StatCard value={stats.total}      label="Total verif."  bg={Colors.surface2}   color={Colors.text} />
-        </View>
-        <View style={[s.statsGrid, { marginTop: 9 }]}>
-          <StatCard value={stats.conformes}  label="Conformes"     bg={Colors.okBg}       color={Colors.ok} />
-          <StatCard value={stats.ncsAbertas} label="NC abertas"    bg={Colors.nokBg}      color={Colors.nok} />
-        </View>
-
-        {/* Divider */}
-        <View style={s.divider} />
-
-        {/* Obras com acesso */}
-        {obrasRows.length > 0 && (
+        {obrasRows.length > 0 ? (
           <>
-            <Text style={s.sectionLabel}>Obras com acesso</Text>
-            {obrasRows.map(o => {
-              const location = [o.municipio, o.uf].filter(Boolean).join(', ');
-              return (
-                <View key={o.id} style={s.obraCard}>
-                  <View style={s.obraCardRow}>
-                    <Text style={s.obraNome} numberOfLines={1}>{o.nome}</Text>
-                    <View style={s.ativoBadge}>
-                      <Text style={s.ativoText}>Ativo</Text>
-                    </View>
-                  </View>
-                  {location ? <Text style={s.obraLocation}>{location}</Text> : null}
-                </View>
-              );
-            })}
-            <View style={s.divider} />
+            <SectionHead title="Obras com acesso" count={obrasRows.length} />
+            <View style={s.list}>
+              {obrasRows.map((o, index) => (
+                <Row
+                  key={o.id}
+                  Icon={Building2}
+                  label={o.nome}
+                  value={[o.municipio, o.uf].filter(Boolean).join(', ') || 'Local não informado'}
+                  strongLabel
+                  last={index === obrasRows.length - 1}
+                />
+              ))}
+            </View>
           </>
-        )}
+        ) : null}
 
-        <TouchableOpacity
-          style={s.passwordBtn}
-          onPress={() => router.push('/(app)/(tabs)/perfil/sincronizacao')}
-          activeOpacity={0.85}
+        <Pressable
           accessibilityRole="button"
-          accessibilityHint="Fila de envio e registros recusados pelo servidor"
+          onPress={handleLogout}
+          style={({ pressed }) => [s.logoutBtn, pressed && s.pressed]}
         >
-          <IconBox icon={RefreshCw} size={18} color={Colors.brand} />
-          <Text style={s.passwordText}>Sincronização</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={s.passwordBtn}
-          onPress={() => router.push('/(app)/alterar-senha')}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-        >
-          <IconBox icon={Key} size={18} color={Colors.brand} />
-          <Text style={s.passwordText}>Alterar senha</Text>
-        </TouchableOpacity>
-
-        {/* Logout */}
-        <TouchableOpacity style={s.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
           <Text style={s.logoutText}>Sair do sistema</Text>
-        </TouchableOpacity>
+        </Pressable>
 
         <Text style={s.versao} selectable>Versão {versaoDoApp()}</Text>
       </ScrollView>
@@ -301,132 +235,135 @@ export default function PerfilScreen() {
   );
 }
 
+function Stat({ value, label, color }: { value: number; label: string; color?: string }) {
+  return (
+    <View style={s.stat}>
+      <Text style={[s.statValue, color ? { color } : null]}>{value}</Text>
+      <Text style={s.statLabel} numberOfLines={1}>{label}</Text>
+    </View>
+  );
+}
+
+/** Linha de lista do Perfil: ladrilho de ícone, rótulo, valor e ação opcional. */
+function Row({
+  Icon,
+  label,
+  value,
+  tone = 'neutral',
+  action,
+  onPress,
+  disabled = false,
+  strongLabel = false,
+  last = false,
+}: {
+  Icon: IconComponent;
+  label: string;
+  value: string;
+  tone?: TrenaTone;
+  action?: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  strongLabel?: boolean;
+  last?: boolean;
+}) {
+  const content = (
+    <>
+      <IconTile Icon={Icon} tone={tone} size={40} />
+      <View style={s.rowBody}>
+        <Text style={strongLabel ? s.rowLabelStrong : s.rowLabel} numberOfLines={1}>{label}</Text>
+        <Text style={strongLabel ? s.rowValueSoft : s.rowValue} numberOfLines={2}>{value}</Text>
+      </View>
+      {action ? (
+        <View style={s.rowAction}>
+          <Text style={s.rowActionText}>{action}</Text>
+        </View>
+      ) : onPress ? (
+        <ChevronRight size={18} color={Colors.textSecondary} />
+      ) : null}
+    </>
+  );
+  return (
+    <View>
+      {onPress ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${label}. ${value}${action ? `. ${action}` : ''}`}
+          disabled={disabled}
+          onPress={onPress}
+          style={({ pressed }) => [s.row, pressed && s.rowPressed, disabled && s.rowDisabled]}
+        >
+          {content}
+        </Pressable>
+      ) : (
+        <View style={s.row} accessible accessibilityLabel={`${label}: ${value}`}>{content}</View>
+      )}
+      {!last ? <View style={s.rowDivider} /> : null}
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-
-  // Hero
-  hero: { alignItems: 'flex-start', paddingBottom: Spacing.sm, gap: 6 },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.brandSignature,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.xs,
-  },
-  avatarText: { color: Colors.text, fontSize: 22, fontFamily: FontFamily.monoBold },
-  heroName:   { color: Colors.text, fontSize: FontSizes.xl, fontFamily: FontFamily.bold },
-  heroRole:   { color: Colors.textSecondary, fontSize: FontSizes.sm, fontFamily: FontFamily.regular },
-
-  // Body
-  body:        { flex: 1, backgroundColor: Colors.bg },
+  body: { flex: 1, backgroundColor: Colors.bg },
   bodyContent: {
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.xxl,
+    gap: Spacing.md,
   },
-  errorCard: {
-    backgroundColor: Colors.nokBg,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  errorText: {
-    color: Colors.nok,
-    fontSize: FontSizes.sm,
-    fontFamily: FontFamily.medium,
-    lineHeight: 20,
-  },
+  errorCard: { backgroundColor: Colors.nokBg, borderRadius: Radius.lg, padding: Spacing.lg },
+  errorText: { color: Colors.nok, fontSize: FontSizes.sm, fontFamily: FontFamily.medium, lineHeight: 20 },
 
-  // Section label
-  sectionLabel: {
-    fontSize: FontSizes.tiny - 1,
-    fontFamily: FontFamily.semibold,
-    color: Colors.textSecondary,
-    letterSpacing: 0,
-    marginBottom: 8,
-  },
-
-  // Data card (dados do usuário)
-  dataCard: {
+  heroCard: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-    marginBottom: 0,
-  },
-  signatureCard: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  signatureAction: { backgroundColor: Colors.surface2, borderRadius: Radius.full, paddingHorizontal: Spacing.lg, paddingVertical: 10 },
-  signatureActionText: { ...Typography.label, color: Colors.brand },
-  signatureError: { ...Typography.caption, color: Colors.nok, marginTop: Spacing.xs },
-  pfRow: {
-    flexDirection: 'row',
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 13,
-    paddingHorizontal: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.bg,
-  },
-  pfRowLast: { borderBottomWidth: 0 },
-  pfIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  pfInfo: { flex: 1 },
-  pfLbl:  { fontSize: FontSizes.tiny - 1, color: Colors.textSecondary },
-  pfVal:  { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.text, marginTop: 2 },
-
-  // Divider
-  divider: {
-    height: 0,
-    marginVertical: 12,
-  },
-
-  // Stats grid
-  statsGrid: { flexDirection: 'row', gap: 9 },
-
-  // Obra cards
-  obraCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    paddingVertical: 13,
-    paddingHorizontal: 15,
-    marginBottom: 9,
-  },
-  obraCardRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  obraNome:     { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text, flex: 1, marginRight: 8 },
-  obraLocation: { fontSize: FontSizes.sm, color: Colors.textSecondary, marginTop: 2 },
-  ativoBadge:   { backgroundColor: Colors.progressBg, paddingHorizontal: 10, paddingVertical: 3, borderRadius: Radius.full },
-  ativoText:    { fontSize: FontSizes.tiny - 1, fontWeight: '500', color: Colors.progress },
-
-  // Account actions
-  passwordBtn: {
-    minHeight: 48,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.full,
-    padding: 13,
+    gap: 4,
     marginBottom: Spacing.sm,
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  passwordText: { ...Typography.label, color: Colors.brand },
-  logoutBtn: {
-    minHeight: 48,
-    backgroundColor: Colors.nokBg,
+  avatar: {
+    width: 88,
+    height: 88,
     borderRadius: Radius.full,
-    padding: 13,
+    backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: Spacing.sm,
   },
-  logoutText: { ...Typography.label, color: Colors.nok },
-  versao: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'center', marginTop: Spacing.lg },
+  avatarText: { color: Colors.brandSignature, fontSize: 32, fontFamily: FontFamily.display, letterSpacing: -0.5 },
+  heroName: { ...Typography.title, fontSize: 24, lineHeight: 29, color: Colors.text, textAlign: 'center' },
+  heroRole: { color: Colors.textSecondary, fontSize: FontSizes.sm, fontFamily: FontFamily.regular, textAlign: 'center' },
+  stats: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.lg, alignSelf: 'stretch' },
+  stat: { flex: 1, minWidth: 0, alignItems: 'center', gap: 2, paddingVertical: Spacing.md, borderRadius: Radius.md, backgroundColor: Colors.bg },
+  statValue: { fontFamily: FontFamily.monoBold, fontSize: 22, lineHeight: 26, color: Colors.text },
+  statLabel: { fontFamily: FontFamily.semibold, fontSize: 11, color: Colors.textSecondary },
+
+  list: { backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: 6, marginBottom: Spacing.sm },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md, borderRadius: Radius.md, minHeight: 64 },
+  rowPressed: { backgroundColor: Colors.surface2 },
+  rowDisabled: { opacity: 0.55 },
+  rowDivider: { height: 1, backgroundColor: Colors.bg, marginLeft: 66, marginRight: Spacing.lg },
+  rowBody: { flex: 1, minWidth: 0, gap: 2 },
+  rowLabel: { fontFamily: FontFamily.regular, fontSize: FontSizes.xs, color: Colors.textSecondary },
+  rowValue: { fontFamily: FontFamily.semibold, fontSize: FontSizes.base, color: Colors.text },
+  rowLabelStrong: { fontFamily: FontFamily.semibold, fontSize: FontSizes.base, color: Colors.text },
+  rowValueSoft: { fontFamily: FontFamily.regular, fontSize: FontSizes.xs, color: Colors.textSecondary },
+  rowAction: { minHeight: 36, paddingHorizontal: Spacing.md, borderRadius: Radius.full, backgroundColor: Colors.surface2, justifyContent: 'center' },
+  rowActionText: { fontFamily: FontFamily.bold, fontSize: FontSizes.xs, color: Colors.text },
+  signatureError: { ...Typography.caption, color: Colors.nok },
+
+  logoutBtn: {
+    minHeight: 56,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.nokBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.sm,
+  },
+  logoutText: { fontFamily: FontFamily.bold, fontSize: FontSizes.md, color: Colors.nok },
+  pressed: { opacity: 0.75 },
+  versao: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'center', marginTop: Spacing.md },
 });

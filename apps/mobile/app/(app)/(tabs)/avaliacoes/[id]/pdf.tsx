@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../../components/AppHeader';
-import { Button, EmptyState, ListSurface, OperationalRow } from '../../../../../components/ui';
+import { Button, DataRow, EmptyState, IconTile, ListSurface } from '../../../../../components/ui';
 import { contractorEvaluationPdfFilename, generateAndShareContractorEvaluationPdf, renderContractorEvaluationPdfHtml, type ContractorEvaluationPdfReport } from '../../../../../lib/contractor-evaluation-pdf';
 import { usePrivateMediaUris } from '../../../../../hooks/usePrivateMediaUris';
 import { Breakpoints, Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../../../../lib/constants';
@@ -41,11 +41,11 @@ export default function ContractorEvaluationPdfScreen() {
   const loading = isLoadingEvaluation || isLoadingItems;
   return <SafeAreaView edges={['top']} style={styles.safe}><AppHeader title="Documento da avaliação" subtitle="PDF local para compartilhamento" showBack onBack={() => router.back()} /><ScrollView contentContainerStyle={styles.content}>
     {loading ? <View style={styles.loading}><LoaderCircle size={24} color={Colors.brand} /><Text style={styles.muted}>Preparando documento...</Text></View> : !report || !printable(report.status) ? <EmptyState Icon={FileText} title="PDF indisponível" description="Somente avaliações assinadas, aprovadas ou invalidadas podem gerar documento." /> : <>
-      <View style={styles.hero}><FileText size={24} color={Colors.brand} /><View style={styles.heroText}><Text style={styles.title}>Avaliação de {report.empreiteiro}</Text><Text style={styles.copy}>{report.obra} · {report.percentual.toFixed(0)}% · {report.itens.length} critérios</Text></View></View>
+      <View style={styles.hero}><IconTile Icon={FileText} tone="info" size={52} /><View style={styles.heroText}><Text style={styles.title}>Avaliação de {report.empreiteiro}</Text><Text style={styles.copy}>{report.obra} · {report.percentual.toFixed(0)}% · {report.itens.length} critérios</Text></View></View>
       <ListSurface>
-        <OperationalRow last onPress={() => {}} accessibilityLabel="Modelo da avaliação"><Text style={styles.rowLabel}>Modelo</Text><Text style={styles.rowValue}>{report.modelo} · Rev. {report.revisao}</Text></OperationalRow>
-        <OperationalRow last onPress={() => {}} accessibilityLabel="Responsável pela avaliação"><Text style={styles.rowLabel}>Responsável</Text><Text style={styles.rowValue}>{report.avaliador}</Text></OperationalRow>
-        <OperationalRow last onPress={() => {}} accessibilityLabel="Estado da assinatura"><Text style={styles.rowLabel}>Assinatura</Text><Text style={styles.rowValue}>{report.assinaturaUri ? 'Incluída no documento' : 'Indisponível — dados permanecem válidos'}</Text></OperationalRow>
+        <DataRow align="stack" label="Modelo" value={`${report.modelo} · Rev. ${report.revisao}`} />
+        <DataRow align="stack" label="Responsável" value={report.avaliador} />
+        <DataRow align="stack" label="Assinatura" value={report.assinaturaUri ? 'Incluída no documento' : 'Indisponível, os dados continuam válidos'} last />
       </ListSurface>
       {error ? <View style={styles.error}><Text style={styles.errorText}>{error}</Text></View> : null}
       <Button label={generating ? 'Gerando PDF...' : 'Gerar PDF'} Icon={FileDown} onPress={() => void generatePdf()} disabled={generating} />
@@ -55,5 +55,5 @@ export default function ContractorEvaluationPdfScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:{flex:1,backgroundColor:Colors.bg}, content:{width:'100%',maxWidth:Breakpoints.maxContent,alignSelf:'center',padding:Spacing.lg,paddingBottom:48,gap:Spacing.lg}, loading:{minHeight:180,alignItems:'center',justifyContent:'center',gap:Spacing.sm}, muted:{...Typography.caption,color:Colors.textSecondary}, hero:{flexDirection:'row',gap:Spacing.md,alignItems:'flex-start',padding:Spacing.lg,backgroundColor:Colors.surface,borderRadius:Radius.xl}, heroText:{flex:1,gap:4}, title:{...Typography.heading,color:Colors.text}, copy:{...Typography.caption,color:Colors.textSecondary}, rowLabel:{...Typography.caption,color:Colors.textSecondary}, rowValue:{fontFamily:FontFamily.medium,fontSize:FontSizes.base,color:Colors.text,marginTop:4}, error:{padding:Spacing.md,borderRadius:Radius.md,backgroundColor:Colors.nokBg}, errorText:{...Typography.caption,color:Colors.nok}, helper:{...Typography.caption,color:Colors.textSecondary,textAlign:'center'},
+  safe:{flex:1,backgroundColor:Colors.bg}, content:{width:'100%',maxWidth:Breakpoints.maxContent,alignSelf:'center',paddingHorizontal:Spacing.xl,paddingBottom:48,gap:Spacing.lg}, loading:{minHeight:180,alignItems:'center',justifyContent:'center',gap:Spacing.sm}, muted:{...Typography.caption,color:Colors.textSecondary}, hero:{flexDirection:'row',gap:Spacing.md,alignItems:'center',padding:Spacing.xl,backgroundColor:Colors.surface,borderRadius:Radius.xl}, heroText:{flex:1,gap:4}, title:{...Typography.heading,color:Colors.text}, copy:{...Typography.caption,color:Colors.textSecondary}, rowLabel:{...Typography.caption,color:Colors.textSecondary}, rowValue:{fontFamily:FontFamily.medium,fontSize:FontSizes.base,color:Colors.text,marginTop:4}, error:{padding:Spacing.md,borderRadius:Radius.md,backgroundColor:Colors.nokBg}, errorText:{...Typography.caption,color:Colors.nok}, helper:{...Typography.caption,color:Colors.textSecondary,textAlign:'center'},
 });

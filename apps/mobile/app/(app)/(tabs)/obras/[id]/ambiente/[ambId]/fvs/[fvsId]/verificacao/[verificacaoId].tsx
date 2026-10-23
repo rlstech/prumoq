@@ -415,11 +415,8 @@ export default function VerificationDetailScreen() {
         <Card style={styles.heroCard}>
           <View style={styles.heroTop}>
             <View style={styles.heroCopy}>
-              <Text style={styles.overline}>Registro histórico · Somente leitura</Text>
-              <Text style={styles.heroTitle}>Verificação #{verification.numero_verif}</Text>
-              <Text style={styles.heroSubtitle}>
-                Data da inspeção: {formatDateOnly(verification.data_verif)}
-              </Text>
+              <Text style={styles.overline}>Somente leitura</Text>
+              <Text style={styles.heroTitle}>Inspeção em {formatDateOnly(verification.data_verif)}</Text>
               {registeredAt ? (
                 <Text style={styles.heroMeta}>Registrada em {registeredAt}</Text>
               ) : null}
@@ -775,10 +772,10 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
   },
   stateIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: Radius.xs,
-    backgroundColor: Colors.warnBg,
+    width: 64,
+    height: 64,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -854,7 +851,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     padding: Spacing.md,
     borderRadius: Radius.md,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.bg,
   },
   metricMobile: {
     width: '48%',
@@ -865,15 +862,16 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   metricIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.xs,
+    width: 40,
+    height: 40,
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   metricValue: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSizes.lg,
+    fontFamily: FontFamily.monoBold,
+    fontSize: 22,
+    lineHeight: 26,
     color: Colors.text,
   },
   metricLabel: {
@@ -894,7 +892,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     padding: Spacing.md,
     borderRadius: Radius.md,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.bg,
   },
   identityBlockTablet: {
     width: '48%',
@@ -903,7 +901,7 @@ const styles = StyleSheet.create({
   identityIcon: {
     width: 40,
     height: 40,
-    borderRadius: Radius.xs,
+    borderRadius: Radius.full,
     backgroundColor: Colors.brandLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -992,7 +990,7 @@ const styles = StyleSheet.create({
   itemOrder: {
     width: 32,
     height: 32,
-    borderRadius: Radius.xs,
+    borderRadius: Radius.full,
     backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1016,9 +1014,7 @@ const styles = StyleSheet.create({
   },
   ncPanel: {
     gap: Spacing.md,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.nok,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     backgroundColor: Colors.nokBg,
     padding: Spacing.lg,
   },
@@ -1045,7 +1041,7 @@ const styles = StyleSheet.create({
   resolutionBox: {
     gap: 4,
     padding: Spacing.md,
-    borderRadius: Radius.sm,
+    borderRadius: Radius.md,
     backgroundColor: Colors.okBg,
   },
   resolutionTitle: {
@@ -1103,9 +1099,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radius.xs,
+    paddingHorizontal: Spacing.md,
+    minHeight: 28,
+    borderRadius: Radius.full,
     backgroundColor: Colors.okBg,
   },
   signedBadgeText: {
@@ -1114,10 +1110,8 @@ const styles = StyleSheet.create({
   },
   signatureFrame: {
     minHeight: 180,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surface2,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.bg,
     padding: Spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1144,11 +1138,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: Colors.borderNormal,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surface2,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.bg,
   },
   auditFooter: {
     flexDirection: 'row',

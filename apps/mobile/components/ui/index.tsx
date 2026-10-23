@@ -933,6 +933,7 @@ export function ChoiceToggle<T extends string>({
   error,
   accessibilityLabel,
   style,
+  size = 'md',
 }: {
   value?: T;
   options: readonly ChoiceToggleOption<T>[];
@@ -941,8 +942,11 @@ export function ChoiceToggle<T extends string>({
   error?: string;
   accessibilityLabel: string;
   style?: StyleProp<ViewStyle>;
+  /** `large`: ladrilhos altos e brancos do modo item a item, ícone em círculo suave. */
+  size?: 'md' | 'large';
 }) {
   const answered = !!value;
+  const large = size === 'large';
   return (
     <View style={style}>
       {error ? <Text style={styles.fieldError}>{error}</Text> : null}
@@ -971,12 +975,17 @@ export function ChoiceToggle<T extends string>({
               onPress={() => onChange(option.value)}
               style={({ pressed }) => [
                 styles.resultToggleOption,
+                large && styles.resultToggleOptionLarge,
                 error && !answered && styles.resultToggleOptionError,
                 selected && { backgroundColor: palette.border },
                 pressed && !selected && styles.resultToggleOptionPressed,
               ]}
             >
-              {Icon ? (
+              {Icon && large ? (
+                <View style={[styles.resultToggleCircle, { backgroundColor: selected ? 'rgba(255,255,255,0.2)' : palette.background }]}>
+                  <Icon size={24} color={selected ? Colors.surface : palette.text} strokeWidth={2} />
+                </View>
+              ) : Icon ? (
                 <Icon
                   size={22}
                   color={selected ? palette.border : tint}
@@ -984,7 +993,10 @@ export function ChoiceToggle<T extends string>({
                   strokeWidth={selected ? 2.2 : 1.8}
                 />
               ) : null}
-              <Text numberOfLines={1} style={[styles.resultToggleText, { color: selected ? Colors.surface : tint }]}>
+              <Text
+                numberOfLines={large ? 2 : 1}
+                style={[styles.resultToggleText, large && styles.resultToggleTextLarge, { color: selected ? Colors.surface : large ? Colors.text : tint }]}
+              >
                 {option.label}
               </Text>
             </Pressable>
@@ -1014,6 +1026,7 @@ export function ResultToggle({
   error,
   accessibilityLabel,
   style,
+  size,
 }: {
   value?: ResultToggleValue;
   onChange: (value: ResultToggleValue) => void;
@@ -1021,6 +1034,7 @@ export function ResultToggle({
   error?: string;
   accessibilityLabel: string;
   style?: StyleProp<ViewStyle>;
+  size?: 'md' | 'large';
 }) {
   return (
     <ChoiceToggle
@@ -1031,6 +1045,7 @@ export function ResultToggle({
       error={error}
       accessibilityLabel={accessibilityLabel}
       style={style}
+      size={size}
     />
   );
 }
@@ -1479,6 +1494,8 @@ const buttonPalette: Record<ButtonVariant, { background: string; pressed: string
   danger: { background: Colors.nok, pressed: Colors.text, border: Colors.nok, text: Colors.surface },
 };
 
+export * from './trena';
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
   screenContent: { width: '100%', alignSelf: 'center' },
@@ -1919,7 +1936,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     gap: Spacing.xs,
   },
-  syncCompact: { width: 32, height: 32, paddingHorizontal: 0, justifyContent: 'center' },
+  // Compacto vive no cabeçalho, ao lado dos botões redondos de 44.
+  syncCompact: { width: 44, height: 44, paddingHorizontal: 0, justifyContent: 'center', alignSelf: 'center' },
   syncOnBrand: {
     backgroundColor: Palette.onBrandLine,
   },
@@ -2014,6 +2032,21 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: Spacing.xs,
   },
+  resultToggleOptionLarge: {
+    minHeight: 112,
+    borderRadius: 28,
+    backgroundColor: Colors.surface,
+    gap: 10,
+    paddingHorizontal: Spacing.sm,
+  },
+  resultToggleCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resultToggleTextLarge: { fontSize: FontSizes.xs, lineHeight: 17, textAlign: 'center' },
   resultToggleOptionError: { borderWidth: 1.5, borderColor: Colors.nok, backgroundColor: Colors.nokBg },
   resultToggleOptionPressed: { backgroundColor: Colors.surface2 },
   resultToggleText: {

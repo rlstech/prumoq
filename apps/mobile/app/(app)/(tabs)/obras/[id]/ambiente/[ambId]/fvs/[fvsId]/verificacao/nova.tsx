@@ -5,10 +5,12 @@ import {
   AlertCircle,
   ArrowLeft,
   ClipboardCheck,
+  List,
   LockKeyhole,
   Save,
+  SquareStack,
 } from '../../../../../../../../../../lib/icons';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -32,9 +34,12 @@ import {
   ErrorBanner,
   ListSurface,
   ModalSheet,
+  SegmentedControl,
   Stepper,
   Toast,
 } from '../../../../../../../../../../components/ui';
+import { ChecklistFocus } from '../../../../../../../../../../components/verification/ChecklistFocus';
+import { ChecklistJumpSheet } from '../../../../../../../../../../components/verification/ChecklistJumpSheet';
 import { ChecklistItemRow } from '../../../../../../../../../../components/verification/ChecklistItemRow';
 import { EvidenceSection } from '../../../../../../../../../../components/verification/EvidenceSection';
 import { ChecklistRouteRail } from '../../../../../../../../../../components/verification/ChecklistRouteRail';
@@ -91,6 +96,14 @@ import {
   canConcludeFvs,
   verificationStatusFromResults,
 } from '../../../../../../../../../../lib/verification/controller';
+import {
+  firstErrorItemId,
+  focusPosition,
+  initialFocusId,
+  nextFocusId,
+  previousFocusId,
+  type FocusItems,
+} from '../../../../../../../../../../lib/verification/focus';
 import { adoptPendingMedia, nomeArquivoMidia } from '../../../../../../../../../../lib/pending-media';
 import { approveReinspecao, createNc, reprovarReinspecao } from '../../../../../../../../../../services/nc.service';
 import { resolveNcFinancialImpact } from '../../../../../../../../../../services/nc-finance.service';
@@ -236,6 +249,13 @@ export default function NovaVerificacaoScreen() {
   const [showFinancialResolution, setShowFinancialResolution] = useState(false);
   /** Checklist item whose NC sheet is open, or null. */
   const [ncSheetItemId, setNcSheetItemId] = useState<string | null>(null);
+  /** Modo da etapa Vistoria: um item por vez (padrão) ou a lista completa. */
+  const [checklistView, setChecklistView] = useState<'focus' | 'list'>('focus');
+  /** Item em foco no modo "item a item". Só da tela: não vai para o rascunho. */
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const [showJumpSheet, setShowJumpSheet] = useState(false);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rowRefs = useRef<Record<string, View | null>>({});
 
   function showToast(msg: string, type: 'success' | 'error', onDone?: () => void) {
     setToast({ msg, type });
@@ -453,13 +473,88 @@ export default function NovaVerificacaoScreen() {
     if (path) updateNc(itemId, { foto: path });
   }
 
+  // ── Modo "item a item" ────────────────────────────────────────────────
+  const lockedItemIds = useMemo(
+    () => new Set(hasOpenNCs ? sortedItens.filter(item => !ncAbertoByItemId[item.id]).map(item => item.id) : []),
+    [hasOpenNCs, ncAbertoByItemId, sortedItens],
+  );
+  const focusItems = useMemo<FocusItems>(
+    () => ({ order: sortedItens.map(item => item.id), locked: lockedItemIds }),
+    [lockedItemIds, sortedItens],
+  );
+  const focusItem = sortedItens.find(item => item.id === focusId) ?? null;
+  const { position: focusPos, total: focusTotal } = focusPosition(focusItems, focusId);
+  const focusNextId = nextFocusId(focusItems, focusId);
+  const focusPreviousId = previousFocusId(focusItems, focusId);
+  const focusMode = checklistView === 'focus' && sortedItens.length > 0;
+
+  // Começa (e recomeça, ao restaurar um rascunho) no primeiro item sem resposta.
+  useEffect(() => {
+    if (focusId && focusItems.order.includes(focusId) && !lockedItemIds.has(focusId)) return;
+    const initial = initialFocusId(focusItems, itemResults);
+    if (initial !== focusId) setFocusId(initial);
+  }, [focusId, focusItems, itemResults, lockedItemIds]);
+
+  useEffect(() => () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+  }, []);
+
+  const goToFocus = useCallback((itemId: string | null) => {
+    if (advanceTimer.current) {
+      clearTimeout(advanceTimer.current);
+      advanceTimer.current = null;
+    }
+    if (!itemId) return;
+    setFocusId(itemId);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  /** Depois de responder, o próximo item aparece sozinho (pausa curta para ver a escolha). */
+  function scheduleAdvance(fromId: string) {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    const target = nextFocusId(focusItems, fromId);
+    if (!target) return;
+    advanceTimer.current = setTimeout(() => {
+      advanceTimer.current = null;
+      setFocusId(current => (current === fromId ? target : current));
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }, 350);
+  }
+
+  function closeNcSheet() {
+    const closingId = ncSheetItemId;
+    setNcSheetItemId(null);
+    if (focusMode && closingId && closingId === focusId && itemResults[closingId] === 'nao_conforme' && isNcComplete(closingId)) {
+      scheduleAdvance(closingId);
+    }
+  }
+
+  function restoreDraftAndRefocus() {
+    restoreDraft();
+    setFocusId(null);
+  }
+
+  /** Leva o inspetor ao item com erro: no modo foco troca o item, na lista rola até a linha. */
+  function revealItemError(itemId: string) {
+    if (checklistView === 'focus') {
+      goToFocus(itemId);
+      return;
+    }
+    const node = rowRefs.current[itemId] as unknown as { scrollIntoView?: (options: object) => void } | null;
+    if (node?.scrollIntoView) node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    else scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }
+
   /** Marking an item não conforme opens its NC sheet straight away — the five
    * required fields are the reason the answer was given, so asking for them is
    * not an interruption. Every other answer just collapses the row. */
   function handleItemResult(itemId: string, value: Resultado) {
     setItemResult(itemId, value);
-    if (value === 'nao_conforme' && !ncAbertoByItemId[itemId]) {
+    const opensNc = value === 'nao_conforme' && !ncAbertoByItemId[itemId];
+    if (opensNc) {
       setNcSheetItemId(itemId);
+    } else if (focusMode && itemId === focusId) {
+      scheduleAdvance(itemId);
     }
   }
 
@@ -480,7 +575,9 @@ export default function NovaVerificacaoScreen() {
     const errs = validateFlow(step);
 
     if (Object.keys(errs).length > 0) {
-      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      const errorItemId = currentStep === 'checklist' ? firstErrorItemId(focusItems.order, errs) : null;
+      if (errorItemId) revealItemError(errorItemId);
+      else scrollRef.current?.scrollTo({ y: 0, animated: true });
       showToast('Revise os campos indicados antes de continuar.', 'error');
       return false;
     }
@@ -920,7 +1017,7 @@ export default function NovaVerificacaoScreen() {
                   }}
                   variant="ghost"
                 />
-                {!draftConflict ? <Button label="Continuar rascunho" onPress={restoreDraft} /> : null}
+                {!draftConflict ? <Button label="Continuar rascunho" onPress={restoreDraftAndRefocus} /> : null}
               </View>
             </Card>
           ) : null}
@@ -935,6 +1032,12 @@ export default function NovaVerificacaoScreen() {
                       itemResults={itemResults}
                       openNcs={ncsAbertas}
                       mode="rail"
+                      currentId={focusMode ? focusId : null}
+                      lockedIds={lockedItemIds}
+                      onSelectItem={itemId => {
+                        if (checklistView === 'focus') goToFocus(itemId);
+                        else revealItemError(itemId);
+                      }}
                     />
                   ) : null}
                   <View style={st.checklistContent}>
@@ -950,7 +1053,22 @@ export default function NovaVerificacaoScreen() {
                     equipeError={errors.equipe}
                   />
 
-                  {!isTablet ? (
+                  {sortedItens.length > 0 ? (
+                    <SegmentedControl
+                      value={checklistView}
+                      onChange={value => {
+                        if (advanceTimer.current) clearTimeout(advanceTimer.current);
+                        setChecklistView(value);
+                      }}
+                      options={[
+                        { value: 'focus', label: 'Item a item', Icon: SquareStack },
+                        { value: 'list', label: 'Lista', Icon: List },
+                      ]}
+                      accessibilityLabel="Modo de preenchimento do checklist"
+                    />
+                  ) : null}
+
+                  {!isTablet && !focusMode ? (
                     <ChecklistRouteRail
                       items={sortedItens}
                       itemResults={itemResults}
@@ -959,7 +1077,26 @@ export default function NovaVerificacaoScreen() {
                     />
                   ) : null}
 
-                  {sortedItens.length === 0 ? (
+                  {focusMode && focusItem ? (
+                    <ChecklistFocus
+                      item={focusItem}
+                      position={focusPos}
+                      total={focusTotal}
+                      answeredCount={sortedItens.filter(item => !!itemResults[item.id]).length}
+                      itemCount={sortedItens.length}
+                      result={itemResults[focusItem.id]}
+                      onResultChange={value => handleItemResult(focusItem.id, value)}
+                      locked={lockedItemIds.has(focusItem.id)}
+                      isNcItem={!!ncAbertoByItemId[focusItem.id]}
+                      ncComplete={isNcComplete(focusItem.id)}
+                      onOpenNc={() => setNcSheetItemId(focusItem.id)}
+                      itemError={errors[`item_${focusItem.id}`]}
+                      ncError={errors[`nc_desc_${focusItem.id}`] || errors[`nc_foto_${focusItem.id}`]
+                        ? 'Faltam campos obrigatórios da não conformidade.'
+                        : undefined}
+                      onShowAll={() => setShowJumpSheet(true)}
+                    />
+                  ) : sortedItens.length === 0 ? (
                     <EmptyState
                       Icon={ClipboardCheck}
                       title="Esta revisão da FVS não tem itens"
@@ -973,8 +1110,8 @@ export default function NovaVerificacaoScreen() {
                         const isNcItem = !!openNc;
                         const isLocked = hasOpenNCs && !isNcItem;
                         return (
+                          <View key={item.id} ref={node => { rowRefs.current[item.id] = node; }}>
                           <ChecklistItemRow
-                            key={item.id}
                             item={item}
                             result={result}
                             onResultChange={value => handleItemResult(item.id, value)}
@@ -987,6 +1124,7 @@ export default function NovaVerificacaoScreen() {
                             ncComplete={isNcComplete(item.id)}
                             ncError={errors[`nc_desc_${item.id}`] ? 'Complete o registro da não conformidade' : undefined}
                           />
+                          </View>
                         );
                       })}
                     </ListSurface>
@@ -1116,14 +1254,14 @@ export default function NovaVerificacaoScreen() {
               : canConcludeCurrentFvs
                 ? (saveOutcome === 'conclude' ? 'Salvar e concluir FVS' : 'Salvar e continuar')
                 : 'Salvar verificação')
-            : 'Continuar'
+            : (focusMode && focusNextId ? 'Próximo item' : 'Continuar')
         }
         onPrimary={
           currentStep === 'review'
             ? (saveOutcome === 'conclude' && canConcludeCurrentFvs
               ? handleConclude
               : () => { void handleSave(false); })
-            : handleNextStep
+            : (focusMode && focusNextId ? () => goToFocus(focusNextId) : handleNextStep)
         }
         primaryLoading={currentStep === 'review' && isSaving}
         primaryDisabled={
@@ -1132,8 +1270,10 @@ export default function NovaVerificacaoScreen() {
           || (currentStep === 'review' && !identityReady)
           || (currentStep === 'review' && pendingFinancialNcs.length > 0 && !canManageFinancialImpact)
         }
-        secondaryLabel={currentStep !== 'checklist' ? 'Voltar' : undefined}
-        onSecondary={currentStep !== 'checklist' ? handlePreviousStep : undefined}
+        secondaryLabel={currentStep !== 'checklist' ? 'Voltar' : focusMode && focusPreviousId ? 'Anterior' : undefined}
+        onSecondary={currentStep !== 'checklist'
+          ? handlePreviousStep
+          : focusMode && focusPreviousId ? () => goToFocus(focusPreviousId) : undefined}
         helper={!isTablet
           ? (currentStep === 'review'
             ? (hasOpenNCs
@@ -1180,9 +1320,23 @@ export default function NovaVerificacaoScreen() {
         </Text>
       </ModalSheet>
 
+      <ChecklistJumpSheet
+        visible={showJumpSheet}
+        onClose={() => setShowJumpSheet(false)}
+        items={sortedItens}
+        itemResults={itemResults}
+        currentId={focusId}
+        lockedIds={lockedItemIds}
+        errorIds={new Set(sortedItens.filter(item => errors[`item_${item.id}`] || errors[`nc_desc_${item.id}`]).map(item => item.id))}
+        onSelect={itemId => {
+          setShowJumpSheet(false);
+          goToFocus(itemId);
+        }}
+      />
+
       <NcSheet
         visible={!!ncSheetItemId}
-        onClose={() => setNcSheetItemId(null)}
+        onClose={closeNcSheet}
         item={sortedItens.find(item => item.id === ncSheetItemId) ?? null}
         detail={ncDetails[ncSheetItemId ?? ''] ?? emptyNcDetail}
         onChange={patch => { if (ncSheetItemId) updateNc(ncSheetItemId, patch); }}

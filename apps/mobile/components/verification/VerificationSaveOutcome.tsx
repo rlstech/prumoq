@@ -139,10 +139,10 @@ const styles = StyleSheet.create({
   option: {
     position: 'relative',
     minHeight: 80,
-    padding: Spacing.md,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
+    padding: Spacing.lg,
+    borderRadius: Radius.lg,
+    borderWidth: 2,
+    borderColor: Colors.surface,
     backgroundColor: Colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
@@ -162,19 +162,13 @@ const styles = StyleSheet.create({
   optionDisabled: {
     opacity: 0.55,
   },
-  selectionDatum: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: 3,
-    backgroundColor: Colors.brandSignature,
-  },
+  // A opção escolhida ganha contorno grafite; o fio lateral saiu com a Trena Suave.
+  selectionDatum: { display: 'none' },
   iconSurface: {
     width: 40,
     height: 40,
-    borderRadius: Radius.sm,
-    backgroundColor: Colors.surface2,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },

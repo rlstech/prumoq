@@ -1,7 +1,7 @@
 import { AlertCircle, CheckCircle2, ChevronRight } from '../../lib/icons';
-import { StyleSheet, Text, View } from 'react-native';
-import { Badge, BadgeTone, DataRow, DatumCard, ErrorBanner, ListSurface, MetricBlock } from '../ui';
-import { Colors, FontFamily, FontSizes, Spacing, Typography } from '../../lib/constants';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pill, type TrenaTone } from '../ui';
+import { Colors, FontFamily, FontSizes, Radius, Spacing } from '../../lib/constants';
 
 interface Props {
   score: number;
@@ -15,9 +15,8 @@ interface Props {
 }
 
 /**
- * Asymmetric result hero: the percentage reads first and largest, the counts
- * sit secondary — rather than a row of identical metric cards, which
- * design-system.md calls out as an anti-pattern.
+ * Resultado da avaliação (Trena Suave): o percentual primeiro e grande, as
+ * contagens em pílulas e as pendências como linhas tocáveis.
  *
  * The percentage shown here is a preview. `pontos_obtidos`, `pontos_possiveis`
  * and `percentual` are recomputed by the `finalizar_avaliacao_empreiteiro`
@@ -26,86 +25,79 @@ interface Props {
 export function EvaluationOutcome({ score, total, metCount, unmetCount, errors, onFixError }: Props) {
   const entries = Object.entries(errors);
   const percent = total > 0 ? Math.round((score / total) * 100) : 0;
-  const tone: BadgeTone = unmetCount === 0 ? 'success' : percent >= 70 ? 'warning' : 'danger';
+  const tone: TrenaTone = unmetCount === 0 ? 'success' : percent >= 70 ? 'warning' : 'danger';
+  const color = tone === 'success' ? Colors.ok : tone === 'warning' ? Colors.warn : Colors.nok;
   const label = unmetCount === 0
     ? 'Todos os critérios atendidos'
     : `${unmetCount} ${unmetCount === 1 ? 'critério não atendido' : 'critérios não atendidos'}`;
 
   return (
     <View style={styles.wrap}>
-      <DatumCard tone={tone}>
-        <View style={styles.hero}>
-          <View style={styles.primary}>
-            <Text style={styles.overline}>Resultado desta avaliação</Text>
-            <View style={styles.resultRow}>
-              <Text style={[styles.percent, { color: metricColor[tone] }]}>{percent}</Text>
-              <Text style={[styles.percentSuffix, { color: metricColor[tone] }]}>%</Text>
-            </View>
-            <Badge
-              tone={tone}
-              size="sm"
-              label={label}
-              Icon={unmetCount === 0 ? CheckCircle2 : AlertCircle}
-            />
-            <Text style={styles.caption}>Prévia — o valor final é calculado ao concluir.</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.facts}>
-            <MetricBlock label="Atende" value={metCount} tone="success" />
-            <MetricBlock label="Não atende" value={unmetCount} tone="danger" />
-            <MetricBlock label="Pontos" value={score} suffix={`/${total}`} tone="neutral" />
-          </View>
+      <View style={styles.card}>
+        <Text style={styles.label}>Resultado desta avaliação</Text>
+        <View style={styles.resultRow}>
+          <Text style={[styles.percent, { color }]}>{percent}</Text>
+          <Text style={[styles.percentSuffix, { color }]}>%</Text>
         </View>
-      </DatumCard>
+        <Pill tone={tone} label={label} Icon={unmetCount === 0 ? CheckCircle2 : AlertCircle} />
+        <View style={styles.pills}>
+          <Pill label={`${metCount} atende`} tone="success" dot />
+          <Pill label={`${unmetCount} não atende`} tone={unmetCount > 0 ? 'danger' : 'neutral'} dot onSurface />
+          <Pill label={`${score}/${total} pontos`} tone="neutral" mono onSurface />
+        </View>
+        <Text style={styles.caption}>Prévia: o valor final é calculado ao concluir.</Text>
+      </View>
 
       {entries.length > 0 ? (
-        <View style={styles.pending}>
-          <ErrorBanner message="Existem informações obrigatórias pendentes antes de concluir." />
-          <ListSurface>
-            {entries.map(([key, message], index) => (
-              <DataRow
-                key={key}
-                label={message}
-                value="Corrigir"
-                onPress={() => onFixError(key)}
-                accessibilityLabel={`Corrigir: ${message}`}
-                trailing={<ChevronRight size={18} color={Colors.brand} />}
-                last={index === entries.length - 1}
-              />
-            ))}
-          </ListSurface>
+        <View style={styles.card}>
+          <View style={styles.pendingHead}>
+            <AlertCircle size={18} color={Colors.nok} />
+            <Text style={styles.pendingTitle}>Falta preencher antes de concluir</Text>
+          </View>
+          {entries.map(([key, message]) => (
+            <Pressable
+              key={key}
+              accessibilityRole="button"
+              accessibilityLabel={`Corrigir: ${message}`}
+              onPress={() => onFixError(key)}
+              style={({ pressed }) => [styles.pendingRow, pressed && styles.pressed]}
+            >
+              <View style={styles.pendingDot} />
+              <Text style={styles.pendingText} numberOfLines={2}>{message}</Text>
+              <Text style={styles.fix}>Corrigir</Text>
+              <ChevronRight size={16} color={Colors.textSecondary} />
+            </Pressable>
+          ))}
         </View>
       ) : (
-        <Badge tone="success" size="sm" label="Preenchimento completo" Icon={CheckCircle2} />
+        <Pill tone="success" label="Preenchimento completo" Icon={CheckCircle2} />
       )}
     </View>
   );
 }
 
-const metricColor: Record<BadgeTone, string> = {
-  neutral: Colors.text,
-  brand: Colors.brand,
-  success: Colors.ok,
-  danger: Colors.nok,
-  warning: Colors.warn,
-  info: Colors.info,
-};
-
 const styles = StyleSheet.create({
   wrap: { gap: Spacing.md },
-  hero: { flexDirection: 'row', alignItems: 'center', minHeight: 80 },
-  primary: { flex: 1.5, minWidth: 180, gap: Spacing.xs, alignItems: 'flex-start' },
-  overline: { ...Typography.overline, color: Colors.textTertiary },
-  resultRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.xs },
-  percent: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.title,
-    lineHeight: 40,
-    letterSpacing: -1.2,
+  card: { backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md },
+  label: { fontFamily: FontFamily.semibold, fontSize: FontSizes.xs, color: Colors.textSecondary },
+  resultRow: { flexDirection: 'row', alignItems: 'baseline', gap: 2, marginTop: -4 },
+  percent: { fontFamily: FontFamily.display, fontSize: 56, lineHeight: 62, letterSpacing: -2 },
+  percentSuffix: { fontFamily: FontFamily.bold, fontSize: 22 },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  caption: { fontFamily: FontFamily.regular, fontSize: FontSizes.tiny, color: Colors.textTertiary },
+  pendingHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  pendingTitle: { fontFamily: FontFamily.bold, fontSize: FontSizes.sm, color: Colors.nok },
+  pendingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    minHeight: 48,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.bg,
   },
-  percentSuffix: { fontFamily: FontFamily.mono, fontSize: FontSizes.md, lineHeight: 24 },
-  caption: { ...Typography.caption, color: Colors.textSecondary },
-  divider: { width: 1, alignSelf: 'stretch', backgroundColor: Colors.border, marginHorizontal: Spacing.lg },
-  facts: { flex: 1, gap: Spacing.md },
-  pending: { gap: Spacing.sm },
+  pendingDot: { width: 6, height: 6, borderRadius: Radius.full, backgroundColor: Colors.nok },
+  pendingText: { flex: 1, minWidth: 0, fontFamily: FontFamily.medium, fontSize: FontSizes.sm, color: Colors.text },
+  fix: { fontFamily: FontFamily.semibold, fontSize: FontSizes.xs, color: Colors.textSecondary },
+  pressed: { opacity: 0.7 },
 });

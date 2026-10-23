@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { KeyRound, Mail } from '../../lib/icons';
+import { KeyRound, Mail, Plumb } from '../../lib/icons';
 import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BrandMark } from '../../components/BrandMark';
+import { BrandWordmark } from '../../components/BrandWordmark';
 import { Button, ErrorBanner, Field } from '../../components/ui';
 import {
   confirmarCodigo,
@@ -26,7 +26,7 @@ import { useSessao } from '../../lib/auth/sessao';
 import {
   Breakpoints,
   Colors,
-  Elevation,
+  Palette,
   FontFamily,
   FontSizes,
   Radius,
@@ -143,8 +143,10 @@ export default function RecoverPasswordScreen() {
         >
           <View style={styles.card}>
             <View style={styles.brandRow}>
-              <BrandMark size={36} />
-              <Text style={styles.brandName}>PrumoQ</Text>
+              <View style={styles.plumbMark}>
+                <Plumb size={30} color={Palette.accent} strokeWidth={1.7} />
+              </View>
+              <BrandWordmark fontSize={24} />
             </View>
 
             <View style={styles.content}>
@@ -255,7 +257,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     padding: Spacing.xxl,
     gap: Spacing.xxl,
-    ...Elevation.floating,
+  },
+  plumbMark: {
+    width: 48,
+    height: 48,
+    borderRadius: Radius.full,
+    backgroundColor: Palette.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   brandName: {
@@ -266,16 +275,16 @@ const styles = StyleSheet.create({
   },
   content: { gap: Spacing.lg },
   iconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: Radius.lg,
+    width: 56,
+    height: 56,
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.brandLight,
   },
   eyebrow: {
     ...Typography.overline,
-    color: Colors.brand,
+    color: Colors.textSecondary,
     marginBottom: Spacing.xs,
   },
   title: {

@@ -2,7 +2,7 @@ import { Check, CheckCircle2, FileDown } from '../lib/icons';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from './AppHeader';
-import { Colors, FontSizes, Radius, Spacing } from '../lib/constants';
+import { Colors, FontSizes, Radius, Spacing, FontFamily } from '../lib/constants';
 
 interface Props {
   visible: boolean;
@@ -44,7 +44,7 @@ export function NCResolvedScreen({
   return (
     <View style={st.overlay}>
       <SafeAreaView edges={['top']} style={st.safe}>
-        <AppHeader title="RE-INSPEÇÃO" subtitle="Resultado da re-inspeção" showBack={false} />
+        <AppHeader title="Reinspeção" subtitle="Resultado da reinspeção" showBack={false} />
         <ScrollView contentContainerStyle={st.content}>
           <View style={st.hero}>
             <View style={st.heroCircle}>
@@ -97,22 +97,22 @@ const st = StyleSheet.create({
   content: { padding: Spacing.lg, paddingBottom: 20 },
 
   hero:        { alignItems: 'center', paddingVertical: Spacing.xl },
-  heroCircle:  { width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.okBg, borderWidth: 2, borderColor: Colors.ok, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
-  heroTitle:   { fontSize: FontSizes.xl, fontWeight: '700', color: Colors.ok },
-  heroSubtitle: { fontSize: FontSizes.sm, color: Colors.textSecondary, marginTop: 4 },
+  heroCircle:  { width: 80, height: 80, borderRadius: Radius.full, backgroundColor: Colors.okBg, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
+  heroTitle:   { fontFamily: FontFamily.display, fontSize: 26, letterSpacing: -0.5, color: Colors.ok },
+  heroSubtitle: { fontFamily: FontFamily.regular, fontSize: FontSizes.sm, color: Colors.textSecondary, marginTop: 4 },
 
-  secTitle: { fontSize: 11, fontWeight: '600', color: Colors.textTertiary, letterSpacing: 0.5, marginBottom: Spacing.sm },
+  secTitle: { fontFamily: FontFamily.bold, fontSize: FontSizes.md, color: Colors.text, marginBottom: Spacing.sm, paddingHorizontal: Spacing.xs },
 
-  table:    { backgroundColor: Colors.surface, borderRadius: Radius.lg, overflow: 'hidden' },
-  tableRow: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: Spacing.md, borderBottomWidth: 0.5, borderBottomColor: Colors.border },
-  tableKey: { flex: 1, fontSize: FontSizes.sm, color: Colors.textSecondary },
-  tableVal: { flex: 1.5, fontSize: FontSizes.sm, color: Colors.text, fontWeight: '500', textAlign: 'right' },
+  table:    { backgroundColor: Colors.surface, borderRadius: Radius.xl, overflow: 'hidden', padding: 6 },
+  tableRow: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.bg },
+  tableKey: { flex: 1, fontFamily: FontFamily.regular, fontSize: FontSizes.sm, color: Colors.textSecondary },
+  tableVal: { flex: 1.5, fontSize: FontSizes.sm, color: Colors.text, fontFamily: FontFamily.medium, textAlign: 'right' },
 
-  photo: { width: '100%', height: 200, borderRadius: Radius.md },
+  photo: { width: '100%', height: 220, borderRadius: Radius.xl },
 
-  footer:        { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.md, paddingBottom: Spacing.xl, borderTopWidth: 0.5, borderTopColor: Colors.border, backgroundColor: Colors.surface },
+  footer:        { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.lg, paddingBottom: Spacing.xl, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, backgroundColor: Colors.surface },
   btnPdf:        { flex: 1, minHeight: 52, paddingVertical: 13, borderRadius: Radius.full, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
-  btnPdfText:    { fontSize: FontSizes.sm, color: Colors.text },
-  btnConcluir:   { flex: 1.5, minHeight: 48, paddingVertical: 13, borderRadius: Radius.md, backgroundColor: Colors.ok, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
-  btnConcluirText: { fontSize: FontSizes.base, color: '#fff', fontWeight: '600' },
+  btnPdfText:    { fontFamily: FontFamily.semibold, fontSize: FontSizes.sm, color: Colors.text },
+  btnConcluir:   { flex: 1.5, minHeight: 56, paddingVertical: 13, borderRadius: Radius.full, backgroundColor: Colors.ok, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
+  btnConcluirText: { fontFamily: FontFamily.bold, fontSize: FontSizes.md, color: Colors.surface },
 });

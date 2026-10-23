@@ -98,7 +98,8 @@ function tuned(name: string, Base: ComponentType<IconProps>): IconComponent {
 export const Plumb = drawn('Plumb', 'M12 2.5v5M8 7.5h8L12 21.5z');
 export const Home = drawn('Home', 'M4 10.8L11 5a1.6 1.6 0 0 1 2 0l7 5.8V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9v5.5H5.5A1.5 1.5 0 0 1 4 19z');
 export const LayoutGrid = drawn('LayoutGrid', 'M6 4h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM15 4h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM6 13h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2zM15 13h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2z');
-export const Building2 = drawn('Building2', 'M5 20V9.8a1.5 1.5 0 0 1 .7-1.3l5.5-3.3a1.5 1.5 0 0 1 1.6 0l5.5 3.3a1.5 1.5 0 0 1 .7 1.3V20M3.5 20h17M10 20v-4.5h4V20M9.5 11h.01M14.5 11h.01');
+// Prédio alto com janelas: não se confunde com a casa do Início.
+export const Building2 = drawn('Building2', 'M6 21V5.5A1.5 1.5 0 0 1 7.5 4h9A1.5 1.5 0 0 1 18 5.5V21M3.5 21h17M9.5 8h1M13.5 8h1M9.5 11.5h1M13.5 11.5h1M9.5 15h1M13.5 15h1M10.5 21v-2.5h3V21');
 export const AlertTriangle = drawn('AlertTriangle', 'M10.3 5.2a2 2 0 0 1 3.4 0l6.6 11.3a2 2 0 0 1-1.7 3H5.4a2 2 0 0 1-1.7-3zM12 10v3.5M12 16.4v.1');
 export const ClipboardCheck = drawn('ClipboardCheck', 'M8 5H6.5A1.5 1.5 0 0 0 5 6.5v13A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 17.5 5H16M9.5 3.5h5a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1zM9 13.5l2 2 4-4');
 export const Star = drawn('Star', 'M12 4.5l2.2 4.5 4.9.7-3.5 3.4.8 4.9-4.4-2.3-4.4 2.3.8-4.9-3.5-3.4 4.9-.7z');
@@ -110,6 +111,8 @@ export const Clock3 = drawn('Clock3', 'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 
 export const CalendarDays = drawn('CalendarDays', 'M6.5 6h11A1.5 1.5 0 0 1 19 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5v-11A1.5 1.5 0 0 1 6.5 6zM5 10.5h14M9 4v3.5M15 4v3.5M9 14.5h.01M12 14.5h.01M15 14.5h.01');
 export const Camera = drawn('Camera', 'M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5zM12 15.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z');
 export const Search = drawn('Search', 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5L20 20');
+export const SquareStack = drawn('SquareStack', 'M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM9 9h6M9 13h4');
+export const List = drawn('List', 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01');
 export const ChevronRight = drawn('ChevronRight', 'M10 6l6 6-6 6');
 export const ChevronLeft = drawn('ChevronLeft', 'M14 6l-6 6 6 6');
 export const ChevronDown = drawn('ChevronDown', 'M6 10l6 6 6-6');

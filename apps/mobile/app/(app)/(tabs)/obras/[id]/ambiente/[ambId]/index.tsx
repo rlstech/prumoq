@@ -1,38 +1,25 @@
 import { useQuery } from '@powersync/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronRight, Layers3, Search, X } from '../../../../../../../lib/icons';
+import { Layers3, Search, X } from '../../../../../../../lib/icons';
 import { useMemo, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppHeader } from '../../../../../../../components/AppHeader';
-import { IconBox } from '../../../../../../../components/IconBox';
+import { AppHeader, HeaderIconButton } from '../../../../../../../components/AppHeader';
 import {
-  Badge,
   type BadgeTone,
   EmptyState,
   ErrorBanner,
-  ListSurface,
-  OperationalRow,
-  SegmentedControl,
+  FilterChips,
+  GroupLabel,
+  HeroPill,
+  Pill,
+  SearchPill,
   Skeleton,
-  type DatumTone,
+  TapeHero,
+  type TrenaTone,
 } from '../../../../../../../components/ui';
-import {
-  Breakpoints,
-  Colors,
-  FontFamily,
-  FontSizes,
-  Radius,
-  Spacing,
-  Typography,
-} from '../../../../../../../lib/constants';
+import { Breakpoints, Colors, FontFamily, FontSizes, Radius, Spacing } from '../../../../../../../lib/constants';
+import { ChevronRight } from '../../../../../../../lib/icons';
 import {
   COMPLETED_FVS_STATUSES,
   IN_PROGRESS_FVS_STATUSES,
@@ -68,7 +55,7 @@ const SERVICE_FILTERS: { value: ServiceFilter; label: string }[] = [
   { value: 'concluidos', label: 'Concluídos' },
 ];
 
-const STATUS_META: Record<string, { label: string; tone: BadgeTone; color: string }> = {
+const STATUS_META: Record<string, { label: string; tone: BadgeTone & TrenaTone; color: string }> = {
   conforme: { label: 'Concluído', tone: 'success', color: Colors.ok },
   concluida: { label: 'Concluído', tone: 'success', color: Colors.ok },
   concluida_ressalva: { label: 'Com ressalva', tone: 'warning', color: Colors.warn },
@@ -96,19 +83,12 @@ const GRUPOS: { key: GroupKey; title: string }[] = [
   { key: 'pendentes', title: 'Pendentes' },
 ];
 
-function estadoVisual(item: FvsRow): {
-  label: string;
-  color: string;
-  tone: DatumTone;
-} {
-  const status = getStatus(item.status);
+function estadoVisual(item: FvsRow): { label: string; tone: TrenaTone } {
   if (item.ncs_abertas > 0) {
-    const ncLabel = item.ncs_abertas === 1
-      ? '1 NC aberta'
-      : `${item.ncs_abertas} NC abertas`;
-    return { label: ncLabel, color: Colors.nok, tone: 'danger' };
+    return { label: item.ncs_abertas === 1 ? '1 NC aberta' : `${item.ncs_abertas} NCs abertas`, tone: 'danger' };
   }
-  return { label: status.label, color: status.color, tone: status.tone };
+  const status = getStatus(item.status);
+  return { label: status.label, tone: status.tone };
 }
 
 function formatDate(value: string): string {
@@ -121,6 +101,7 @@ export default function AmbienteScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState<ServiceFilter>('todos');
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const { data: ambienteRows } = useQuery<AmbienteRow>(`
     SELECT a.id, a.nome, a.tipo, a.localizacao, o.nome AS obra_nome
@@ -206,6 +187,13 @@ export default function AmbienteScreen() {
     ambiente?.obra_nome || null,
   ].filter(Boolean).join(' · ');
 
+  const counts = {
+    todos: fvsList.length,
+    atencao: summary.attention,
+    em_curso: summary.inProgress,
+    concluidos: summary.completed,
+  };
+
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
       <AppHeader
@@ -213,109 +201,66 @@ export default function AmbienteScreen() {
         subtitle={subtitle}
         showBack
         onBack={() => goBack(`/(app)/(tabs)/obras/${id}`)}
+        rightElement={(
+          <HeaderIconButton
+            Icon={searchOpen ? X : Search}
+            label={searchOpen ? 'Fechar busca' : 'Buscar serviços'}
+            active={searchOpen}
+            onPress={() => {
+              if (searchOpen) setSearch('');
+              setSearchOpen(open => !open);
+            }}
+          />
+        )}
       />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <View style={styles.summary}>
-          <View style={styles.summaryPrimary}>
-            <Text style={styles.summaryEyebrow}>Progresso do ambiente</Text>
-            <Text style={styles.summaryValue}>{Math.round(summary.progress)}%</Text>
-            <Text style={styles.summaryLabel}>avanço ponderado dos serviços</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryFacts}>
-            <SummaryFact
-              value={`${summary.completed}/${summary.total}`}
-              label="serviços concluídos"
-              tone={Colors.text}
-            />
-            <SummaryFact
-              value={summary.attention}
-              label="com atenção"
-              tone={summary.attention > 0 ? Colors.nok : Colors.text}
-            />
-          </View>
-        </View>
+        {searchOpen ? (
+          <SearchPill value={search} onChangeText={setSearch} placeholder="Buscar por nome do serviço" autoFocus />
+        ) : null}
 
-        <View style={styles.controls}>
-          <SegmentedControl
-            value={filter}
-            options={SERVICE_FILTERS}
-            onChange={setFilter}
-            accessibilityLabel="Filtrar serviços por situação"
+        <TapeHero label="Avanço do ambiente" value={summary.progress}>
+          <HeroPill label={`${summary.completed}/${summary.total} serviços concluídos`} />
+          <HeroPill
+            label={summary.attention > 0 ? `${summary.attention} com NC` : 'Sem NC aberta'}
+            tone={summary.attention > 0 ? 'danger' : 'success'}
           />
+        </TapeHero>
 
-          <View style={styles.searchBox}>
-            <IconBox icon={Search} size={18} color={Colors.textTertiary} />
-            <TextInput
-              accessibilityLabel="Buscar serviços"
-              style={styles.searchInput}
-              placeholder="Buscar por nome do serviço"
-              placeholderTextColor={Colors.textTertiary}
-              value={search}
-              onChangeText={setSearch}
-              returnKeyType="search"
-            />
-            {search ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Limpar busca"
-                onPress={() => setSearch('')}
-                style={styles.clearSearch}
-              >
-                <X size={17} color={Colors.textSecondary} />
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
+        <FilterChips
+          value={filter}
+          onChange={setFilter}
+          options={SERVICE_FILTERS.map(option => ({ ...option, count: counts[option.value] }))}
+          accessibilityLabel="Filtrar serviços por situação"
+        />
 
         {error ? (
           <ErrorBanner message="Não foi possível carregar os serviços." />
         ) : null}
 
-        <View style={styles.listHeading}>
-          <Text style={styles.listTitle}>Serviços</Text>
-          <Text style={styles.listCount}>{String(filtered.length).padStart(2, '0')}</Text>
-          {hasRefinements ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Limpar todos os filtros"
-              onPress={clearAllFilters}
-              style={styles.clearFilters}
-            >
-              <Text style={styles.clearFiltersText}>Limpar filtros</Text>
-            </Pressable>
-          ) : null}
-        </View>
-
         {isLoading ? (
           <View style={styles.loading}>
-            <Skeleton style={styles.skeletonGroup} />
             <Skeleton style={styles.skeletonRows} />
             <Skeleton style={styles.skeletonRows} />
           </View>
         ) : groups.length ? (
           groups.map(group => (
             <View key={group.key} style={styles.group}>
-              <View style={styles.groupHeader}>
-                <View style={styles.groupTitleRow}>
-                  <Text style={styles.groupTitle}>{group.title}</Text>
-                  <Text style={styles.groupCount}>{group.items.length}</Text>
-                </View>
-              </View>
-              <ListSurface>
+              <GroupLabel label={group.title} count={group.items.length} />
+              <View style={styles.list}>
                 {group.items.map((item, index) => (
-                  <ServicoRowItem
-                    key={item.id}
-                    item={item}
-                    last={index === group.items.length - 1}
-                    onOpen={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${item.id}` as never)}
-                  />
+                  <View key={item.id}>
+                    {index > 0 ? <View style={styles.divider} /> : null}
+                    <ServicoLinha
+                      item={item}
+                      onOpen={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${item.id}` as never)}
+                    />
+                  </View>
                 ))}
-              </ListSurface>
+              </View>
             </View>
           ))
         ) : (
@@ -329,7 +274,7 @@ export default function AmbienteScreen() {
                   ? 'Este ambiente ainda não possui FVS planejadas.'
                   : 'Nenhum serviço atende ao filtro selecionado.'
             }
-            actionLabel={hasRefinements ? 'Limpar filtros' : undefined}
+            actionLabel={hasRefinements ? 'Limpar busca' : undefined}
             onAction={hasRefinements ? clearAllFilters : undefined}
           />
         )}
@@ -338,68 +283,27 @@ export default function AmbienteScreen() {
   );
 }
 
-function SummaryFact({
-  value,
-  label,
-  tone,
-}: {
-  value: number | string;
-  label: string;
-  tone: string;
-}) {
-  return (
-    <View style={styles.summaryFact}>
-      <Text style={[styles.summaryFactValue, { color: tone }]}>{value}</Text>
-      <Text style={styles.summaryFactLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function ServicoRowItem({
-  item,
-  last,
-  onOpen,
-}: {
-  item: FvsRow;
-  last: boolean;
-  onOpen: () => void;
-}) {
-  const status = getStatus(item.status);
+/** Linha de serviço (FVS): nome, situação em pílula e a última verificação. */
+function ServicoLinha({ item, onOpen }: { item: FvsRow; onOpen: () => void }) {
   const estado = estadoVisual(item);
-  const hasOpenNc = item.ncs_abertas > 0;
-  const countLabel = item.total_verificacoes === 1
-    ? 'verificação'
-    : 'verificações';
-
+  const countLabel = item.total_verificacoes === 1 ? 'verificação' : 'verificações';
+  const ultima = item.ultima_verif ? `Última em ${formatDate(item.ultima_verif)}` : 'Não iniciado';
   return (
-    <OperationalRow
-      tone={estado.tone}
-      last={last}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Abrir serviço ${item.subservico || 'sem nome'}, ${estado.label}. ${ultima}.`}
       onPress={onOpen}
-      accessibilityLabel={`Abrir serviço ${item.subservico || 'sem nome'}, ${estado.label}`}
-      trailing={<IconBox icon={ChevronRight} size={19} color={Colors.textTertiary} />}
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
-      <View style={styles.rowTop}>
-        <Text style={styles.rowTitle} numberOfLines={1}>
-          {item.subservico || 'Serviço'}
-        </Text>
-        <Badge label={status.label} tone={status.tone} size="sm" />
-      </View>
-      <Text style={styles.rowContext} numberOfLines={1}>
-        {item.ultima_verif
-          ? `Última verificação em ${formatDate(item.ultima_verif)}`
-          : 'Não iniciado'}
-      </Text>
-      <Text style={styles.rowDescription} numberOfLines={1}>
-        {item.total_verificacoes} {countLabel}
-        {hasOpenNc ? ` · ${item.ncs_abertas} NC ${item.ncs_abertas === 1 ? 'aberta' : 'abertas'}` : ''}
-      </Text>
-      <View style={styles.rowFooter}>
-        <Text style={[styles.footerLabel, { color: estado.color }]} numberOfLines={1}>
-          {estado.label}
+      <View style={styles.rowBody}>
+        <Text style={styles.rowTitle} numberOfLines={2}>{item.subservico || 'Serviço'}</Text>
+        <Text style={styles.rowMeta} numberOfLines={1}>
+          {ultima} · {item.total_verificacoes} {countLabel}
         </Text>
       </View>
-    </OperationalRow>
+      <Pill label={estado.label} tone={estado.tone} onSurface />
+      <ChevronRight size={16} color={Colors.textSecondary} />
+    </Pressable>
   );
 }
 
@@ -409,139 +313,26 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
-    padding: Spacing.lg,
-    paddingBottom: 104,
-    gap: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.xxl,
+    gap: Spacing.lg,
   },
-  summary: {
-    minHeight: 112,
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-  },
-  summaryPrimary: { flex: 1.5, justifyContent: 'center' },
-  summaryEyebrow: { ...Typography.overline, color: Colors.textTertiary },
-  summaryValue: {
-    marginTop: 2,
-    color: Colors.brand,
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: 34,
-    lineHeight: 39,
-  },
-  summaryLabel: { ...Typography.caption, color: Colors.textSecondary },
-  summaryDivider: {
-    width: 1,
-    marginHorizontal: Spacing.lg,
-    backgroundColor: Colors.border,
-  },
-  summaryFacts: {
-    flex: 1,
-    minWidth: 116,
+  group: { gap: Spacing.sm, marginTop: Spacing.xs },
+  list: { backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: 6 },
+  divider: { height: 1, backgroundColor: Colors.bg, marginHorizontal: Spacing.lg },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    gap: Spacing.md,
-  },
-  summaryFact: { alignItems: 'center', gap: 1 },
-  summaryFactValue: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.xl,
-    lineHeight: 28,
-  },
-  summaryFactLabel: { ...Typography.caption, color: Colors.textTertiary },
-  controls: { gap: Spacing.md },
-  searchBox: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.full,
-    paddingLeft: Spacing.md,
     gap: Spacing.sm,
+    padding: Spacing.md,
+    paddingLeft: Spacing.lg,
+    borderRadius: Radius.md,
+    minHeight: 64,
   },
-  searchInput: {
-    flex: 1,
-    minHeight: 46,
-    color: Colors.text,
-    fontFamily: FontFamily.regular,
-    fontSize: FontSizes.base,
-  },
-  clearSearch: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listHeading: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: Spacing.sm,
-    marginBottom: -Spacing.sm,
-  },
-  listTitle: { ...Typography.heading, color: Colors.text },
-  listCount: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-  },
-  clearFilters: {
-    marginLeft: 'auto',
-    minHeight: 36,
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.sm,
-  },
-  clearFiltersText: {
-    ...Typography.caption,
-    color: Colors.brand,
-    fontFamily: FontFamily.semibold,
-  },
-  group: { gap: Spacing.sm },
-  groupHeader: { paddingHorizontal: 2, gap: 1 },
-  groupTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
-  groupTitle: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.base,
-    color: Colors.text,
-  },
-  groupCount: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.tiny,
-    color: Colors.textTertiary,
-  },
-  rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  rowTitle: {
-    flex: 1,
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.base,
-    color: Colors.text,
-  },
-  rowContext: {
-    marginTop: 3,
-    fontFamily: FontFamily.medium,
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-  },
-  rowDescription: {
-    marginTop: 3,
-    fontFamily: FontFamily.regular,
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-  },
-  rowFooter: {
-    marginTop: Spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  footerLabel: {
-    flex: 1,
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.tiny,
-    letterSpacing: 0,
-  },
+  rowPressed: { backgroundColor: Colors.surface2 },
+  rowBody: { flex: 1, minWidth: 0, gap: 3 },
+  rowTitle: { fontFamily: FontFamily.semibold, fontSize: FontSizes.base, lineHeight: 20, color: Colors.text },
+  rowMeta: { fontFamily: FontFamily.regular, fontSize: FontSizes.xs, color: Colors.textSecondary },
   loading: { gap: Spacing.md },
-  skeletonGroup: { width: 140, height: 20, borderRadius: Radius.sm },
-  skeletonRows: { width: '100%', height: 132, borderRadius: Radius.lg },
+  skeletonRows: { width: '100%', height: 96, borderRadius: Radius.lg },
 });

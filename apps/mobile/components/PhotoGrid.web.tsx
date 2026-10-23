@@ -96,5 +96,5 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
   addLabel: { fontSize: 10, fontFamily: FontFamily.medium, color: Colors.textSecondary, textAlign: 'center', paddingHorizontal: 4 },
   overflow: { backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center' },
-  overflowText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
+  overflowText: { fontSize: 14, fontFamily: FontFamily.semibold, color: Colors.textSecondary },
 });

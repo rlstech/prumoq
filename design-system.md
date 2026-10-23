@@ -115,6 +115,8 @@ na cor da tinta; peso sempre amarelo; frisos do peso só a partir de 40px.
 - **Resposta do item** (`ChoiceToggle`/`ResultToggle`): três ladrilhos
   arredondados; o escolhido fica sólido na cor do estado, texto branco.
 - **Etiquetas** (`Badge`, `StatusBadge`): pílulas sem borda, fundo suave.
+- **Componentes Trena Suave** (`components/ui/trena.tsx`): `TapeHero` (avanço em fita sobre o grafite), `ProgressCard`, `Pill`, `FilterChips` (chips com contagem), `SearchPill`, `IconTile`, `SectionHead`, `GroupLabel`; `HeaderIconButton` no `AppHeader` (telas internas sem logotipo).
+- **Verificação item a item** (`components/verification/ChecklistFocus.tsx` + `ChecklistJumpSheet.tsx`, lógica em `lib/verification/focus.ts`): um item por tela com avanço automático; a lista continua disponível.
 - **Menu** (`components/FloatingTabBar.tsx`): pílula grafite solta da borda; a
   aba ativa vira pílula amarela com nome, as demais só ícone. No tablet, trilho
   vertical com a mesma linguagem.

@@ -2,7 +2,7 @@ import { Camera, Image as ImageIcon } from '../../lib/icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button, Field, PhotoSlot } from '../ui';
 import { PhotoGrid } from '../PhotoGrid';
-import { Colors, FontFamily, FontSizes, Spacing, Typography } from '../../lib/constants';
+import { Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../lib/constants';
 
 interface Props {
   isReinspection: boolean;
@@ -74,8 +74,8 @@ export function EvidenceSection({
 }
 
 const styles = StyleSheet.create({
-  section: { gap: Spacing.lg },
-  overline: { ...Typography.overline, color: Colors.textTertiary },
+  section: { gap: Spacing.lg, backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.xl },
+  overline: { ...Typography.heading, color: Colors.text },
   evidenceBlock: { gap: Spacing.sm },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   label: { ...Typography.label, color: Colors.text },

@@ -2,18 +2,19 @@ import { useQuery } from '@powersync/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AlertTriangle,
-  CalendarDays,
   Camera,
+  Check,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
+  Clock3,
   FileText,
   PenLine,
   Plus,
-  UserRound,
   WifiOff,
+  X,
 } from '../../../../../../../../../lib/icons';
-import { AppHeader } from '../../../../../../../../../components/AppHeader';
+import { AppHeader, HeaderIconButton } from '../../../../../../../../../components/AppHeader';
 import { goBack } from '../../../../../../../../../lib/navigation';
 import { useMemo, useState } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -23,22 +24,19 @@ import { FVSReopenModal } from '../../../../../../../../../components/FVSReopenM
 import { StatusBadge } from '../../../../../../../../../components/StatusBadge';
 import type { BadgeStatus } from '../../../../../../../../../components/StatusBadge';
 import {
-  Badge,
-  DatumCard,
+  Button,
   EmptyState,
-  SectionTitle,
+  IconTile,
+  Pill,
+  SectionHead,
 } from '../../../../../../../../../components/ui';
-import type { DatumTone } from '../../../../../../../../../components/ui';
 import {
   Breakpoints,
   Colors,
-  ComponentSize,
   FontFamily,
   FontSizes,
-  Palette,
   Radius,
   Spacing,
-  Typography,
 } from '../../../../../../../../../lib/constants';
 import {
   formatDateOnly,
@@ -162,54 +160,23 @@ export default function FvsHistoryScreen() {
     }) as never);
   }
 
+  const novaVerificacao = () => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never);
+
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
-      {/* Header */}
       <AppHeader
         title={fvs?.subservico || 'FVS'}
         subtitle={[fvs?.ambiente_nome, fvs?.obra_nome].filter(Boolean).join(' · ')}
         showBack
         onBack={() => goBack(`/(app)/(tabs)/obras/${id}/ambiente/${ambId}`)}
-        rightElement={
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            {Platform.OS === 'web' && (
-              <Pressable
-                style={styles.pdfBtn}
-                onPress={() => (window as Window).open(`/print/${fvsId}`, '_blank', 'noreferrer')}
-                accessibilityRole="button"
-                accessibilityLabel="Visualizar PDF da FVS"
-              >
-                <FileText size={14} color={Colors.brand} />
-              </Pressable>
-            )}
-            {!isLocked && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Nova verificação"
-                style={({ pressed }) => [styles.novaBtn, pressed && styles.novaBtnPressed]}
-                onPress={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
-              >
-                <Plus size={16} color={Palette.white} />
-                <Text style={styles.novaBtnText}>Nova</Text>
-              </Pressable>
-            )}
-          </View>
-        }
+        rightElement={Platform.OS === 'web' ? (
+          <HeaderIconButton
+            Icon={FileText}
+            label="Visualizar PDF da FVS"
+            onPress={() => (window as Window).open(`/print/${fvsId}`, '_blank', 'noreferrer')}
+          />
+        ) : undefined}
       />
-
-      <View style={styles.statusPanel}>
-        <View style={styles.statusPrimary}>
-          {fvs && <StatusBadge status={fvs.status as BadgeStatus} />}
-          <Text style={styles.summaryTotal}>
-            {verificacoes.length} registro{verificacoes.length === 1 ? '' : 's'}
-          </Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <SummaryStat value={summary.conformes} label="Conformes" tone={Colors.ok} />
-          <SummaryStat value={summary.naoConformes} label="Não conf." tone={Colors.nok} />
-          <SummaryStat value={summary.pendentes} label="Pendentes" tone={Colors.progress} />
-        </View>
-      </View>
 
       <FlatList
         data={historyItems}
@@ -217,95 +184,92 @@ export default function FvsHistoryScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View style={styles.listHeader}>
+            <View style={styles.hero}>
+              <View style={styles.heroTop}>
+                {fvs ? <StatusBadge status={fvs.status as BadgeStatus} /> : <View />}
+                <Text style={styles.heroCount}>
+                  {verificacoes.length} {verificacoes.length === 1 ? 'registro' : 'registros'}
+                </Text>
+              </View>
+              <View style={styles.stats}>
+                <Stat value={summary.conformes} label="Conformes" color={Colors.ok} bg={Colors.okBg} />
+                <Stat value={summary.naoConformes} label="Com NC" color={Colors.nok} bg={Colors.nokBg} />
+                <Stat value={summary.pendentes} label="Pendentes" color={Colors.info} bg={Colors.infoBg} />
+              </View>
+            </View>
+
             {isLocked ? (
               <FVSLockedScreen
                 status={fvs!.status as 'conforme' | 'concluida' | 'concluida_ressalva'}
                 conclusao={ultimaConclusao}
                 onRequestReopen={() => setReopenModalOpen(true)}
               />
+            ) : (
+              <Button label="Nova verificação" Icon={Plus} onPress={novaVerificacao} fullWidth />
+            )}
+
+            {historyItems.length > 0 ? (
+              <SectionHead title="Histórico de verificações" count={historyItems.length} />
             ) : null}
-            <SectionTitle
-              eyebrow="Registros"
-              title="Histórico de verificações"
-              description={
-                isLocked
-                  ? undefined
-                  : 'Mais recentes primeiro. Toque em um registro para consultar todos os detalhes.'
-              }
-            />
           </View>
         }
-        renderItem={({ item }) => (
-          <DatumCard
-            tone={datumTone(item.status)}
-            style={styles.recordCard}
-            accessibilityLabel={`Verificação ${item.numero_verif}, ${formatDateOnly(item.data_verif)}, ${statusLabel(item.status)}. Abrir registro completo.`}
-            onPress={() => openVerification(item.id)}
-          >
-            <View style={styles.recordTop}>
-              <Text style={styles.recordNumber}>Verificação #{item.numero_verif}</Text>
-              <View style={styles.recordTopActions}>
-                <StatusBadge status={item.status as BadgeStatus} size="sm" />
-                <ChevronRight size={20} color={Colors.textTertiary} />
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        renderItem={({ item }) => {
+          const tone = item.status === 'conforme' ? 'success' : item.status === 'nao_conforme' ? 'danger' : 'info';
+          const Icon = item.status === 'conforme' ? Check : item.status === 'nao_conforme' ? X : Clock3;
+          return (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Verificação ${item.numero_verif}, ${formatDateOnly(item.data_verif)}, ${statusLabel(item.status)}. Abrir registro completo.`}
+              onPress={() => openVerification(item.id)}
+              style={({ pressed }) => [styles.record, pressed && styles.recordPressed]}
+            >
+              <View style={styles.recordTop}>
+                <IconTile Icon={Icon} tone={tone} />
+                <View style={styles.recordBody}>
+                  <Text style={styles.recordTitle}>Verificação #{item.numero_verif}</Text>
+                  <Text style={styles.recordMeta} numberOfLines={1}>
+                    {formatDateOnly(item.data_verif)} · {item.inspetor_nome || 'Inspetor não informado'}
+                  </Text>
+                </View>
+                <ChevronRight size={18} color={Colors.textSecondary} />
               </View>
-            </View>
-
-            <View style={styles.recordMeta}>
-              <View style={styles.metaItem}>
-                <CalendarDays size={15} color={Colors.textSecondary} />
-                <Text style={styles.metaText}>{formatDateOnly(item.data_verif)}</Text>
+              <View style={styles.indicatorRow}>
+                {item.openNonConformities > 0 ? (
+                  <Pill
+                    label={`${item.openNonConformities} ${item.openNonConformities === 1 ? 'NC aberta' : 'NCs abertas'}`}
+                    tone="danger"
+                    Icon={AlertTriangle}
+                  />
+                ) : item.resolvedNonConformities > 0 ? (
+                  <Pill
+                    label={`${item.resolvedNonConformities} ${item.resolvedNonConformities === 1 ? 'NC resolvida' : 'NCs resolvidas'}`}
+                    tone="success"
+                    Icon={CheckCircle2}
+                  />
+                ) : null}
+                {item.photoCount > 0 ? (
+                  <Pill label={`${item.photoCount} ${item.photoCount === 1 ? 'foto' : 'fotos'}`} Icon={Camera} onSurface />
+                ) : null}
+                <Pill
+                  label={item.assinatura_url ? 'Assinada' : 'Sem assinatura'}
+                  tone={item.assinatura_url ? 'success' : 'neutral'}
+                  Icon={PenLine}
+                  onSurface
+                />
+                {(item.created_offline === 1 || item.created_offline === true) ? (
+                  <Pill label="Criada offline" tone="warning" Icon={WifiOff} />
+                ) : null}
               </View>
-              <View style={styles.metaItem}>
-                <UserRound size={15} color={Colors.textSecondary} />
-                <Text style={styles.metaText} numberOfLines={1}>
-                  {item.inspetor_nome || 'Inspetor não informado'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.indicatorRow}>
-              {item.openNonConformities > 0 ? (
-                <Badge
-                  label={`${item.openNonConformities} NC ${item.openNonConformities === 1 ? 'aberta' : 'abertas'}`}
-                  tone="danger"
-                  Icon={AlertTriangle}
-                  size="sm"
-                />
-              ) : item.resolvedNonConformities > 0 ? (
-                <Badge
-                  label={`${item.resolvedNonConformities} NC ${item.resolvedNonConformities === 1 ? 'resolvida' : 'resolvidas'}`}
-                  tone="success"
-                  Icon={CheckCircle2}
-                  size="sm"
-                />
-              ) : null}
-              {item.photoCount > 0 ? (
-                <Badge
-                  label={`${item.photoCount} ${item.photoCount === 1 ? 'foto' : 'fotos'}`}
-                  Icon={Camera}
-                  size="sm"
-                />
-              ) : null}
-              <Badge
-                label={item.assinatura_url ? 'Assinada' : 'Sem assinatura'}
-                tone={item.assinatura_url ? 'success' : 'neutral'}
-                Icon={PenLine}
-                size="sm"
-              />
-              {(item.created_offline === 1 || item.created_offline === true) ? (
-                <Badge label="Criada offline" tone="warning" Icon={WifiOff} size="sm" />
-              ) : null}
-            </View>
-          </DatumCard>
-        )}
+            </Pressable>
+          );
+        }}
         ListEmptyComponent={
           !isLocked ? (
             <EmptyState
               title="Nenhuma verificação registrada"
               description="Registre a primeira inspeção deste serviço para iniciar o histórico."
               Icon={ClipboardCheck}
-              actionLabel="Registrar primeira verificação"
-              onAction={() => router.push(`/obras/${id}/ambiente/${ambId}/fvs/${fvsId}/verificacao/nova` as never)}
             />
           ) : null
         }
@@ -322,20 +286,13 @@ export default function FvsHistoryScreen() {
   );
 }
 
-function SummaryStat({ value, label, tone }: { value: number; label: string; tone: string }) {
+function Stat({ value, label, color, bg }: { value: number; label: string; color: string; bg: string }) {
   return (
-    <View style={styles.summaryStat}>
-      <Text style={[styles.summaryValue, { color: tone }]}>{value}</Text>
-      <Text style={styles.summaryLabel} numberOfLines={1}>{label}</Text>
+    <View style={[styles.stat, { backgroundColor: value > 0 ? bg : Colors.bg }]}>
+      <Text style={[styles.statValue, { color: value > 0 ? color : Colors.textSecondary }]}>{value}</Text>
+      <Text style={styles.statLabel} numberOfLines={1}>{label}</Text>
     </View>
   );
-}
-
-function datumTone(status: string): DatumTone {
-  if (status === 'conforme') return 'success';
-  if (status === 'nao_conforme') return 'danger';
-  if (status === 'em_andamento') return 'info';
-  return 'neutral';
 }
 
 function statusLabel(status: string): string {
@@ -350,127 +307,44 @@ function statusLabel(status: string): string {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  novaBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: ComponentSize.touch,
-    backgroundColor: Colors.action,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    gap: 4,
-  },
-  novaBtnPressed: { backgroundColor: Colors.actionPressed },
-  novaBtnText: { color: Palette.white, fontSize: FontSizes.base, fontFamily: FontFamily.medium },
-  pdfBtn: {
-    width: ComponentSize.touch,
-    height: ComponentSize.touch,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusPanel: {
-    backgroundColor: Colors.surface,
-    marginHorizontal: Spacing.lg,
-    borderRadius: Radius.xl,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  statusPrimary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  summaryStat: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-    backgroundColor: Colors.surface2,
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 6,
-  },
-  summaryValue: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.base,
-    lineHeight: 20,
-  },
-  summaryLabel: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
-    flexShrink: 1,
-  },
-  summaryTotal: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
-  },
   list: {
     width: '100%',
     maxWidth: Breakpoints.maxForm,
     alignSelf: 'center',
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.xxl,
   },
-  listHeader: {
+  listHeader: { gap: Spacing.lg, marginBottom: Spacing.md },
+  hero: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
     gap: Spacing.lg,
-    marginBottom: Spacing.md,
   },
-  recordCard: {
-    marginBottom: Spacing.sm,
-  },
-  recordTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
-  },
-  recordNumber: {
+  heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md },
+  heroCount: { fontFamily: FontFamily.medium, fontSize: FontSizes.xs, color: Colors.textSecondary },
+  stats: { flexDirection: 'row', gap: Spacing.sm },
+  stat: {
     flex: 1,
-    color: Colors.text,
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.base,
-    lineHeight: 22,
-  },
-  recordTopActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    flexShrink: 0,
-  },
-  recordMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: Spacing.md,
-    marginTop: Spacing.sm,
-  },
-  metaItem: {
     minWidth: 0,
-    flexDirection: 'row',
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.md,
     alignItems: 'center',
-    gap: 6,
+    gap: 2,
   },
-  metaText: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
-    flexShrink: 1,
+  statValue: { fontFamily: FontFamily.monoBold, fontSize: 24, lineHeight: 28 },
+  statLabel: { fontFamily: FontFamily.semibold, fontSize: FontSizes.tiny, color: Colors.textSecondary },
+  separator: { height: Spacing.sm },
+  record: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.md,
   },
-  indicatorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginTop: Spacing.md,
-  },
+  recordPressed: { backgroundColor: Colors.surface2 },
+  recordTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  recordBody: { flex: 1, minWidth: 0, gap: 2 },
+  recordTitle: { fontFamily: FontFamily.bold, fontSize: FontSizes.md, color: Colors.text },
+  recordMeta: { fontFamily: FontFamily.regular, fontSize: FontSizes.xs, color: Colors.textSecondary },
+  indicatorRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.sm },
 });
