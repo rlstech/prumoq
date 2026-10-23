@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
-import { Colors } from '../lib/constants';
+import { Colors, FontFamily, Palette } from '../lib/constants';
 
 interface Props {
   visible: boolean;
@@ -54,7 +54,7 @@ export function SignatureField({ visible, onSign, onCancel, inline = false }: Pr
         <button style={backBtn} onClick={onCancel} title="Voltar ao formulário">
           ← Voltar
         </button>
-        <span style={titleStyle}>Assinatura Digital</span>
+        <span style={titleStyle}>Assinatura digital</span>
         <div style={{ width: 80 }} />
       </div>
 
@@ -104,42 +104,42 @@ const header: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  padding: '12px 16px',
-  borderBottom: `1px solid ${Colors.border}`,
+  padding: '16px 20px',
   backgroundColor: Colors.bg,
 };
 
 const backBtn: React.CSSProperties = {
-  background: 'none',
+  background: Colors.surface,
   border: 'none',
   fontSize: 14,
-  fontWeight: 500,
-  color: Colors.brand,
+  fontFamily: FontFamily.semibold,
+  color: Colors.text,
   cursor: 'pointer',
-  padding: '4px 8px',
-  borderRadius: 6,
-  width: 80,
-  textAlign: 'left',
+  padding: '10px 16px',
+  borderRadius: 9999,
+  textAlign: 'center',
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: 15,
-  fontWeight: 600,
+  fontSize: 17,
+  fontFamily: FontFamily.bold,
   color: Colors.text,
 };
 
 const hint: React.CSSProperties = {
-  padding: '8px 16px',
-  fontSize: 12,
+  padding: '0 20px 12px',
+  fontSize: 13,
+  fontFamily: FontFamily.regular,
   color: Colors.textSecondary,
   backgroundColor: Colors.bg,
-  borderBottom: `1px solid ${Colors.border}`,
   textAlign: 'center',
 };
 
 const canvasWrapper: React.CSSProperties = {
   flex: 1,
-  borderBottom: `1px solid ${Colors.border}`,
+  margin: '0 16px',
+  borderRadius: 32,
+  overflow: 'hidden',
   cursor: 'crosshair',
   backgroundColor: Colors.surface,
   position: 'relative',
@@ -148,17 +148,18 @@ const canvasWrapper: React.CSSProperties = {
 const footer: React.CSSProperties = {
   display: 'flex',
   gap: 10,
-  padding: '14px 16px',
+  padding: '16px',
   backgroundColor: Colors.bg,
   justifyContent: 'space-between',
 };
 
 const btn: React.CSSProperties = {
-  padding: '12px 24px',
-  borderRadius: 10,
+  minHeight: 56,
+  padding: '0 24px',
+  borderRadius: 9999,
   border: 'none',
-  fontSize: 14,
-  fontWeight: 600,
+  fontSize: 16,
+  fontFamily: FontFamily.bold,
   cursor: 'pointer',
   flex: 1,
 };
@@ -170,8 +171,8 @@ const btnClear: React.CSSProperties = {
 };
 
 const btnConfirm: React.CSSProperties = {
-  backgroundColor: Colors.brand,
-  color: Colors.surface,
+  backgroundColor: Palette.accent,
+  color: Palette.onAccent,
   flex: 0.6,
 };
 
@@ -179,15 +180,17 @@ const btnConfirm: React.CSSProperties = {
 const inlineWrapper: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: 0,
-  borderRadius: 12,
+  gap: 6,
+  borderRadius: 24,
   overflow: 'hidden',
-  border: `1px solid ${Colors.border}`,
-  backgroundColor: Colors.surface,
+  padding: 6,
+  backgroundColor: Colors.bg,
 };
 
 const inlineCanvas: React.CSSProperties = {
-  height: 110,
+  height: 120,
+  borderRadius: 20,
+  overflow: 'hidden',
   backgroundColor: Colors.surface,
   cursor: 'crosshair',
   position: 'relative',
@@ -197,35 +200,34 @@ const inlineToolbar: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  backgroundColor: Colors.surface2,
-  padding: '7px 12px',
-  borderTop: `1px solid ${Colors.border}`,
+  padding: '2px 10px',
 };
 
 const inlineHintText: React.CSSProperties = {
-  fontSize: 11,
+  fontSize: 12,
+  fontFamily: FontFamily.regular,
   color: Colors.textSecondary,
 };
 
 const inlineBtnClear: React.CSSProperties = {
   background: 'none',
   border: 'none',
-  fontSize: 12,
+  fontSize: 13,
+  fontFamily: FontFamily.semibold,
   color: Colors.nok,
   cursor: 'pointer',
-  fontWeight: 500,
-  padding: '2px 4px',
+  padding: '6px 8px',
 };
 
 const inlineBtnConfirm: React.CSSProperties = {
   width: '100%',
-  padding: '11px',
-  backgroundColor: Colors.brand,
+  minHeight: 52,
+  backgroundColor: Palette.accent,
   border: 'none',
-  borderTop: `1px solid ${Colors.brand}`,
-  fontSize: 13,
-  fontWeight: 600,
-  color: Colors.surface,
+  borderRadius: 9999,
+  fontSize: 15,
+  fontFamily: FontFamily.bold,
+  color: Palette.onAccent,
   cursor: 'pointer',
   textAlign: 'center',
 };

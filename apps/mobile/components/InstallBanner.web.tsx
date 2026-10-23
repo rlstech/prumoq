@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   },
   btn: {
     backgroundColor: Palette.accent,
-    borderRadius: Radius.xs,
+    borderRadius: Radius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
   },

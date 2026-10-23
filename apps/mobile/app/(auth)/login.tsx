@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { ClipboardCheck, HardHat, ShieldCheck, WifiOff } from '../../lib/icons';
+import { ClipboardCheck, Plumb, ShieldCheck, WifiOff } from '../../lib/icons';
 import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -12,23 +12,23 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BrandMark } from '../../components/BrandMark';
+
 import { BrandWordmark } from '../../components/BrandWordmark';
-import { Button, ErrorBanner, Field } from '../../components/ui';
+import { Button, ErrorBanner, Field, Pill } from '../../components/ui';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 import { confirmarCodigo, entrarComSenha, mensagemDoErro, type ResultadoEtapa } from '../../lib/auth/fluxo-login';
 import { useSessao } from '../../lib/auth/sessao';
 import {
   Breakpoints,
   Colors,
-  Elevation,
+
   FontFamily,
   FontSizes,
   Palette,
   Radius,
   Spacing,
   Typography,
-  BorderWidth,
+
 } from '../../lib/constants';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -103,7 +103,7 @@ export default function LoginScreen() {
         style={styles.safe}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <StatusBar style={isTablet ? 'light' : 'dark'} />
+        <StatusBar style="dark" />
         <ScrollView
           contentContainerStyle={[styles.scroll, isTablet && styles.scrollTablet]}
           keyboardShouldPersistTaps="handled"
@@ -111,13 +111,12 @@ export default function LoginScreen() {
           <View style={[styles.shell, isTablet && styles.shellTablet]}>
             <View style={[styles.hero, isTablet && styles.heroTablet]}>
               <View style={styles.brand}>
-                <BrandMark size={38} variant="onBrand" />
-                <BrandWordmark fontSize={28} variant="onBrand" />
+                <View style={styles.plumbMark}>
+                  <Plumb size={44} color={Palette.accent} strokeWidth={1.7} />
+                </View>
+                <BrandWordmark fontSize={30} />
               </View>
               <View style={styles.heroCopy}>
-                <View style={styles.heroIcon}>
-                  <HardHat size={30} color={Colors.brandSignature} />
-                </View>
                 <Text style={styles.eyebrow}>Qualidade em campo</Text>
                 <Text style={styles.heroTitle}>Verificações claras, mesmo sem conexão.</Text>
                 <Text style={styles.heroDescription}>
@@ -230,128 +229,88 @@ export default function LoginScreen() {
 }
 
 function TrustItem({ Icon, text }: { Icon: typeof ClipboardCheck; text: string }) {
-  return (
-    <View style={styles.trustItem}>
-      <View style={styles.trustIcon}><Icon size={17} color={Colors.brandSignature} /></View>
-      <Text style={styles.trustText}>{text}</Text>
-    </View>
-  );
+  return <Pill label={text} Icon={Icon} />;
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: Spacing.lg },
-  scrollTablet: { backgroundColor: Colors.text, padding: Spacing.xxxl },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
+  scrollTablet: { padding: Spacing.xxxl },
   shell: {
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    gap: Spacing.xl,
+    gap: Spacing.xxl,
   },
   shellTablet: {
     maxWidth: Breakpoints.maxContent,
-    minHeight: 680,
     flexDirection: 'row',
-    gap: 0,
-    borderRadius: Radius.xl,
-    overflow: 'hidden',
-    backgroundColor: Colors.surface,
-    ...Elevation.floating,
+    alignItems: 'center',
+    gap: 56,
   },
-  hero: {
-    borderRadius: Radius.xl,
-    backgroundColor: Colors.text,
-    padding: Spacing.xxl,
-    gap: Spacing.xxl,
-    overflow: 'hidden',
-  },
-  heroTablet: {
-    flex: 1.08,
-    borderRadius: 0,
-    padding: 48,
-    justifyContent: 'space-between',
-  },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  heroCopy: { gap: Spacing.sm, maxWidth: 500 },
-  heroIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: Radius.xs,
-    borderWidth: BorderWidth.card,
-    borderColor: Palette.onBrandLine,
+  // Trena Suave: o herói fica direto no concreto; só o formulário é cartão.
+  hero: { gap: Spacing.xl },
+  heroTablet: { flex: 1.05 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  plumbMark: {
+    width: 72,
+    height: 72,
+    borderRadius: Radius.full,
+    backgroundColor: Palette.brand,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.sm,
   },
+  heroCopy: { gap: Spacing.sm, maxWidth: 500 },
   eyebrow: {
     ...Typography.caption,
-    color: Colors.brandSignature,
-    fontFamily: FontFamily.bold,
-    letterSpacing: 0,
+    color: Colors.textSecondary,
+    fontFamily: FontFamily.semibold,
   },
   heroTitle: {
     fontFamily: FontFamily.display,
-    fontSize: 38,
+    fontSize: 36,
     lineHeight: 40,
-    letterSpacing: 0,
-    color: Colors.surface,
+    letterSpacing: -1,
+    color: Colors.text,
   },
   heroDescription: {
     ...Typography.body,
-    color: Colors.borderNormal,
+    color: Colors.textSecondary,
     maxWidth: 460,
   },
-  trustList: { gap: Spacing.sm },
-  trustItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  trustIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: Radius.xs,
-    borderWidth: BorderWidth.card,
-    borderColor: Palette.onBrandLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  trustText: { ...Typography.caption, color: Colors.border, fontFamily: FontFamily.medium },
+  trustList: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   formPanel: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     padding: Spacing.xxl,
     gap: Spacing.xl,
-    ...Elevation.card,
   },
   formPanelTablet: {
-    flex: 0.92,
-    borderRadius: 0,
-    borderWidth: 0,
-    padding: 56,
-    justifyContent: 'center',
+    flex: 0.95,
+    padding: 48,
   },
   formHeader: { gap: 6 },
   formEyebrow: {
     ...Typography.caption,
-    color: Colors.brand,
-    fontFamily: FontFamily.bold,
-    letterSpacing: 0,
+    color: Colors.textSecondary,
+    fontFamily: FontFamily.semibold,
   },
   formTitle: {
-    fontFamily: FontFamily.bold,
-    fontSize: 30,
-    lineHeight: 38,
+    ...Typography.title,
     color: Colors.text,
-    letterSpacing: -0.7,
   },
   formDescription: { ...Typography.body, color: Colors.textSecondary },
   fields: { gap: Spacing.lg },
   recoveryLink: {
-    minHeight: 36,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   recoveryLinkText: {
-    color: Colors.brand,
+    color: Colors.text,
     fontFamily: FontFamily.semibold,
     fontSize: FontSizes.sm,
+    textDecorationLine: 'underline',
   },
   support: {
     ...Typography.caption,
