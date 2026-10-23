@@ -1,39 +1,23 @@
 import { useQuery } from '@powersync/react';
 import { useRouter } from 'expo-router';
-import { Building2, ChevronRight, Search, X } from '../../../../lib/icons';
-import { useEffect, useMemo, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Building2, Search, X } from '../../../../lib/icons';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppHeader } from '../../../../components/AppHeader';
-import { IconBox } from '../../../../components/IconBox';
+import { AppHeader, HeaderIconButton } from '../../../../components/AppHeader';
 import {
-  Badge,
   type BadgeTone,
   EmptyState,
   ErrorBanner,
-  ListSurface,
-  OperationalRow,
-  Progress,
-  SegmentedControl,
+  GroupLabel,
+  HeroPill,
+  ProgressCard,
+  SearchPill,
+  FilterChips,
   Skeleton,
-  type DatumTone,
+  TapeHero,
 } from '../../../../components/ui';
-import {
-  Breakpoints,
-  Colors,
-  FontFamily,
-  FontSizes,
-  Radius,
-  Spacing,
-  Typography,
-} from '../../../../lib/constants';
+import { Breakpoints, Colors, Radius, Spacing } from '../../../../lib/constants';
 import { useConta } from '../../../../lib/auth/sessao';
 
 interface ObraRow {
@@ -103,18 +87,11 @@ const GROUP_ORDER: { status: string; title: string }[] = [
   { status: 'concluida', title: 'Concluída' },
 ];
 
-function datumToneFor(item: ObraRow): DatumTone {
-  if (item.ncs_abertas > 0) return 'danger';
-  if (item.status === 'concluida') return 'success';
-  if (item.status === 'paralisada') return 'warning';
-  if (item.status === 'em_andamento') return 'info';
-  return 'neutral';
-}
-
 export default function ObrasScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ObraTab>('em_andamento');
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const conta = useConta();
   const userId = conta?.usuarioId ?? null;
   const perfil: string | null = conta?.perfil ?? null;
@@ -193,110 +170,65 @@ export default function ObrasScreen() {
       <AppHeader
         title="Obras"
         subtitle={`${activeCount} em andamento · ${doneCount} concluídas`}
+        rightElement={(
+          <HeaderIconButton
+            Icon={searchOpen ? X : Search}
+            label={searchOpen ? 'Fechar busca' : 'Buscar obras'}
+            active={searchOpen}
+            onPress={() => {
+              if (searchOpen) setSearch('');
+              setSearchOpen(open => !open);
+            }}
+          />
+        )}
       />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <View style={styles.summary}>
-          <View style={styles.summaryPrimary}>
-            <Text style={styles.summaryTitle}>Avanço da carteira</Text>
-            <Text style={styles.summaryValue}>{Math.round(portfolio.progress)}%</Text>
-            <Text style={styles.summaryLabel}>avanço ponderado das FVS</Text>
-            <Progress value={portfolio.progress} height={5} tone={portfolio.openNc > 0 ? 'danger' : 'brand'} />
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryFacts}>
-            <SummaryFact
-              value={portfolio.completedFvs}
-              label="FVS concluídas"
-              tone={Colors.text}
-            />
-            <SummaryFact
-              value={portfolio.openNc}
-              label="NC abertas"
-              tone={portfolio.openNc > 0 ? Colors.nok : Colors.text}
-            />
-          </View>
-        </View>
+        {searchOpen ? (
+          <SearchPill value={search} onChangeText={setSearch} placeholder="Buscar por nome ou cidade" autoFocus />
+        ) : null}
 
-        <View style={styles.controls}>
-          <SegmentedControl
-            value={activeTab}
-            options={TAB_OPTIONS}
-            onChange={setActiveTab}
-            accessibilityLabel="Filtrar por situação da obra"
+        <TapeHero label="Avanço da carteira" value={portfolio.progress}>
+          <HeroPill label={`${portfolio.completedFvs}/${portfolio.totalFvs} FVS concluídas`} />
+          <HeroPill
+            label={`${portfolio.openNc} ${portfolio.openNc === 1 ? 'NC aberta' : 'NCs abertas'}`}
+            tone={portfolio.openNc > 0 ? 'danger' : 'success'}
           />
+        </TapeHero>
 
-          <View style={styles.searchBox}>
-            <IconBox icon={Search} size={18} color={Colors.textTertiary} />
-            <TextInput
-              accessibilityLabel="Buscar obras"
-              style={styles.searchInput}
-              placeholder="Buscar por nome ou cidade"
-              placeholderTextColor={Colors.textTertiary}
-              value={search}
-              onChangeText={setSearch}
-              returnKeyType="search"
-            />
-            {search ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Limpar busca"
-                onPress={() => setSearch('')}
-                style={styles.clearSearch}
-              >
-                <X size={17} color={Colors.textSecondary} />
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
+        <FilterChips
+          value={activeTab}
+          options={TAB_OPTIONS.map(option => ({
+            ...option,
+            count: option.value === 'em_andamento' ? activeCount : option.value === 'concluidas' ? doneCount : obras.length,
+          }))}
+          onChange={setActiveTab}
+          accessibilityLabel="Filtrar por situação da obra"
+        />
 
         {error ? (
           <ErrorBanner message="Não foi possível carregar as obras." />
         ) : null}
 
-        <View style={styles.listHeading}>
-          <Text style={styles.listTitle}>Registros</Text>
-          <Text style={styles.listCount}>{String(filtered.length).padStart(2, '0')}</Text>
-          {hasRefinements ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Limpar todos os filtros"
-              onPress={clearAllFilters}
-              style={styles.clearFilters}
-            >
-              <Text style={styles.clearFiltersText}>Limpar filtros</Text>
-            </Pressable>
-          ) : null}
-        </View>
-
         {!ready || isLoading ? (
           <View style={styles.loading}>
-            <Skeleton style={styles.skeletonGroup} />
             <Skeleton style={styles.skeletonRows} />
             <Skeleton style={styles.skeletonRows} />
           </View>
         ) : groups.length ? (
           groups.map(group => (
             <View key={group.status} style={styles.group}>
-              <View style={styles.groupHeader}>
-                <View style={styles.groupTitleRow}>
-                  <Text style={styles.groupTitle}>{group.title}</Text>
-                  <Text style={styles.groupCount}>{group.items.length}</Text>
-                </View>
-              </View>
-              <ListSurface>
-                {group.items.map((item, index) => (
-                  <ObraRowItem
-                    key={item.id}
-                    item={item}
-                    last={index === group.items.length - 1}
-                    onOpen={() => router.push(`/obras/${item.id}` as never)}
-                  />
-                ))}
-              </ListSurface>
+              <GroupLabel label={group.title} count={group.items.length} />
+              {group.items.map(item => (
+                <ObraCard
+                  key={item.id}
+                  item={item}
+                  onOpen={() => router.push(`/obras/${item.id}` as never)}
+                />
+              ))}
             </View>
           ))
         ) : (
@@ -308,7 +240,7 @@ export default function ObrasScreen() {
                 ? 'Ajuste a busca para ampliar os resultados.'
                 : 'As obras liberadas para o seu acesso aparecerão aqui.'
             }
-            actionLabel={hasRefinements ? 'Limpar filtros' : undefined}
+            actionLabel={hasRefinements ? 'Limpar busca' : undefined}
             onAction={hasRefinements ? clearAllFilters : undefined}
           />
         )}
@@ -317,63 +249,23 @@ export default function ObrasScreen() {
   );
 }
 
-function SummaryFact({
-  value,
-  label,
-  tone,
-}: {
-  value: number;
-  label: string;
-  tone: string;
-}) {
-  return (
-    <View style={styles.summaryFact}>
-      <Text style={[styles.summaryFactValue, { color: tone }]}>{value}</Text>
-      <Text style={styles.summaryFactLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function ObraRowItem({
-  item,
-  last,
-  onOpen,
-}: {
-  item: ObraRow;
-  last: boolean;
-  onOpen: () => void;
-}) {
+function ObraCard({ item, onOpen }: { item: ObraRow; onOpen: () => void }) {
   const status = OBRA_STATUS[item.status] ?? OBRA_STATUS.nao_iniciada;
   const progress = item.progresso_percentual ?? 0;
   const hasNc = item.ncs_abertas > 0;
-
+  const local = `${item.municipio || 'Local não informado'}${item.uf ? `, ${item.uf}` : ''}`;
   return (
-    <OperationalRow
-      tone={datumToneFor(item)}
-      last={last}
+    <ProgressCard
+      title={item.nome}
+      subtitle={local}
+      status={status}
+      progress={progress}
+      progressTone={progress >= 100 ? 'success' : 'brand'}
+      meta={`${item.fvs_concluidas ?? 0} de ${item.total_fvs ?? 0} FVS${hasNc ? ` · ${item.ncs_abertas} ${item.ncs_abertas === 1 ? 'NC aberta' : 'NCs abertas'}` : ''}`}
+      metaTone={hasNc ? 'danger' : undefined}
       onPress={onOpen}
-      accessibilityLabel={`Abrir obra ${item.nome}`}
-      trailing={<IconBox icon={ChevronRight} size={19} color={Colors.textTertiary} />}
-    >
-      <View style={styles.rowTop}>
-        <Text style={styles.rowTitle} numberOfLines={1}>{item.nome}</Text>
-        <Badge label={status.label} tone={status.tone} size="sm" />
-      </View>
-      <Text style={styles.rowContext} numberOfLines={1}>
-        {item.municipio || 'Local não informado'}{item.uf ? `, ${item.uf}` : ''}
-      </Text>
-      <Text style={styles.rowDescription} numberOfLines={1}>
-        {item.fvs_concluidas ?? 0} de {item.total_fvs ?? 0} FVS concluídas
-        {hasNc ? ` · ${item.ncs_abertas} NC abertas` : ''}
-      </Text>
-      <Progress value={progress} height={5} tone={hasNc ? 'danger' : progress >= 100 ? 'success' : 'brand'} />
-      <View style={styles.rowFooter}>
-        <Text style={[styles.footerLabel, { color: hasNc ? Colors.nok : Colors.ok }]}>
-          {hasNc ? `${item.ncs_abertas} NC` : 'Sem NC'}
-        </Text>
-        <Text style={styles.footerProgress}>{Math.round(progress)}%</Text>
-      </View>
-    </OperationalRow>
+      accessibilityLabel={`Abrir obra ${item.nome}, ${local}, ${Math.round(progress)} por cento${hasNc ? `, ${item.ncs_abertas} não conformidades abertas` : ''}`}
+    />
   );
 }
 
@@ -383,145 +275,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
-    padding: Spacing.lg,
-    paddingBottom: 104,
-    gap: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.xxl,
+    gap: Spacing.lg,
   },
-  summary: {
-    minHeight: 112,
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-  },
-  summaryPrimary: { flex: 1.5, justifyContent: 'center' },
-  summaryTitle: { ...Typography.label, color: Colors.textSecondary },
-  summaryValue: {
-    marginTop: 2,
-    color: Colors.brand,
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: 34,
-    lineHeight: 39,
-  },
-  summaryLabel: { ...Typography.caption, color: Colors.textSecondary, marginBottom: Spacing.sm },
-  summaryDivider: {
-    width: 1,
-    marginHorizontal: Spacing.lg,
-    backgroundColor: Colors.border,
-  },
-  summaryFacts: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    gap: Spacing.md,
-  },
-  summaryFact: { flex: 1, minWidth: 0, alignItems: 'center', gap: 1 },
-  summaryFactValue: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.xl,
-    lineHeight: 28,
-  },
-  summaryFactLabel: { ...Typography.caption, color: Colors.textTertiary, textAlign: 'center' },
-  controls: { gap: Spacing.md },
-  searchBox: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.full,
-    paddingLeft: Spacing.md,
-    gap: Spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    minHeight: 46,
-    color: Colors.text,
-    fontFamily: FontFamily.regular,
-    fontSize: FontSizes.base,
-  },
-  clearSearch: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listHeading: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: Spacing.sm,
-    marginBottom: -Spacing.sm,
-  },
-  listTitle: { ...Typography.heading, color: Colors.text },
-  listCount: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-  },
-  clearFilters: {
-    marginLeft: 'auto',
-    minHeight: 36,
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.sm,
-  },
-  clearFiltersText: {
-    ...Typography.caption,
-    color: Colors.brand,
-    fontFamily: FontFamily.semibold,
-  },
-  group: { gap: Spacing.sm },
-  groupHeader: { paddingHorizontal: 2, gap: 1 },
-  groupTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
-  groupTitle: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.base,
-    color: Colors.text,
-  },
-  groupCount: {
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.tiny,
-    color: Colors.textTertiary,
-  },
-  rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  rowTitle: {
-    flex: 1,
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.base,
-    color: Colors.text,
-  },
-  rowContext: {
-    marginTop: 3,
-    fontFamily: FontFamily.medium,
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-  },
-  rowDescription: {
-    marginTop: 3,
-    fontFamily: FontFamily.regular,
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-  },
-  rowFooter: {
-    marginTop: Spacing.xs,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  footerLabel: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSizes.tiny,
-    letterSpacing: 0,
-  },
-  footerProgress: {
-    flex: 1,
-    textAlign: 'right',
-    fontFamily: FontFamily.monoSemibold,
-    fontSize: FontSizes.tiny,
-    color: Colors.textTertiary,
-  },
+  group: { gap: Spacing.sm, marginTop: Spacing.xs },
   loading: { gap: Spacing.md },
-  skeletonGroup: { width: 140, height: 20, borderRadius: Radius.sm },
   skeletonRows: { width: '100%', height: 132, borderRadius: Radius.lg },
 });

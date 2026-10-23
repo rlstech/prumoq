@@ -3,11 +3,10 @@ import {
   CalendarDays,
   Flag,
   LockKeyhole,
-  Printer,
   RotateCcw,
   UserRound,
 } from '../lib/icons';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Badge, Button, DatumCard } from './ui';
 import { Colors, FontFamily, FontSizes, Radius, Spacing, Typography } from '../lib/constants';
 
@@ -88,16 +87,10 @@ export function FVSLockedScreen({ status, conclusao, onRequestReopen }: Props) {
         </View>
       </DatumCard>
 
+      {/* O PDF da FVS fica no botão do cabeçalho da tela. */}
       <View style={styles.actions}>
         <Button
-          label="Exportar PDF"
-          Icon={Printer}
-          variant="secondary"
-          style={styles.action}
-          onPress={() => Alert.alert('Em breve', 'A exportação de PDF será disponibilizada em uma próxima etapa.')}
-        />
-        <Button
-          label="Reabrir"
+          label="Reabrir FVS"
           Icon={RotateCcw}
           variant="secondary"
           style={styles.action}
@@ -117,9 +110,9 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   statusIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.sm,
+    width: 44,
+    height: 44,
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -159,7 +152,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: Colors.bg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,

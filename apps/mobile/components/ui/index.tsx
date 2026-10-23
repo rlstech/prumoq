@@ -1936,7 +1936,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     gap: Spacing.xs,
   },
-  syncCompact: { width: 32, height: 32, paddingHorizontal: 0, justifyContent: 'center' },
+  // Compacto vive no cabeçalho, ao lado dos botões redondos de 44.
+  syncCompact: { width: 44, height: 44, paddingHorizontal: 0, justifyContent: 'center', alignSelf: 'center' },
   syncOnBrand: {
     backgroundColor: Palette.onBrandLine,
   },

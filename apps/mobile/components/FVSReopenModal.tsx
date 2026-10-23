@@ -4,7 +4,8 @@ import {
   Alert, Modal, Pressable, ScrollView,
   Platform, StyleSheet, Text, TextInput, View,
 } from 'react-native';
-import { Colors, FontSizes, Radius, Spacing, FontFamily } from '../lib/constants';
+import { Colors, FontSizes, Palette, Radius, Spacing, FontFamily, Typography } from '../lib/constants';
+import { RotateCcw } from '../lib/icons';
 import { db } from '../lib/powersync';
 import { useConta } from '../lib/auth/sessao';
 
@@ -105,16 +106,18 @@ export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: P
       <View style={st.overlay}>
         <View style={st.sheet}>
           {/* Header */}
-          <View style={[st.header, { backgroundColor: purple }]}>
-            <Text style={st.headerIcon}>↑</Text>
-            <Text style={st.headerTitle}>Reabrir Serviço</Text>
+          <View style={st.header}>
+            <View style={st.headerIcon}>
+              <RotateCcw size={20} color={Colors.info} />
+            </View>
+            <Text style={st.headerTitle}>Reabrir serviço</Text>
           </View>
 
           <ScrollView style={st.body} contentContainerStyle={{ gap: Spacing.md }}>
             {/* Info banner */}
             <View style={[st.infoBanner, { backgroundColor: Colors.progressBg, borderColor: Colors.progress }]}>
               <Text style={[st.infoText, { color: Colors.progress }]}>
-                ℹ Esta ação será registrada no histórico com data, hora e responsável. O gestor da obra será notificado.
+                Esta ação será registrada no histórico com data, hora e responsável. O gestor da obra será notificado.
               </Text>
             </View>
 
@@ -184,7 +187,7 @@ export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: P
             {/* Info bottom */}
             <View style={[st.infoBanner, { backgroundColor: Colors.okBg, borderColor: Colors.ok }]}>
               <Text style={[st.infoText, { color: Colors.ok }]}>
-                ℹ Após reabrir, o status muda para Em revisão. Uma nova verificação pode ser registrada. O histórico completo é preservado.
+                Após reabrir, o status muda para Em revisão. Uma nova verificação pode ser registrada. O histórico completo é preservado.
               </Text>
             </View>
           </ScrollView>
@@ -192,11 +195,11 @@ export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: P
           {/* Footer */}
           <View style={st.footer}>
             <Pressable
-              style={[st.btn, { backgroundColor: purple }]}
+              style={[st.btn, st.btnPrimary]}
               onPress={handleConfirm}
               disabled={loading}
             >
-              <Text style={st.btnText}>{loading ? 'Aguarde...' : '↑ Confirmar reabertura'}</Text>
+              <Text style={st.btnText}>{loading ? 'Aguarde…' : 'Confirmar reabertura'}</Text>
             </Pressable>
             <Pressable style={[st.btn, st.btnGhost]} onPress={onClose} disabled={loading}>
               <Text style={st.btnGhostText}>Cancelar</Text>
@@ -211,36 +214,37 @@ export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: P
 const st = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   sheet:   { backgroundColor: Colors.bg, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, maxHeight: '90%' },
-  header:  { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.lg, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl },
-  headerIcon:  { fontSize: 20, color: '#fff' },
-  headerTitle: { fontSize: FontSizes.md, fontFamily: FontFamily.bold, color: '#fff' },
+  header:  { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.xl, paddingBottom: Spacing.sm },
+  headerIcon:  { width: 44, height: 44, borderRadius: Radius.full, backgroundColor: Colors.infoBg, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { ...Typography.title, fontSize: 24, lineHeight: 28, color: Colors.text },
   body: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
-  infoBanner:  { borderWidth: 1, borderRadius: Radius.md, padding: Spacing.md },
+  infoBanner:  { borderRadius: Radius.md, padding: Spacing.lg },
   infoText:    { fontSize: FontSizes.sm, lineHeight: 20 },
   field:       { gap: Spacing.xs },
   label:       { fontSize: FontSizes.sm, fontFamily: FontFamily.semibold, color: Colors.text },
   optionsList: { gap: Spacing.xs },
   option: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
-    padding: Spacing.sm, backgroundColor: Colors.surface,
+    borderRadius: Radius.md, minHeight: 52,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, backgroundColor: Colors.surface,
   },
   radio:     { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: Colors.borderNormal, alignItems: 'center', justifyContent: 'center' },
   radioDot:  { width: 8, height: 8, borderRadius: 4 },
   optionLabel: { fontSize: FontSizes.sm, color: Colors.text },
   optionSub:   { fontSize: FontSizes.xs, color: Colors.textSecondary },
   textarea: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
-    padding: Spacing.sm, fontSize: FontSizes.sm, color: Colors.text,
+    borderWidth: 1, borderColor: Colors.borderNormal, borderRadius: Radius.sm,
+    padding: Spacing.md, fontSize: FontSizes.sm, fontFamily: FontFamily.regular, color: Colors.text,
     minHeight: 90, textAlignVertical: 'top', backgroundColor: Colors.surface,
   },
   inputError: { borderColor: Colors.nok },
   charCount:  { fontSize: FontSizes.xs, color: Colors.textTertiary, textAlign: 'right' },
   error:      { fontSize: FontSizes.xs, color: Colors.nok },
   emptyMsg:   { fontSize: FontSizes.sm, color: Colors.textSecondary, fontStyle: 'italic' },
-  footer: { padding: Spacing.lg, gap: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.border },
-  btn:          { padding: Spacing.md, borderRadius: Radius.md, alignItems: 'center' },
-  btnText:      { color: '#fff', fontFamily: FontFamily.semibold, fontSize: FontSizes.sm },
+  footer: { padding: Spacing.xl, paddingTop: Spacing.md, gap: Spacing.sm },
+  btn:          { minHeight: 56, borderRadius: Radius.full, alignItems: 'center', justifyContent: 'center' },
+  btnPrimary:   { backgroundColor: Palette.accent },
+  btnText:      { color: Palette.onAccent, fontFamily: FontFamily.bold, fontSize: FontSizes.md },
   btnGhost:     { backgroundColor: Colors.surface2 },
   btnGhostText: { color: Colors.text, fontFamily: FontFamily.medium, fontSize: FontSizes.sm },
 });
