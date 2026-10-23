@@ -26,7 +26,7 @@ export function ReviewOutcome({ conformCount, ncCount, naCount, hasNonConformity
       <DatumCard tone={hasNonConformity ? 'danger' : 'success'}>
         <View style={styles.hero}>
           <View style={styles.primary}>
-            <Text style={styles.overline}>RESULTADO DESTA VERIFICAÇÃO</Text>
+            <Text style={styles.overline}>Resultado desta verificação</Text>
             <View style={styles.resultRow}>
               {hasNonConformity
                 ? <AlertCircle size={20} color={Colors.nok} />
@@ -39,7 +39,7 @@ export function ReviewOutcome({ conformCount, ncCount, naCount, hasNonConformity
           </View>
           <View style={styles.divider} />
           <View style={styles.facts}>
-            <MetricBlock label="CONFORMES" value={conformCount} tone="success" />
+            <MetricBlock label="Conformes" value={conformCount} tone="success" />
             <MetricBlock label="NC" value={ncCount} tone="danger" />
             <MetricBlock label="N/A" value={naCount} tone="neutral" />
           </View>

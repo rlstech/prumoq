@@ -118,7 +118,7 @@ export default function LoginScreen() {
                 <View style={styles.heroIcon}>
                   <HardHat size={30} color={Colors.brandSignature} />
                 </View>
-                <Text style={styles.eyebrow}>QUALIDADE EM CAMPO</Text>
+                <Text style={styles.eyebrow}>Qualidade em campo</Text>
                 <Text style={styles.heroTitle}>Verificações claras, mesmo sem conexão.</Text>
                 <Text style={styles.heroDescription}>
                   Registre serviços, evidências e não conformidades com segurança durante toda a inspeção.
@@ -133,7 +133,7 @@ export default function LoginScreen() {
 
             <View style={[styles.formPanel, isTablet && styles.formPanelTablet]}>
               <View style={styles.formHeader}>
-                <Text style={styles.formEyebrow}>ACESSO DO INSPETOR</Text>
+                <Text style={styles.formEyebrow}>Acesso do inspetor</Text>
                 <Text style={styles.formTitle}>Entrar na conta</Text>
                 <Text style={styles.formDescription}>
                   Use suas credenciais do PrumoQ para continuar o trabalho de campo.
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.brandSignature,
     fontFamily: FontFamily.bold,
-    letterSpacing: 1.2,
+    letterSpacing: 0,
   },
   heroTitle: {
     fontFamily: FontFamily.display,
@@ -318,8 +318,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     padding: Spacing.xxl,
     gap: Spacing.xl,
-    borderWidth: BorderWidth.card,
-    borderColor: Colors.border,
     ...Elevation.card,
   },
   formPanelTablet: {
@@ -334,7 +332,7 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.brand,
     fontFamily: FontFamily.bold,
-    letterSpacing: 1,
+    letterSpacing: 0,
   },
   formTitle: {
     fontFamily: FontFamily.bold,

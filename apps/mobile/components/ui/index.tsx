@@ -27,7 +27,6 @@ import {
   Radius,
   Spacing,
   Typography,
-  BorderWidth,
 } from '../../lib/constants';
 import {
   formatDate,
@@ -914,11 +913,11 @@ export interface ChoiceToggleOption<T extends string> {
  * no answer is harder to hit than another — the previous 1.55 / 1.15 / 64px
  * split left N/A with less than half the target area of Conforme.
  *
- * The chosen position carries three signals at once: the soft tint, a 1.5px
- * semantic ring, and a solid-filled glyph where the others are outlines. The
- * fill is what survives direct sunlight and still reads in greyscale; the tint
- * alone is roughly a 4% luminance step and vanishes on site. Icon over label
- * buys the height for a 56px target without a second row of controls.
+ * Trena Suave: each position is its own rounded tile. The chosen one turns
+ * solid in its semantic colour with white text and a white-filled glyph, which
+ * survives direct sunlight and still reads in greyscale; the others stay on the
+ * concrete tone with outline glyphs. Icon over label buys the height for a
+ * 56px target without a second row of controls.
  *
  * `locked` is disabled visually and for a11y, but still announced as radios so
  * screen readers say why it can't be changed.
@@ -948,12 +947,12 @@ export function ChoiceToggle<T extends string>({
     <View style={style}>
       {error ? <Text style={styles.fieldError}>{error}</Text> : null}
       <View
-        style={[styles.resultToggle, locked && styles.resultToggleLocked, error && styles.resultToggleError]}
+        style={[styles.resultToggle, locked && styles.resultToggleLocked]}
         accessibilityRole="radiogroup"
         accessibilityLabel={accessibilityLabel}
         pointerEvents={locked ? 'none' : 'auto'}
       >
-        {options.map((option, index) => {
+        {options.map(option => {
           const selected = value === option.value;
           const palette = choiceTogglePalette[option.tone];
           const Icon = option.Icon;
@@ -972,28 +971,22 @@ export function ChoiceToggle<T extends string>({
               onPress={() => onChange(option.value)}
               style={({ pressed }) => [
                 styles.resultToggleOption,
-                index > 0 && !selected && styles.resultToggleDivider,
-                selected && { backgroundColor: palette.background },
+                error && !answered && styles.resultToggleOptionError,
+                selected && { backgroundColor: palette.border },
                 pressed && !selected && styles.resultToggleOptionPressed,
               ]}
             >
               {Icon ? (
                 <Icon
                   size={22}
-                  color={selected ? Colors.surface : tint}
-                  fill={selected ? palette.text : 'transparent'}
-                  strokeWidth={selected ? 2.4 : 2}
+                  color={selected ? palette.border : tint}
+                  fill={selected ? Colors.surface : 'transparent'}
+                  strokeWidth={selected ? 2.2 : 1.8}
                 />
               ) : null}
-              <Text numberOfLines={1} style={[styles.resultToggleText, { color: tint }]}>
+              <Text numberOfLines={1} style={[styles.resultToggleText, { color: selected ? Colors.surface : tint }]}>
                 {option.label}
               </Text>
-              {selected ? (
-                <View
-                  pointerEvents="none"
-                  style={[styles.resultToggleRing, { borderColor: palette.border }]}
-                />
-              ) : null}
             </Pressable>
           );
         })}
@@ -1055,7 +1048,7 @@ export function Chip({
 }) {
   const content = (
     <>
-      {Icon ? <Icon size={14} color={selected ? Colors.brand : Colors.textSecondary} /> : null}
+      {Icon ? <Icon size={14} color={selected ? Colors.surface : Colors.textSecondary} /> : null}
       <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
     </>
   );
@@ -1292,12 +1285,15 @@ export function SyncIndicator({
   label,
   compact = false,
   tone = 'surface',
+  short = false,
 }: {
   state: SyncState;
   label?: string;
   compact?: boolean;
   /** `onBrand` para superfícies escuras (capa do dashboard). */
   tone?: SyncIndicatorTone;
+  /** Rótulo curto ("Offline") mesmo sobre superfície clara. */
+  short?: boolean;
 }) {
   const config = syncConfig[state];
   const Icon = config.Icon;
@@ -1307,7 +1303,7 @@ export function SyncIndicator({
   const foreground = onBrand ? onBrandSyncColor[state] : config.color;
   // O rótulo longo do offline não cabe ao lado do avatar — na capa entra a
   // versão curta, mas o leitor de tela continua ouvindo o rótulo completo.
-  const text = label ?? (onBrand ? config.shortLabel : config.label);
+  const text = label ?? (onBrand || short ? config.shortLabel : config.label);
 
   return (
     <View
@@ -1402,7 +1398,8 @@ const choiceTogglePalette: Record<ChoiceToggleTone, { background: string; border
   success: { background: Colors.okBg, border: Colors.ok, text: Colors.ok },
   danger: { background: Colors.nokBg, border: Colors.nok, text: Colors.nok },
   neutral: { background: Colors.naBg, border: Colors.na, text: Colors.na },
-  brand: { background: Colors.brandLight, border: Colors.brandSignature, text: Colors.brand },
+  // Escolhida fica sólida: no tom de marca é grafite (nunca branco sobre o amarelo).
+  brand: { background: Colors.brandLight, border: Colors.brand, text: Colors.brand },
 };
 
 const progressPalette: Record<BadgeTone, string> = {
@@ -1476,7 +1473,8 @@ const metricPalette: Record<BadgeTone, string> = {
 const buttonPalette: Record<ButtonVariant, { background: string; pressed: string; border: string; text: string }> = {
   // Ação principal em amarelo trena com texto grafite (nunca branco sobre o amarelo).
   primary: { background: Palette.accent, pressed: Palette.accentPressed, border: Palette.accent, text: Palette.onAccent },
-  secondary: { background: Colors.surface, pressed: Colors.surface2, border: Colors.text, text: Colors.text },
+  // Sem borda: o secundário é uma pílula no tom do concreto.
+  secondary: { background: Colors.surface2, pressed: Colors.border, border: Colors.surface2, text: Colors.text },
   ghost: { background: 'transparent', pressed: Colors.surface2, border: 'transparent', text: Colors.textSecondary },
   danger: { background: Colors.nok, pressed: Colors.text, border: Colors.nok, text: Colors.surface },
 };
@@ -1494,8 +1492,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: BorderWidth.card,
-    borderColor: Colors.border,
+    borderWidth: 0,
+    borderColor: 'transparent',
     padding: Spacing.lg,
     ...Elevation.card,
   },
@@ -1505,54 +1503,36 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: BorderWidth.card,
-    borderColor: Colors.border,
     ...Elevation.card,
   },
   datumCardPressed: {
     backgroundColor: Colors.surface2,
-    borderColor: Colors.borderNormal,
   },
-  datumLine: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: 3,
-  },
+  // Trena Suave: sem fio lateral; o tom do cartão já separa o bloco.
+  datumLine: { display: 'none' },
   datumContent: {
     flex: 1,
     padding: Spacing.lg,
-    paddingLeft: Spacing.lg + 3,
   },
   listSurface: {
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    padding: 6,
   },
   operationalRow: {
     minHeight: 84,
     position: 'relative',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    paddingLeft: Spacing.lg + 3,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
+    borderRadius: Radius.md,
     backgroundColor: Colors.surface,
   },
   operationalRowPressed: { backgroundColor: Colors.surface2 },
-  operationalDatum: {
-    position: 'absolute',
-    top: Spacing.md,
-    bottom: Spacing.md,
-    left: 0,
-    width: 3,
-    borderTopRightRadius: Radius.full,
-    borderBottomRightRadius: Radius.full,
-  },
+  operationalDatum: { display: 'none' },
   operationalLeading: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1569,9 +1549,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: Spacing.lg,
     bottom: 0,
-    left: Spacing.lg + 3,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.border,
+    left: Spacing.lg,
+    height: 1,
+    backgroundColor: Colors.bg,
   },
   metricBlock: {
     minWidth: 88,
@@ -1599,9 +1579,9 @@ const styles = StyleSheet.create({
   },
   button: {
     minHeight: ComponentSize.button,
-    borderRadius: Radius.xs,
-    borderWidth: BorderWidth.card,
-    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.full,
+    borderWidth: 0,
+    paddingHorizontal: Spacing.xl,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1610,6 +1590,7 @@ const styles = StyleSheet.create({
   fullWidth: { width: '100%' },
   disabled: { opacity: 0.5 },
   focusVisible: {
+    borderWidth: 2,
     borderColor: Colors.focus,
     shadowColor: Colors.focus,
     shadowOpacity: 0.22,
@@ -1620,7 +1601,7 @@ const styles = StyleSheet.create({
   iconButton: {
     width: ComponentSize.touch,
     height: ComponentSize.touch,
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1630,11 +1611,11 @@ const styles = StyleSheet.create({
   fieldLabel: { ...Typography.label, color: Colors.text },
   input: {
     minHeight: ComponentSize.input,
-    borderRadius: Radius.md,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: Colors.borderNormal,
     backgroundColor: Colors.surface,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     color: Colors.text,
     fontFamily: FontFamily.regular,
@@ -1650,7 +1631,7 @@ const styles = StyleSheet.create({
   },
   dateTrigger: {
     minHeight: ComponentSize.input,
-    borderRadius: Radius.md,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: Colors.borderNormal,
     backgroundColor: Colors.surface,
@@ -1676,9 +1657,9 @@ const styles = StyleSheet.create({
     maxHeight: ComponentSize.touch,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
   },
-  calendarDayToday: { borderWidth: BorderWidth.card, borderColor: Colors.text },
+  calendarDayToday: { borderWidth: 1.5, borderColor: Colors.text },
   calendarDaySelected: { backgroundColor: Colors.brand },
   calendarDayPressed: { backgroundColor: Colors.brandLight },
   calendarDayDisabled: { opacity: 0.35 },
@@ -1706,19 +1687,12 @@ const styles = StyleSheet.create({
   selectTriggerLocked: { backgroundColor: Colors.surface2, borderColor: Colors.border },
   selectTriggerError: { borderColor: Colors.nok, borderWidth: 1.5 },
   selectTriggerPressed: { backgroundColor: Colors.surface2 },
-  selectDatum: {
-    position: 'absolute',
-    width: 3,
-    left: 0,
-    top: Spacing.sm,
-    bottom: Spacing.sm,
-    backgroundColor: Colors.brandSignature,
-  },
+  selectDatum: { display: 'none' },
   selectDatumLocked: { backgroundColor: Colors.borderNormal },
   selectIcon: {
     width: 32,
     height: 32,
-    borderRadius: Radius.xs,
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.surface,
@@ -1733,8 +1707,8 @@ const styles = StyleSheet.create({
     minHeight: ComponentSize.input,
     borderWidth: 1,
     borderColor: Colors.borderNormal,
-    borderRadius: Radius.md,
-    paddingLeft: Spacing.md,
+    borderRadius: Radius.full,
+    paddingLeft: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
@@ -1748,7 +1722,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
   },
   selectList: { maxHeight: 360 },
-  selectListContent: { borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.lg, overflow: 'hidden' },
+  selectListContent: { backgroundColor: Colors.surface, borderRadius: Radius.lg, overflow: 'hidden' },
   selectOption: {
     minHeight: 60,
     backgroundColor: Colors.surface,
@@ -1757,8 +1731,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.bg,
   },
   selectOptionSelected: { backgroundColor: Colors.brandLight },
   selectOptionPressed: { backgroundColor: Colors.surface2 },
@@ -1782,48 +1756,49 @@ const styles = StyleSheet.create({
   segmented: {
     flexDirection: 'row',
     padding: 4,
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
     backgroundColor: Colors.surface2,
     gap: 4,
   },
   segment: {
     minHeight: ComponentSize.touch,
     flex: 1,
-    borderRadius: Radius.sm,
+    borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
-  segmentSelected: { backgroundColor: Colors.surface, borderWidth: BorderWidth.card, borderColor: Colors.text },
+  segmentSelected: {
+    backgroundColor: Colors.surface,
+    shadowColor: Palette.ink,
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+  },
   segmentPressed: { backgroundColor: Colors.border },
-  segmentText: { ...Typography.caption, color: Colors.textSecondary, fontFamily: FontFamily.medium },
-  segmentTextSelected: { color: Colors.brand, fontFamily: FontFamily.semibold },
+  segmentText: { ...Typography.label, color: Colors.textSecondary, fontFamily: FontFamily.semibold },
+  segmentTextSelected: { color: Colors.brand, fontFamily: FontFamily.bold },
   chip: {
     minHeight: ComponentSize.touch,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radius.xs,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.full,
     backgroundColor: Colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
-  chipSelected: { backgroundColor: Colors.brandLight, borderColor: Colors.text },
-  chipText: { ...Typography.caption, color: Colors.textSecondary, fontFamily: FontFamily.medium },
-  chipTextSelected: { color: Colors.brand, fontFamily: FontFamily.semibold },
+  chipSelected: { backgroundColor: Colors.brand },
+  chipText: { ...Typography.label, color: Colors.text, fontFamily: FontFamily.semibold },
+  chipTextSelected: { color: Colors.surface, fontFamily: FontFamily.bold },
   stepper: {
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
     flexDirection: 'row',
   },
   stepItem: { flex: 1, alignItems: 'center', position: 'relative', gap: 5 },
@@ -1831,9 +1806,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: Radius.full,
-    backgroundColor: Colors.surface2,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1,
@@ -1846,7 +1819,8 @@ const styles = StyleSheet.create({
   stepLine: {
     position: 'absolute',
     height: 2,
-    backgroundColor: Colors.border,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface2,
     left: '50%',
     right: '-50%',
     top: 13,
@@ -1854,8 +1828,8 @@ const styles = StyleSheet.create({
   stepLineDone: { backgroundColor: Colors.brand },
   actionBar: {
     backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopLeftRadius: Radius.xl,
+    borderTopRightRadius: Radius.xl,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.xl,
@@ -1872,10 +1846,10 @@ const styles = StyleSheet.create({
   actionHelper: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'right' },
   empty: { alignItems: 'center', paddingVertical: 56, paddingHorizontal: Spacing.xxl, gap: Spacing.sm },
   emptyIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.surface2,
+    width: 56,
+    height: 56,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.xs,
@@ -1885,15 +1859,13 @@ const styles = StyleSheet.create({
   errorBanner: {
     borderRadius: Radius.md,
     backgroundColor: Colors.nokBg,
-    borderWidth: 1,
-    borderColor: Colors.nok,
-    padding: Spacing.md,
+    padding: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.sm,
   },
   errorBannerText: { ...Typography.caption, color: Colors.nok, fontFamily: FontFamily.medium, flex: 1 },
-  skeleton: { minHeight: 18, backgroundColor: Colors.surface2, borderRadius: Radius.sm },
+  skeleton: { minHeight: 18, backgroundColor: Colors.surface2, borderRadius: Radius.xs },
   sectionHeading: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1903,26 +1875,23 @@ const styles = StyleSheet.create({
   sectionHeadingText: { flex: 1, gap: 3 },
   eyebrow: {
     ...Typography.caption,
-    color: Colors.brand,
+    color: Colors.textSecondary,
     fontFamily: FontFamily.semibold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
   },
   sectionTitle: { ...Typography.heading, color: Colors.text },
   sectionDescription: { ...Typography.body, color: Colors.textSecondary },
   badge: {
     alignSelf: 'flex-start',
     minHeight: 28,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.xs,
-    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.full,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.xs,
   },
-  badgeSm: { minHeight: 24, paddingHorizontal: Spacing.sm - 2 },
-  badgeText: { ...Typography.caption, fontFamily: FontFamily.semibold },
+  badgeSm: { minHeight: 24, paddingHorizontal: Spacing.sm + 2 },
+  badgeText: { ...Typography.caption, fontFamily: FontFamily.bold },
   badgeTextSm: { fontSize: FontSizes.tiny, lineHeight: 16 },
   progressRow: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   progressLabel: { ...Typography.caption, color: Colors.textSecondary, minWidth: 68 },
@@ -1942,21 +1911,19 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   sync: {
-    minHeight: 28,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.xs,
+    minHeight: 32,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.full,
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     gap: Spacing.xs,
   },
-  syncCompact: { width: 28, height: 28, paddingHorizontal: 0, justifyContent: 'center' },
+  syncCompact: { width: 32, height: 32, paddingHorizontal: 0, justifyContent: 'center' },
   syncOnBrand: {
-    backgroundColor: 'transparent',
-    borderWidth: BorderWidth.card,
-    borderColor: Palette.onBrandLine,
+    backgroundColor: Palette.onBrandLine,
   },
-  syncText: { ...Typography.caption, fontFamily: FontFamily.medium },
+  syncText: { ...Typography.caption, fontFamily: FontFamily.semibold },
   modalBackdrop: {
     flex: 1,
     alignItems: 'center',
@@ -1974,25 +1941,23 @@ const styles = StyleSheet.create({
     ...Elevation.floating,
   },
   modalHeader: {
-    minHeight: 60,
-    paddingHorizontal: Spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    minHeight: 64,
+    paddingHorizontal: Spacing.xl,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: Spacing.md,
   },
   modalTitle: { ...Typography.heading, color: Colors.text, flex: 1 },
-  modalContent: { padding: Spacing.lg },
-  modalActions: { padding: Spacing.lg, paddingTop: 0, gap: Spacing.sm },
+  modalContent: { padding: Spacing.xl, paddingTop: Spacing.xs },
+  modalActions: { padding: Spacing.xl, paddingTop: 0, gap: Spacing.sm },
   toast: {
     width: '100%',
-    minHeight: 52,
-    paddingHorizontal: Spacing.md,
+    minHeight: 56,
+    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    borderRadius: Radius.md,
-    borderWidth: 1,
+    borderRadius: Radius.full,
+    borderWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
@@ -2010,8 +1975,8 @@ const styles = StyleSheet.create({
   },
   dataRowStack: { alignItems: 'flex-start' },
   dataRowBordered: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.bg,
   },
   dataRowPressed: { backgroundColor: Colors.surface2 },
   dataRowLeading: { alignItems: 'center', justifyContent: 'center' },
@@ -2035,35 +2000,24 @@ const styles = StyleSheet.create({
   dataRowTrailing: { alignItems: 'center', justifyContent: 'center' },
   resultToggle: {
     flexDirection: 'row',
-    minHeight: ComponentSize.choice,
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    backgroundColor: Colors.surface,
-    overflow: 'hidden',
+    gap: Spacing.sm,
   },
   resultToggleLocked: { opacity: 0.6 },
-  resultToggleError: { borderColor: Colors.nok, borderWidth: 1.5 },
   resultToggleOption: {
-    position: 'relative',
     flex: 1,
-    minHeight: ComponentSize.choice - 2,
+    minHeight: ComponentSize.choice + 8,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.bg,
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
+    gap: 4,
     paddingHorizontal: Spacing.xs,
   },
-  resultToggleDivider: {
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: Colors.borderNormal,
-  },
+  resultToggleOptionError: { borderWidth: 1.5, borderColor: Colors.nok, backgroundColor: Colors.nokBg },
   resultToggleOptionPressed: { backgroundColor: Colors.surface2 },
-  // Drawn inside the option rather than as a border on it: the joined control
-  // clips to its own radius, so an inset ring survives at the outer corners.
-  resultToggleRing: { ...StyleSheet.absoluteFillObject, borderWidth: 1.5 },
   resultToggleText: {
-    fontFamily: FontFamily.semibold,
+    fontFamily: FontFamily.bold,
     fontSize: FontSizes.tiny,
     lineHeight: 16,
   },
@@ -2071,8 +2025,8 @@ const styles = StyleSheet.create({
   // signature, and a lime block here would outshout the state of the form it
   // sits in. The error state below is what earns colour.
   photoSlotEmpty: {
-    borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: Colors.borderNormal,
     backgroundColor: Colors.bg,
@@ -2086,7 +2040,7 @@ const styles = StyleSheet.create({
   photoSlotLabel: { ...Typography.label, color: Colors.brand, textAlign: 'center' },
   photoSlotLabelError: { color: Colors.nok },
   photoSlotFilled: {
-    borderRadius: Radius.lg,
+    borderRadius: Radius.md,
     overflow: 'hidden',
     position: 'relative',
     backgroundColor: Colors.surface2,

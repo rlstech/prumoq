@@ -36,7 +36,7 @@ export function EvaluationOutcome({ score, total, metCount, unmetCount, errors, 
       <DatumCard tone={tone}>
         <View style={styles.hero}>
           <View style={styles.primary}>
-            <Text style={styles.overline}>RESULTADO DESTA AVALIAÇÃO</Text>
+            <Text style={styles.overline}>Resultado desta avaliação</Text>
             <View style={styles.resultRow}>
               <Text style={[styles.percent, { color: metricColor[tone] }]}>{percent}</Text>
               <Text style={[styles.percentSuffix, { color: metricColor[tone] }]}>%</Text>
@@ -51,9 +51,9 @@ export function EvaluationOutcome({ score, total, metCount, unmetCount, errors, 
           </View>
           <View style={styles.divider} />
           <View style={styles.facts}>
-            <MetricBlock label="ATENDE" value={metCount} tone="success" />
-            <MetricBlock label="NÃO ATENDE" value={unmetCount} tone="danger" />
-            <MetricBlock label="PONTOS" value={score} suffix={`/${total}`} tone="neutral" />
+            <MetricBlock label="Atende" value={metCount} tone="success" />
+            <MetricBlock label="Não atende" value={unmetCount} tone="danger" />
+            <MetricBlock label="Pontos" value={score} suffix={`/${total}`} tone="neutral" />
           </View>
         </View>
       </DatumCard>

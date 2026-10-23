@@ -22,8 +22,8 @@
   "dependencies": {
     "@babel/runtime": "7.29.2",
     "@clerk/clerk-js": "5.128.0",
-    "@expo-google-fonts/barlow": "0.4.1",
     "@expo-google-fonts/barlow-condensed": "0.4.1",
+    "@expo-google-fonts/figtree": "0.4.1",
     "@expo-google-fonts/jetbrains-mono": "0.4.1",
     "@expo/metro-runtime": "~4.0.1",
     "@journeyapps/wa-sqlite": "^2.0.7",

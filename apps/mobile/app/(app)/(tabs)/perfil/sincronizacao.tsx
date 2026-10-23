@@ -179,7 +179,7 @@ export default function SincronizacaoScreen() {
           />
         ) : (
           <View style={styles.list}>
-            <Text style={styles.overline}>REGISTROS RECUSADOS</Text>
+            <Text style={styles.overline}>Registros recusados</Text>
             <Text style={styles.help}>
               Estes registros ficaram de fora para que os demais continuassem subindo. Corrija a
               causa no painel e toque em Tentar novamente, ou descarte se não forem mais
@@ -262,8 +262,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: Spacing.lg,
     gap: Spacing.sm,
   },

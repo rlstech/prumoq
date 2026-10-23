@@ -46,7 +46,7 @@ export function FieldRoute({ items, itemResults, openNcs, onOpenPriority }: Prop
       style={styles.card}
     >
       <View style={styles.header}>
-        <Text style={styles.overline}>FILA DE CAMPO</Text>
+        <Text style={styles.overline}>Fila de campo</Text>
         {isReinspection ? <Badge tone="danger" size="sm" label="NC aberta" Icon={AlertCircle} /> : null}
       </View>
 

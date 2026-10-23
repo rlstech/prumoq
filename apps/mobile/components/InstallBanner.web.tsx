@@ -44,7 +44,6 @@ const styles = StyleSheet.create({
     color: Palette.onAccent,
     fontSize: 14,
     fontFamily: FontFamily.display,
-    textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
 });

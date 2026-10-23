@@ -365,18 +365,18 @@ const styles = StyleSheet.create({
   pdfBtn: {
     width: ComponentSize.touch,
     height: ComponentSize.touch,
-    borderRadius: Radius.md,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   statusPanel: {
     backgroundColor: Colors.surface,
+    marginHorizontal: Spacing.lg,
+    borderRadius: Radius.xl,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.lg,
     gap: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   statusPrimary: {
     flexDirection: 'row',

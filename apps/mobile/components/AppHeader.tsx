@@ -9,6 +9,7 @@ import {
   Palette,
   Radius,
   Spacing,
+  Typography,
 } from '../lib/constants';
 import { BrandMark } from './BrandMark';
 import { BrandWordmark } from './BrandWordmark';
@@ -54,7 +55,7 @@ export function AppHeader({
                   pressed && (isBrand ? styles.iconButtonBrandPressed : styles.iconButtonPressed),
                 ]}
               >
-                <ChevronLeft size={22} color={isBrand ? Palette.white : Colors.text} />
+                <ChevronLeft size={22} color={isBrand ? Palette.white : Colors.text} strokeWidth={1.9} />
               </Pressable>
             ) : (
               <BrandMark size={32} variant={isBrand ? 'onBrand' : 'default'} />
@@ -62,7 +63,8 @@ export function AppHeader({
             <BrandWordmark fontSize={FontSizes.base} variant={isBrand ? 'onBrand' : 'default'} />
           </View>
           <View style={styles.headerActions}>
-            <SyncStatusIndicator />
+            {/* Com ações à direita o indicador vira só o ícone, para caber na linha. */}
+            <SyncStatusIndicator compact={!!rightElement} short />
             {rightElement}
           </View>
         </View>
@@ -88,20 +90,21 @@ export function AppHeader({
 }
 
 const styles = StyleSheet.create({
+  // Trena Suave: o cabeçalho é o próprio concreto, sem faixa nem borda.
   shell: {
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    backgroundColor: Colors.bg,
   },
   shellBrand: {
     backgroundColor: Colors.brand,
-    borderBottomColor: Colors.brandDark,
+    borderBottomLeftRadius: Radius.xl,
+    borderBottomRightRadius: Radius.xl,
   },
   container: {
     width: '100%',
     maxWidth: Breakpoints.maxContent,
     alignSelf: 'center',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.lg,
   },
   topRow: {
@@ -119,25 +122,22 @@ const styles = StyleSheet.create({
   iconButton: {
     width: ComponentSize.touch,
     height: ComponentSize.touch,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surface2,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconButtonPressed: { backgroundColor: Colors.border },
+  iconButtonPressed: { backgroundColor: Colors.surface2 },
   iconButtonBrand: { backgroundColor: 'rgba(255,255,255,0.1)' },
   iconButtonBrandPressed: { backgroundColor: 'rgba(255,255,255,0.18)' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   content: {
-    paddingTop: Spacing.xs,
+    paddingTop: Spacing.sm,
     gap: 4,
   },
   title: {
+    ...Typography.title,
     color: Colors.text,
-    fontSize: FontSizes.xxl,
-    lineHeight: 32,
-    fontFamily: FontFamily.bold,
-    letterSpacing: -0.5,
   },
   titleBrand: { color: Palette.white },
   subtitle: {

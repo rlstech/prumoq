@@ -1,4 +1,4 @@
-import { useFonts } from '@expo-google-fonts/barlow/useFonts';
+import { useFonts } from 'expo-font';
 import { createContext, ReactNode, useContext, useEffect } from 'react';
 import { Text } from 'react-native';
 import {
@@ -31,14 +31,15 @@ export const fieldTheme = {
   componentSize: ComponentSize,
 } as const;
 
-/** Fontes empacotadas com o app (não dependem de rede): Barlow no texto,
- * Barlow Condensed nos títulos e JetBrains Mono em números e códigos. */
+/** Fontes empacotadas com o app (não dependem de rede): Figtree no texto e
+ * nos títulos, JetBrains Mono em números e códigos e Barlow Condensed só no
+ * logotipo. */
 const bundledFonts = {
-  Barlow_400Regular: require('@expo-google-fonts/barlow/400Regular/Barlow_400Regular.ttf'),
-  Barlow_500Medium: require('@expo-google-fonts/barlow/500Medium/Barlow_500Medium.ttf'),
-  Barlow_600SemiBold: require('@expo-google-fonts/barlow/600SemiBold/Barlow_600SemiBold.ttf'),
-  Barlow_700Bold: require('@expo-google-fonts/barlow/700Bold/Barlow_700Bold.ttf'),
-  BarlowCondensed_600SemiBold: require('@expo-google-fonts/barlow-condensed/600SemiBold/BarlowCondensed_600SemiBold.ttf'),
+  Figtree_400Regular: require('@expo-google-fonts/figtree/400Regular/Figtree_400Regular.ttf'),
+  Figtree_500Medium: require('@expo-google-fonts/figtree/500Medium/Figtree_500Medium.ttf'),
+  Figtree_600SemiBold: require('@expo-google-fonts/figtree/600SemiBold/Figtree_600SemiBold.ttf'),
+  Figtree_700Bold: require('@expo-google-fonts/figtree/700Bold/Figtree_700Bold.ttf'),
+  Figtree_800ExtraBold: require('@expo-google-fonts/figtree/800ExtraBold/Figtree_800ExtraBold.ttf'),
   BarlowCondensed_700Bold: require('@expo-google-fonts/barlow-condensed/700Bold/BarlowCondensed_700Bold.ttf'),
   JetBrainsMono_500Medium: require('@expo-google-fonts/jetbrains-mono/500Medium/JetBrainsMono_500Medium.ttf'),
   JetBrainsMono_600SemiBold: require('@expo-google-fonts/jetbrains-mono/600SemiBold/JetBrainsMono_600SemiBold.ttf'),

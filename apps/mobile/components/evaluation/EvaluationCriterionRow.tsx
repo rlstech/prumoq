@@ -102,11 +102,10 @@ const styles = StyleSheet.create({
     position: 'relative',
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    paddingLeft: Spacing.lg + 3,
     gap: Spacing.sm,
   },
-  rowBordered: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border },
-  datum: { position: 'absolute', left: 0, width: 3 },
+  rowBordered: { borderBottomWidth: 1, borderBottomColor: Colors.bg },
+  datum: { display: 'none' },
   datumPending: {
     top: Spacing.md,
     bottom: Spacing.md,

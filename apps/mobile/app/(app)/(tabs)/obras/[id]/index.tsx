@@ -233,7 +233,7 @@ export default function ObraDetailScreen() {
         <View style={styles.summary}>
           <View style={styles.summaryMetrics}>
             <View style={styles.summaryPrimary}>
-              <Text style={styles.summaryEyebrow}>PROGRESSO DA OBRA</Text>
+              <Text style={styles.summaryEyebrow}>Progresso da obra</Text>
               <Text style={styles.summaryValue}>{Math.round(progress)}%</Text>
               <Text style={styles.summaryLabel} numberOfLines={2}>
                 avanço ponderado das FVS
@@ -435,8 +435,6 @@ const styles = StyleSheet.create({
   summary: {
     minHeight: 112,
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     gap: Spacing.sm,
@@ -505,9 +503,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
     paddingLeft: Spacing.md,
     gap: Spacing.sm,
   },
@@ -589,8 +585,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FontFamily.semibold,
     fontSize: FontSizes.tiny,
-    textTransform: 'uppercase',
-    letterSpacing: 0.35,
+    letterSpacing: 0,
   },
   footerProgress: {
     fontFamily: FontFamily.monoSemibold,
