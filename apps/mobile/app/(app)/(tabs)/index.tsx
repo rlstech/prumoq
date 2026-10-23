@@ -9,13 +9,13 @@ import {
   ChevronRight,
   FileClock,
   History,
-  Plumb,
   Trash2,
 } from '../../../lib/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconBox } from '../../../components/IconBox';
+import { BrandMark } from '../../../components/BrandMark';
 import { ProgressBar } from '../../../components/ProgressBar';
 import { BadgeStatus, StatusBadge } from '../../../components/StatusBadge';
 import { SyncStatusIndicator } from '../../../components/SyncStatusIndicator';
@@ -450,7 +450,7 @@ export default function DashboardScreen() {
               style={({ pressed }) => [styles.identity, pressed && styles.pressed]}
             >
               <View style={styles.plumbMark}>
-                <Plumb size={34} color={Palette.accent} strokeWidth={1.7} />
+                <BrandMark size={36} variant="onBrand" />
               </View>
               <View style={styles.identityText}>
                 <Text style={styles.greetingSmall} numberOfLines={1}>{greetingFor()},</Text>

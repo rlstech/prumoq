@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { KeyRound, Mail, Plumb } from '../../lib/icons';
+import { KeyRound, Mail } from '../../lib/icons';
+import { BrandMark } from '../../components/BrandMark';
 import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -144,7 +145,7 @@ export default function RecoverPasswordScreen() {
           <View style={styles.card}>
             <View style={styles.brandRow}>
               <View style={styles.plumbMark}>
-                <Plumb size={30} color={Palette.accent} strokeWidth={1.7} />
+                <BrandMark size={33} variant="onBrand" />
               </View>
               <BrandWordmark fontSize={24} />
             </View>

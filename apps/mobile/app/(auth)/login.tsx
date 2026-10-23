@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { Plumb } from '../../lib/icons';
+import { BrandMark } from '../../components/BrandMark';
 import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -108,7 +108,7 @@ export default function LoginScreen() {
           <View style={styles.shell}>
             <View style={styles.brand}>
               <View style={styles.plumbMark}>
-                <Plumb size={44} color={Palette.accent} strokeWidth={1.7} />
+                <BrandMark size={50} variant="onBrand" />
               </View>
               <BrandWordmark fontSize={30} />
             </View>
