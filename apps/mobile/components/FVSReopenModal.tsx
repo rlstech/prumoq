@@ -1,12 +1,13 @@
 import { useQuery } from '@powersync/react';
 import { useEffect, useState } from 'react';
 import {
-  Alert, Modal, Pressable, ScrollView,
+  Modal, Pressable, ScrollView,
   Platform, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { Colors, FontSizes, Palette, Radius, Spacing, FontFamily, Typography } from '../lib/constants';
 import { RotateCcw } from '../lib/icons';
 import { db } from '../lib/powersync';
+import { alertInfo } from '../lib/platform-alert';
 import { useConta } from '../lib/auth/sessao';
 
 const purple = Colors.info;
@@ -95,7 +96,7 @@ export function FVSReopenModal({ visible, fvsId, obraId, onClose, onSuccess }: P
 
       onSuccess();
     } catch (e: any) {
-      Alert.alert('Erro', e.message ?? 'Não foi possível reabrir o serviço.');
+      alertInfo('Erro', e.message ?? 'Não foi possível reabrir o serviço.');
     } finally {
       setLoading(false);
     }

@@ -252,6 +252,41 @@ export const faceSymbolGeometry = {
   fittedViewBox: '-3 4 58 58',
 } as const;
 
+/**
+ * SVG do "Q de face" como texto, para HTML montado à mão (relatórios, favicon,
+ * painel). `ink` pinta o Q, o fio e o taco; o peso é sempre amarelo trena.
+ * `tile` desenha o ladrilho grafite de ícone de app em volta.
+ */
+export function faceSymbolSvg(options: {
+  ink?: string;
+  ribs?: boolean;
+  tile?: boolean;
+  className?: string;
+  size?: number;
+  title?: string;
+} = {}): string {
+  const g = faceSymbolGeometry;
+  const ink = options.ink ?? (options.tile ? trenaPalette.white : trenaPalette.graphite);
+  const ribs = options.ribs ?? true;
+  const size = options.size ? ` width="${options.size}" height="${options.size}"` : '';
+  const cls = options.className ? ` class="${options.className}"` : '';
+  const a11y = options.title ? `role="img" aria-label="${options.title}"` : 'aria-hidden="true"';
+  const glyph = [
+    `<circle cx="${g.ring.cx}" cy="${g.ring.cy}" r="${g.ring.radius}" fill="none" stroke="${ink}" stroke-width="${g.ring.strokeWidth}"/>`,
+    `<path d="M${g.cordTop.x} ${g.cordTop.top}V${g.cordTop.bottom}M${g.cordBottom.x} ${g.cordBottom.top}V${g.cordBottom.bottom}" stroke="${ink}" stroke-width="${g.cordTop.strokeWidth}"/>`,
+    `<rect x="${g.taco.x}" y="${g.taco.y}" width="${g.taco.width}" height="${g.taco.height}" rx="${g.taco.radius}" fill="${ink}"/>`,
+    `<path d="${g.weightPath}" fill="${trenaPalette.tapeYellow}"/>`,
+    ribs
+      ? `<path d="${g.ribs.y.map(y => `M${g.weight.x} ${y}H${g.weight.x + g.weight.width}`).join('')}" stroke="${trenaPalette.graphite}" stroke-width="${g.ribs.strokeWidth}"/>`
+      : '',
+  ].join('');
+  if (!options.tile) {
+    return `<svg xmlns="http://www.w3.org/2000/svg"${cls}${size} viewBox="${g.fittedViewBox}" ${a11y}>${glyph}</svg>`;
+  }
+  // Mesma proporção do favicon do PWA (prumoq-face.svg): marca a 78% no ladrilho de 64.
+  return `<svg xmlns="http://www.w3.org/2000/svg"${cls}${size} viewBox="0 0 64 64" ${a11y}><rect width="64" height="64" rx="13" fill="${trenaPalette.graphite}"/><g transform="translate(32 32) scale(0.78) translate(-26 -33)">${glyph}</g></svg>`;
+}
+
 export type MineralColorToken = keyof typeof mineralColors;
 export type TrenaColorToken = keyof typeof trenaColors;
 export type StatusTone = typeof statusTones[keyof typeof statusTones];

@@ -37,6 +37,7 @@ import { VerificationDraftV1 } from '../../../lib/verification/draft.types';
 import { draftStore } from '../../../lib/verification/draftStore';
 import { normalizeVerificationStep, VERIFICATION_STEPS, verificationStepIndex } from '../../../lib/verification/controller';
 import { getTodayIso } from '../../../lib/calendar';
+import { alertInfo } from '../../../lib/platform-alert';
 
 const WEEKDAY_ABBR = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTH_ABBR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -400,7 +401,7 @@ export default function DashboardScreen() {
       setDrafts(previous => previous.filter(draft => draft.draftId !== draftId));
     } catch (error) {
       console.warn('[Dashboard] discard draft error:', error);
-      Alert.alert('Erro', 'Não foi possível descartar o rascunho. Tente novamente.');
+      alertInfo('Erro', 'Não foi possível descartar o rascunho. Tente novamente.');
     }
   }, []);
 
