@@ -1,10 +1,11 @@
 /**
- * Ícones do PWA na identidade Trena.
+ * Ícones do PWA: pacote Seixo (identidade Trena Suave).
  *
  * Todas as telas importam daqui, nunca direto de 'lucide-react-native'.
- * - Os ícones mais visíveis (menu, obra, NC, sync, prazos, setas) são desenhados
- *   para o app: traço reto, cantos vivos, formas de canteiro (capacete no Perfil).
- * - Os demais vêm do Lucide com o mesmo acabamento: traço 2,3 e pontas retas.
+ * - Os ícones mais visíveis (menu, obra, NC, sync, prazos, setas, prumo) são
+ *   desenhados para o app numa grade de 24: traço 1,8, pontas e junções
+ *   arredondadas, cantos internos com raio 1,5.
+ * - Os demais vêm do Lucide com o mesmo acabamento (traço 1,8, pontas redondas).
  * A API é a do Lucide (size, color, strokeWidth, fill...), então trocar um
  * ícone entre os dois grupos não muda as telas.
  */
@@ -26,7 +27,6 @@ import {
   FileQuestion as LucideFileQuestion,
   FileText as LucideFileText,
   Flag as LucideFlag,
-  History as LucideHistory,
   Image as LucideImage,
   Images as LucideImages,
   Key as LucideKey,
@@ -45,7 +45,6 @@ import {
   Printer as LucidePrinter,
   RotateCcw as LucideRotateCcw,
   Save as LucideSave,
-  Search as LucideSearch,
   ShieldAlert as LucideShieldAlert,
   ShieldCheck as LucideShieldCheck,
   SlidersHorizontal as LucideSlidersHorizontal,
@@ -62,9 +61,9 @@ export type IconProps = LucideProps;
 export type IconComponent = ComponentType<IconProps>;
 
 /** Traço padrão quando a tela não define um. */
-export const ICON_STROKE = 2.3;
+export const ICON_STROKE = 1.8;
 
-const EDGES = { strokeLinecap: 'square', strokeLinejoin: 'miter' } as const;
+const EDGES = { strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
 /** Ícone desenhado para o app, numa grade de 24. */
 function drawn(name: string, d: string): IconComponent {
@@ -84,7 +83,7 @@ function drawn(name: string, d: string): IconComponent {
   return Icon;
 }
 
-/** Ícone do Lucide com o acabamento Trena (pontas retas e traço mais firme). */
+/** Ícone do Lucide com o acabamento Seixo (traço 1,8 e pontas redondas). */
 function tuned(name: string, Base: ComponentType<IconProps>): IconComponent {
   const Icon = forwardRef<Svg, IconProps>(function TunedIcon(props, ref) {
     // O Lucide repassa as props extras para cada traço do desenho.
@@ -95,28 +94,33 @@ function tuned(name: string, Base: ComponentType<IconProps>): IconComponent {
   return Icon;
 }
 
-// Desenhados para o app
-export const LayoutGrid = drawn('LayoutGrid', 'M3 3h8v10H3zM13 3h8v6h-8zM13 11h8v10h-8zM3 15h8v6H3z');
-export const Building2 = drawn('Building2', 'M4 21V3h11v18M15 9h5v12M2 21h20M7.5 7h4M7.5 11h4M7.5 15h4M17.5 13v.01M17.5 17v.01');
-export const AlertTriangle = drawn('AlertTriangle', 'M12 3l10 18H2zM12 10v5M12 17.5v.5');
-export const ClipboardCheck = drawn('ClipboardCheck', 'M8 3h8v3H8zM8 4.5H4V21h16V4.5h-4M8 13l2.5 2.5L16 10');
-export const User = drawn('User', 'M4 15a8 7.5 0 0 1 16 0M10 7.8V12M14 7.8V12M2 15h20v3H2z');
-export const HardHat = drawn('HardHat', 'M4 15a8 7.5 0 0 1 16 0M10 7.8V12M14 7.8V12M2 15h20v3H2z');
-export const RefreshCw = drawn('RefreshCw', 'M4 12a8 8 0 0 1 14-5.3L20 9M20 3.5V9h-5.5M20 12a8 8 0 0 1-14 5.3L4 15M4 20.5V15h5.5');
-export const Clock3 = drawn('Clock3', 'M3 3h18v18H3zM12 7v5.5l3.5 2');
-export const CalendarDays = drawn('CalendarDays', 'M3 5h18v16H3zM3 10h18M8 2v5M16 2v5M7 14h3v3H7z');
-export const Camera = drawn('Camera', 'M3 7h4l2-3h6l2 3h4v13H3zM16 13.5a4 4 0 1 1-8 0a4 4 0 1 1 8 0');
-export const ChevronRight = drawn('ChevronRight', 'M9 5l7 7-7 7');
-export const ChevronLeft = drawn('ChevronLeft', 'M15 5l-7 7 7 7');
-export const ChevronDown = drawn('ChevronDown', 'M5 9l7 7 7-7');
-export const ChevronUp = drawn('ChevronUp', 'M5 15l7-7 7 7');
-export const Check = drawn('Check', 'M4 12.5l5 5L20 6.5');
-export const X = drawn('X', 'M6 6l12 12M18 6L6 18');
-export const Plus = drawn('Plus', 'M12 4v16M4 12h16');
-export const ArrowRight = drawn('ArrowRight', 'M4 12h15M13 6l6 6-6 6');
-export const ArrowLeft = drawn('ArrowLeft', 'M20 12H5M11 6l-6 6 6 6');
+// Desenhados para o app (Seixo)
+export const Plumb = drawn('Plumb', 'M12 2.5v5M8 7.5h8L12 21.5z');
+export const Home = drawn('Home', 'M4 10.8L11 5a1.6 1.6 0 0 1 2 0l7 5.8V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9v5.5H5.5A1.5 1.5 0 0 1 4 19z');
+export const LayoutGrid = drawn('LayoutGrid', 'M6 4h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM15 4h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM6 13h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2zM15 13h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2z');
+export const Building2 = drawn('Building2', 'M5 20V9.8a1.5 1.5 0 0 1 .7-1.3l5.5-3.3a1.5 1.5 0 0 1 1.6 0l5.5 3.3a1.5 1.5 0 0 1 .7 1.3V20M3.5 20h17M10 20v-4.5h4V20M9.5 11h.01M14.5 11h.01');
+export const AlertTriangle = drawn('AlertTriangle', 'M10.3 5.2a2 2 0 0 1 3.4 0l6.6 11.3a2 2 0 0 1-1.7 3H5.4a2 2 0 0 1-1.7-3zM12 10v3.5M12 16.4v.1');
+export const ClipboardCheck = drawn('ClipboardCheck', 'M8 5H6.5A1.5 1.5 0 0 0 5 6.5v13A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 17.5 5H16M9.5 3.5h5a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1zM9 13.5l2 2 4-4');
+export const Star = drawn('Star', 'M12 4.5l2.2 4.5 4.9.7-3.5 3.4.8 4.9-4.4-2.3-4.4 2.3.8-4.9-3.5-3.4 4.9-.7z');
+export const HardHat = drawn('HardHat', 'M3.5 17.5h17M5.5 17.5V15a6.5 6.5 0 0 1 13 0v2.5M10 8.8V6.5a2 2 0 0 1 4 0v2.3');
+export const User = HardHat;
+export const RefreshCw = drawn('RefreshCw', 'M19 12a7 7 0 0 1-12.5 4.3M5 12a7 7 0 0 1 12.5-4.3M17.5 4v3.7h-3.7M6.5 20v-3.7h3.7');
+export const History = drawn('History', 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v3h3M12 8v4l2.5 2.5');
+export const Clock3 = drawn('Clock3', 'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 8v4.5l3 2');
+export const CalendarDays = drawn('CalendarDays', 'M6.5 6h11A1.5 1.5 0 0 1 19 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5v-11A1.5 1.5 0 0 1 6.5 6zM5 10.5h14M9 4v3.5M15 4v3.5M9 14.5h.01M12 14.5h.01M15 14.5h.01');
+export const Camera = drawn('Camera', 'M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5zM12 15.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z');
+export const Search = drawn('Search', 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5L20 20');
+export const ChevronRight = drawn('ChevronRight', 'M10 6l6 6-6 6');
+export const ChevronLeft = drawn('ChevronLeft', 'M14 6l-6 6 6 6');
+export const ChevronDown = drawn('ChevronDown', 'M6 10l6 6 6-6');
+export const ChevronUp = drawn('ChevronUp', 'M6 14l6-6 6 6');
+export const Check = drawn('Check', 'M5 12.5l4.5 4.5L19 7.5');
+export const X = drawn('X', 'M7 7l10 10M17 7L7 17');
+export const Plus = drawn('Plus', 'M12 5v14M5 12h14');
+export const ArrowRight = drawn('ArrowRight', 'M5 12h14M13 6l6 6-6 6');
+export const ArrowLeft = drawn('ArrowLeft', 'M19 12H5M11 6l-6 6 6 6');
 
-// Lucide com acabamento Trena
+// Lucide com acabamento Seixo
 export const AlertCircle = tuned('AlertCircle', LucideAlertCircle);
 export const BadgeCheck = tuned('BadgeCheck', LucideBadgeCheck);
 export const CalendarClock = tuned('CalendarClock', LucideCalendarClock);
@@ -132,7 +136,6 @@ export const FileDown = tuned('FileDown', LucideFileDown);
 export const FileQuestion = tuned('FileQuestion', LucideFileQuestion);
 export const FileText = tuned('FileText', LucideFileText);
 export const Flag = tuned('Flag', LucideFlag);
-export const History = tuned('History', LucideHistory);
 export const Image = tuned('Image', LucideImage);
 export const Images = tuned('Images', LucideImages);
 export const Key = tuned('Key', LucideKey);
@@ -151,7 +154,6 @@ export const Phone = tuned('Phone', LucidePhone);
 export const Printer = tuned('Printer', LucidePrinter);
 export const RotateCcw = tuned('RotateCcw', LucideRotateCcw);
 export const Save = tuned('Save', LucideSave);
-export const Search = tuned('Search', LucideSearch);
 export const ShieldAlert = tuned('ShieldAlert', LucideShieldAlert);
 export const ShieldCheck = tuned('ShieldCheck', LucideShieldCheck);
 export const SlidersHorizontal = tuned('SlidersHorizontal', LucideSlidersHorizontal);

@@ -882,8 +882,6 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   contextList: {
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     overflow: 'hidden',
   },
@@ -997,8 +995,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.md,
     padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     backgroundColor: Colors.surface2,
   },

@@ -119,9 +119,9 @@ export const SemanticColors = {
 } as const;
 
 export const Radius = {
-  xs: trenaRadius.control,
+  xs: trenaRadius.chip,
   sm: trenaRadius.control,
-  md: trenaRadius.card,
+  md: trenaRadius.tile,
   lg: trenaRadius.card,
   xl: trenaRadius.feature,
   full: trenaRadius.full,
@@ -155,54 +155,56 @@ export const FontSizes = {
 } as const;
 
 export const FontFamily = {
-  regular: 'Barlow_400Regular',
-  medium: 'Barlow_500Medium',
-  semibold: 'Barlow_600SemiBold',
-  bold: 'Barlow_700Bold',
-  /** Títulos, botões e rótulos de seção (Barlow Condensed, geralmente em caixa alta). */
-  display: 'BarlowCondensed_700Bold',
-  displaySemibold: 'BarlowCondensed_600SemiBold',
+  regular: 'Figtree_400Regular',
+  medium: 'Figtree_500Medium',
+  semibold: 'Figtree_600SemiBold',
+  bold: 'Figtree_700Bold',
+  /** Títulos, números grandes e botões (Figtree ExtraBold, sem caixa alta). */
+  display: 'Figtree_800ExtraBold',
+  displaySemibold: 'Figtree_700Bold',
+  /** Só o logotipo PRUMOQ continua em Barlow Condensed. */
+  wordmark: 'BarlowCondensed_700Bold',
   mono: 'JetBrainsMono_500Medium',
   monoSemibold: 'JetBrainsMono_600SemiBold',
   monoBold: 'JetBrainsMono_700Bold',
 } as const;
 
+/**
+ * Trena Suave: Figtree em caixa normal, títulos pesados com espaçamento
+ * negativo e rótulos discretos. Nada de caixa alta fora do logotipo.
+ */
 export const Typography = {
-  // Títulos em Barlow Condensed: a condensada é mais estreita, por isso os tamanhos sobem um pouco.
-  display: { fontFamily: FontFamily.display, fontSize: 44, lineHeight: 46, letterSpacing: 0 },
-  title: { fontFamily: FontFamily.display, fontSize: 30, lineHeight: 32, letterSpacing: 0 },
-  heading: { fontFamily: FontFamily.display, fontSize: 24, lineHeight: 28, letterSpacing: 0.1 },
+  display: { fontFamily: FontFamily.display, fontSize: 40, lineHeight: 44, letterSpacing: -1.2 },
+  title: { fontFamily: FontFamily.display, fontSize: 28, lineHeight: 32, letterSpacing: -0.7 },
+  heading: { fontFamily: FontFamily.bold, fontSize: 19, lineHeight: 24, letterSpacing: -0.2 },
   body: { fontFamily: FontFamily.regular, fontSize: FontSizes.md, lineHeight: 24 },
   bodyMedium: { fontFamily: FontFamily.medium, fontSize: FontSizes.md, lineHeight: 24 },
   label: { fontFamily: FontFamily.semibold, fontSize: FontSizes.sm, lineHeight: 20 },
   caption: { fontFamily: FontFamily.regular, fontSize: FontSizes.xs, lineHeight: 18 },
   button: {
-    fontFamily: FontFamily.display,
-    fontSize: 17,
+    fontFamily: FontFamily.bold,
+    fontSize: 16,
     lineHeight: 20,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase' as const,
+    letterSpacing: 0,
   },
   overline: {
-    fontFamily: FontFamily.display,
-    fontSize: FontSizes.sm,
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSizes.xs,
     lineHeight: 18,
-    letterSpacing: 0.9,
-    textTransform: 'uppercase' as const,
+    letterSpacing: 0,
   },
-  /** Título em caixa alta: saudação, nomes de obra, cabeçalhos de card. */
+  /** Título de destaque: saudação, nomes de obra, cabeçalhos de card. */
   displayCaps: {
     fontFamily: FontFamily.display,
-    fontSize: 32,
+    fontSize: 30,
     lineHeight: 34,
-    letterSpacing: 0.2,
-    textTransform: 'uppercase' as const,
+    letterSpacing: -0.8,
   },
   /** Números de destaque (KPIs, percentuais, prazos). */
   metric: { fontFamily: FontFamily.monoBold, fontSize: 22, lineHeight: 26, letterSpacing: -0.3 },
 } as const;
 
-/** Espessura das bordas: na identidade Trena os cards se separam por borda, não por sombra. */
+/** Espessura das bordas: na Trena Suave só os campos têm borda; cartões se separam pelo tom. */
 export const BorderWidth = {
   hairline: trenaBorder.hairline,
   card: trenaBorder.card,
@@ -210,7 +212,7 @@ export const BorderWidth = {
 } as const;
 
 export const Elevation = {
-  /** Sem sombra: o card se destaca pela borda (BorderWidth.card). */
+  /** Sem sombra: o card branco se destaca do concreto pelo tom. */
   card: {
     shadowColor: Palette.ink,
     shadowOffset: { width: 0, height: 0 },
@@ -245,7 +247,7 @@ export const ComponentSize = {
   touch: 44,
   input: 48,
   /** Botões maiores para uso com luva. */
-  button: 52,
+  button: 56,
   /** Joined answer control (ChoiceToggle): icon over label needs the extra
    * height, and it buys an equal-thirds target of ~118×56 on a 390pt screen. */
   choice: 56,

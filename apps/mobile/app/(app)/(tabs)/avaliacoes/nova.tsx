@@ -601,7 +601,7 @@ export default function NewEvaluationScreen() {
             <View style={styles.section}>
               <Badge tone="warning" size="sm" label="Assinada · aguardando aprovação" Icon={LockKeyhole} />
               <SectionTitle
-                eyebrow="AGUARDANDO APROVAÇÃO"
+                eyebrow="Aguardando aprovação"
                 title="Esta avaliação já foi assinada"
                 description="Reabrir volta ela para rascunho — as respostas atuais ficam preservadas, só a assinatura é desfeita. Será preciso assinar de novo para concluir."
               />
@@ -685,7 +685,7 @@ export default function NewEvaluationScreen() {
                   <>
                     <View style={styles.section}>
                       <SectionTitle
-                        eyebrow="CRITÉRIOS"
+                        eyebrow="Critérios"
                         title={selectedModel.nome}
                         description={`Revisão ${selectedModel.numero_revisao} · peso total ${total} pontos`}
                       />
@@ -751,7 +751,7 @@ export default function NewEvaluationScreen() {
                   onLayout={event => { blockOffsets.current.registros = event.nativeEvent.layout.y; }}
                 >
                   <SectionTitle
-                    eyebrow="REGISTROS"
+                    eyebrow="Registros"
                     title="Ocorrências e providências"
                     description="Fica anexado ao documento assinado."
                   />

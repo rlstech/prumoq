@@ -31,7 +31,7 @@ export function MeasurementAdvanceSection({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.overline}>AVANÇO FÍSICO · OPCIONAL</Text>
+      <Text style={styles.overline}>Avanço físico · Opcional</Text>
       <Text style={styles.helper}>
         Informe apenas o que foi executado e aprovado nesta verificação — o sistema soma ao acumulado.
       </Text>

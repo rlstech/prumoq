@@ -221,7 +221,7 @@ export default function AmbienteScreen() {
       >
         <View style={styles.summary}>
           <View style={styles.summaryPrimary}>
-            <Text style={styles.summaryEyebrow}>PROGRESSO DO AMBIENTE</Text>
+            <Text style={styles.summaryEyebrow}>Progresso do ambiente</Text>
             <Text style={styles.summaryValue}>{Math.round(summary.progress)}%</Text>
             <Text style={styles.summaryLabel}>avanço ponderado dos serviços</Text>
           </View>
@@ -418,8 +418,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'stretch',
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
   },
@@ -459,9 +457,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
     paddingLeft: Spacing.md,
     gap: Spacing.sm,
   },
@@ -543,8 +539,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FontFamily.semibold,
     fontSize: FontSizes.tiny,
-    textTransform: 'uppercase',
-    letterSpacing: 0.35,
+    letterSpacing: 0,
   },
   loading: { gap: Spacing.md },
   skeletonGroup: { width: 140, height: 20, borderRadius: Radius.sm },

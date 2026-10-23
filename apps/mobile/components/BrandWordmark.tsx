@@ -20,7 +20,7 @@ export function BrandWordmark({ fontSize = 18, variant = 'default' }: Props) {
       accessibilityRole="text"
       accessibilityLabel="PrumoQ"
       style={{
-        fontFamily: FontFamily.display,
+        fontFamily: FontFamily.wordmark,
         fontSize,
         lineHeight: Math.round(fontSize * 1.1),
         letterSpacing: fontSize * 0.02,

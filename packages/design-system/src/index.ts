@@ -206,19 +206,24 @@ export const trenaColors = {
   overlay: trenaPalette.overlay,
 } as const satisfies Record<keyof typeof mineralColors, string>;
 
-/** Cantos quase retos: bordas no lugar de sombras. */
+/**
+ * Trena Suave: cantos de seixo. Chips e miniaturas em 12, controles em 16,
+ * blocos internos em 20, cartões em 24, destaques em 32; botões em pílula.
+ */
 export const trenaRadius = {
-  control: 3,
-  card: 4,
-  feature: 6,
+  chip: 12,
+  control: 16,
+  tile: 20,
+  card: 24,
+  feature: 32,
   full: 9999,
 } as const;
 
-/** Espessura das bordas de cards e controles. */
+/** Bordas só em campos de formulário: cartões se separam do concreto pelo tom. */
 export const trenaBorder = {
   hairline: 1,
-  card: 1.5,
-  control: 2,
+  card: 1,
+  control: 1.5,
 } as const;
 
 /**

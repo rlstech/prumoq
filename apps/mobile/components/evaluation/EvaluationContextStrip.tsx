@@ -10,7 +10,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Badge, InlineDateField, SelectField, SelectOption } from '../ui';
-import { Colors, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography, BorderWidth } from '../../lib/constants';
+import { Colors, Elevation, FontFamily, FontSizes, Radius, Spacing, Typography } from '../../lib/constants';
 
 interface Props {
   /** True when the evaluation was opened from a medição, which already names
@@ -163,18 +163,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: BorderWidth.card,
-    borderColor: Colors.border,
     ...Elevation.card,
   },
-  datum: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: 3,
-    backgroundColor: Colors.brandSignature,
-  },
+  datum: { display: 'none' },
   header: {
     minHeight: 64,
     flexDirection: 'row',
@@ -182,16 +173,13 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    paddingLeft: Spacing.lg + 3,
   },
   headerPressed: { backgroundColor: Colors.surface2 },
   icon: {
     width: 32,
     height: 32,
-    borderRadius: Radius.xs,
+    borderRadius: Radius.full,
     backgroundColor: Colors.brandLight,
-    borderWidth: BorderWidth.card,
-    borderColor: Colors.text,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -202,9 +190,8 @@ const styles = StyleSheet.create({
   metaMono: { fontFamily: FontFamily.mono, fontSize: FontSizes.tiny, color: Colors.textSecondary },
   body: {
     paddingHorizontal: Spacing.lg,
-    paddingLeft: Spacing.lg + 3,
     paddingBottom: Spacing.md,
     gap: Spacing.md,
   },
-  hairline: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.border, marginBottom: Spacing.xs },
+  hairline: { height: 1, backgroundColor: Colors.bg, marginBottom: Spacing.xs },
 });

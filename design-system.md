@@ -5,13 +5,13 @@ O PrumoQ tem duas identidades visuais, com tokens no mesmo pacote
 
 | App | Identidade | Tokens |
 |---|---|---|
-| PWA de campo (`apps/mobile`) | **Trena** (desde out/2026) | `trenaPalette`, `trenaColors`, `trenaRadius`, `trenaBorder`, `faceSymbolGeometry` |
+| PWA de campo (`apps/mobile`) | **Trena Suave** (desde out/2026) | `trenaPalette`, `trenaColors`, `trenaRadius`, `trenaBorder`, `faceSymbolGeometry` |
 | Painel admin (`apps/admin`) | **Prumo Mineral** (a migrar) | `mineralPalette`, `mineralColors`, `mineralRadius`, `prumoSymbolGeometry`, `tokens.css` |
 
 A seção Trena vem primeiro. A partir de "Prumo Mineral (admin)", o texto vale
 para o painel; as seções de layout e acessibilidade valem para os dois.
 
-# Trena (PWA)
+# Trena Suave (PWA)
 
 ## Conceito
 
@@ -21,8 +21,9 @@ cilíndrico com a mesma largura). O app é usado sob sol, com luva e pressa, ent
 a prioridade é contraste máximo e alvos grandes.
 
 - Grafite e amarelo de trena; fundo cinza-concreto e cards brancos.
-- Bordas no lugar de sombras; cantos quase retos (3–6px).
-- Números em fonte mono, grandes.
+- Minimalista: cartões sem borda (o branco se separa do concreto pelo tom),
+  cantos de seixo (12–32px) e botões, chips e etiquetas em pílula.
+- Números em fonte mono; o número principal da tela é grande (Figtree 800).
 - Amarelo é escasso: ação principal, item ativo, destaque. Texto sobre amarelo
   é sempre grafite.
 
@@ -58,30 +59,36 @@ grafite (`Colors.text`).
 
 Fontes empacotadas no app (`lib/theme/ThemeProvider.tsx`, `@expo-google-fonts`):
 
-- **Barlow Condensed** 600/700 (`FontFamily.display`): títulos, botões, rótulos
-  de seção, nomes de obra. Botões e rótulos em caixa alta.
-- **Barlow** 400–700: texto.
+- **Figtree** 400–800: texto (`FontFamily.regular`…`bold`) e títulos
+  (`FontFamily.display`, 800, espaçamento negativo). Sem caixa alta.
 - **JetBrains Mono** 500–700 (`FontFamily.mono*`): números, percentuais, prazos,
   códigos.
+- **Barlow Condensed** 700 (`FontFamily.wordmark`): só o logotipo PRUMOQ.
 
-Estilos em `Typography`: `displayCaps` (saudação, títulos em caixa alta),
-`metric` (números de destaque), `button`, `overline`.
+Estilos em `Typography`: `title` (título de tela), `heading` (título de seção),
+`displayCaps` (destaque), `metric` (números), `button`, `overline` (rótulo
+pequeno em caixa normal).
 
 ## Forma
 
-- Raios (`Radius`): `xs`/`sm` 3px (controles, etiquetas, avatares), `md`/`lg`
-  4px (cards), `xl` 6px (menu inferior, superfícies grandes). Círculo só para
-  pontos de status, rádio e botões sobre foto.
-- Bordas (`BorderWidth`): 1,5px em cards e controles. Sem sombra em card
-  (`Elevation.card` é nula); sombra só no que flutua.
-- Botão principal: 52px de altura.
+- Raios (`Radius`, de `trenaRadius`): `xs` 12px (chips de ícone, miniaturas),
+  `sm` 16px (campos, ladrilhos de ícone), `md` 20px (blocos internos, linhas
+  tocáveis), `lg` 24px (cartões), `xl` 32px (cartões de destaque, folhas),
+  `full` (botões, chips, etiquetas, abas, avatares, menu).
+- Bordas: só em campos de formulário (1px `borderNormal`), área de foto
+  tracejada e estados de erro. Cartões e listas não têm borda; divisores
+  internos são 1px no tom do concreto. Sem sombra em card; sombra só no que
+  flutua (menu, folhas).
+- Botão principal: pílula de 56px; secundário em pílula no tom do concreto.
 
 ## Ícones
 
-Sempre de `apps/mobile/lib/icons.tsx`, nunca direto de `lucide-react-native`.
-Os mais visíveis são desenhados para o app (traço reto, cantos vivos, capacete
-no Perfil); os demais vêm do Lucide com traço 2,3 e pontas retas. Mesma API do
-Lucide. Ícone novo: adicione o nome ali.
+Pacote **Seixo**, sempre de `apps/mobile/lib/icons.tsx`, nunca direto de
+`lucide-react-native`. Grade de 24, traço 1,8, pontas e junções arredondadas,
+cantos internos com raio 1,5. Os mais visíveis são desenhados para o app
+(`Home`, `Building2`, `AlertTriangle`, `Star`, `HardHat`, `Plumb`, `History`,
+setas...); os demais vêm do Lucide com o mesmo acabamento. Mesma API do Lucide.
+Ícone novo: adicione o nome ali.
 
 ## Marca: Q de face
 
@@ -100,15 +107,17 @@ na cor da tinta; peso sempre amarelo; frisos do peso só a partir de 40px.
 
 ## Componentes de assinatura
 
-- **Capa do Início** (`DashboardCanopy`): grafite chapado, régua na borda de
-  baixo, prumo de face pendurado à direita.
-- **Anel de conformidade** (`ConformityRing`): mostrador com arco amarelo e marcas
-  a cada 5%.
-- **Trena** (`ProgressBar`): fundo branco com borda grafite, preenchimento amarelo
-  (verde quando 100%) e marcas a cada 5%/10%.
-- **Etiquetas** (`StatusBadge`, prazos): retas, ponto quadrado, caixa alta. Prazo
-  vencido em vermelho cheio, até 3 dias em amarelo, depois só contorno.
-- **Menu inferior**: grafite, bloco amarelo atrás do ícone ativo.
+- **Início**: prumo amarelo num círculo grafite, número da semana grande direto
+  no concreto, pílulas de NC/resolvidas/conformidade, cartão amarelo "Continuar
+  vistoria" e atalho em pílula para o **Histórico** (`app/(app)/(tabs)/historico.tsx`).
+- **Trena** (`ProgressBar`): fita em pílula sem borda, marcas discretas a cada
+  5%/10%; no cartão amarelo vira grafite com marcas amarelas.
+- **Resposta do item** (`ChoiceToggle`/`ResultToggle`): três ladrilhos
+  arredondados; o escolhido fica sólido na cor do estado, texto branco.
+- **Etiquetas** (`Badge`, `StatusBadge`): pílulas sem borda, fundo suave.
+- **Menu** (`components/FloatingTabBar.tsx`): pílula grafite solta da borda; a
+  aba ativa vira pílula amarela com nome, as demais só ícone. No tablet, trilho
+  vertical com a mesma linguagem.
 
 # Prumo Mineral (admin)
 

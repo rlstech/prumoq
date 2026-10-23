@@ -189,7 +189,7 @@ export default function PerfilScreen() {
         ) : null}
 
         {/* Dados do usuário */}
-        <Text style={s.sectionLabel}>DADOS DO USUÁRIO</Text>
+        <Text style={s.sectionLabel}>Dados do usuário</Text>
         <View style={s.dataCard}>
           {infoRows.map((row, idx) => {
             const Icon = row.icon;
@@ -211,7 +211,7 @@ export default function PerfilScreen() {
         </View>
 
         <View style={s.divider} />
-        <Text style={s.sectionLabel}>ASSINATURA PADRÃO</Text>
+        <Text style={s.sectionLabel}>Assinatura padrão</Text>
         <View style={s.signatureCard}>
           <View style={s.pfIcon}><PenLine size={16} color={Colors.brand} /></View>
           <View style={s.pfInfo}>
@@ -233,7 +233,7 @@ export default function PerfilScreen() {
         <View style={s.divider} />
 
         {/* Minhas estatísticas */}
-        <Text style={s.sectionLabel}>MINHAS ESTATÍSTICAS</Text>
+        <Text style={s.sectionLabel}>Minhas estatísticas</Text>
         <View style={s.statsGrid}>
           <StatCard value={stats.obras}      label="Obras ativas"  bg={Colors.progressBg} color={Colors.progress} />
           <StatCard value={stats.total}      label="Total verif."  bg={Colors.surface2}   color={Colors.text} />
@@ -249,7 +249,7 @@ export default function PerfilScreen() {
         {/* Obras com acesso */}
         {obrasRows.length > 0 && (
           <>
-            <Text style={s.sectionLabel}>OBRAS COM ACESSO</Text>
+            <Text style={s.sectionLabel}>Obras com acesso</Text>
             {obrasRows.map(o => {
               const location = [o.municipio, o.uf].filter(Boolean).join(', ');
               return (
@@ -309,8 +309,7 @@ const s = StyleSheet.create({
   avatar: {
     width: 64,
     height: 64,
-    borderRadius: Radius.xs,
-    // Avatar quadrado em amarelo trena, igual ao da tela de Início.
+    borderRadius: Radius.full,
     backgroundColor: Colors.brandSignature,
     alignItems: 'center',
     justifyContent: 'center',
@@ -330,8 +329,6 @@ const s = StyleSheet.create({
   },
   errorCard: {
     backgroundColor: Colors.nokBg,
-    borderWidth: 1,
-    borderColor: Colors.nok,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.md,
@@ -348,8 +345,7 @@ const s = StyleSheet.create({
     fontSize: FontSizes.tiny - 1,
     fontFamily: FontFamily.semibold,
     color: Colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0,
     marginBottom: 8,
   },
 
@@ -357,13 +353,11 @@ const s = StyleSheet.create({
   dataCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
     overflow: 'hidden',
     marginBottom: 0,
   },
-  signatureCard: { backgroundColor: Colors.surface, borderRadius: Radius.lg, borderWidth: 0.5, borderColor: Colors.border, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  signatureAction: { borderWidth: 1, borderColor: Colors.brand, borderRadius: Radius.md, paddingHorizontal: Spacing.sm, paddingVertical: 8 },
+  signatureCard: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  signatureAction: { backgroundColor: Colors.surface2, borderRadius: Radius.full, paddingHorizontal: Spacing.lg, paddingVertical: 10 },
   signatureActionText: { ...Typography.label, color: Colors.brand },
   signatureError: { ...Typography.caption, color: Colors.nok, marginTop: Spacing.xs },
   pfRow: {
@@ -372,15 +366,15 @@ const s = StyleSheet.create({
     gap: 12,
     paddingVertical: 13,
     paddingHorizontal: Spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.bg,
   },
   pfRowLast: { borderBottomWidth: 0 },
   pfIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: Colors.surface2,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -391,9 +385,8 @@ const s = StyleSheet.create({
 
   // Divider
   divider: {
-    height: 0.5,
-    backgroundColor: Colors.border,
-    marginVertical: 13,
+    height: 0,
+    marginVertical: 12,
   },
 
   // Stats grid
@@ -402,8 +395,6 @@ const s = StyleSheet.create({
   // Obra cards
   obraCard: {
     backgroundColor: Colors.surface,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.lg,
     paddingVertical: 13,
     paddingHorizontal: 15,
@@ -412,16 +403,14 @@ const s = StyleSheet.create({
   obraCardRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   obraNome:     { fontSize: FontSizes.base, fontWeight: '500', color: Colors.text, flex: 1, marginRight: 8 },
   obraLocation: { fontSize: FontSizes.sm, color: Colors.textSecondary, marginTop: 2 },
-  ativoBadge:   { backgroundColor: Colors.progressBg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.xs },
+  ativoBadge:   { backgroundColor: Colors.progressBg, paddingHorizontal: 10, paddingVertical: 3, borderRadius: Radius.full },
   ativoText:    { fontSize: FontSizes.tiny - 1, fontWeight: '500', color: Colors.progress },
 
   // Account actions
   passwordBtn: {
     minHeight: 48,
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.full,
     padding: 13,
     marginBottom: Spacing.sm,
     flexDirection: 'row',
@@ -433,9 +422,7 @@ const s = StyleSheet.create({
   logoutBtn: {
     minHeight: 48,
     backgroundColor: Colors.nokBg,
-    borderWidth: 1,
-    borderColor: Colors.nok,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.full,
     padding: 13,
     alignItems: 'center',
     justifyContent: 'center',

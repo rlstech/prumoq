@@ -8,6 +8,8 @@ interface Props {
   /** `onBrand` na capa do dashboard; `surface` nos cabecalhos claros. */
   tone?: SyncIndicatorTone;
   compact?: boolean;
+  /** Rótulo curto ("Offline") para caber ao lado da saudação. */
+  short?: boolean;
 }
 
 interface PendingRow { pendentes: number }
@@ -21,7 +23,7 @@ interface PendingRow { pendentes: number }
  * estava em dia. Agora `uploadError` e a quarentena mandam no estado, e tocar
  * no indicador abre a tela que explica o que travou.
  */
-export function SyncStatusIndicator({ tone = 'surface', compact = true }: Props = {}) {
+export function SyncStatusIndicator({ tone = 'surface', compact = true, short = false }: Props = {}) {
   const router = useRouter();
   const status = useStatus();
   const conexao = useConexaoEstavel();
@@ -53,7 +55,7 @@ export function SyncStatusIndicator({ tone = 'surface', compact = true }: Props 
     state = 'syncing';
   }
 
-  const indicator = <SyncIndicator state={state} label={label} compact={compact} tone={tone} />;
+  const indicator = <SyncIndicator state={state} label={label} compact={compact} tone={tone} short={short} />;
   if (state !== 'error') return indicator;
 
   return (

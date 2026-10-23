@@ -33,7 +33,7 @@ export function EvidenceSection({
 }: Props) {
   return (
     <View style={styles.section}>
-      <Text style={styles.overline}>EVIDÊNCIAS</Text>
+      <Text style={styles.overline}>Evidências</Text>
 
       {isReinspection ? (
         <PhotoSlot

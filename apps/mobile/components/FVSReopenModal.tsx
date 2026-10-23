@@ -241,6 +241,6 @@ const st = StyleSheet.create({
   footer: { padding: Spacing.lg, gap: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.border },
   btn:          { padding: Spacing.md, borderRadius: Radius.md, alignItems: 'center' },
   btnText:      { color: '#fff', fontWeight: '600', fontSize: FontSizes.sm },
-  btnGhost:     { backgroundColor: Colors.surface2, borderWidth: 1, borderColor: Colors.border },
+  btnGhost:     { backgroundColor: Colors.surface2 },
   btnGhostText: { color: Colors.text, fontWeight: '500', fontSize: FontSizes.sm },
 });

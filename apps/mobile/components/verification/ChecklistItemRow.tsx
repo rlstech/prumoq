@@ -174,13 +174,13 @@ export function ChecklistItemRow({
                 <View style={styles.methodExpanded}>
                   {item.metodo_verif ? (
                     <View style={styles.methodBlock}>
-                      <Text style={styles.overline}>MÉTODO</Text>
+                      <Text style={styles.overline}>Método</Text>
                       <Text style={styles.methodText}>{item.metodo_verif}</Text>
                     </View>
                   ) : null}
                   {item.tolerancia ? (
                     <View style={styles.methodBlock}>
-                      <Text style={styles.overline}>TOLERÂNCIA</Text>
+                      <Text style={styles.overline}>Tolerância</Text>
                       <Text style={styles.toleranceText}>{item.tolerancia}</Text>
                     </View>
                   ) : null}
@@ -216,8 +216,10 @@ export function ChecklistItemRow({
 
 const styles = StyleSheet.create({
   row: { position: 'relative' },
-  rowBordered: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border },
-  datum: { position: 'absolute', left: 0, width: 3 },
+  rowBordered: { borderBottomWidth: 1, borderBottomColor: Colors.bg },
+  // Trena Suave: sem fio lateral; o número em amarelo marca o próximo item e o
+  // botão escolhido mostra a resposta.
+  datum: { display: 'none' },
   datumPending: {
     top: Spacing.md,
     bottom: Spacing.md,
@@ -229,7 +231,6 @@ const styles = StyleSheet.create({
   open: {
     paddingVertical: Spacing.md + 2,
     paddingHorizontal: Spacing.lg,
-    paddingLeft: Spacing.lg + 3,
     gap: 10,
   },
   collapsed: {
@@ -239,7 +240,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    paddingLeft: Spacing.lg + 3,
   },
   collapsedPressed: { backgroundColor: Colors.surface2 },
   collapsedBody: { flex: 1, minWidth: 0, gap: 1 },

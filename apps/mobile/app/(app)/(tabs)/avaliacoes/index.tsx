@@ -211,8 +211,6 @@ const styles = StyleSheet.create({
   },
   hero: {
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     flexDirection: 'row',
@@ -256,8 +254,7 @@ const styles = StyleSheet.create({
   footerLabel: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSizes.tiny,
-    textTransform: 'uppercase',
-    letterSpacing: 0.35,
+    letterSpacing: 0,
   },
   footerDate: {
     flex: 1,

@@ -81,8 +81,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FontSizes.xs,
     fontFamily: FontFamily.bold,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    letterSpacing: 0,
   },
   labelSm: {
     fontSize: 11,

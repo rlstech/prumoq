@@ -262,7 +262,7 @@ Veja `.env.example`. Arquivos `.env.local` só com valores públicos; segredos n
 ## Design
 
 **`design-system.md` e `packages/design-system/` são a referência visual definitiva.**
-São duas identidades: **Trena** no PWA (grafite + amarelo de trena, logo "Q de face") e
+São duas identidades: **Trena Suave** no PWA (grafite + amarelo de trena, cantos de seixo, ícones Seixo, Figtree; logo "Q de face") e
 **Prumo Mineral** no admin (azul prumo + cal viva), que ainda não migrou. Os protótipos
 HTML em `references/` continuam válidos para conteúdo e fluxos, não para cores,
 tipografia ou shell.

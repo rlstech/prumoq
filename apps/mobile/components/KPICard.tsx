@@ -43,8 +43,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
     padding: Spacing.md,
     gap: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   value: {
     fontSize: FontSizes.xxl,

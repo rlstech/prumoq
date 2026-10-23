@@ -54,7 +54,7 @@ export function NCResolvedScreen({
             <Text style={st.heroSubtitle}>Item aprovado na re-inspeção</Text>
           </View>
 
-          <Text style={st.secTitle}>RESUMO</Text>
+          <Text style={st.secTitle}>Resumo</Text>
           <View style={st.table}>
             {rows.map(([k, v], i) => (
               <View key={k} style={[st.tableRow, i === rows.length - 1 && { borderBottomWidth: 0 }]}>
@@ -66,7 +66,7 @@ export function NCResolvedScreen({
 
           {fotoUri ? (
             <>
-              <Text style={[st.secTitle, { marginTop: Spacing.lg }]}>FOTO DA RESOLUÇÃO</Text>
+              <Text style={[st.secTitle, { marginTop: Spacing.lg }]}>Foto da resolução</Text>
               <Image source={{ uri: fotoUri }} style={st.photo} resizeMode="cover" />
             </>
           ) : null}
@@ -103,7 +103,7 @@ const st = StyleSheet.create({
 
   secTitle: { fontSize: 11, fontWeight: '600', color: Colors.textTertiary, letterSpacing: 0.5, marginBottom: Spacing.sm },
 
-  table:    { backgroundColor: Colors.surface, borderRadius: Radius.md, borderWidth: 0.5, borderColor: Colors.borderNormal, overflow: 'hidden' },
+  table:    { backgroundColor: Colors.surface, borderRadius: Radius.lg, overflow: 'hidden' },
   tableRow: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: Spacing.md, borderBottomWidth: 0.5, borderBottomColor: Colors.border },
   tableKey: { flex: 1, fontSize: FontSizes.sm, color: Colors.textSecondary },
   tableVal: { flex: 1.5, fontSize: FontSizes.sm, color: Colors.text, fontWeight: '500', textAlign: 'right' },
@@ -111,7 +111,7 @@ const st = StyleSheet.create({
   photo: { width: '100%', height: 200, borderRadius: Radius.md },
 
   footer:        { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.md, paddingBottom: Spacing.xl, borderTopWidth: 0.5, borderTopColor: Colors.border, backgroundColor: Colors.surface },
-  btnPdf:        { flex: 1, minHeight: 48, paddingVertical: 13, borderRadius: Radius.md, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, borderWidth: 1, borderColor: Colors.borderNormal },
+  btnPdf:        { flex: 1, minHeight: 52, paddingVertical: 13, borderRadius: Radius.full, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
   btnPdfText:    { fontSize: FontSizes.sm, color: Colors.text },
   btnConcluir:   { flex: 1.5, minHeight: 48, paddingVertical: 13, borderRadius: Radius.md, backgroundColor: Colors.ok, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
   btnConcluirText: { fontSize: FontSizes.base, color: '#fff', fontWeight: '600' },

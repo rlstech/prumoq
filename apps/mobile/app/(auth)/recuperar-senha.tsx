@@ -154,7 +154,7 @@ export default function RecoverPasswordScreen() {
                   : <Mail size={27} color={Colors.brand} />}
               </View>
               <View>
-                <Text style={styles.eyebrow}>RECUPERAÇÃO DE ACESSO</Text>
+                <Text style={styles.eyebrow}>Recuperação de acesso</Text>
                 <Text style={styles.title}>{TITULO[etapa]}</Text>
                 <Text style={styles.description}>{descricao}</Text>
               </View>
@@ -252,8 +252,6 @@ const styles = StyleSheet.create({
     maxWidth: Breakpoints.maxForm,
     alignSelf: 'center',
     borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: Colors.border,
     backgroundColor: Colors.surface,
     padding: Spacing.xxl,
     gap: Spacing.xxl,

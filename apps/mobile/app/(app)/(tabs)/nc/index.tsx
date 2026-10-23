@@ -383,7 +383,7 @@ export default function NcScreen() {
         <ScrollView showsVerticalScrollIndicator={false}>
           {activeTab !== 'resolvidas' ? (
             <View style={styles.sheetSection}>
-              <Text style={styles.sheetLabel}>PRAZO</Text>
+              <Text style={styles.sheetLabel}>Prazo</Text>
               <View style={styles.optionList}>
                 {URGENCY_OPTIONS.map(option => {
                   const Icon = option.Icon;
@@ -416,7 +416,7 @@ export default function NcScreen() {
           ) : null}
 
           <View style={styles.sheetSection}>
-            <Text style={styles.sheetLabel}>PRIORIDADE</Text>
+            <Text style={styles.sheetLabel}>Prioridade</Text>
             <View style={styles.priorityGrid}>
               {PRIORITY_OPTIONS.map(option => {
                 const selected = draftPriority === option.value;
@@ -562,8 +562,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'stretch',
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
   },
@@ -605,9 +603,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
     paddingLeft: Spacing.md,
     gap: Spacing.sm,
   },
@@ -631,15 +627,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 4,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderNormal,
+    borderRadius: Radius.full,
     backgroundColor: Colors.surface,
   },
   filterButtonActive: {
-    width: 58,
+    width: 64,
     backgroundColor: Colors.brand,
-    borderColor: Colors.brand,
   },
   filterButtonPressed: { opacity: 0.78 },
   filterCount: {
@@ -712,8 +705,7 @@ const styles = StyleSheet.create({
   deadline: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSizes.tiny,
-    textTransform: 'uppercase',
-    letterSpacing: 0.35,
+    letterSpacing: 0,
   },
   owner: {
     flex: 1,
@@ -730,8 +722,6 @@ const styles = StyleSheet.create({
   sheetSection: { gap: Spacing.sm, marginBottom: Spacing.xl },
   sheetLabel: { ...Typography.overline, color: Colors.textTertiary },
   optionList: {
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     overflow: 'hidden',
   },

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
-import { BorderWidth, Colors, FontFamily, FontSizes, Palette, Spacing } from '../lib/constants';
+import { Colors, FontFamily, FontSizes, Palette, Radius, Spacing } from '../lib/constants';
 
 interface Props {
   value: number;       // 0–100 (concluídos / conforme)
@@ -8,6 +8,10 @@ interface Props {
   height?: number;
   color?: string;
   bgColor?: string;
+  /** Fundo da fita; no cartão amarelo usar um grafite translúcido. */
+  trackColor?: string;
+  /** Cor das marcas de régua. */
+  tickColor?: string;
   showLabel?: boolean;
 }
 
@@ -15,8 +19,8 @@ interface Props {
 const TICKS = Array.from({ length: 19 }, (_, i) => (i + 1) * 5);
 
 /**
- * Barra de progresso desenhada como uma trena: fundo branco com borda
- * grafite, preenchimento amarelo e marcas de régua a cada 5%.
+ * Barra de progresso como uma fita de trena (Trena Suave): pílula sem borda,
+ * preenchimento arredondado e marcas de régua discretas a cada 5%.
  */
 export function ProgressBar({
   value,
@@ -24,6 +28,8 @@ export function ProgressBar({
   height = 14,
   color = Palette.accent,
   bgColor,
+  trackColor = Colors.surface2,
+  tickColor = 'rgba(28, 31, 34, 0.28)',
   showLabel = false,
 }: Props) {
   const anim = useRef(new Animated.Value(value)).current;
@@ -42,7 +48,7 @@ export function ProgressBar({
 
   return (
     <View style={styles.row}>
-      <View style={[styles.track, { height }]}>
+      <View style={[styles.track, { height, backgroundColor: trackColor }]}>
         {bgValue !== undefined && bgValue > 0 && (
           <Animated.View style={[styles.fill, { width: bgWidthPercent, backgroundColor: bgColor ?? `${color}55` }]} />
         )}
@@ -53,7 +59,7 @@ export function ProgressBar({
             style={[
               styles.tick,
               tick % 10 === 0 ? styles.tickMajor : styles.tickMinor,
-              { left: `${tick}%` },
+              { left: `${tick}%`, backgroundColor: tickColor },
             ]}
           />
         ))}
@@ -73,15 +79,13 @@ const styles = StyleSheet.create({
   },
   track: {
     flex: 1,
-    backgroundColor: Colors.surface,
-    borderWidth: BorderWidth.card,
-    borderColor: Colors.text,
+    borderRadius: Radius.full,
     overflow: 'hidden',
   },
-  fill: { position: 'absolute', top: 0, bottom: 0, left: 0 },
-  tick: { position: 'absolute', top: 0, backgroundColor: Colors.text },
+  fill: { position: 'absolute', top: 0, bottom: 0, left: 0, borderRadius: Radius.full },
+  tick: { position: 'absolute', top: '25%' },
   tickMajor: { width: 1.5, height: '50%' },
-  tickMinor: { width: 1, height: '28%' },
+  tickMinor: { width: 1, height: '30%', top: '35%' },
   label: {
     fontFamily: FontFamily.monoBold,
     fontSize: FontSizes.sm,

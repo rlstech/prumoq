@@ -415,7 +415,7 @@ export default function VerificationDetailScreen() {
         <Card style={styles.heroCard}>
           <View style={styles.heroTop}>
             <View style={styles.heroCopy}>
-              <Text style={styles.overline}>REGISTRO HISTÓRICO · SOMENTE LEITURA</Text>
+              <Text style={styles.overline}>Registro histórico · Somente leitura</Text>
               <Text style={styles.heroTitle}>Verificação #{verification.numero_verif}</Text>
               <Text style={styles.heroSubtitle}>
                 Data da inspeção: {formatDateOnly(verification.data_verif)}
@@ -798,9 +798,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: Spacing.md,
     padding: Spacing.lg,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.warn,
+    borderRadius: Radius.lg,
     backgroundColor: Colors.warnBg,
   },
   syncBannerCopy: {
@@ -857,8 +855,6 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderRadius: Radius.md,
     backgroundColor: Colors.surface2,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   metricMobile: {
     width: '48%',
