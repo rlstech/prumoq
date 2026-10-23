@@ -2,7 +2,8 @@ import { useQuery, useStatus } from '@powersync/react';
 import { useRouter } from 'expo-router';
 import { AlertTriangle, CheckCircle2, RefreshCw, Trash2, WifiOff } from '../../../../lib/icons';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { alertInfo, confirmDialog } from '../../../../lib/platform-alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../components/AppHeader';
 import { Badge, Button, DataRow, EmptyState, IconTile, ListSurface } from '../../../../components/ui';
@@ -83,7 +84,7 @@ export default function SincronizacaoScreen() {
       await retryQuarantined(db, row);
       await refreshQueue();
     } catch (error) {
-      Alert.alert('Não foi possível reenviar', error instanceof Error ? error.message : String(error));
+      alertInfo('Não foi possível reenviar', error instanceof Error ? error.message : String(error));
     } finally {
       setBusyId(null);
     }
@@ -102,7 +103,7 @@ export default function SincronizacaoScreen() {
       }
       await refreshQueue();
     } catch (error) {
-      Alert.alert(
+      alertInfo(
         'Reenvio interrompido',
         error instanceof Error ? error.message : String(error),
       );
@@ -112,21 +113,18 @@ export default function SincronizacaoScreen() {
   }
 
   function handleDiscard(row: SyncFalhasRow) {
-    Alert.alert(
-      'Descartar registro?',
-      'O registro sai da fila e não será enviado ao servidor. Não há como recuperar depois.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Descartar',
-          style: 'destructive',
-          onPress: () => {
-            setBusyId(row.id);
-            void discardQuarantined(db, row.id).finally(() => setBusyId(null));
-          },
-        },
-      ],
-    );
+    confirmDialog({
+      title: 'Descartar registro?',
+      message: 'O registro sai da fila e não será enviado ao servidor. Não há como recuperar depois.',
+      confirmText: 'Descartar',
+      destructive: true,
+      onConfirm: () => {
+        setBusyId(row.id);
+        void discardQuarantined(db, row.id)
+          .catch(error => alertInfo('Não foi possível descartar', error instanceof Error ? error.message : String(error)))
+          .finally(() => setBusyId(null));
+      },
+    });
   }
 
   return (

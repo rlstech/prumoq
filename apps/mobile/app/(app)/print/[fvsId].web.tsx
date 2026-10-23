@@ -14,7 +14,7 @@ import type {
   FvsPrintableReport,
   FvsPrintableVerification,
 } from '@prumoq/shared';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { assinarDownloads } from '../../../lib/media-api';
 import { supabase } from '../../../lib/supabase';
@@ -121,6 +121,7 @@ export default function FvsPrintPage() {
     fvsId: string;
     attachments?: string;
   }>();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [data, setData] = useState<FvsPrintableReport | null>(null);
@@ -331,7 +332,7 @@ export default function FvsPrintPage() {
 
   if (error || !data) {
     return (
-      <div style={{ ...feedbackStyle, color: '#B23A3A' }}>
+      <div style={{ ...feedbackStyle, color: '#C8281E' }}>
         FVS não encontrada ou sem permissão.
       </div>
     );
@@ -359,7 +360,7 @@ export default function FvsPrintPage() {
             overflow: visible !important;
           }
           body {
-            background: #F4F1E8;
+            background: #ECEAE6;
             overflow-y: auto !important;
             padding: 88px 16px 64px;
           }
@@ -385,7 +386,7 @@ export default function FvsPrintPage() {
           gap: 8,
           alignItems: 'center',
           background: 'white',
-          border: '1px solid #D9DDD9',
+          border: '1px solid #CFCBC3',
           borderRadius: 8,
           boxShadow: '0 6px 24px rgba(20, 37, 34, 0.14)',
           padding: 8,
@@ -397,8 +398,8 @@ export default function FvsPrintPage() {
             display: 'flex',
             gap: 7,
             padding: '0 8px',
-            color: '#142522',
-            fontFamily: 'IBM Plex Sans, Arial, sans-serif',
+            color: '#1C1F22',
+            fontFamily: 'Figtree, Arial, sans-serif',
             fontSize: 13,
           }}
         >
@@ -417,7 +418,7 @@ export default function FvsPrintPage() {
           onClick={() => window.print()}
           disabled={!imagesReady}
           style={{
-            background: '#163B50',
+            background: '#1C1F22',
             color: 'white',
             border: 'none',
             padding: '10px 18px',
@@ -432,11 +433,15 @@ export default function FvsPrintPage() {
           {imagesReady ? 'Imprimir / Salvar PDF' : 'Carregando imagens...'}
         </button>
         <button
-          onClick={() => window.close()}
+          // window.close() no PWA instalado fecharia o app inteiro.
+          onClick={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/');
+          }}
           style={{
-            background: '#E4E7E1',
-            color: '#142522',
-            border: '1px solid #C9D0CA',
+            background: '#E3E0DA',
+            color: '#1C1F22',
+            border: '1px solid #CFCBC3',
             padding: '10px 14px',
             minHeight: 44,
             borderRadius: 6,
@@ -444,7 +449,7 @@ export default function FvsPrintPage() {
             fontSize: 13,
           }}
         >
-          Fechar
+          Voltar
         </button>
       </div>
 
@@ -458,9 +463,9 @@ export default function FvsPrintPage() {
 
 const feedbackStyle = {
   alignItems: 'center',
-  color: '#52615B',
+  color: '#5B6168',
   display: 'flex',
-  fontFamily: 'IBM Plex Sans, Arial, sans-serif',
+  fontFamily: 'Figtree, Arial, sans-serif',
   height: '100vh',
   justifyContent: 'center',
 } as const;

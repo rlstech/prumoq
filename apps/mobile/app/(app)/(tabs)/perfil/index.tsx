@@ -1,8 +1,9 @@
 import { useQuery } from '@powersync/react';
 import { useRouter } from 'expo-router';
 import { Building2, ChevronRight, Key, Mail, PenLine, Phone, RefreshCw, User, type IconComponent } from '../../../../lib/icons';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,8 +19,13 @@ import { db } from '../../../../lib/powersync';
 import { useConta, useSessao } from '../../../../lib/auth/sessao';
 import { adoptPendingMedia } from '../../../../lib/pending-media';
 import { confirmDialog } from '../../../../lib/platform-alert';
+import { ensureDefaultSignature } from '../../../../lib/signature-defaults';
 import { signatureStore } from '../../../../lib/signature-store';
 import { versaoDoApp } from '../../../../lib/versao';
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' }).format(new Date(value));
+}
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -51,6 +57,7 @@ export default function PerfilScreen() {
   const [signing, setSigning] = useState(false);
   const [savingSignature, setSavingSignature] = useState(false);
   const [signatureError, setSignatureError] = useState<string | null>(null);
+  const [signatureUri, setSignatureUri] = useState<string | null>(null);
 
   const {
     data: usuarioRows,
@@ -62,6 +69,16 @@ export default function PerfilScreen() {
     userId ? [userId] : [],
   );
   const usuario = usuarioRows[0];
+  const signatureKey = usuario?.assinatura_padrao_url ?? null;
+  const signatureUpdatedAt = usuario?.assinatura_padrao_atualizada_em ?? null;
+
+  // Prévia da assinatura atual (cópia local; baixa do servidor se o aparelho ainda não tiver).
+  useEffect(() => {
+    if (!userId || !signatureKey) { setSignatureUri(null); return; }
+    let active = true;
+    void ensureDefaultSignature(userId, signatureKey).then(uri => { if (active) setSignatureUri(uri); });
+    return () => { active = false; };
+  }, [userId, signatureKey, signatureUpdatedAt]);
   const profileUnavailable = !userId || !!usuarioError;
 
   const { data: obrasRows } = useQuery<ObraRow>(
@@ -180,11 +197,13 @@ export default function PerfilScreen() {
           <Row
             Icon={PenLine}
             label="Assinatura padrão" strongLabel
-            value={hasSignature ? 'Configurada para novas assinaturas' : 'Ainda não cadastrada'}
+            value={hasSignature
+              ? (signatureUpdatedAt ? `Atualizada em ${formatDate(signatureUpdatedAt)}` : 'Configurada para novas assinaturas')
+              : 'Ainda não cadastrada'}
             tone={hasSignature ? 'success' : 'warning'}
             action={hasSignature ? 'Alterar' : 'Cadastrar'}
             disabled={!userId || savingSignature}
-            onPress={() => setSigning(true)}
+            onPress={() => { setSignatureError(null); setSigning(true); }}
           />
           <Row
             Icon={RefreshCw}
@@ -200,7 +219,25 @@ export default function PerfilScreen() {
             last
           />
         </View>
-        {signatureError ? <Text style={s.signatureError}>{signatureError}</Text> : null}
+        {hasSignature ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Alterar assinatura padrão"
+            onPress={() => { setSignatureError(null); setSigning(true); }}
+            style={({ pressed }) => [s.signatureCard, pressed && s.pressed]}
+          >
+            {signatureUri ? (
+              <Image source={{ uri: signatureUri }} style={s.signatureImage} resizeMode="contain" accessibilityLabel="Sua assinatura padrão" />
+            ) : (
+              <Text style={s.signatureHint}>Conecte-se à internet para ver a assinatura cadastrada.</Text>
+            )}
+            <Text style={s.signatureHint}>
+              {signatureKey?.startsWith('pending:')
+                ? 'Salva neste aparelho. Será enviada na próxima sincronização.'
+                : 'Aplicada automaticamente nas verificações, conclusões e avaliações.'}
+            </Text>
+          </Pressable>
+        ) : null}
 
         {obrasRows.length > 0 ? (
           <>
@@ -230,7 +267,16 @@ export default function PerfilScreen() {
 
         <Text style={s.versao} selectable>Versão {versaoDoApp()}</Text>
       </ScrollView>
-      <SignatureField visible={signing} onSign={handleSignature} onCancel={() => setSigning(false)} />
+      <SignatureField
+        visible={signing}
+        title={hasSignature ? 'Alterar assinatura padrão' : 'Cadastrar assinatura padrão'}
+        description="Usada nas verificações, conclusões e avaliações."
+        currentUri={signatureUri}
+        saving={savingSignature}
+        error={signatureError}
+        onSign={handleSignature}
+        onCancel={() => { setSignatureError(null); setSigning(false); }}
+      />
     </SafeAreaView>
   );
 }
@@ -353,7 +399,9 @@ const s = StyleSheet.create({
   rowValueSoft: { fontFamily: FontFamily.regular, fontSize: FontSizes.xs, color: Colors.textSecondary },
   rowAction: { minHeight: 36, paddingHorizontal: Spacing.md, borderRadius: Radius.full, backgroundColor: Colors.surface2, justifyContent: 'center' },
   rowActionText: { fontFamily: FontFamily.bold, fontSize: FontSizes.xs, color: Colors.text },
-  signatureError: { ...Typography.caption, color: Colors.nok },
+  signatureCard: { gap: Spacing.sm, padding: Spacing.lg, borderRadius: Radius.xl, backgroundColor: Colors.surface, alignItems: 'center' },
+  signatureImage: { width: '100%', height: 88 },
+  signatureHint: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'center' },
 
   logoutBtn: {
     minHeight: 56,

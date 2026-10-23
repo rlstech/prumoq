@@ -1,3 +1,4 @@
+import { faceSymbolSvg } from '@prumoq/design-system';
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -60,33 +61,34 @@ export function renderContractorEvaluationPdfHtml(report: ContractorEvaluationPd
   <style>
     @page { size: A4 portrait; margin: 12mm; }
     * { box-sizing: border-box; }
-    body { margin: 0; color: #142522; font-family: Arial, sans-serif; font-size: 11px; }
-    .sheet { border: 1px solid #163B50; min-height: 270mm; }
-    .head { display: grid; grid-template-columns: 130px 1fr 92px; border-bottom: 1px solid #163B50; }
-    .brand { padding: 18px 12px; color: #163B50; font-size: 24px; font-weight: 700; }
-    .title { border-left: 1px solid #163B50; border-right: 1px solid #163B50; padding: 18px 8px; text-align: center; font-size: 14px; font-weight: 700; }
+    body { margin: 0; color: #1C1F22; font-family: Arial, sans-serif; font-size: 11px; }
+    .sheet { border: 1px solid #1C1F22; min-height: 270mm; }
+    .head { display: grid; grid-template-columns: 130px 1fr 92px; border-bottom: 1px solid #1C1F22; }
+    .brand { display: flex; align-items: center; gap: 8px; padding: 14px 12px; color: #1C1F22; font-size: 22px; font-weight: 700; }
+    .mark { width: 32px; height: 32px; flex: 0 0 auto; }
+    .title { border-left: 1px solid #1C1F22; border-right: 1px solid #1C1F22; padding: 18px 8px; text-align: center; font-size: 14px; font-weight: 700; }
     .issue { padding: 18px 8px; text-align: center; font-size: 9px; font-weight: 700; }
-    .meta { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #163B50; }
-    .meta div { min-height: 48px; padding: 7px 9px; border-right: 1px solid #D0D7D2; }
-    .label, th { color: #52615B; font-size: 8px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .meta { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #1C1F22; }
+    .meta div { min-height: 48px; padding: 7px 9px; border-right: 1px solid #CFCBC3; }
+    .label, th { color: #5B6168; font-size: 8px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
     .label { display: block; margin-bottom: 3px; }
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 6px; border: 1px solid #7D8983; vertical-align: top; }
-    th { background: #EDF0EB; }
+    th, td { padding: 6px; border: 1px solid #9C978E; vertical-align: top; }
+    th { background: #E9E8E4; }
     .num { text-align: center; }
-    .comment { margin-top: 5px; padding-top: 5px; border-top: 1px solid #D9DDD9; color: #52615B; font-size: 10px; }
-    .total { background: #F3F7D5; font-weight: 700; }
+    .comment { margin-top: 5px; padding-top: 5px; border-top: 1px solid #CFCBC3; color: #5B6168; font-size: 10px; }
+    .total { background: #FFF3CC; font-weight: 700; }
     .sections { padding: 9px; }
-    .section { min-height: 56px; margin-top: 9px; border: 1px solid #7D8983; }
-    .section h2 { margin: 0; padding: 5px 7px; border-bottom: 1px solid #7D8983; background: #EDF0EB; font-size: 9px; text-transform: uppercase; }
+    .section { min-height: 56px; margin-top: 9px; border: 1px solid #9C978E; }
+    .section h2 { margin: 0; padding: 5px 7px; border-bottom: 1px solid #9C978E; background: #E9E8E4; font-size: 9px; text-transform: uppercase; }
     .section p { min-height: 35px; margin: 0; padding: 7px; white-space: pre-wrap; }
     .sign { display: flex; justify-content: flex-end; padding: 28px 22px 14px; }
-    .signbox { width: 220px; min-height: 78px; padding-top: 5px; border-top: 1px solid #142522; text-align: center; font-size: 9px; }
+    .signbox { width: 220px; min-height: 78px; padding-top: 5px; border-top: 1px solid #1C1F22; text-align: center; font-size: 9px; }
     .signbox img { display: block; max-width: 180px; max-height: 65px; margin: -68px auto 5px; }
-    .invalid { position: fixed; top: 42%; left: 0; right: 0; color: #B23A3A; font-size: 34px; font-weight: 700; opacity: .16; text-align: center; transform: rotate(-22deg); }
+    .invalid { position: fixed; top: 42%; left: 0; right: 0; color: #C8281E; font-size: 34px; font-weight: 700; opacity: .16; text-align: center; transform: rotate(-22deg); }
   </style></head><body>
   ${invalidated ? '<div class="invalid">AVALIAÇÃO INVALIDADA</div>' : ''}
-  <main class="sheet"><header class="head"><div class="brand">PrumoQ</div><div class="title">AVALIAÇÃO DE FORNECEDOR DE SERVIÇO<br /><small>${escapeHtml(report.modelo)} · Rev. ${report.revisao}</small></div><div class="issue">EMITIDO EM<br />${formatDate(report.dataAvaliacao)}</div></header>
+  <main class="sheet"><header class="head"><div class="brand">${faceSymbolSvg({ className: 'mark' })}<span>PrumoQ</span></div><div class="title">AVALIAÇÃO DE FORNECEDOR DE SERVIÇO<br /><small>${escapeHtml(report.modelo)} · Rev. ${report.revisao}</small></div><div class="issue">EMITIDO EM<br />${formatDate(report.dataAvaliacao)}</div></header>
   <section class="meta"><div><span class="label">Fornecedor / Empreiteiro</span>${escapeHtml(report.empreiteiro)}${report.cnpj ? ` · ${escapeHtml(report.cnpj)}` : ''}</div><div><span class="label">Obra</span>${escapeHtml(report.obra)}</div><div><span class="label">Origem</span>${report.referencia ? `Medição ${escapeHtml(report.referencia)}` : 'Avaliação avulsa'}</div><div><span class="label">Data da avaliação</span>${formatDate(report.dataAvaliacao)}</div></section>
   <table><thead><tr><th>Item</th><th>Critério de avaliação</th><th>Peso</th><th>Atende</th><th>Não atende</th></tr></thead><tbody>${rows}<tr class="total"><td colspan="2">TOTAL</td><td class="num">${report.pontosPossiveis}</td><td colspan="2">${report.pontosObtidos} pontos · ${report.percentual.toFixed(1)}%</td></tr></tbody></table>
   <div class="sections"><section class="section"><h2>Notificações ocorridas</h2><p>${escapeHtml(report.notificacoes) || 'Sem registros adicionais.'}</p></section><section class="section"><h2>Providências tomadas</h2><p>${escapeHtml(report.providencias) || 'Sem providências registradas.'}</p></section>${invalidated ? `<section class="section"><h2>Motivo da invalidação</h2><p>${escapeHtml(report.motivoInvalidacao)}</p></section>` : ''}</div>
@@ -109,15 +111,43 @@ async function signatureAsDataUrl(uri: string | null): Promise<string | null> {
   } catch { return null; }
 }
 
+const PRINT_ROOT_ID = 'prumoq-print-root';
+
+// Imprime na própria janela: no PWA instalado, abrir outra janela tira o usuário do app.
+// O documento fica num contêiner oculto na tela; o CSS (todo dentro de @media print) esconde o app
+// e mostra só o contêiner na impressão.
+async function printInSameWindow(html: string): Promise<void> {
+  document.getElementById(PRINT_ROOT_ID)?.remove();
+  const css = html.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? '';
+  const body = html.match(/<body>([\s\S]*)<\/body>/)?.[1] ?? html;
+
+  const root = document.createElement('div');
+  root.id = PRINT_ROOT_ID;
+  root.innerHTML = `<style>
+    #${PRINT_ROOT_ID} { display: none; }
+    @media print {
+      html, body { height: auto !important; overflow: visible !important; background: white !important; }
+      body > *:not(#${PRINT_ROOT_ID}) { display: none !important; }
+      #${PRINT_ROOT_ID} { display: block; }
+      ${css}
+    }
+  </style>${body}`;
+  document.body.appendChild(root);
+
+  const images = Array.from(root.querySelectorAll('img'));
+  await Promise.all(images.map(image => image.decode().catch(() => undefined)));
+
+  const cleanup = () => {
+    window.removeEventListener('afterprint', cleanup);
+    root.remove();
+  };
+  window.addEventListener('afterprint', cleanup);
+  window.print();
+}
+
 export async function generateAndShareContractorEvaluationPdf(html: string, filename: string, signatureUri: string | null): Promise<void> {
   if (Platform.OS === 'web') {
-    const popup = window.open('', '_blank');
-    if (!popup) throw new Error('O navegador bloqueou a janela de impressão. Permita pop-ups e tente novamente.');
-    popup.document.open();
-    popup.document.write(signatureUri ? html.replace('data-signature-placeholder', signatureUri) : html.replace('src="data-signature-placeholder"', ''));
-    popup.document.close();
-    popup.focus();
-    popup.setTimeout(() => popup.print(), 250);
+    await printInSameWindow(signatureUri ? html.replace('data-signature-placeholder', signatureUri) : html.replace('src="data-signature-placeholder"', ''));
     return;
   }
   const signature = await signatureAsDataUrl(signatureUri);

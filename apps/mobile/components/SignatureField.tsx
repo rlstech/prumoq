@@ -14,9 +14,16 @@ function uuid(): string {
 
 interface Props {
   visible: boolean;
-  onSign: (path: string) => void;
+  onSign: (path: string) => void | Promise<void>;
   onCancel: () => void;
   inline?: boolean;
+  // Usados só na versão web (SignatureField.web.tsx); o app nativo foi descontinuado.
+  title?: string;
+  description?: string;
+  currentUri?: string | null;
+  saving?: boolean;
+  error?: string | null;
+  confirmLabel?: string;
 }
 
 export function SignatureField({ visible, onSign, onCancel }: Props) {

@@ -1,5 +1,6 @@
 import { Camera, XCircle } from '../lib/icons';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { alertInfo } from '../lib/platform-alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { AppHeader } from './AppHeader';
@@ -55,23 +56,23 @@ export function NCReprovadaPanel({
 
   async function handleSalvar() {
     if (descricao.trim().length < 10) {
-      Alert.alert('Campo obrigatório', 'Descrição deve ter pelo menos 10 caracteres.');
+      alertInfo('Campo obrigatório', 'Descrição deve ter pelo menos 10 caracteres.');
       return;
     }
     if (!foto) {
-      Alert.alert('Foto obrigatória', 'Adicione a foto de evidência.');
+      alertInfo('Foto obrigatória', 'Adicione a foto de evidência.');
       return;
     }
     if (solucao.trim().length < 10) {
-      Alert.alert('Campo obrigatório', 'Solução proposta deve ter pelo menos 10 caracteres.');
+      alertInfo('Campo obrigatório', 'Solução proposta deve ter pelo menos 10 caracteres.');
       return;
     }
     if (!dataVerif) {
-      Alert.alert('Campo obrigatório', 'Informe a nova data de re-inspeção.');
+      alertInfo('Campo obrigatório', 'Informe a nova data de re-inspeção.');
       return;
     }
     if (financialRequired && !financialManagerId) {
-      Alert.alert('Impacto financeiro', 'Selecione o gestor responsável pela avaliação financeira.');
+      alertInfo('Impacto financeiro', 'Selecione o gestor responsável pela avaliação financeira.');
       return;
     }
     setIsSaving(true);
@@ -96,7 +97,7 @@ export function NCReprovadaPanel({
       });
       onSalvo();
     } catch {
-      Alert.alert('Erro', 'Não foi possível registrar a NC. Tente novamente.');
+      alertInfo('Erro', 'Não foi possível registrar a NC. Tente novamente.');
     } finally {
       setIsSaving(false);
     }

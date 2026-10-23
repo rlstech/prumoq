@@ -1,5 +1,6 @@
 import { Check, CheckCircle2, FileDown } from '../lib/icons';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { alertInfo } from '../lib/platform-alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from './AppHeader';
 import { Colors, FontSizes, Radius, Spacing, FontFamily } from '../lib/constants';
@@ -76,7 +77,7 @@ export function NCResolvedScreen({
           <Pressable
             accessibilityRole="button"
             style={st.btnPdf}
-            onPress={() => Alert.alert('Em breve', 'A exportação de PDF será disponibilizada em uma próxima etapa.')}
+            onPress={() => alertInfo('Em breve', 'A exportação de PDF será disponibilizada em uma próxima etapa.')}
           >
             <FileDown size={17} color={Colors.text} />
             <Text style={st.btnPdfText}>Exportar PDF</Text>

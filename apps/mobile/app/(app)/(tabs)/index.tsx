@@ -9,13 +9,13 @@ import {
   ChevronRight,
   FileClock,
   History,
-  Plumb,
   Trash2,
 } from '../../../lib/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconBox } from '../../../components/IconBox';
+import { BrandMark } from '../../../components/BrandMark';
 import { ProgressBar } from '../../../components/ProgressBar';
 import { BadgeStatus, StatusBadge } from '../../../components/StatusBadge';
 import { SyncStatusIndicator } from '../../../components/SyncStatusIndicator';
@@ -37,6 +37,7 @@ import { VerificationDraftV1 } from '../../../lib/verification/draft.types';
 import { draftStore } from '../../../lib/verification/draftStore';
 import { normalizeVerificationStep, VERIFICATION_STEPS, verificationStepIndex } from '../../../lib/verification/controller';
 import { getTodayIso } from '../../../lib/calendar';
+import { alertInfo } from '../../../lib/platform-alert';
 
 const WEEKDAY_ABBR = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTH_ABBR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -400,7 +401,7 @@ export default function DashboardScreen() {
       setDrafts(previous => previous.filter(draft => draft.draftId !== draftId));
     } catch (error) {
       console.warn('[Dashboard] discard draft error:', error);
-      Alert.alert('Erro', 'Não foi possível descartar o rascunho. Tente novamente.');
+      alertInfo('Erro', 'Não foi possível descartar o rascunho. Tente novamente.');
     }
   }, []);
 
@@ -449,7 +450,7 @@ export default function DashboardScreen() {
               style={({ pressed }) => [styles.identity, pressed && styles.pressed]}
             >
               <View style={styles.plumbMark}>
-                <Plumb size={34} color={Palette.accent} strokeWidth={1.7} />
+                <BrandMark size={36} variant="onBrand" />
               </View>
               <View style={styles.identityText}>
                 <Text style={styles.greetingSmall} numberOfLines={1}>{greetingFor()},</Text>

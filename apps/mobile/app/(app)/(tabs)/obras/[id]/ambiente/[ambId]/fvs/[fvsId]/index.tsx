@@ -173,7 +173,8 @@ export default function FvsHistoryScreen() {
           <HeaderIconButton
             Icon={FileText}
             label="Visualizar PDF da FVS"
-            onPress={() => (window as Window).open(`/print/${fvsId}`, '_blank', 'noreferrer')}
+            // Na mesma janela: no PWA instalado, abrir outra janela tira o usuário do app.
+            onPress={() => router.push(`/print/${fvsId}` as never)}
           />
         ) : undefined}
       />
