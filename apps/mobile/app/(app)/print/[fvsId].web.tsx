@@ -14,7 +14,7 @@ import type {
   FvsPrintableReport,
   FvsPrintableVerification,
 } from '@prumoq/shared';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { assinarDownloads } from '../../../lib/media-api';
 import { supabase } from '../../../lib/supabase';
@@ -121,6 +121,7 @@ export default function FvsPrintPage() {
     fvsId: string;
     attachments?: string;
   }>();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [data, setData] = useState<FvsPrintableReport | null>(null);
@@ -432,7 +433,11 @@ export default function FvsPrintPage() {
           {imagesReady ? 'Imprimir / Salvar PDF' : 'Carregando imagens...'}
         </button>
         <button
-          onClick={() => window.close()}
+          // window.close() no PWA instalado fecharia o app inteiro.
+          onClick={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/');
+          }}
           style={{
             background: '#E4E7E1',
             color: '#142522',
@@ -444,7 +449,7 @@ export default function FvsPrintPage() {
             fontSize: 13,
           }}
         >
-          Fechar
+          Voltar
         </button>
       </div>
 

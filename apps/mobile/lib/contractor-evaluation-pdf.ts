@@ -109,15 +109,43 @@ async function signatureAsDataUrl(uri: string | null): Promise<string | null> {
   } catch { return null; }
 }
 
+const PRINT_ROOT_ID = 'prumoq-print-root';
+
+// Imprime na própria janela: no PWA instalado, abrir outra janela tira o usuário do app.
+// O documento fica num contêiner oculto na tela; o CSS (todo dentro de @media print) esconde o app
+// e mostra só o contêiner na impressão.
+async function printInSameWindow(html: string): Promise<void> {
+  document.getElementById(PRINT_ROOT_ID)?.remove();
+  const css = html.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? '';
+  const body = html.match(/<body>([\s\S]*)<\/body>/)?.[1] ?? html;
+
+  const root = document.createElement('div');
+  root.id = PRINT_ROOT_ID;
+  root.innerHTML = `<style>
+    #${PRINT_ROOT_ID} { display: none; }
+    @media print {
+      html, body { height: auto !important; overflow: visible !important; background: white !important; }
+      body > *:not(#${PRINT_ROOT_ID}) { display: none !important; }
+      #${PRINT_ROOT_ID} { display: block; }
+      ${css}
+    }
+  </style>${body}`;
+  document.body.appendChild(root);
+
+  const images = Array.from(root.querySelectorAll('img'));
+  await Promise.all(images.map(image => image.decode().catch(() => undefined)));
+
+  const cleanup = () => {
+    window.removeEventListener('afterprint', cleanup);
+    root.remove();
+  };
+  window.addEventListener('afterprint', cleanup);
+  window.print();
+}
+
 export async function generateAndShareContractorEvaluationPdf(html: string, filename: string, signatureUri: string | null): Promise<void> {
   if (Platform.OS === 'web') {
-    const popup = window.open('', '_blank');
-    if (!popup) throw new Error('O navegador bloqueou a janela de impressão. Permita pop-ups e tente novamente.');
-    popup.document.open();
-    popup.document.write(signatureUri ? html.replace('data-signature-placeholder', signatureUri) : html.replace('src="data-signature-placeholder"', ''));
-    popup.document.close();
-    popup.focus();
-    popup.setTimeout(() => popup.print(), 250);
+    await printInSameWindow(signatureUri ? html.replace('data-signature-placeholder', signatureUri) : html.replace('src="data-signature-placeholder"', ''));
     return;
   }
   const signature = await signatureAsDataUrl(signatureUri);
