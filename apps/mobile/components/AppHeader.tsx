@@ -1,4 +1,4 @@
-import { ChevronLeft } from '../lib/icons';
+import { ChevronLeft, type IconComponent } from '../lib/icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   Breakpoints,
@@ -11,8 +11,6 @@ import {
   Spacing,
   Typography,
 } from '../lib/constants';
-import { BrandMark } from './BrandMark';
-import { BrandWordmark } from './BrandWordmark';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 
 type AppHeaderTone = 'light' | 'brand';
@@ -25,6 +23,39 @@ interface Props {
   onBack?: () => void;
   rightElement?: React.ReactNode;
   children?: React.ReactNode;
+}
+
+/** Ação redonda do cabeçalho (busca, PDF, filtro). */
+export function HeaderIconButton({
+  Icon,
+  label,
+  onPress,
+  active = false,
+  badge,
+}: {
+  Icon: IconComponent;
+  label: string;
+  onPress: () => void;
+  active?: boolean;
+  badge?: number;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      hitSlop={6}
+      style={({ pressed }) => [styles.iconButton, active && styles.iconButtonActive, pressed && styles.iconButtonPressed]}
+    >
+      <Icon size={21} color={active ? Palette.white : Colors.text} strokeWidth={1.9} />
+      {badge ? (
+        <View style={styles.iconBadge}>
+          <Text style={styles.iconBadgeText}>{badge}</Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
 }
 
 export function AppHeader({
@@ -41,38 +72,42 @@ export function AppHeader({
   return (
     <View style={[styles.shell, isBrand && styles.shellBrand]}>
       <View style={styles.container}>
+        {/* Trena Suave: telas internas sem logotipo. Com voltar, a linha de cima
+            leva o botão redondo e as ações; nas abas raiz o título sobe para ela. */}
         <View style={styles.topRow}>
-          <View style={styles.brandRow}>
-            {showBack ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Voltar"
-                onPress={onBack}
-                hitSlop={8}
-                style={({ pressed }) => [
-                  styles.iconButton,
-                  isBrand && styles.iconButtonBrand,
-                  pressed && (isBrand ? styles.iconButtonBrandPressed : styles.iconButtonPressed),
-                ]}
-              >
-                <ChevronLeft size={22} color={isBrand ? Palette.white : Colors.text} strokeWidth={1.9} />
-              </Pressable>
-            ) : (
-              <BrandMark size={32} variant={isBrand ? 'onBrand' : 'default'} />
-            )}
-            <BrandWordmark fontSize={FontSizes.base} variant={isBrand ? 'onBrand' : 'default'} />
-          </View>
+          {showBack ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Voltar"
+              onPress={onBack}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.iconButton,
+                isBrand && styles.iconButtonBrand,
+                pressed && (isBrand ? styles.iconButtonBrandPressed : styles.iconButtonPressed),
+              ]}
+            >
+              <ChevronLeft size={22} color={isBrand ? Palette.white : Colors.text} strokeWidth={1.9} />
+            </Pressable>
+          ) : title ? (
+            <Text
+              accessibilityRole="header"
+              style={[styles.title, styles.titleInline, isBrand && styles.titleBrand]}
+              numberOfLines={2}
+            >
+              {title}
+            </Text>
+          ) : <View />}
           <View style={styles.headerActions}>
-            {/* Com ações à direita o indicador vira só o ícone, para caber na linha. */}
-            <SyncStatusIndicator compact={!!rightElement} short />
+            <SyncStatusIndicator compact short />
             {rightElement}
           </View>
         </View>
 
-        {(title || subtitle || children) ? (
+        {((showBack && title) || subtitle || children) ? (
           <View style={styles.content}>
-            {title ? (
-              <Text style={[styles.title, isBrand && styles.titleBrand]} numberOfLines={2}>
+            {showBack && title ? (
+              <Text accessibilityRole="header" style={[styles.title, isBrand && styles.titleBrand]} numberOfLines={2}>
                 {title}
               </Text>
             ) : null}
@@ -114,11 +149,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.md,
   },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
   iconButton: {
     width: ComponentSize.touch,
     height: ComponentSize.touch,
@@ -128,6 +158,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconButtonPressed: { backgroundColor: Colors.surface2 },
+  iconButtonActive: { backgroundColor: Colors.brand },
+  iconBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: Radius.full,
+    backgroundColor: Palette.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconBadgeText: { fontFamily: FontFamily.monoBold, fontSize: 10, color: Palette.onAccent },
   iconButtonBrand: { backgroundColor: 'rgba(255,255,255,0.1)' },
   iconButtonBrandPressed: { backgroundColor: 'rgba(255,255,255,0.18)' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
@@ -139,6 +183,7 @@ const styles = StyleSheet.create({
     ...Typography.title,
     color: Colors.text,
   },
+  titleInline: { flex: 1, minWidth: 0 },
   titleBrand: { color: Palette.white },
   subtitle: {
     color: Colors.textSecondary,
