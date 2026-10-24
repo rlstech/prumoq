@@ -103,6 +103,17 @@ export default function MeasurementReportClient({ report }: { report: Measuremen
               Contratado <b className="mono" style={{ color: '#1C1F22' }}>R$ {brl(c.contratado)}</b> · medido <b className="mono" style={{ color: '#1C1F22' }}>R$ {brl(c.medido)}</b> · saldo <b className="mono" style={{ color: '#1C1F22' }}>R$ {brl(Math.max(c.contratado - c.medido, 0))}</b>
             </div>
 
+            {c.aditivos.length ? (
+              <div className="muted" style={{ marginBottom: 8 }}>
+                Aditivos:{' '}
+                {c.aditivos.map((ad, index) => (
+                  <span key={ad.numero}>
+                    {index ? ' · ' : ''}<b style={{ color: '#1C1F22' }}>AD-{String(ad.numero).padStart(2, '0')}</b> {fmtDate(ad.data)} ({ad.descricao}) <span className="mono">R$ {brl(ad.valorAnterior)} → R$ {brl(ad.valorNovo)}</span>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
             {c.medicoes.length ? (
               <>
                 {!single ? (

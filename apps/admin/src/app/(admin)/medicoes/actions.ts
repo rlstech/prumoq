@@ -165,6 +165,51 @@ export async function addContractServices(raw: ContractServicesInput) {
   }
 }
 
+const amendmentItemSchema = z.union([
+  z.object({
+    fvs_id: z.string().uuid(),
+    novo: z.literal(true),
+    metodo: z.enum(['quantidade', 'unidade_concluida']),
+    unidade: z.string().trim().min(1),
+    quantidade: z.number().positive(),
+    preco: z.number().nonnegative().nullable(),
+  }),
+  z.object({
+    fvs_id: z.string().uuid(),
+    quantidade: z.number().positive().optional(),
+    preco: z.number().nonnegative().nullable().optional(),
+  }),
+]);
+const amendmentSchema = z.object({
+  contratoId: z.string().uuid(),
+  obraId: z.string().uuid(),
+  descricao: z.string().trim().min(3, 'Descreva o motivo do aditivo'),
+  data: z.string().date(),
+  itens: z.array(amendmentItemSchema).min(1, 'Altere ou inclua ao menos um item'),
+});
+export type AmendmentInput = z.infer<typeof amendmentSchema>;
+
+/** Aditivo: vale na hora e fica registrado (número, motivo, autor e antes/depois de cada item). */
+export async function applyAmendment(raw: AmendmentInput) {
+  try {
+    const input = amendmentSchema.parse(raw);
+    await requireWork(input.obraId);
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc('aplicar_aditivo_contrato', {
+      p_contrato_id: input.contratoId,
+      p_descricao: input.descricao,
+      p_data: input.data,
+      p_itens: input.itens as unknown as Json,
+    });
+    if (error) throw error;
+    refresh();
+    return { success: true as const, id: data as string };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false as const, error: error.issues[0]?.message ?? 'Dados inválidos.' };
+    return { success: false as const, error: errorMessage(error, 'Falha ao registrar o aditivo.') };
+  }
+}
+
 // ---------------------------------------------------------------- medições
 
 export type Release = {

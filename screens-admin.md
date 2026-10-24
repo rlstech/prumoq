@@ -473,20 +473,26 @@ nº, objeto, valor, vigência). Cada serviço medido (FVS) e cada medição pert
 
 - **`/medicoes` (contratos):** todos os contratos de todas as obras. Busca, filtros por obra e empreiteiro, abas
   Ativos/Encerrados/Todos. Cartão grafite com medido sobre contratado, a medir, liberado para medir e bloqueado por NC.
-  Tabela: nº/objeto, empreiteiro/obra, contratado, medido (trena), a medir e etiquetas (rascunho, bloqueio, liberado).
+  Tabela: nº/objeto, empreiteiro/obra, contratado, medido (trena), a medir, etiquetas (rascunho, bloqueio, liberado) e
+  registro (criado em/por, alterado em/por).
   Ações: "Gerar PDF" (respeita o filtro de obra) e "Novo contrato" (painel lateral; ao criar, abre o contrato na aba "A medir").
-- **`/medicoes/contratos/:id` (contrato):** etiquetas (situação, empreiteiro, obra, vigência), resumo em grafite e abas:
+- **`/medicoes/contratos/:id` (contrato):** etiquetas (situação, empreiteiro, obra, vigência, nº de aditivos), quem criou e
+  quem alterou por último, resumo em grafite e abas:
+  - *Itens do contrato:* um serviço por linha: quantidade e valor contratados (preço atual), medido em quantidade e em R$
+    (valor das medições aprovadas), saldo a medir em quantidade e em R$, liberado agora. "Adicionar serviços" só até a
+    primeira medição aprovada; depois, itens mudam por aditivo. "Configurar" leva à página de medição do serviço.
   - *Medições:* referência, período, data, valor, situação; rascunho com Aprovar/Descartar; clique abre a medição.
-  - *A medir:* um serviço por linha (previsto, aprovado em campo, medido, liberado agora, valor a medir) e
-    "Adicionar serviços" (FVS da obra sem medição configurada: método, unidade, quantidade e preço). "Configurar" leva à
-    página de medição do serviço (etapas ponderadas, troca de empreiteiro para o contrato de outro empreiteiro).
-  - Ações: Nova medição (painel lateral; só liberações deste contrato; referência e período sugeridos), Gerar PDF,
-    Editar, Encerrar/Reabrir (encerrar exige não ter rascunho).
+  - *Aditivos e histórico:* cada aditivo (AD-nn, motivo, data, autor, valor antes → depois e itens antes → depois) e a
+    linha do tempo (criação, edição, encerramento, aditivos, configuração de serviço, troca de empreiteiro e qualquer
+    mudança de quantidade/preço feita fora de aditivo).
+  - Ações: Nova medição, **Novo aditivo** (painel lateral: motivo, data, quantidade e preço de cada item com o mínimo
+    permitido, inclusão de serviços; mostra o valor do contrato antes → depois), Gerar PDF, Editar, Encerrar/Reabrir.
+  - Aditivo vale na hora; medições aprovadas não mudam (guardam o preço do momento); o valor do contrato soma a diferença.
 - **`/medicoes/m/:id` (medição):** valor, avanço, retrabalho, o que ficou fora por RNC; itens com as FVS que liberaram
   cada quantidade; descontos por RNC; histórico (criada, aprovada, cancelada). Aprovar/descartar (rascunho),
   cancelar e "PDF desta medição" (aprovada). Empreiteiro terceirizado precisa de avaliação aprovada para aprovar.
 - **PDF (`/relatorio/medicoes?obra=|contrato=|medicao=`):** página de impressão (A4). Resumo por contrato, medições
-  aprovadas com valor e acumulado, itens de cada uma. Com `medicao=` sai como boletim, com campos de assinatura.
+  aprovadas com valor e acumulado, itens de cada uma e os aditivos de cada contrato. Com `medicao=` sai como boletim, com campos de assinatura.
 
 ## Página 13: Relatórios
 

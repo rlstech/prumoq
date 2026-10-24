@@ -41,6 +41,7 @@ export type MeasurementReportContract = {
   status: string;
   contratado: number;
   medido: number;
+  aditivos: { numero: number; data: string; descricao: string; valorAnterior: number; valorNovo: number }[];
   medicoes: MeasurementReportMeasurement[];
 };
 export type MeasurementReport = {
@@ -71,12 +72,13 @@ export async function loadMeasurementReport(supabase: Client, filter: Measuremen
   const contractIds = contracts.map(c => c.id);
   const obraIds = Array.from(new Set(contracts.map(c => c.obra_id)));
   const equipeIds = Array.from(new Set(contracts.map(c => c.equipe_id)));
-  const [{ data: summaries }, { data: obras }, { data: equipes }, { data: measurements }] = await Promise.all([
+  const [{ data: summaries }, { data: obras }, { data: equipes }, { data: measurements }, { data: amendments }] = await Promise.all([
     supabase.from('vw_resumo_contratos').select('contrato_id,valor_referencia').in('contrato_id', contractIds),
     supabase.from('obras').select('id,nome').in('id', obraIds),
     supabase.from('equipes').select('id,nome').in('id', equipeIds),
     supabase.from('medicoes_servico').select('*').in('contrato_id', contractIds).eq('status', 'aprovada')
       .order('data_medicao').order('aprovado_em'),
+    supabase.from('contrato_aditivos').select('contrato_id,numero,data,descricao,valor_anterior,valor_novo').in('contrato_id', contractIds).order('numero'),
   ]);
 
   const measurementIds = (measurements ?? []).map(m => m.id);
@@ -163,6 +165,9 @@ export async function loadMeasurementReport(supabase: Client, filter: Measuremen
       status: c.status,
       contratado: reference.get(c.id) ?? 0,
       medido: acumulado,
+      aditivos: (amendments ?? []).filter(a => a.contrato_id === c.id).map(a => ({
+        numero: a.numero, data: a.data, descricao: a.descricao, valorAnterior: Number(a.valor_anterior), valorNovo: Number(a.valor_novo),
+      })),
       medicoes: filter.medicao ? all.filter(m => m.id === filter.medicao) : all,
     };
   });

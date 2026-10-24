@@ -16,12 +16,13 @@ type Situation = 'ativo' | 'encerrado' | 'todos';
 
 const n = (v: number | null | undefined) => Number(v ?? 0);
 
-export default function ContractsClient({ contracts, summaries, works, teams, workTeams }: {
+export default function ContractsClient({ contracts, summaries, works, teams, workTeams, users }: {
   contracts: Contract[];
   summaries: ContractSummary[];
   works: Work[];
   teams: Team[];
   workTeams: WorkTeam[];
+  users: { id: string; nome: string }[];
 }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -60,6 +61,7 @@ export default function ContractsClient({ contracts, summaries, works, teams, wo
     count: acc.count + n(r.summary?.medicoes_aprovadas),
   }), { reference: 0, measured: 0, toMeasure: 0, released: 0, blocked: 0, count: 0 });
 
+  const userName = new Map(users.map(u => [u.id, u.nome]));
   const usedTeams = teams.filter(t => rows.some(r => r.equipe_id === t.id));
   const usedWorks = works.filter(w => rows.some(r => r.obra_id === w.id) || w.controle_medicoes_efetivo);
   const canCreate = works.some(w => w.controle_medicoes_efetivo);
@@ -94,6 +96,15 @@ export default function ContractsClient({ contracts, summaries, works, teams, wo
     },
     { header: 'A medir', align: 'right', cell: r => <span className="prumo-metric font-bold">{money(r.summary?.valor_a_medir)}</span> },
     { header: 'Atenção', cell: r => <Attention row={r} /> },
+    {
+      header: 'Registro',
+      cell: r => (
+        <div className="flex min-w-[170px] flex-col gap-0.5 text-xs text-txt-2">
+          <span>Criado <b className="prumo-metric font-medium text-txt">{fmtDate(r.created_at.slice(0, 10))}</b> · {r.criado_por ? userName.get(r.criado_por) ?? '—' : 'migração automática'}</span>
+          <span>Alterado <b className="prumo-metric font-medium text-txt">{fmtDate(r.updated_at.slice(0, 10))}</b> · {r.updated_by ? userName.get(r.updated_by) ?? '—' : r.criado_por ? userName.get(r.criado_por) ?? '—' : 'migração automática'}</span>
+        </div>
+      ),
+    },
   ];
 
   return (
