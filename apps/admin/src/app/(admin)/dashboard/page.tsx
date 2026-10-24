@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import ProgressBar from '@/components/ui/ProgressBar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import PageHeader from '@/components/layout/PageHeader';
+import Header from '@/components/layout/Header';
 import { ArrowRight, CalendarDays, ChevronRight, Plumb, RefreshCw, Ruler } from '@/components/icons';
 import Link from '@/lib/compat/link';
 
@@ -91,6 +92,8 @@ export default async function DashboardPage() {
   });
 
   return (
+    <>
+    <Header breadcrumbs={[{ label: 'Visão geral' }]} />
     <div className="prumo-page">
       <div className="prumo-page-inner">
         <PageHeader
@@ -314,5 +317,6 @@ export default async function DashboardPage() {
         </section>
       </div>
     </div>
+    </>
   );
 }
