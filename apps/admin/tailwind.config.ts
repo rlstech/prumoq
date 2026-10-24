@@ -41,13 +41,14 @@ const config: Config = {
         'brd-2': trenaPalette.jointStrong,
         'txt': trenaPalette.graphite,
         'txt-2': trenaPalette.steel,
-        'txt-3': trenaPalette.steelMuted,
+        // Um pouco mais escuro que steelMuted: passa 4,5:1 também sobre o concreto.
+        'txt-3': '#646A71',
         sidebar: trenaPalette.graphite,
         'on-brand': trenaPalette.steelLight,
       },
       fontSize: {
         'xs': ['12px', { lineHeight: '16px' }],
-        'sm': ['13px', { lineHeight: '18px' }],
+        'sm': ['14px', { lineHeight: '20px' }],
         'base': ['15px', { lineHeight: '22px' }],
         'md': ['16px', { lineHeight: '24px' }],
         'lg': ['18px', { lineHeight: '26px' }],

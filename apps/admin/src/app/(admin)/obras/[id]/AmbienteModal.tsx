@@ -103,7 +103,7 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
           <h3 className="text-xs font-semibold text-txt-2 mb-2">FVS Planejadas (Checklists)</h3>
           <p className="text-[11px] text-txt-3 mb-4">Selecione as fixas de verificação padrão que se aplicam a este ambiente.</p>
           
-          <div className="flex-1 overflow-y-auto max-h-64 border border-brd-0 rounded-lg overflow-hidden bg-bg-0">
+          <div className="flex-1 overflow-y-auto max-h-64 rounded-lg overflow-hidden bg-bg-0">
             {fvsPadraoList.map(fvs => {
               const isSelected = selectedFvs.includes(fvs.id);
               return (

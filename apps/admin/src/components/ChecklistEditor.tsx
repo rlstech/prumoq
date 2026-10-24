@@ -48,7 +48,7 @@ export default function ChecklistEditor({ items, onChange, readOnly = false }: C
   return (
     <div className="flex flex-col gap-3">
       {visibleItems.length === 0 ? (
-        <div className="bg-bg-0 border border-brd-0 rounded-lg p-8 flex flex-col items-center justify-center text-center">
+        <div className="bg-bg-0 rounded-lg p-8 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-txt-2 mb-4">Nenhum item adicionado a esta FVS.</p>
           {!readOnly && (
              <button
@@ -64,7 +64,7 @@ export default function ChecklistEditor({ items, onChange, readOnly = false }: C
         <>
           <div className="space-y-3">
             {visibleItems.map((item, index) => (
-              <div key={item.id} className="bg-bg-1 border border-brd-0 rounded-lg overflow-hidden flex shadow-sm">
+              <div key={item.id} className="bg-bg-1 rounded-xl overflow-hidden flex shadow-sm">
                 
                 {/* Drag Handle & Order */}
                 <div className="bg-bg-2 w-10 flex flex-col items-center py-3 border-r border-brd-0 text-txt-3">

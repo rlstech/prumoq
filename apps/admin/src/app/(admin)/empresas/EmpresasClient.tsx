@@ -241,7 +241,7 @@ export default function EmpresasClient({
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={selectedEmpresa ? 'Editar Empresa' : 'Nova Empresa'} size="lg">
         <form onSubmit={handleSave} className="flex flex-col gap-5 p-1">
           {/* Identificação */}
-          <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+          <div className="bg-bg-0 rounded-lg p-4">
             <div className="text-xs font-semibold text-txt-2 mb-3">Identificação</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="md:col-span-2">
@@ -260,7 +260,7 @@ export default function EmpresasClient({
           </div>
 
           {/* Contato */}
-          <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+          <div className="bg-bg-0 rounded-lg p-4">
             <div className="text-xs font-semibold text-txt-2 mb-3">Contato</div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
@@ -279,7 +279,7 @@ export default function EmpresasClient({
           </div>
 
           {/* Endereço */}
-          <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+          <div className="bg-bg-0 rounded-lg p-4">
             <div className="text-xs font-semibold text-txt-2 mb-3">Endereço</div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="md:col-span-2">
@@ -304,7 +304,7 @@ export default function EmpresasClient({
             </div>
           </div>
 
-          <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+          <div className="bg-bg-0 rounded-lg p-4">
             <div className="text-xs font-semibold text-txt-2 mb-1">Recursos opcionais</div>
             <p className="mb-3 text-xs leading-5 text-txt-3">Defina o padrão para as obras desta empresa. Cada obra pode herdar ou sobrescrever estes controles.</p>
             <label className="flex items-start gap-3 rounded-lg border border-brd-1 bg-bg-1 p-3 cursor-pointer">

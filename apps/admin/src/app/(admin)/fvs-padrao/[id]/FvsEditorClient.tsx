@@ -134,7 +134,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
       <div className="flex flex-col xl:flex-row h-full gap-6">
         
         {/* Painel Esquerdo - Checklist Editor */}
-        <div className="flex-1 flex flex-col h-full bg-bg-1 border border-brd-0 rounded-xl overflow-hidden shrink-0 min-h-[600px]">
+        <div className="flex-1 flex flex-col h-full bg-bg-1 rounded-xl overflow-hidden shrink-0 min-h-[600px]">
            <div className="px-5 py-4 border-b border-brd-0 bg-bg-0 flex items-center justify-between sticky top-0 z-10">
               <div>
                 <h2 className="text-[14px] font-semibold text-txt tracking-tight">Itens de Verificação</h2>
@@ -158,7 +158,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
         <div className="w-full xl:w-[360px] flex flex-col gap-6 shrink-0 h-full overflow-y-auto pb-6">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-txt">{fvsData.revisao_atual < 0 ? 'Rascunho' : `Rev. ${fvsData.revisao_atual}`}</h1>
-            <div className="flex items-center gap-2 bg-bg-1 px-3 py-1.5 border border-brd-0 rounded-lg">
+            <div className="flex items-center gap-2 bg-bg-1 px-3 py-1.5 rounded-lg">
                <span className={`text-xs font-semibold ${fvsData.ativo ? 'text-ok' : 'text-txt-3'}`}>
                  {fvsData.ativo ? 'Ativa' : 'Inativa'}
                </span>
@@ -166,7 +166,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
             </div>
           </div>
 
-          <div className="bg-bg-1 border border-brd-0 rounded-xl p-5">
+          <div className="bg-bg-1 rounded-xl p-5">
              <h3 className="text-xs font-semibold text-txt-2 mb-4">Informações da Padrão</h3>
              
              <div className="space-y-4">
@@ -213,7 +213,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
              </div>
           </div>
 
-          <div className="bg-bg-1 border border-brd-0 rounded-xl p-5">
+          <div className="bg-bg-1 rounded-xl p-5">
             <h3 className="text-xs font-semibold text-txt-2 mb-4">Escopo empresarial</h3>
             <select
               className="prumo-field py-2.5"
@@ -241,9 +241,9 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
             ) : null}
           </div>
 
-          <div className="bg-bg-1 border border-brd-0 rounded-xl p-5">
+          <div className="bg-bg-1 rounded-xl p-5">
              <h3 className="text-xs font-semibold text-txt-2 mb-4">Uso Atual</h3>
-             <div className="flex bg-bg-0 border border-brd-0 rounded-lg divide-x divide-brd-0 p-3 text-center">
+             <div className="flex bg-bg-0 rounded-lg divide-x divide-brd-0 p-3 text-center">
                <div className="flex-1">
                  <p className="text-xl font-bold text-txt">{getInUseCount()}</p>
                  <p className="text-xs text-txt-3 font-semibold mt-0.5">Ambientes</p>
@@ -251,7 +251,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
              </div>
           </div>
 
-          <div className="bg-bg-1 border border-brd-0 rounded-xl flex flex-col flex-1 min-h-[200px]">
+          <div className="bg-bg-1 rounded-xl flex flex-col flex-1 min-h-[200px]">
              <div className="px-5 py-3 border-b border-brd-0 bg-bg-0 flex items-center justify-between">
                 <h3 className="text-xs font-semibold text-txt-2">Histórico</h3>
                 <History size={14} className="text-txt-3" />

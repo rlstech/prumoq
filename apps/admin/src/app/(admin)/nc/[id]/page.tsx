@@ -345,7 +345,7 @@ export default async function NcDetailPage({ params }: PageProps) {
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
             <div className="space-y-5">
               <Panel eyebrow="Ocorrência" title="Problema e encaminhamento" icon={<AlertTriangle size={18} />}>
-                <div className="rounded-lg border-l-[3px] border-l-nok bg-nok-bg p-4">
+                <div className="rounded-lg bg-nok-bg p-4">
                   <div className="mb-1 text-xs font-semibold text-nok">Descrição</div>
                   <p className="text-sm font-medium leading-6 text-txt">{nc.descricao}</p>
                 </div>
@@ -501,7 +501,7 @@ export default async function NcDetailPage({ params }: PageProps) {
                 />
               ) : null}
 
-              <section className="rounded-xl border border-brd-0 bg-bg-1 p-4">
+              <section className="rounded-xl bg-bg-1 p-4">
                 <div className="text-xs font-semibold text-txt-3">Auditoria</div>
                 <dl className="mt-3 space-y-3 text-xs">
                   <AuditFact label="ID do registro" value={nc.id} mono />
@@ -530,7 +530,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-brd-0 bg-bg-1 p-5">
+    <section className="rounded-xl bg-bg-1 p-5">
       <div className="mb-5 flex items-center gap-3">
         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--bl)] text-[var(--br)]">
           {icon}

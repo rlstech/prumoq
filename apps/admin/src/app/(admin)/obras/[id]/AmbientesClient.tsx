@@ -77,7 +77,7 @@ export default function AmbientesClient({ obraId, initialAmbientes, fvsPadraoLis
             <div 
               key={amb.id}
               onClick={() => router.push(`/obras/${obraId}/ambiente/${amb.id}`)}
-              className="bg-bg-1 border border-brd-0 rounded-xl p-4 cursor-pointer hover:border-[var(--br)] transition-colors group overflow-hidden relative"
+              className="bg-bg-1 rounded-xl p-4 cursor-pointer hover:border-[var(--br)] transition-colors group overflow-hidden relative"
             >
               <div 
                 className="absolute top-0 inset-x-0 h-1" 
@@ -103,7 +103,7 @@ export default function AmbientesClient({ obraId, initialAmbientes, fvsPadraoLis
           ))}
         </div>
       ) : (
-        <div className="bg-bg-1 rounded-xl border border-brd-0 p-12 flex flex-col items-center justify-center text-center">
+        <div className="bg-bg-1 rounded-xl p-12 flex flex-col items-center justify-center text-center">
           <div className="w-12 h-12 bg-bg-2 rounded-full flex items-center justify-center text-txt-3 mb-4">
              <Layers size={24} />
           </div>

@@ -89,7 +89,7 @@ export default function EquipesClient({
 
   const EquipeCard = ({ eq }: { eq: any }) => (
     <div 
-      className="bg-bg-1 border border-brd-0 rounded-xl p-4 flex items-center gap-4 hover:border-[var(--br)] transition-colors cursor-pointer group"
+      className="bg-bg-1 rounded-xl p-4 flex items-center gap-4 hover:border-[var(--br)] transition-colors cursor-pointer group"
       onClick={() => openEditEquipeModal(eq)}
     >
        <div className="w-10 h-10 rounded-full bg-[var(--brl)] text-[var(--br)] flex items-center justify-center font-bold relative shrink-0">
@@ -132,7 +132,7 @@ export default function EquipesClient({
              <h3 className="text-sm font-semibold text-txt">Equipes Próprias</h3>
            </div>
            <div className="space-y-3">
-             {proprios.length > 0 ? proprios.map(eq => <EquipeCard key={eq.id} eq={eq} />) : <p className="text-sm text-txt-3 p-4 bg-bg-0 text-center rounded-lg border border-brd-0 border-dashed">Nenhuma equipe encontrada.</p>}
+             {proprios.length > 0 ? proprios.map(eq => <EquipeCard key={eq.id} eq={eq} />) : <p className="text-sm text-txt-3 p-4 bg-bg-0 text-center rounded-lg border-dashed">Nenhuma equipe encontrada.</p>}
            </div>
         </div>
         <div>
@@ -141,7 +141,7 @@ export default function EquipesClient({
              <h3 className="text-sm font-semibold text-txt">Terceirizados</h3>
            </div>
            <div className="space-y-3">
-             {terceirizados.length > 0 ? terceirizados.map(eq => <EquipeCard key={eq.id} eq={eq} />) : <p className="text-sm text-txt-3 p-4 bg-bg-0 text-center rounded-lg border border-brd-0 border-dashed">Nenhum terceirizado encontrado.</p>}
+             {terceirizados.length > 0 ? terceirizados.map(eq => <EquipeCard key={eq.id} eq={eq} />) : <p className="text-sm text-txt-3 p-4 bg-bg-0 text-center rounded-lg border-dashed">Nenhum terceirizado encontrado.</p>}
            </div>
         </div>
       </div>
@@ -174,7 +174,7 @@ export default function EquipesClient({
               <input type="text" placeholder="Ex: Carpintaria, Instalações Elétricas..." className="prumo-field py-2.5" value={formData.especialidade} onChange={e => setFormData({...formData, especialidade: e.target.value})} />
             </div>
 
-            <div className="rounded-lg border border-brd-0 bg-bg-0 p-4">
+            <div className="rounded-lg bg-bg-0 p-4">
               <label className="mb-2 block text-[13px] font-semibold text-txt">Disponibilidade</label>
               <select className="prumo-field py-2.5" value={formData.escopo} onChange={e => setFormData({...formData, escopo: e.target.value as 'global' | 'restrito', empresaIds: e.target.value === 'global' ? [] : formData.empresaIds})}>
                 <option value="global">Todas as empresas do cliente</option>

@@ -55,7 +55,7 @@ export default function NcFinancialPanel({ ncId, initial, users, history }: Prop
   }
 
   return (
-    <section className="rounded-xl border border-brd-0 bg-bg-1 p-4">
+    <section className="rounded-xl bg-bg-1 p-4">
       <div className="flex items-center gap-2"><Landmark size={17} className="text-[var(--br)]" /><div><h2 className="text-sm font-semibold text-txt">Impacto financeiro</h2><p className="text-xs text-txt-3">Obrigatório nesta obra. O histórico de alterações é preservado.</p></div></div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Field label="Situação"><select value={form.situacao} onChange={event => set('situacao', event.target.value as NcFinancialInput['situacao'])}><option value="sem_impacto">{situationLabels.sem_impacto}</option><option value="em_avaliacao">{situationLabels.em_avaliacao}</option><option value="estimado">{situationLabels.estimado}</option><option value="confirmado">{situationLabels.confirmado}</option></select></Field>

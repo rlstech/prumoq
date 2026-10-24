@@ -54,7 +54,7 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
     <div className="flex flex-col lg:flex-row h-full gap-6">
       
       {/* Left Panel: FVS Planejadas */}
-      <div className="flex-1 flex flex-col bg-bg-1 border border-brd-0 rounded-xl overflow-hidden min-h-[500px]">
+      <div className="flex-1 flex flex-col bg-bg-1 rounded-xl overflow-hidden min-h-[500px]">
         <div className="px-5 py-4 border-b border-brd-0 bg-bg-0 flex items-center justify-between">
           <div>
             <h2 className="text-[14px] font-semibold text-txt tracking-tight">FVS Planejadas</h2>
@@ -159,7 +159,7 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
 
       {/* Right Panel: Resumo Info */}
       <div className="w-full lg:w-[340px] flex flex-col gap-6 shrink-0">
-        <div className="bg-bg-1 border border-brd-0 rounded-xl p-5">
+        <div className="bg-bg-1 rounded-xl p-5">
           <h3 className="text-xs font-semibold text-txt-2 mb-4">Progresso do Ambiente</h3>
           <div className="flex items-end gap-2 mb-2">
             <span className="text-4xl font-semibold text-txt leading-none">{progress}%</span>
@@ -179,7 +179,7 @@ export default function FvsPlannerClient({ ambiente, initialFvsList, fvsPadraoLi
           </div>
         </div>
 
-        <div className="bg-bg-1 border border-brd-0 rounded-xl p-5">
+        <div className="bg-bg-1 rounded-xl p-5">
            <h3 className="text-xs font-semibold text-txt-2 mb-4">Detalhes</h3>
            <dl className="space-y-3 text-sm">
              <div>

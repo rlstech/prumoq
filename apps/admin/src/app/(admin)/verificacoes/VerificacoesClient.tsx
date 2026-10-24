@@ -176,10 +176,10 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
             <div className="lg:col-span-3 flex flex-col gap-5">
               {/* Mini KPIs */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-bg-0 border border-brd-0 rounded-lg p-3 flex items-center justify-center">
+                <div className="bg-bg-0 rounded-lg p-3 flex items-center justify-center">
                   <StatusBadge status={detail?.status || 'em_andamento'} />
                 </div>
-                <div className="bg-bg-0 border border-brd-0 rounded-lg p-3 text-center">
+                <div className="bg-bg-0 rounded-lg p-3 text-center">
                   <div className="text-lg font-semibold text-txt">
                     {isPending ? <Loader2 size={16} className="animate-spin mx-auto" /> : (detailData?.verificacao_itens?.length ?? '-')}
                   </div>
@@ -188,7 +188,7 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
               </div>
 
               {/* Checklist Results */}
-              <div className="bg-bg-1 border border-brd-0 rounded-lg">
+              <div className="bg-bg-1 rounded-lg">
                 <div className="px-4 py-3 border-b border-brd-0 text-xs font-semibold text-txt-2">Itens de verificação</div>
                 {isPending ? (
                   <div className="px-4 py-6 flex justify-center"><Loader2 size={20} className="animate-spin text-txt-3" /></div>
@@ -206,7 +206,7 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
                       {item.metodo_verif && <div className="text-[11px] text-txt-3 mt-1">Método: {item.metodo_verif}</div>}
                       {item.tolerancia && <div className="text-[11px] text-txt-3">Tolerância: {item.tolerancia}</div>}
                       {item.resultado === 'nao_conforme' && item.nc_descricao && (
-                        <div className="mt-2 bg-nok-bg border-l-[3px] border-nok rounded-r-md px-3 py-2">
+                        <div className="mt-2 rounded-md bg-nok-bg px-3 py-2">
                           <p className="text-xs text-nok leading-relaxed">{item.nc_descricao}</p>
                         </div>
                       )}
@@ -219,7 +219,7 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
 
               {/* Observações */}
               {detail?.observacoes && (
-                <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+                <div className="bg-bg-0 rounded-lg p-4">
                   <h4 className="text-xs font-semibold text-txt-2 mb-2">Observações</h4>
                   <p className="text-sm text-txt leading-relaxed">{detail.observacoes}</p>
                 </div>
@@ -227,7 +227,7 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
 
               {/* Assinatura */}
               {detail?.assinatura_url && (
-                <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+                <div className="bg-bg-0 rounded-lg p-4">
                   <h4 className="text-xs font-semibold text-txt-2 mb-3">Assinatura Digital</h4>
                   {resolveR2Url(detail.assinatura_url) ? (
                     <img
@@ -251,7 +251,7 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
 
             {/* Painel Direito (2/5) */}
             <div className="lg:col-span-2 flex flex-col gap-5">
-              <div className="bg-bg-0 border border-brd-0 rounded-lg p-4 flex flex-col gap-3">
+              <div className="bg-bg-0 rounded-lg p-4 flex flex-col gap-3">
                 <h4 className="text-xs font-semibold text-txt-2">Dados da verificação</h4>
                 <div>
                   <div className="text-[11px] text-txt-3">Obra</div>
@@ -280,7 +280,7 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
               </div>
 
               {/* Fotos */}
-              <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+              <div className="bg-bg-0 rounded-lg p-4">
                 <h4 className="text-xs font-semibold text-txt-2 mb-3">
                   Fotos ({isPending ? '…' : fotos.length})
                 </h4>

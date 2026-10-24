@@ -61,7 +61,7 @@ export default function AddFvsModal({
           Selecione as fixas de verificação padrão que deseja adicionar a este ambiente.
         </p>
 
-        <div className="border border-brd-0 rounded-lg overflow-hidden bg-bg-0 max-h-80 overflow-y-auto">
+        <div className="rounded-lg overflow-hidden bg-bg-0 max-h-80 overflow-y-auto">
           {available.length > 0 ? (
             available.map(fvs => {
               const isSelected = selectedIds.includes(fvs.id);

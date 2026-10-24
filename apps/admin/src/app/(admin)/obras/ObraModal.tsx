@@ -112,7 +112,7 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
         {/* Identificação */}
-        <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+        <div className="bg-bg-0 rounded-lg p-4">
           <div className="text-xs font-semibold text-txt-2 mb-3">Identificação</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="md:col-span-2">
@@ -151,7 +151,7 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
         </div>
 
         {/* Responsável Técnico */}
-        <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+        <div className="bg-bg-0 rounded-lg p-4">
           <div className="text-xs font-semibold text-txt-2 mb-3">Responsável Técnico</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
@@ -176,7 +176,7 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
         </div>
 
         {/* Localização */}
-        <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+        <div className="bg-bg-0 rounded-lg p-4">
           <div className="text-xs font-semibold text-txt-2 mb-3">Localização</div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-2">
@@ -209,7 +209,7 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
         </div>
 
         {/* Cronograma */}
-        <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
+        <div className="bg-bg-0 rounded-lg p-4">
           <div className="text-xs font-semibold text-txt-2 mb-3">Cronograma</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>

@@ -230,7 +230,7 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
           </div>
 
           {formData.perfil !== 'admin' && (
-            <div className="mt-2 p-4 border border-brd-0 rounded-lg bg-bg-0">
+            <div className="mt-2 p-4 rounded-lg bg-bg-0">
                <label className="block text-xs font-medium text-txt-2 mb-2">Obras Vinculadas</label>
                <p className="text-[11px] text-txt-3 mb-3">Selecione as obras que este usuário pode acessar.</p>
                

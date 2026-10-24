@@ -52,7 +52,7 @@ export default function MeasurementDetailModal({ detail, onClose }: { detail: Me
               {detail.equipe_nome} · Período {fmtDate(measurement.periodo_inicio)} a {fmtDate(measurement.periodo_fim)} · Medição em {fmtDate(measurement.data_medicao)}
             </p>
           </div>
-          <div className="rounded-xl border border-brd-0 bg-bg-0 px-4 py-3 text-right">
+          <div className="rounded-xl bg-bg-0 px-4 py-3 text-right">
             <div className="text-xs font-semibold text-txt-3">Valor total</div>
             <div className="mt-1 text-xl font-bold text-txt">{money(total)}</div>
           </div>
@@ -67,7 +67,7 @@ export default function MeasurementDetailModal({ detail, onClose }: { detail: Me
         </div>
 
         {/* Metadados de aprovação */}
-        <div className="grid gap-2 rounded-xl border border-brd-0 bg-bg-0 p-4 text-xs text-txt-2 md:grid-cols-3">
+        <div className="grid gap-2 rounded-xl bg-bg-0 p-4 text-xs text-txt-2 md:grid-cols-3">
           <div>Criado por <b className="text-txt">{detail.criado_por_nome ?? '—'}</b> em {fmtDateTime(measurement.created_at)}</div>
           {measurement.status === 'aprovada' ? (
             <div>Aprovado por <b className="text-txt">{detail.aprovado_por_nome ?? '—'}</b> em {fmtDateTime(measurement.aprovado_em)}</div>
@@ -201,7 +201,7 @@ export default function MeasurementDetailModal({ detail, onClose }: { detail: Me
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: 'ok' | 'nok' }) {
   return (
-    <div className="rounded-xl border border-brd-0 bg-bg-1 p-4">
+    <div className="rounded-xl bg-bg-1 p-4">
       <div className="text-xs font-semibold text-txt-3">{label}</div>
       <div className={`mt-1 text-lg font-semibold ${tone === 'ok' ? 'text-ok' : tone === 'nok' ? 'text-nok' : 'text-txt'}`}>{value}</div>
     </div>
