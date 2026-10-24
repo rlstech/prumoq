@@ -40,7 +40,7 @@ export const NAV_GROUPS = [
       { href: '/obras', icon: Building2, title: 'Obras', adminOnly: false, alert: false },
       { href: '/verificacoes', icon: ClipboardCheck, title: 'Vistorias', adminOnly: false, alert: false },
       { href: '/nc', icon: AlertTriangle, title: 'Não conformidades', adminOnly: false, alert: true },
-      { href: '/medicoes', icon: Ruler, title: 'Medições', adminOnly: false, alert: false },
+      { href: '/medicoes', icon: Ruler, title: 'Contratos e medições', adminOnly: false, alert: false },
       { href: '/avaliacoes', icon: Star, title: 'Avaliações', adminOnly: false, alert: false },
     ],
   },
