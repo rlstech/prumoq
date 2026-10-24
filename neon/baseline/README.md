@@ -120,3 +120,18 @@ Ensaio no projeto `prumoq-teste` (cópia da produção: schema raw + permissões
 iguais): patch sem erro, 0 `auth.uid()` restantes, 78 policies, 93 funções; API REST com token do Clerk (template
 `neon`) respeita o tenant; session token sem `role` é tratado como anon; PowerSync (conexão direta IPv6) sincroniza
 por obra; painel e PWA publicados passaram nos testes de tela, impressão, escrita e offline.
+
+## Contratos de medição (2026-10-24)
+
+`extra/30_contratos.sql` (entra no `supabase.sql`; também roda sozinho, é idempotente):
+- tabela `contratos` (obra + empreiteiro + nº, objeto, valor, vigência, situação). Leitura pela RLS de obra; escrita só por
+  `salvar_contrato`, `encerrar_contrato` e `reabrir_contrato`;
+- `contrato_id` em `vinculos_execucao_servico` e `medicoes_servico`. O gatilho `atribuir_contrato_medicao` preenche a partir de
+  `app.contrato_id` (setado por `salvar_configuracao_medicao_contrato`, `salvar_medicao_contrato` e `trocar_empreiteiro_contrato`,
+  que chamam as RPCs antigas) ou do único contrato ativo do empreiteiro na obra; recusa contrato de outra obra/empreiteiro;
+- item de medição só com serviço do mesmo contrato (`validar_contrato_item_medicao`); referência única por contrato;
+- view `vw_resumo_contratos` (previsto, medido, rascunho, a medir, liberado, bloqueado);
+- migração: um contrato `CT-00n` por par obra + empreiteiro que já tinha serviço ou medição;
+- `public.uuid_generate_v4()` (atalho que a produção tem e o prumoq-teste recriado não tinha).
+
+Aplicado no prumoq-teste em 2026-10-24 (15 testes de regra com rollback antes). Produção: pendente, só com confirmação.
