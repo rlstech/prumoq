@@ -111,7 +111,7 @@ export default function AmbientesClient({ obraId, initialAmbientes, fvsPadraoLis
           <p className="text-sm text-txt-2 mb-4">Ainda não há ambientes cadastrados para esta obra.</p>
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+            className="prumo-primary-button"
           >
             <Plus size={16} /> Cadastrar Ambiente
           </button>

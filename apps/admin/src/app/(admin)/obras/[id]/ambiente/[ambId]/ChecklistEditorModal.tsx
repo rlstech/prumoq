@@ -58,7 +58,7 @@ export default function ChecklistEditorModal({ isOpen, onClose, fvsId, fvsName }
       )}
 
       <div className="mt-6 flex justify-end">
-        <button onClick={onClose} className="px-5 py-2.5 bg-bg-2 text-txt-2 hover:bg-brd-0 rounded-lg text-sm font-medium transition-colors">
+        <button onClick={onClose} className="prumo-secondary-button bg-bg-0 hover:bg-bg-2">
           Fechar
         </button>
       </div>

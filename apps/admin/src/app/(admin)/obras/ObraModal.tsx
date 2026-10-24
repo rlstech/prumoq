@@ -108,7 +108,7 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Editar Obra' : 'Nova Obra'} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Editar obra' : 'Nova obra'} size="lg">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
         {/* Identificação */}
@@ -116,7 +116,7 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
           <div className="text-xs font-semibold text-txt-2 mb-3">Identificação</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="md:col-span-2">
-              <label className="mb-2 block text-[13px] font-semibold text-txt">Nome da Obra *</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Nome da obra *</label>
               <input
                 type="text"
                 className="prumo-field py-2.5"
@@ -141,8 +141,8 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
                 className="prumo-field py-2.5"
                 value={f.status} onChange={set('status')}
               >
-                <option value="nao_iniciada">Não Iniciada</option>
-                <option value="em_andamento">Em Andamento</option>
+                <option value="nao_iniciada">Não iniciada</option>
+                <option value="em_andamento">Em andamento</option>
                 <option value="paralisada">Paralisada</option>
                 <option value="concluida">Concluída</option>
               </select>
@@ -152,10 +152,10 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
 
         {/* Responsável Técnico */}
         <div className="bg-bg-0 rounded-lg p-4">
-          <div className="text-xs font-semibold text-txt-2 mb-3">Responsável Técnico</div>
+          <div className="text-xs font-semibold text-txt-2 mb-3">Responsável técnico</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="mb-2 block text-[13px] font-semibold text-txt">Engenheiro Resp.</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Engenheiro responsável</label>
               <input
                 type="text"
                 className="prumo-field py-2.5"
@@ -235,14 +235,14 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2"
+            className="prumo-secondary-button bg-bg-0 hover:bg-bg-2 flex-1"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60"
+            className="prumo-primary-button flex-1 disabled:opacity-60"
           >
             {loading ? 'Salvando...' : isEdit ? 'Salvar alterações' : 'Criar obra'}
           </button>

@@ -263,10 +263,10 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
           </div>
 
           <div className="flex gap-3 justify-end pt-1 border-t border-brd-0">
-            <button type="button" onClick={handleClose} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">
+            <button type="button" onClick={handleClose} className="prumo-secondary-button bg-bg-0 hover:bg-bg-2">
               Cancelar
             </button>
-            <button type="button" onClick={handleAnalyze} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-full text-sm font-medium hover:bg-[var(--brd)]">
+            <button type="button" onClick={handleAnalyze} className="prumo-primary-button">
               Analisar <ChevronRight size={16} />
             </button>
           </div>
@@ -316,10 +316,10 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
           </div>
 
           <div className="flex gap-3 justify-end pt-1 border-t border-brd-0">
-            <button type="button" onClick={() => setStep('paste')} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">
+            <button type="button" onClick={() => setStep('paste')} className="prumo-secondary-button bg-bg-0 hover:bg-bg-2">
               Voltar
             </button>
-            <button type="button" onClick={() => setStep('review')} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-full text-sm font-medium hover:bg-[var(--brd)]">
+            <button type="button" onClick={() => setStep('review')} className="prumo-primary-button">
               Revisar itens <ChevronRight size={16} />
             </button>
           </div>
@@ -416,10 +416,10 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
           </div>
 
           <div className="flex gap-3 justify-end pt-1 border-t border-brd-0">
-            <button type="button" onClick={() => setStep('preview')} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">
+            <button type="button" onClick={() => setStep('preview')} className="prumo-secondary-button bg-bg-0 hover:bg-bg-2">
               Voltar
             </button>
-            <button type="button" onClick={handleImport} disabled={isImporting} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-full text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
+            <button type="button" onClick={handleImport} disabled={isImporting} className="prumo-primary-button disabled:opacity-60">
               {isImporting ? 'Importando...' : `Confirmar e Importar ${parsed.length} FVS`}
             </button>
           </div>
@@ -453,7 +453,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
           </div>
 
           <div className="flex justify-end pt-1 border-t border-brd-0">
-            <button type="button" onClick={handleClose} className="px-5 py-2.5 bg-[var(--br)] text-white rounded-full text-sm font-medium hover:bg-[var(--brd)]">
+            <button type="button" onClick={handleClose} className="prumo-primary-button">
               Concluir
             </button>
           </div>

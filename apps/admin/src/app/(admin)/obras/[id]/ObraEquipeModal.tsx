@@ -140,7 +140,7 @@ export default function ObraEquipeModal({ isOpen, onClose, obraId, availableEqui
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2"
+            className="prumo-secondary-button bg-bg-0 hover:bg-bg-2 flex-1"
           >
             Cancelar
           </button>
@@ -149,7 +149,7 @@ export default function ObraEquipeModal({ isOpen, onClose, obraId, availableEqui
               type="button"
               onClick={handleSave}
               disabled={!selected.length || isPending}
-              className="flex-1 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-50"
+              className="prumo-primary-button flex-1 disabled:opacity-50"
             >
               {isPending ? 'Adicionando...' : selected.length ? `Adicionar (${selected.length})` : 'Adicionar'}
             </button>

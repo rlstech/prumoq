@@ -314,8 +314,8 @@ export default function FvsPadraoClient({
             {formData.escopo === 'restrito' ? <div className="mt-2 max-h-32 space-y-1 overflow-y-auto rounded border border-brd-0 p-2">{empresas.map(empresa => <label key={empresa.id} className="flex items-center gap-2 text-xs"><input type="checkbox" checked={formData.empresaIds.includes(empresa.id)} onChange={e => setFormData({...formData, empresaIds: e.target.checked ? [...formData.empresaIds, empresa.id] : formData.empresaIds.filter(id => id !== empresa.id)})} />{empresa.nome}</label>)}</div> : null}
           </div>
           <div className="mt-4 flex gap-3">
-             <button type="button" onClick={() => setCreateModalOpen(false)} className="flex-1 py-2 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">Cancelar</button>
-             <button type="submit" className="flex-1 py-2 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)]">Criar e Editar</button>
+             <button type="button" onClick={() => setCreateModalOpen(false)} className="prumo-secondary-button bg-bg-0 hover:bg-bg-2 flex-1">Cancelar</button>
+             <button type="submit" className="prumo-primary-button flex-1">Criar e Editar</button>
           </div>
         </form>
       </Modal>

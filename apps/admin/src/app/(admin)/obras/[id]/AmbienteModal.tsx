@@ -128,10 +128,10 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
       
       {/* Footer out of form to bypass flex alignment issues */}
       <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-brd-0">
-        <button type="button" onClick={onClose} className="px-4 py-2 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0">
+        <button type="button" onClick={onClose} className="prumo-secondary-button bg-bg-0 hover:bg-bg-2">
           Cancelar
         </button>
-        <button type="button" onClick={handleSubmit} disabled={loading} className="px-6 py-2 bg-[var(--br)] text-white rounded-full text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
+        <button type="button" onClick={handleSubmit} disabled={loading} className="prumo-primary-button disabled:opacity-60">
           {loading ? 'Salvando...' : 'Salvar Ambiente'}
         </button>
       </div>

@@ -134,7 +134,7 @@ export default function ChecklistEditor({ items, onChange, readOnly = false }: C
             <button
              type="button"
              onClick={addItem}
-             className="flex items-center justify-center gap-2 bg-bg-2 border border-brd-0 text-txt-2 hover:text-txt hover:bg-brd-0 py-3 rounded-lg text-sm font-medium transition-colors w-full mt-2 border-dashed"
+             className="prumo-secondary-button bg-bg-0 hover:bg-bg-2"
             >
              <Plus size={16} /> Adicionar novo item
             </button>
