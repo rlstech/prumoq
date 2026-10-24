@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 
 export interface TabItem {
@@ -19,40 +18,40 @@ interface TabsProps {
 
 /**
  * Recortes do mesmo conjunto de dados — abertas, em correção, resolvidas.
- * Substituem filtros escondidos que ninguém abre.
+ * Seletor em pílula: a aba ativa fica grafite com a contagem em amarelo.
  */
 export default function Tabs({ tabs, value, onChange, ariaLabel = 'Recortes', trailing }: TabsProps) {
   return (
-    <div className="mt-4 flex items-center gap-0.5 overflow-x-auto border-b border-brd-0" role="tablist" aria-label={ariaLabel}>
-      {tabs.map(tab => {
-        const active = tab.id === value;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(tab.id)}
-            className={`-mb-px flex h-[38px] shrink-0 items-center gap-2 border-b-2 px-3 text-[13px] transition-colors ${
-              active
-                ? 'border-[var(--br)] font-semibold text-txt'
-                : 'border-transparent font-normal text-txt-3 hover:text-txt'
-            }`}
-          >
-            {tab.label}
-            {typeof tab.count === 'number' ? (
-              <span
-                className={`rounded-full px-1.5 py-px font-mono text-[10.5px] font-semibold ${
-                  active ? 'bg-[var(--br)] text-white' : 'bg-na-bg text-na'
-                }`}
-              >
-                {tab.count}
-              </span>
-            ) : null}
-          </button>
-        );
-      })}
-      {trailing ? <div className="ml-auto flex shrink-0 items-center pb-1.5 pl-3">{trailing}</div> : null}
+    <div className="mt-5 flex flex-wrap items-center gap-3">
+      <div
+        className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full bg-bg-1 p-1"
+        role="tablist"
+        aria-label={ariaLabel}
+      >
+        {tabs.map(tab => {
+          const active = tab.id === value;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(tab.id)}
+              className={`flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm transition-colors ${
+                active ? 'bg-sidebar font-bold text-white' : 'font-semibold text-txt hover:bg-bg-0'
+              }`}
+            >
+              {tab.label}
+              {typeof tab.count === 'number' ? (
+                <span className={`font-mono text-xs font-bold ${active ? 'text-accent' : 'text-txt-2'}`}>
+                  {tab.count}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+      {trailing ? <div className="ml-auto flex shrink-0 items-center">{trailing}</div> : null}
     </div>
   );
 }

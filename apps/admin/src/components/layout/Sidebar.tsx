@@ -4,7 +4,7 @@ import { usePathname } from '@/lib/compat/navigation';
 import { useClerk } from '@clerk/clerk-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { PerfilUsuario } from '@prumoq/shared';
-import { BrandMark } from '@/components/ui/BrandMark';
+import { BrandMark, BrandWordmark } from '@/components/ui/BrandMark';
 import { createClient } from '@/lib/supabase/client';
 import {
   AlertTriangle,
@@ -19,7 +19,7 @@ import {
   LogOut,
   Menu,
   Ruler,
-  ScanLine,
+  Star,
   Users,
   X,
 } from '@/components/icons';
@@ -38,10 +38,10 @@ export const NAV_GROUPS = [
     label: 'Operação',
     items: [
       { href: '/obras', icon: Building2, title: 'Obras', adminOnly: false, alert: false },
-      { href: '/verificacoes', icon: ScanLine, title: 'Vistorias', adminOnly: false, alert: false },
+      { href: '/verificacoes', icon: ClipboardCheck, title: 'Vistorias', adminOnly: false, alert: false },
       { href: '/nc', icon: AlertTriangle, title: 'Não conformidades', adminOnly: false, alert: true },
       { href: '/medicoes', icon: Ruler, title: 'Medições', adminOnly: false, alert: false },
-      { href: '/avaliacoes', icon: ClipboardCheck, title: 'Avaliações', adminOnly: false, alert: false },
+      { href: '/avaliacoes', icon: Star, title: 'Avaliações', adminOnly: false, alert: false },
     ],
   },
   {
@@ -119,7 +119,7 @@ export default function Sidebar({ profile }: { profile: UserSummary }) {
   function navigation(expanded: boolean) {
     return (
       <>
-        <nav className="flex-1 overflow-y-auto px-3 py-3.5" aria-label="Navegação principal">
+        <nav className="flex-1 overflow-y-auto px-3 pb-3" aria-label="Navegação principal">
           {NAV_GROUPS.map((group, groupIdx) => {
             const items = group.items.filter(item => !item.adminOnly || profile.perfil === 'admin');
             if (!items.length) return null;
@@ -127,68 +127,67 @@ export default function Sidebar({ profile }: { profile: UserSummary }) {
             return (
               <div key={group.label ?? `grupo-${groupIdx}`} className="mb-4 last:mb-0">
                 {group.label && expanded ? (
-                  <div className="px-2.5 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
-                    {group.label}
-                  </div>
+                  <div className="px-3.5 pb-1.5 text-xs font-semibold text-[#8F959B]">{group.label}</div>
                 ) : null}
-                {group.label && !expanded ? <div className="mx-2 mb-3.5 h-px bg-white/10" /> : null}
+                {group.label && !expanded ? <div className="mx-auto mb-3 h-px w-8 bg-brand-line" /> : null}
 
-                {items.map(item => {
-                  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                  const Icon = item.icon;
-                  const showBadge = item.alert && ncCount > 0;
+                <div className={`flex flex-col gap-0.5 ${expanded ? '' : 'items-center'}`}>
+                  {items.map(item => {
+                    const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    const Icon = item.icon;
+                    const showBadge = item.alert && ncCount > 0;
+                    const badgeTone = active ? 'bg-sidebar text-accent' : 'bg-nok text-white';
 
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      title={expanded ? undefined : item.title}
-                      aria-current={active ? 'page' : undefined}
-                      className={`group relative mb-0.5 flex min-h-10 items-center rounded-lg text-[13px] transition-colors ${
-                        expanded ? 'gap-3 px-3' : 'justify-center px-2'
-                      } ${
-                        active
-                          ? 'bg-accent/[0.12] font-semibold text-white'
-                          : 'font-normal text-white/60 hover:bg-white/[0.07] hover:text-white'
-                      }`}
-                    >
-                      {active ? <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-accent" /> : null}
-                      <span className="relative flex shrink-0">
-                        <Icon size={19} strokeWidth={active ? 2.2 : 1.8} className={active ? 'text-accent' : ''} />
-                        {showBadge && !expanded ? (
-                          <span className="absolute -right-2 -top-1.5 min-w-[15px] rounded-full bg-nok px-[3px] text-center font-mono text-[9px] font-semibold leading-[15px] text-white">
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        title={expanded ? undefined : item.title}
+                        aria-label={expanded ? undefined : item.title}
+                        aria-current={active ? 'page' : undefined}
+                        className={`relative flex h-11 shrink-0 items-center rounded-full text-sm transition-colors ${
+                          expanded ? 'gap-3 pl-3.5 pr-3' : 'w-11 justify-center'
+                        } ${
+                          active
+                            ? 'bg-accent font-bold text-txt'
+                            : 'font-medium text-on-brand hover:bg-white/[0.07] hover:text-white'
+                        }`}
+                      >
+                        <Icon size={20} className="shrink-0" />
+                        {expanded ? <span className="min-w-0 flex-1 truncate">{item.title}</span> : null}
+                        {showBadge && expanded ? (
+                          <span className={`flex h-[22px] min-w-[22px] shrink-0 items-center justify-center rounded-full px-[7px] font-mono text-[11px] font-bold ${badgeTone}`}>
                             {Math.min(ncCount, 99)}
                           </span>
                         ) : null}
-                      </span>
-                      {expanded ? <span className="min-w-0 flex-1 truncate">{item.title}</span> : null}
-                      {showBadge && expanded ? (
-                        <span className="min-w-5 shrink-0 rounded-full bg-nok px-1.5 py-px text-center font-mono text-[10px] font-semibold text-white">
-                          {Math.min(ncCount, 99)}
-                        </span>
-                      ) : null}
-                    </Link>
-                  );
-                })}
+                        {showBadge && !expanded ? (
+                          <span className={`absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 font-mono text-[10px] font-bold ${badgeTone}`}>
+                            {Math.min(ncCount, 99)}
+                          </span>
+                        ) : null}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
         </nav>
 
-        <div className="shrink-0 border-t border-white/10 p-3">
+        <div className="shrink-0 p-3 pt-1">
           {expanded ? (
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 rounded-full bg-[#26292D] p-1.5">
               <Link
                 href="/conta"
-                className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1.5 pl-1.5 pr-2 transition-colors hover:bg-white/[0.07]"
+                className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full pr-2"
                 aria-label="Abrir minha conta"
               >
-                <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-accent font-mono text-[12px] font-semibold text-txt">
+                <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-accent font-mono text-xs font-bold text-txt">
                   {initials(profile.nome)}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12.5px] font-medium text-white/90">{profile.nome}</span>
-                  <span className="block truncate text-[11px] text-white/40">Minha conta</span>
+                  <span className="block truncate text-[13px] font-semibold text-white">{profile.nome}</span>
+                  <span className="block truncate text-xs text-on-brand">Minha conta</span>
                 </span>
               </Link>
               <button
@@ -196,9 +195,9 @@ export default function Sidebar({ profile }: { profile: UserSummary }) {
                 onClick={handleLogout}
                 title="Sair"
                 aria-label="Sair"
-                className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/[0.07] hover:text-white"
+                className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full text-on-brand transition-colors hover:bg-white/[0.08] hover:text-white"
               >
-                <LogOut size={16} />
+                <LogOut size={18} />
               </button>
             </div>
           ) : (
@@ -207,7 +206,7 @@ export default function Sidebar({ profile }: { profile: UserSummary }) {
                 href="/conta"
                 title="Minha conta"
                 aria-label="Abrir minha conta"
-                className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-accent font-mono text-[12px] font-semibold text-txt"
+                className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-accent font-mono text-xs font-bold text-txt"
               >
                 {initials(profile.nome)}
               </Link>
@@ -216,9 +215,9 @@ export default function Sidebar({ profile }: { profile: UserSummary }) {
                 onClick={handleLogout}
                 title="Sair"
                 aria-label="Sair"
-                className="flex h-[30px] w-[30px] items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/[0.07] hover:text-white"
+                className="flex h-[38px] w-[38px] items-center justify-center rounded-full text-on-brand transition-colors hover:bg-white/[0.08] hover:text-white"
               >
-                <LogOut size={16} />
+                <LogOut size={18} />
               </button>
             </div>
           )}
@@ -229,33 +228,21 @@ export default function Sidebar({ profile }: { profile: UserSummary }) {
 
   function brand(expanded: boolean) {
     return (
-      <div
-        className={`flex h-[72px] shrink-0 items-center border-b border-white/10 ${
-          expanded ? 'gap-2.5 pl-4 pr-3' : 'justify-center px-2'
-        }`}
-      >
-        <Link href="/dashboard" aria-label="PrumoQ — Visão geral" className="flex shrink-0 items-center">
-          <BrandMark size={30} />
+      <div className={`flex shrink-0 items-center pb-5 pt-5 ${expanded ? 'gap-2.5 pl-5 pr-3' : 'flex-col gap-3 px-2'}`}>
+        <Link href="/dashboard" aria-label="PrumoQ — Visão geral" className="flex min-w-0 shrink-0 items-center gap-2.5 rounded-full">
+          <BrandMark size={34} />
+          {expanded ? <BrandWordmark /> : null}
         </Link>
-        {expanded ? (
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[15px] font-semibold leading-[18px] tracking-[-0.01em] text-white">PrumoQ</div>
-            {profile.cargo ? (
-              <div className="mt-0.5 truncate text-[10px] uppercase tracking-[0.1em] text-white/40">{profile.cargo}</div>
-            ) : null}
-          </div>
-        ) : null}
-        {expanded ? (
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            title="Recolher menu"
-            aria-label="Recolher menu"
-            className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/45 transition-colors hover:bg-white/[0.07] hover:text-white md:flex"
-          >
-            <ChevronsLeft size={17} />
-          </button>
-        ) : null}
+        {expanded ? <span className="flex-1" /> : null}
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          title={expanded ? 'Recolher menu' : 'Expandir menu'}
+          aria-label={expanded ? 'Recolher menu' : 'Expandir menu'}
+          className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full text-on-brand transition-colors hover:bg-white/[0.08] hover:text-white md:flex"
+        >
+          {expanded ? <ChevronsLeft size={17} /> : <ChevronsRight size={17} />}
+        </button>
       </div>
     );
   }
@@ -263,22 +250,12 @@ export default function Sidebar({ profile }: { profile: UserSummary }) {
   return (
     <>
       <aside
-        className="hidden h-screen shrink-0 flex-col bg-sidebar transition-[width] duration-200 md:flex"
-        style={{ width: collapsed ? '88px' : '248px' }}
+        className="on-brand my-3 ml-3 hidden shrink-0 flex-col overflow-hidden rounded-[28px] bg-sidebar text-white transition-[width] duration-200 md:flex"
+        style={{ width: collapsed ? '76px' : '240px' }}
       >
         {brand(!collapsed)}
-        {collapsed ? (
-          <div className="flex justify-center pb-0.5 pt-2.5">
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              title="Expandir menu"
-              aria-label="Expandir menu"
-              className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-white/45 transition-colors hover:bg-white/[0.07] hover:text-white"
-            >
-              <ChevronsRight size={17} />
-            </button>
-          </div>
+        {profile.cargo && !collapsed ? (
+          <div className="-mt-2 mb-4 truncate px-5 text-xs text-on-brand">{profile.cargo}</div>
         ) : null}
         {navigation(!collapsed)}
       </aside>
@@ -286,7 +263,7 @@ export default function Sidebar({ profile }: { profile: UserSummary }) {
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
-        className="fixed left-3 top-3 z-40 flex h-11 w-11 items-center justify-center rounded-lg bg-sidebar text-white shadow-float md:hidden"
+        className="on-brand fixed left-3 top-3 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-sidebar text-white shadow-float md:hidden"
         aria-label="Abrir menu"
       >
         <Menu size={21} />
@@ -296,17 +273,17 @@ export default function Sidebar({ profile }: { profile: UserSummary }) {
         <div className="fixed inset-0 z-50 md:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-[rgba(20,37,34,.58)]"
+            className="absolute inset-0 bg-[rgba(28,31,34,.62)]"
             onClick={() => setMobileOpen(false)}
             aria-label="Fechar menu"
           />
-          <aside className="relative flex h-full w-[248px] flex-col bg-sidebar shadow-float">
+          <aside className="on-brand relative m-3 flex h-[calc(100%-24px)] w-[248px] flex-col rounded-[28px] bg-sidebar text-white shadow-float">
             <div className="relative">
               {brand(true)}
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="absolute -right-12 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-bg-1 text-txt shadow-card"
+                className="absolute -right-14 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-bg-1 text-txt"
                 aria-label="Fechar menu"
               >
                 <X size={19} />

@@ -7,7 +7,7 @@ interface PageHeaderProps {
   title: string;
   /** Uma frase dizendo para que serve a tela e qual é o próximo passo. */
   description?: string;
-  /** Ações da página; a primária vem por último, em Azul Prumo. Também usado para selos de status em heróis de detalhe. */
+  /** Ações da página; a primária vem por último, em amarelo. Também usado para selos de status em heróis de detalhe. */
   actions?: ReactNode;
   /** Faixa de abas ou qualquer recorte que pertença ao cabeçalho. */
   children?: ReactNode;
@@ -20,11 +20,11 @@ interface PageHeaderProps {
 export default function PageHeader({ kicker, title, description, actions, children }: PageHeaderProps) {
   return (
     <div>
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="min-w-0">
-          {kicker ? <p className="prumo-kicker mb-2 text-[var(--prumo-brand)]">{kicker}</p> : null}
-          <h1 className="text-xl font-semibold tracking-[-0.025em] text-txt">{title}</h1>
-          {description ? <p className="mt-1.5 max-w-[660px] text-sm text-txt-2">{description}</p> : null}
+          {kicker ? <p className="prumo-kicker mb-1.5">{kicker}</p> : null}
+          <h1 className="text-[30px] font-extrabold leading-[1.08] tracking-[-0.03em] text-txt md:text-[36px]">{title}</h1>
+          {description ? <p className="mt-2 max-w-[660px] text-[15px] text-txt-2">{description}</p> : null}
         </div>
         {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2.5">{actions}</div> : null}
       </div>

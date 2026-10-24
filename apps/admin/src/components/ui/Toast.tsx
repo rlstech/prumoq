@@ -35,22 +35,29 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      <div className="fixed bottom-5 right-5 z-[60] flex flex-col gap-2" role="status" aria-live="polite">
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border text-sm font-medium transition-all duration-250 enter animate-in slide-in-from-bottom-5 fade-in ${
-              t.type === 'success' ? 'bg-ok-bg text-ok border-ok/20' :
-              t.type === 'error' ? 'bg-nok-bg text-nok border-nok/20' :
-              'bg-pg-bg text-pg border-pg/20'
-            }`}
+            className="on-brand flex min-h-12 items-center gap-3 rounded-full bg-sidebar py-2 pl-2 pr-2 text-sm font-semibold text-white shadow-float"
           >
-            {t.type === 'success' && <CheckCircle2 size={16} />}
-            {t.type === 'error' && <XCircle size={16} />}
-            {t.type === 'info' && <AlertCircle size={16} />}
-            <span>{t.message}</span>
-            <button onClick={() => remove(t.id)} className="ml-2 opacity-60 hover:opacity-100">
-              <X size={14} />
+            <span
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                t.type === 'success' ? 'bg-ok text-white' : t.type === 'error' ? 'bg-nok text-white' : 'bg-accent text-txt'
+              }`}
+            >
+              {t.type === 'success' && <CheckCircle2 size={17} />}
+              {t.type === 'error' && <XCircle size={17} />}
+              {t.type === 'info' && <AlertCircle size={17} />}
+            </span>
+            <span className="pr-1">{t.message}</span>
+            <button
+              type="button"
+              onClick={() => remove(t.id)}
+              aria-label="Fechar aviso"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-on-brand hover:bg-white/[0.08] hover:text-white"
+            >
+              <X size={15} />
             </button>
           </div>
         ))}

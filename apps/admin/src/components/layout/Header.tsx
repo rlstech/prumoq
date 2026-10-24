@@ -35,22 +35,22 @@ export default function Header({ breadcrumbs, actions }: HeaderProps) {
   const trail: BreadcrumbItem[] = group ? [{ label: group }, ...breadcrumbs] : breadcrumbs;
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 min-h-14 items-center justify-between gap-5 border-b border-brd-0 bg-bg-1/95 px-4 pl-16 backdrop-blur md:px-8 md:pl-8">
-      <nav className="flex min-w-0 items-center gap-1.5 text-[12.5px]" aria-label="Trilha de navegação">
+    <header className="flex h-[60px] min-h-[60px] shrink-0 items-center justify-between gap-5 px-4 pl-[68px] pt-2 md:px-7 md:pt-3">
+      <nav className="flex min-w-0 items-center gap-2 text-[13px]" aria-label="Trilha de navegação">
         {trail.map((crumb, idx) => {
           const isLast = idx === trail.length - 1;
 
           return (
-            <div key={`${crumb.label}-${idx}`} className="flex min-w-0 items-center gap-1.5 text-txt-3">
+            <div key={`${crumb.label}-${idx}`} className="flex min-w-0 items-center gap-2 font-semibold text-txt-2">
               {crumb.href && !isLast ? (
                 <Link href={crumb.href} className="truncate transition-colors hover:text-txt">
                   {crumb.label}
                 </Link>
               ) : (
-                <span className={`truncate ${isLast ? 'font-semibold text-txt' : ''}`}>{crumb.label}</span>
+                <span className={`truncate ${isLast ? 'text-txt' : ''}`}>{crumb.label}</span>
               )}
 
-              {!isLast && <ChevronRight size={13} className="shrink-0 text-[var(--brd1)]" aria-hidden="true" />}
+              {!isLast && <ChevronRight size={14} className="shrink-0 text-brd-2" aria-hidden="true" />}
             </div>
           );
         })}

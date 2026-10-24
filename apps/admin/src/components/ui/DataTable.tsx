@@ -1,5 +1,6 @@
 
 import { ReactNode } from 'react';
+import { Plumb } from '@/components/icons';
 
 export interface Column<T> {
   header: string;
@@ -42,10 +43,10 @@ export default function DataTable<T>({
     return (
       <div className="prumo-panel w-full overflow-hidden">
         <div className="flex animate-pulse flex-col">
-          <div className="h-9 border-b border-brd-0 bg-bg-0"></div>
+          <div className="h-11"></div>
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="flex h-[52px] items-center border-b border-brd-0 px-4">
-              <div className="h-3.5 w-full rounded bg-bg-2"></div>
+            <div key={i} className="mx-2 flex h-14 items-center border-t border-brd-0 px-4">
+              <div className="h-3.5 w-full rounded-full bg-bg-0"></div>
             </div>
           ))}
         </div>
@@ -56,24 +57,26 @@ export default function DataTable<T>({
   if (data.length === 0) {
     return (
       <div className="prumo-panel flex w-full flex-col items-center justify-center px-6 py-12 text-center">
-        <div className="mb-4 h-8 w-px bg-accent" />
-        <p className="text-sm font-semibold text-txt">{emptyMessage}</p>
-        {emptyHint ? <p className="mt-1.5 max-w-[320px] text-[13px] text-txt-2">{emptyHint}</p> : null}
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-bg-0 text-txt">
+          <Plumb size={24} />
+        </div>
+        <p className="text-[15px] font-bold text-txt">{emptyMessage}</p>
+        {emptyHint ? <p className="mt-1.5 max-w-[340px] text-sm text-txt-2">{emptyHint}</p> : null}
         {emptyAction ? <div className="mt-4">{emptyAction}</div> : null}
       </div>
     );
   }
 
   return (
-    <div className="prumo-panel w-full overflow-hidden">
+    <div className="prumo-panel w-full overflow-hidden px-2 py-1.5">
       <div className="w-full overflow-x-auto">
         <table className="w-full border-collapse text-left">
-          <thead className="sticky top-0 z-10">
-            <tr className="border-b border-brd-0 bg-bg-0">
+          <thead>
+            <tr>
               {columns.map((col, idx) => (
                 <th
                   key={col.header || idx}
-                  className={`whitespace-nowrap px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.4px] text-txt-2 ${
+                  className={`prumo-th ${
                     col.align === 'right' ? 'text-right' : ''
                   } ${col.width || ''}`}
                 >
@@ -96,16 +99,16 @@ export default function DataTable<T>({
                     }
                   }}
                   tabIndex={rowIsClickable ? 0 : undefined}
-                  className={`border-b border-brd-0 last:border-0 ${
+                  className={`border-t border-brd-0 ${
                     rowIsClickable
-                      ? 'cursor-pointer transition-colors hover:bg-accent-soft/50 focus:bg-accent-soft/50 focus:outline-none'
+                      ? 'cursor-pointer transition-colors hover:bg-bg-hover focus-visible:bg-accent-soft focus-visible:outline-none'
                       : ''
                   }`}
                 >
                   {columns.map((col, colIdx) => (
                     <td
                       key={colIdx}
-                      className={`px-4 py-3 text-[13px] text-txt ${col.align === 'right' ? 'text-right' : ''} ${
+                      className={`px-4 py-3.5 text-sm text-txt ${col.align === 'right' ? 'text-right' : ''} ${
                         col.className || ''
                       }`}
                     >
@@ -120,7 +123,7 @@ export default function DataTable<T>({
           </tbody>
         </table>
       </div>
-      {footer ? <div className="border-t border-brd-0 px-4 py-2.5">{footer}</div> : null}
+      {footer ? <div className="border-t border-brd-0 px-4 py-3">{footer}</div> : null}
     </div>
   );
 }
