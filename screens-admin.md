@@ -466,6 +466,28 @@ Colunas: Descrição | Serviço / Ambiente | Obra | Prioridade | Responsável | 
 
 ---
 
+## Página 12b: Contratos e medições
+
+Menu "Contratos e medições" (`/medicoes`). Tudo é organizado por **contrato** (tabela `contratos`: obra + empreiteiro +
+nº, objeto, valor, vigência). Cada serviço medido (FVS) e cada medição pertencem a um contrato.
+
+- **`/medicoes` (contratos):** todos os contratos de todas as obras. Busca, filtros por obra e empreiteiro, abas
+  Ativos/Encerrados/Todos. Cartão grafite com medido sobre contratado, a medir, liberado para medir e bloqueado por NC.
+  Tabela: nº/objeto, empreiteiro/obra, contratado, medido (trena), a medir e etiquetas (rascunho, bloqueio, liberado).
+  Ações: "Gerar PDF" (respeita o filtro de obra) e "Novo contrato" (painel lateral; ao criar, abre o contrato na aba "A medir").
+- **`/medicoes/contratos/:id` (contrato):** etiquetas (situação, empreiteiro, obra, vigência), resumo em grafite e abas:
+  - *Medições:* referência, período, data, valor, situação; rascunho com Aprovar/Descartar; clique abre a medição.
+  - *A medir:* um serviço por linha (previsto, aprovado em campo, medido, liberado agora, valor a medir) e
+    "Adicionar serviços" (FVS da obra sem medição configurada: método, unidade, quantidade e preço). "Configurar" leva à
+    página de medição do serviço (etapas ponderadas, troca de empreiteiro para o contrato de outro empreiteiro).
+  - Ações: Nova medição (painel lateral; só liberações deste contrato; referência e período sugeridos), Gerar PDF,
+    Editar, Encerrar/Reabrir (encerrar exige não ter rascunho).
+- **`/medicoes/m/:id` (medição):** valor, avanço, retrabalho, o que ficou fora por RNC; itens com as FVS que liberaram
+  cada quantidade; descontos por RNC; histórico (criada, aprovada, cancelada). Aprovar/descartar (rascunho),
+  cancelar e "PDF desta medição" (aprovada). Empreiteiro terceirizado precisa de avaliação aprovada para aprovar.
+- **PDF (`/relatorio/medicoes?obra=|contrato=|medicao=`):** página de impressão (A4). Resumo por contrato, medições
+  aprovadas com valor e acumulado, itens de cada uma. Com `medicao=` sai como boletim, com campos de assinatura.
+
 ## Página 13: Relatórios
 
 **Rota:** `/relatorios`
