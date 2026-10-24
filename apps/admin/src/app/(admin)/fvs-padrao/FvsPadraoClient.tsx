@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Plus, Upload, Trash2, XCircle } from 'lucide-react';
+import { Plus, Upload, Trash2, XCircle } from '@/components/icons';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { FilterBar, SearchField, SelectFilter } from '@/components/ui/FilterBar';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
@@ -271,20 +271,20 @@ export default function FvsPadraoClient({
       <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Nova FVS Padrão" size="sm">
         <form onSubmit={handleCreate} className="flex flex-col gap-4">
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Código</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Código</label>
             <input
               type="text"
-              className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1 focus:border-[var(--br)] outline-none font-mono"
+              className="prumo-field py-2.5 font-mono"
               value={formData.codigo}
               onChange={e => setFormData({ ...formData, codigo: e.target.value })}
               placeholder="Ex: FVS 03.01"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Nome da Verificação *</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Nome da Verificação *</label>
             <input 
               type="text"
-              className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1 focus:border-[var(--br)] outline-none"
+              className="prumo-field py-2.5"
               value={formData.nome}
               onChange={e => setFormData({ ...formData, nome: e.target.value })}
               placeholder="Ex: Execução de Alvenaria"
@@ -293,9 +293,9 @@ export default function FvsPadraoClient({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Categoria *</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Categoria *</label>
             <select 
-              className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1 focus:border-[var(--br)] outline-none"
+              className="prumo-field py-2.5"
               value={formData.categoria}
               onChange={e => setFormData({ ...formData, categoria: e.target.value })}
               required
@@ -306,7 +306,7 @@ export default function FvsPadraoClient({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Disponibilidade</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Disponibilidade</label>
             <select className="prumo-field" value={formData.escopo} onChange={e => setFormData({...formData, escopo: e.target.value as 'global' | 'restrito', empresaIds: e.target.value === 'global' ? [] : formData.empresaIds})}>
               <option value="global">Todas as empresas</option>
               <option value="restrito">Empresas selecionadas</option>
@@ -314,8 +314,8 @@ export default function FvsPadraoClient({
             {formData.escopo === 'restrito' ? <div className="mt-2 max-h-32 space-y-1 overflow-y-auto rounded border border-brd-0 p-2">{empresas.map(empresa => <label key={empresa.id} className="flex items-center gap-2 text-xs"><input type="checkbox" checked={formData.empresaIds.includes(empresa.id)} onChange={e => setFormData({...formData, empresaIds: e.target.checked ? [...formData.empresaIds, empresa.id] : formData.empresaIds.filter(id => id !== empresa.id)})} />{empresa.nome}</label>)}</div> : null}
           </div>
           <div className="mt-4 flex gap-3">
-             <button type="button" onClick={() => setCreateModalOpen(false)} className="flex-1 py-2 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">Cancelar</button>
-             <button type="submit" className="flex-1 py-2 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)]">Criar e Editar</button>
+             <button type="button" onClick={() => setCreateModalOpen(false)} className="prumo-secondary-button bg-bg-0 hover:bg-bg-2 flex-1">Cancelar</button>
+             <button type="submit" className="prumo-primary-button flex-1">Criar e Editar</button>
           </div>
         </form>
       </Modal>

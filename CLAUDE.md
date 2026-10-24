@@ -23,7 +23,7 @@ prumoq/
   apps/mobile/       ← PWA: Expo 52 (web) + Expo Router + PowerSync Web + Clerk; Worker em worker/ (rota de mídia R2)
   apps/admin/        ← Painel admin: Vite + React 19 + React Router (SPA em /admin) + Worker em worker/ (contas no Clerk)
   packages/shared/   ← tipos TypeScript (Database) + enums + renderer do relatório de FVS
-  packages/design-system/ ← tokens: "Trena" (PWA) e "Prumo Mineral" (admin); símbolos da marca
+  packages/design-system/ ← tokens Trena Suave (PWA e admin), traços dos ícones Seixo; símbolos da marca
   neon/              ← baseline do schema (extraído do Supabase) + patch Clerk/PowerSync (`baseline/supabase.sql`)
   powersync/         ← configuração do PowerSync Cloud (service.yaml, sync-config.yaml)
   supabase/          ← migrations históricas (referência; o schema atual é raw/ + supabase.sql)
@@ -215,7 +215,7 @@ Veja `.env.example`. Arquivos `.env.local` só com valores públicos; segredos n
 - SPA estático: nada de render no servidor; dados buscados no navegador (TanStack Query)
 - Nova tela: `src/app/<rota>/page.tsx` (+ `*Client.tsx`) e registrar em `src/router.tsx`
 - Escritas em `actions.ts` junto à rota, rodando no navegador; o que exige segredo vai para `apps/admin/worker`
-- Tailwind CSS — tokens de cor em `apps/admin/tailwind.config.ts`
+- Tailwind CSS — tokens de cor em `apps/admin/tailwind.config.ts`; classes base (`prumo-primary-button`, `prumo-panel`, `prumo-field`, `prumo-th`, `prumo-pill`...) em `src/globals.css`
 
 ### Banco de Dados
 - Usar `@prumoq/shared` — client tipado com `Database`
@@ -262,19 +262,19 @@ Veja `.env.example`. Arquivos `.env.local` só com valores públicos; segredos n
 ## Design
 
 **`design-system.md` e `packages/design-system/` são a referência visual definitiva.**
-São duas identidades: **Trena Suave** no PWA (grafite + amarelo de trena, cantos de seixo, ícones Seixo, Figtree; logo "Q de face") e
-**Prumo Mineral** no admin (azul prumo + cal viva), que ainda não migrou. Os protótipos
+Os dois apps usam a identidade **Trena Suave** (grafite + amarelo de trena, cantos de seixo, ícones Seixo, Figtree; logo "Q de face"):
+o PWA na densidade de campo e o admin na de mesa (controles de 44px, tabelas). Os protótipos
 HTML em `references/` continuam válidos para conteúdo e fluxos, não para cores,
 tipografia ou shell.
 
 Ao implementar qualquer tela:
 1. Consulte o fluxo no HTML de referência correspondente (`prumoq_mobile_inspector.html` para mobile, `fvs_admin_prumoq.html` para web)
-2. Use os tokens de `packages/design-system/` (via `apps/mobile/lib/constants.ts` no PWA) e os padrões de `design-system.md`
+2. Use os tokens de `packages/design-system/` (via `apps/mobile/lib/constants.ts` no PWA; classes Tailwind e `prumo-*` de `apps/admin/src/globals.css` no admin) e os padrões de `design-system.md`
 3. Use os componentes canônicos de cada app
-4. Ícones: no PWA, sempre de `apps/mobile/lib/icons.tsx` (nunca direto de `lucide-react-native`); no admin, Lucide React. Nada de emoji
-5. PWA: texto sobre o amarelo é sempre grafite (`Palette.onAccent`); não usar o amarelo como texto ou borda sobre fundo claro
+4. Ícones: no PWA, sempre de `apps/mobile/lib/icons.tsx` (nunca direto de `lucide-react-native`); no admin, sempre de `apps/admin/src/components/icons.tsx` (nunca direto de `lucide-react`). Nada de emoji
+5. Texto sobre o amarelo é sempre grafite (`Palette.onAccent` no PWA); não usar o amarelo como texto ou borda sobre fundo claro. Amarelo é escasso: ação principal, item ativo, foco
 
-Cores principais do PWA (Trena; `trenaPalette`):
+Cores principais (Trena; `trenaPalette`, as mesmas nos dois apps):
 - Brand / Grafite: `#1C1F22`
 - Accent / Amarelo Trena: `#FFC21A`
 - Canvas / Concreto: `#ECEAE6`
@@ -282,8 +282,3 @@ Cores principais do PWA (Trena; `trenaPalette`):
 - NOK/Não conforme: `#C8281E`
 - Sync/Em andamento: `#2459A8`
 - Warn/Prazo: `#B85400`
-
-Cores principais do admin (Prumo Mineral; `apps/admin/tailwind.config.ts`):
-- Brand / Azul Prumo: `#163B50`
-- Accent / Cal Viva: `#D8E568`
-- Canvas / Calcário: `#F4F1E8`

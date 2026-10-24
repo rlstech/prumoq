@@ -2,6 +2,7 @@
 // dados (com o token do usuário) e devolve JSX. Aqui ela roda dentro de uma consulta do TanStack Query, então
 // revalidatePath/router.refresh recarregam a tela, e redirect()/notFound() viram navegação.
 import type { ReactNode } from 'react';
+import { Plumb } from '@/components/icons';
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, Outlet, useLocation, useParams } from 'react-router';
 import { NotFoundSignal, RedirectSignal } from './navigation';
@@ -73,7 +74,7 @@ function ErroDeTela({ error, onRetry }: { error: Error; onRetry: () => void }) {
     <div className="prumo-page">
       <div className="prumo-page-inner">
         <div className="prumo-panel space-y-3 p-6">
-          <h1 className="text-base font-semibold text-txt">Não foi possível carregar esta tela</h1>
+          <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-txt">Não foi possível carregar esta tela</h1>
           <p className="text-sm text-txt-2">{error.message || 'Erro inesperado.'}</p>
           <button
             type="button"
@@ -92,9 +93,10 @@ export function NaoEncontrado() {
   return (
     <div className="prumo-page">
       <div className="prumo-page-inner">
-        <div className="prumo-panel p-6">
-          <h1 className="text-base font-semibold text-txt">Página não encontrada</h1>
-          <p className="mt-1 text-sm text-txt-2">O endereço não existe ou você não tem acesso a ele.</p>
+        <div className="prumo-panel flex flex-col items-start gap-3 p-8">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-bg-0 text-txt"><Plumb size={24} /></span>
+          <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-txt">Página não encontrada</h1>
+          <p className="text-[15px] text-txt-2">O endereço não existe ou você não tem acesso a ele.</p>
         </div>
       </div>
     </div>

@@ -48,13 +48,13 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
         
         {/* Lado esquerdo: Dados do ambiente */}
         <div className="flex-1 flex flex-col gap-4">
-          <h3 className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-1">Dados Básicos</h3>
+          <h3 className="text-xs font-semibold text-txt-2 mb-1">Dados Básicos</h3>
           
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Nome do Ambiente *</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Nome do Ambiente *</label>
             <input 
               type="text"
-              className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1"
+              className="prumo-field py-2.5"
               value={formData.nome}
               onChange={e => setFormData({ ...formData, nome: e.target.value })}
               placeholder="Ex: Apartamento 302"
@@ -65,9 +65,9 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
 
           <div className="grid grid-cols-2 gap-3">
              <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">Tipo *</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Tipo *</label>
               <select 
-                className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1"
+                className="prumo-field py-2.5"
                 value={formData.tipo}
                 onChange={e => setFormData({ ...formData, tipo: e.target.value })}
               >
@@ -76,10 +76,10 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">Localização *</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Localização *</label>
               <input 
                 type="text"
-                className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1"
+                className="prumo-field py-2.5"
                 value={formData.localizacao}
                 onChange={e => setFormData({ ...formData, localizacao: e.target.value })}
                 placeholder="Ex: Torre B"
@@ -89,9 +89,9 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Observações</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Observações</label>
             <textarea 
-              className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1 h-20 resize-none"
+              className="prumo-field py-2.5 h-20 resize-none"
               value={formData.observacoes}
               onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
             />
@@ -100,10 +100,10 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
 
         {/* Lado Direito: Seleção FVS */}
         <div className="flex-1 flex flex-col pt-4 md:pt-0 md:border-l md:border-brd-0 md:pl-6">
-          <h3 className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-2">FVS Planejadas (Checklists)</h3>
+          <h3 className="text-xs font-semibold text-txt-2 mb-2">FVS Planejadas (Checklists)</h3>
           <p className="text-[11px] text-txt-3 mb-4">Selecione as fixas de verificação padrão que se aplicam a este ambiente.</p>
           
-          <div className="flex-1 overflow-y-auto max-h-64 border border-brd-0 rounded-lg overflow-hidden bg-bg-0">
+          <div className="flex-1 overflow-y-auto max-h-64 rounded-lg overflow-hidden bg-bg-0">
             {fvsPadraoList.map(fvs => {
               const isSelected = selectedFvs.includes(fvs.id);
               return (
@@ -128,10 +128,10 @@ export default function AmbienteModal({ isOpen, onClose, obraId, fvsPadraoList }
       
       {/* Footer out of form to bypass flex alignment issues */}
       <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-brd-0">
-        <button type="button" onClick={onClose} className="px-4 py-2 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0">
+        <button type="button" onClick={onClose} className="prumo-secondary-button bg-bg-0 hover:bg-bg-2">
           Cancelar
         </button>
-        <button type="button" onClick={handleSubmit} disabled={loading} className="px-6 py-2 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
+        <button type="button" onClick={handleSubmit} disabled={loading} className="prumo-primary-button disabled:opacity-60">
           {loading ? 'Salvando...' : 'Salvar Ambiente'}
         </button>
       </div>

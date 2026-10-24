@@ -1,7 +1,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from '@/lib/compat/link';
-import { HardHat, Pencil, Ruler, Trash2, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ArrowRight, HardHat, Layers, Pencil, Plus, Ruler, Trash2 } from '@/components/icons';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { useRouter } from '@/lib/compat/navigation';
 import { useToast } from '@/components/ui/Toast';
@@ -163,7 +163,7 @@ export default function ObraDetailClient({
   } : undefined;
 
   return (
-    <div>
+    <div className="space-y-5">
       <ObraFeatureControls
         obraId={obraId}
         medicionesOverride={obra.controle_medicoes_override ?? null}
@@ -171,159 +171,163 @@ export default function ObraDetailClient({
         medicionesEffective={Boolean(obra.controle_medicoes_efetivo)}
         financeiroEffective={Boolean(obra.controle_financeiro_nc_efetivo)}
       />
-      <div className="mb-6">
-        <Tabs
-          tabs={tabs}
-          value={activeTab}
-          onChange={setActiveTab}
-          ariaLabel="Seções da obra"
-          trailing={
-            <button type="button" onClick={() => setIsEditModalOpen(true)} className="prumo-row-button">
-              <Pencil size={13} /> Editar obra
-            </button>
-          }
-        />
-      </div>
+      <Tabs
+        tabs={tabs}
+        value={activeTab}
+        onChange={setActiveTab}
+        ariaLabel="Seções da obra"
+        className=""
+        trailing={
+          <button type="button" onClick={() => setIsEditModalOpen(true)} className="prumo-secondary-button">
+            <Pencil size={16} /> Editar obra
+          </button>
+        }
+      />
 
       {/* Tab: Ambientes */}
       {activeTab === 'ambientes' && (
-        <>
-          <Tabs
-            tabs={[
-              { id: 'Todos', label: 'Todos', count: initialAmbientes.length },
-              { id: 'Interno', label: 'Internos', count: initialAmbientes.filter(a => a.tipo === 'Interno').length },
-              { id: 'Externo', label: 'Externos', count: initialAmbientes.filter(a => a.tipo === 'Externo').length },
-              { id: 'Com NC', label: 'Com NC', count: initialAmbientes.filter(a => a.ncs_abertas > 0).length },
-            ]}
-            value={filterType}
-            onChange={setFilterType}
-            ariaLabel="Recorte de ambientes"
-          />
-          <div className="mt-4 mb-5">
-            <FilterBar resultLabel={`${filtered.length} de ${initialAmbientes.length} ambientes`}>
-              <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Buscar ambiente" className="w-full sm:w-64" />
-            </FilterBar>
-          </div>
+        <div>
+          <FilterBar resultLabel={`${filtered.length} de ${initialAmbientes.length} ambientes`}>
+            <Tabs
+              variant="chips"
+              tabs={[
+                { id: 'Todos', label: 'Todos', count: initialAmbientes.length },
+                { id: 'Interno', label: 'Internos', count: initialAmbientes.filter(a => a.tipo === 'Interno').length },
+                { id: 'Externo', label: 'Externos', count: initialAmbientes.filter(a => a.tipo === 'Externo').length },
+                { id: 'Com NC', label: 'Com NC', count: initialAmbientes.filter(a => a.ncs_abertas > 0).length },
+              ]}
+              value={filterType}
+              onChange={setFilterType}
+              ariaLabel="Recorte de ambientes"
+              className=""
+            />
+            <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Buscar ambiente" className="w-full sm:w-[280px]" />
+          </FilterBar>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map(amb => {
               const percent = amb.total_fvs > 0 ? Math.round((amb.fvs_concluidas / amb.total_fvs) * 100) : 0;
               const hasNC = amb.ncs_abertas > 0;
               return (
                 <div
                   key={amb.id}
+                  role="link"
+                  tabIndex={0}
                   onClick={() => router.push(`/obras/${obraId}/ambiente/${amb.id}`)}
-                  className="bg-bg-1 border border-brd-0 rounded-xl p-[14px] cursor-pointer hover:border-[var(--br)] hover:shadow-sm transition-all"
-                  style={{ borderTopWidth: '3px', borderTopColor: hasNC ? 'var(--nok)' : amb.tipo === 'Interno' ? 'var(--pg)' : 'var(--ok)' }}
+                  onKeyDown={e => { if (e.key === 'Enter') router.push(`/obras/${obraId}/ambiente/${amb.id}`); }}
+                  className="group flex cursor-pointer flex-col gap-3.5 rounded-xl bg-bg-1 p-4 transition-colors hover:bg-bg-hover"
                 >
-                  <div className="flex justify-between items-start">
-                    <h4 className="text-[13px] font-semibold text-txt">{amb.nome}</h4>
-                    <div className="flex items-center gap-1">
-                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                        hasNC ? 'bg-nok-bg text-nok' : percent >= 80 ? 'bg-ok-bg text-ok' : percent > 0 ? 'bg-pg-bg text-pg' : 'bg-na-bg text-na'
-                      }`}>
-                        {hasNC ? 'NC' : `${amb.fvs_concluidas}/${amb.total_fvs}`}
-                      </span>
-                      {!ambientesWithVerificacoes[amb.id] && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirmAmbienteDelete({ id: amb.id, name: amb.nome });
-                          }}
-                          title="Excluir ambiente"
-                          className="p-1 text-txt-3 hover:text-nok hover:bg-nok-bg rounded-lg transition-colors"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      )}
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] bg-bg-0 text-txt">
+                      <Layers size={20} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="truncate text-[15px] font-bold text-txt">{amb.nome}</h4>
+                      <p className="truncate text-[13px] text-txt-2">{amb.tipo}{amb.localizacao ? ` · ${amb.localizacao}` : ''}</p>
                     </div>
+                    {!ambientesWithVerificacoes[amb.id] && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmAmbienteDelete({ id: amb.id, name: amb.nome });
+                        }}
+                        title="Excluir ambiente"
+                        aria-label={`Excluir ambiente ${amb.nome}`}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-txt-2 opacity-0 transition hover:bg-nok-bg hover:text-nok focus-visible:opacity-100 group-hover:opacity-100"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </div>
-                  <p className="text-xs text-txt-2 mt-1">{amb.tipo} · {amb.localizacao}</p>
-                  <div className="mt-2.5">
-                    <ProgressBar value={percent} variant={hasNC ? 'nok' : percent === 100 ? 'ok' : 'brand'} />
+                  <ProgressBar value={percent} variant={hasNC ? 'nok' : 'brand'} showLabel />
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="prumo-pill bg-bg-0 font-mono text-txt">{amb.fvs_concluidas}/{amb.total_fvs} FVS</span>
+                    {hasNC ? (
+                      <span className="prumo-pill bg-nok-bg text-nok">
+                        {amb.ncs_abertas} {amb.ncs_abertas > 1 ? 'NCs abertas' : 'NC aberta'}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               );
             })}
 
-            {/* Card "Novo ambiente" */}
-            <div
+            {/* Novo ambiente */}
+            <button
+              type="button"
               onClick={() => setIsAmbienteModalOpen(true)}
-              className="bg-bg-0 border-2 border-dashed border-brd-1 rounded-xl flex flex-col items-center justify-center min-h-[100px] cursor-pointer hover:border-[var(--br)] hover:bg-bg-1 transition-all gap-1.5"
+              className="flex min-h-[148px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-brd-1 text-txt-2 transition-colors hover:border-brd-2 hover:text-txt"
             >
-              <span className="text-xl text-txt-3">+</span>
-              <span className="text-xs text-txt-3">Novo ambiente</span>
-            </div>
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-txt">
+                <Plus size={20} />
+              </span>
+              <span className="text-sm font-semibold">Novo ambiente</span>
+            </button>
           </div>
-        </>
+        </div>
       )}
 
       {/* Tab: Equipe */}
       {activeTab === 'equipe' && (
-        <div className="bg-bg-1 border border-brd-0 rounded-xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-brd-0 flex items-center justify-between">
-            <h3 className="text-[14px] font-semibold text-txt">Equipe da obra</h3>
+        <div className="prumo-panel overflow-hidden">
+          <div className="flex items-center justify-between px-5 pb-2 pt-4">
+            <h3 className="text-lg font-bold text-txt">Equipe da obra</h3>
             <button
               type="button"
               onClick={() => setIsEquipeModalOpen(true)}
               className="prumo-row-button"
             >
-              + Adicionar
+              <Plus size={14} /> Adicionar
             </button>
           </div>
 
           {obraEquipes.length > 0 ? (
-            obraEquipes.map(eq => {
-              const isProprio = eq.tipo === 'proprio';
-              const isRemoving = removingId === eq.id && isPending;
-              return (
-                <div key={eq.id} className="flex items-center gap-3 px-4 py-3 border-b border-brd-0 last:border-0">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
-                    isProprio ? 'bg-ok-bg text-ok' : 'bg-warn-bg text-warn'
-                  }`}>
-                    {eq.nome.substring(0, 2).toUpperCase()}
+            <div className="px-5 pb-2">
+              {obraEquipes.map((eq, idx) => {
+                const isProprio = eq.tipo === 'proprio';
+                const isRemoving = removingId === eq.id && isPending;
+                return (
+                  <div key={eq.id} className={`flex items-center gap-3.5 py-3 ${idx ? 'border-t border-brd-0' : ''}`}>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-0 font-mono text-xs font-bold text-txt">
+                      {eq.nome.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h5 className="text-sm font-bold text-txt">{eq.nome}</h5>
+                      <p className="text-[13px] text-txt-2">{eq.especialidade || 'Geral'}</p>
+                    </div>
+                    <span className={`prumo-pill ${isProprio ? 'bg-ok-bg text-ok' : 'bg-warn-bg text-warn'}`}>
+                      {isProprio ? 'Próprio' : 'Terceirizado'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveEquipe(eq.id)}
+                      disabled={isRemoving}
+                      title="Remover da obra"
+                      aria-label={`Remover ${eq.nome} da obra`}
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-txt-2 transition-colors hover:bg-nok-bg hover:text-nok disabled:opacity-40"
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h5 className="text-[13px] font-medium text-txt">{eq.nome}</h5>
-                    <p className="text-xs text-txt-2 mt-0.5">{eq.especialidade || 'Geral'}</p>
-                  </div>
-                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-                    isProprio ? 'bg-ok-bg text-ok' : 'bg-warn-bg text-warn'
-                  }`}>
-                    {isProprio ? 'Próprio' : 'Terceirizado'}
-                  </span>
-                  <button
-                    onClick={() => handleRemoveEquipe(eq.id)}
-                    disabled={isRemoving}
-                    title="Remover da obra"
-                    className="p-1.5 text-txt-3 hover:text-nok hover:bg-nok-bg rounded-lg transition-colors disabled:opacity-40 ml-1"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           ) : (
-            <div className="py-10 text-center text-sm text-txt-3 flex flex-col items-center gap-2">
-              <HardHat size={24} className="opacity-40" />
+            <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-txt-2">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-bg-0 text-txt"><HardHat size={22} /></span>
               {totalEmpresaEquipes === 0 ? (
                 <>
                   <span>Nenhuma equipe cadastrada para esta empresa.</span>
-                  <a
-                    href="/equipes"
-                    className="mt-1 text-xs text-[var(--br)] hover:underline font-medium"
-                  >
-                    Cadastrar equipes →
-                  </a>
+                  <Link href="/equipes" className="prumo-row-button mt-1">
+                    Cadastrar equipes <ArrowRight size={14} />
+                  </Link>
                 </>
               ) : (
                 <>
                   <span>Nenhuma equipe vinculada a esta obra.</span>
-                  <button
-                    onClick={() => setIsEquipeModalOpen(true)}
-                    className="mt-1 text-xs text-[var(--br)] hover:underline font-medium"
-                  >
-                    + Adicionar equipe
+                  <button type="button" onClick={() => setIsEquipeModalOpen(true)} className="prumo-row-button mt-1">
+                    <Plus size={14} /> Adicionar equipe
                   </button>
                 </>
               )}
@@ -334,19 +338,19 @@ export default function ObraDetailClient({
 
       {/* Tab: Medições */}
       {activeTab === 'medicoes' && (
-        <div className="bg-bg-1 border border-brd-0 rounded-xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-brd-0 flex items-center justify-between">
-            <h3 className="text-[14px] font-semibold text-txt">Serviços com medição configurada</h3>
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-lg font-bold text-txt">Serviços com medição configurada</h3>
             {medicoesServices.length > 0 && (
-              <span className="text-xs text-txt-2">{medicoesServices.length} serviço(s)</span>
+              <span className="text-[13px] text-txt-2">{medicoesServices.length} serviço(s)</span>
             )}
           </div>
 
           {!medicoesEnabled ? (
-            <div className="py-10 text-center text-sm text-txt-3 flex flex-col items-center gap-2">
-              <Ruler size={24} className="opacity-40" />
-              <span>O controle de medições está desativado nesta obra.</span>
-              <span className="text-xs">Ative-o nos recursos opcionais da obra (seção acima).</span>
+            <div className="prumo-panel flex flex-col items-center gap-2 py-10 text-center text-sm text-txt-2">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-bg-0 text-txt"><Ruler size={22} /></span>
+              <span className="font-semibold text-txt">O controle de medições está desativado nesta obra.</span>
+              <span>Ative-o nos recursos opcionais da obra (seção acima).</span>
             </div>
           ) : (
             <DataTable
@@ -357,12 +361,12 @@ export default function ObraDetailClient({
               columns={[
                 {
                   header: 'Serviço',
-                  cell: svc => <div><div className="font-medium text-[13px] text-txt">{svc.subservico}</div><div className="text-xs text-txt-2">{svc.ambienteNome}</div></div>,
+                  cell: svc => <div><div className="text-sm font-bold text-txt">{svc.subservico}</div><div className="text-[13px] text-txt-2">{svc.ambienteNome}</div></div>,
                 },
                 {
                   header: 'Método',
                   cell: svc => (
-                    <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                    <span className={`prumo-pill ${
                       svc.metodo === 'quantidade' ? 'bg-pg-bg text-pg'
                       : svc.metodo === 'unidade_concluida' ? 'bg-ok-bg text-ok'
                       : 'bg-warn-bg text-warn'
@@ -371,13 +375,13 @@ export default function ObraDetailClient({
                     </span>
                   ),
                 },
-                { header: 'Previsto', align: 'right', cell: svc => <span className="text-[13px] text-txt">{fmt(svc.escopo || svc.quantidadeTotal)} {svc.unidade}</span> },
-                { header: 'Aprovado', align: 'right', cell: svc => <span className="text-[13px] text-txt">{fmt(svc.aprovado)}</span> },
-                { header: 'Disponível', align: 'right', cell: svc => <span className="text-[13px] font-medium text-ok">{fmt(svc.disponivel)}</span> },
-                { header: 'Valor disponível', align: 'right', cell: svc => <span className="text-[13px] text-txt">{money(svc.valorDisponivel)}</span> },
+                { header: 'Previsto', align: 'right', cell: svc => <span className="prumo-metric text-[13px] text-txt">{fmt(svc.escopo || svc.quantidadeTotal)} {svc.unidade}</span> },
+                { header: 'Aprovado', align: 'right', cell: svc => <span className="prumo-metric text-[13px] text-txt">{fmt(svc.aprovado)}</span> },
+                { header: 'Disponível', align: 'right', cell: svc => <span className="prumo-metric text-[13px] font-bold text-ok">{fmt(svc.disponivel)}</span> },
+                { header: 'Valor disponível', align: 'right', cell: svc => <span className="prumo-metric text-[13px] text-txt">{money(svc.valorDisponivel)}</span> },
                 {
                   header: 'Empreiteiro',
-                  cell: svc => <div><div className="text-[13px] text-txt">{svc.empreiteiro ?? '—'}</div>{svc.dataInicio && <div className="text-xs text-txt-3">desde {fmtDate(svc.dataInicio)}</div>}</div>,
+                  cell: svc => <div><div className="text-sm text-txt">{svc.empreiteiro ?? '—'}</div>{svc.dataInicio && <div className="text-[13px] text-txt-2">desde {fmtDate(svc.dataInicio)}</div>}</div>,
                 },
                 {
                   header: '',
@@ -390,35 +394,32 @@ export default function ObraDetailClient({
         </div>
       )}
 
-      {/* Zona de Perigo — exclusão da obra */}
+      {/* Exclusão da obra */}
       {canDelete && (
-        <section className="mt-8 border border-nok/30 rounded-xl bg-nok/5 p-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-nok/10 text-nok shrink-0">
-              <AlertTriangle size={18} />
+        <section className="prumo-panel mt-8 p-5">
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-nok-bg text-nok">
+              <AlertTriangle size={20} />
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-[13px] font-semibold text-nok">Zona de Perigo</h3>
-              <p className="text-xs text-txt-2 mt-1 leading-relaxed">
-                A exclusão é <span className="font-medium">permanente</span> e não pode ser desfeita.
+            <div className="min-w-0 flex-1">
+              <h3 className="text-[15px] font-bold text-txt">Excluir obra</h3>
+              <p className="mt-1 text-[13px] leading-relaxed text-txt-2">
+                A exclusão é <span className="font-semibold">permanente</span> e não pode ser desfeita.
                 A obra só pode ser excluída se não tiver ambientes, equipes ou usuários vinculados.
                 {hasAssociations && (
-                  <span className="block mt-1.5 text-nok">
+                  <span className="mt-1.5 block font-semibold text-nok">
                     Esta obra possui {initialAmbientes.length} ambiente(s), {obraEquipes.length} equipe(s) e {totalUsuariosVinculados} usuário(s) vinculado(s).
                   </span>
                 )}
               </p>
               <button
+                type="button"
                 onClick={() => setConfirmDelete({ id: obraId, name: obra?.nome ?? '' })}
                 disabled={hasAssociations || isPending}
                 title={hasAssociations ? 'Obra possui registros associados' : 'Excluir obra'}
-                className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors ${
-                  hasAssociations
-                    ? 'bg-bg-0 text-txt-3 cursor-not-allowed opacity-50'
-                    : 'bg-nok text-white border-nok hover:bg-nok/90'
-                }`}
+                className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-full bg-nok px-4 text-[13px] font-bold text-white transition-colors hover:bg-nok/90 disabled:cursor-not-allowed disabled:bg-bg-0 disabled:text-txt-3"
               >
-                <Trash2 size={13} /> Excluir obra
+                <Trash2 size={15} /> Excluir obra
               </button>
             </div>
           </div>

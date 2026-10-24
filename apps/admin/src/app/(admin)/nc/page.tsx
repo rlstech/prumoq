@@ -83,23 +83,17 @@ export default async function NcPage({ searchParams }: { searchParams?: Promise<
           title="Não conformidades"
           description="Desvios abertos pelas vistorias. Uma NC só encerra com reinspeção conforme — o prazo comanda a ordem da fila."
         />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-nok rounded-xl p-[14px_16px]">
-            <div className="text-2xl font-semibold text-nok">{abertas}</div>
-            <div className="text-xs text-txt-2">Abertas</div>
-          </div>
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-warn rounded-xl p-[14px_16px]">
-            <div className="text-2xl font-semibold text-warn">{urgentes}</div>
-            <div className="text-xs text-txt-2">Prazo próximo</div>
-          </div>
-          <div className="bg-bg-1 border border-brd-0 border-l-[3px] border-l-ok rounded-xl p-[14px_16px]">
-            <div className="text-2xl font-semibold text-ok">{resolvidas}</div>
-            <div className="text-xs text-txt-2">Resolvidas</div>
-          </div>
-          <div className="bg-bg-1 border border-brd-0 rounded-xl p-[14px_16px]">
-            <div className="text-2xl font-semibold text-txt">{avgDays}d</div>
-            <div className="text-xs text-txt-2">Tempo médio resolução</div>
-          </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { valor: abertas, rotulo: 'abertas', tom: 'bg-nok-bg text-nok' },
+            { valor: urgentes, rotulo: 'com prazo próximo', tom: 'bg-warn-bg text-warn' },
+            { valor: resolvidas, rotulo: 'resolvidas', tom: 'bg-ok-bg text-ok' },
+            { valor: avgDays === '-' ? '—' : `${avgDays} dias`, rotulo: 'tempo médio de resolução', tom: 'bg-bg-1 text-txt' },
+          ].map(item => (
+            <span key={item.rotulo} className={`prumo-pill h-9 px-4 text-[13px] ${item.tom}`}>
+              <span className="prumo-metric text-[15px]">{item.valor}</span> {item.rotulo}
+            </span>
+          ))}
         </div>
 
         <NcClient initialData={ncs} page={page} hasNextPage={hasNextPage} />

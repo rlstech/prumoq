@@ -23,7 +23,7 @@ const configSchema = z.object({
   permiteParciais: z.boolean(),
   modeloId: z.string().uuid().nullable(),
   etapas: z.array(stageSchema),
-  equipeInicialId: z.string().uuid(),
+  contratoId: z.string().uuid(),
   dataInicio: z.string().date(),
 });
 
@@ -44,7 +44,8 @@ export async function saveMeasurementConfig(raw: MeasurementConfigInput) {
     const context = await requireTenantRole(['admin', 'gestor']);
     await assertObraInTenant(input.obraId, context.clienteId);
     const supabase = await createClient();
-    const { error } = await supabase.rpc('salvar_configuracao_medicao_fvs', {
+    const { error } = await supabase.rpc('salvar_configuracao_medicao_contrato', {
+      p_contrato_id: input.contratoId,
       p_fvs_id: input.fvsId,
       p_metodo: input.metodo,
       p_unidade: input.unidade,
@@ -53,7 +54,6 @@ export async function saveMeasurementConfig(raw: MeasurementConfigInput) {
       p_permite_parciais: input.permiteParciais,
       p_modelo_id: input.modeloId,
       p_etapas: input.etapas as unknown as Json,
-      p_equipe_inicial_id: input.equipeInicialId,
       p_data_inicio: input.dataInicio,
     });
     if (error) throw error;
@@ -69,7 +69,7 @@ export async function saveMeasurementConfig(raw: MeasurementConfigInput) {
 const swapSchema = z.object({
   obraId: z.string().uuid(),
   vinculoId: z.string().uuid(),
-  novaEquipeId: z.string().uuid(),
+  contratoDestinoId: z.string().uuid(),
   data: z.string().date(),
   motivo: z.string().trim().min(5),
 });
@@ -80,9 +80,9 @@ export async function swapMeasurementContractor(raw: z.infer<typeof swapSchema>)
     const context = await requireTenantRole(['admin', 'gestor']);
     await assertObraInTenant(input.obraId, context.clienteId);
     const supabase = await createClient();
-    const { error } = await supabase.rpc('trocar_empreiteiro_servico', {
+    const { error } = await supabase.rpc('trocar_empreiteiro_contrato', {
       p_vinculo_id: input.vinculoId,
-      p_nova_equipe_id: input.novaEquipeId,
+      p_contrato_destino_id: input.contratoDestinoId,
       p_data: input.data,
       p_motivo: input.motivo,
     });

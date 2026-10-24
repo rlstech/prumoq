@@ -1,6 +1,6 @@
 
 import { useMemo, useState, useTransition } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from '@/components/icons';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
@@ -66,33 +66,33 @@ export default function ObrasClient({ initialObras, empresas, canDelete }: Obras
       header: 'Obra',
       cell: (item) => (
         <div>
-          <div className="font-medium text-[13px] text-txt">{item.nome}</div>
-          <div className="text-xs text-txt-2 mt-0.5">{item.endereco || item.municipio}{item.uf ? `, ${item.uf}` : ''}</div>
+          <div className="text-sm font-bold text-txt">{item.nome}</div>
+          <div className="mt-0.5 text-[13px] text-txt-2">{item.endereco || item.municipio}{item.uf ? `, ${item.uf}` : ''}</div>
         </div>
       ),
       className: 'min-w-[200px]'
     },
     {
       header: 'Empresa',
-      cell: (item) => <span className="text-[13px] text-txt">{item.empresa_nome || '-'}</span>,
+      cell: (item) => <span className="text-sm text-txt">{item.empresa_nome || '-'}</span>,
     },
     {
       header: 'Eng. Responsável',
       cell: (item) => (
         <div>
-          <div className="text-[13px] text-txt">{item.engenheiro_nome || '-'}</div>
-          {item.engenheiro_crea && <div className="text-xs text-txt-2 mt-0.5">{item.engenheiro_crea}</div>}
+          <div className="text-sm text-txt">{item.engenheiro_nome || '-'}</div>
+          {item.engenheiro_crea && <div className="prumo-metric mt-0.5 text-xs text-txt-2">{item.engenheiro_crea}</div>}
         </div>
       ),
     },
     {
       header: 'Amb.',
-      cell: (item) => <span className="text-[13px] text-txt">{item.total_ambientes || 0}</span>,
+      cell: (item) => <span className="prumo-metric text-[13px] text-txt">{item.total_ambientes || 0}</span>,
     },
     {
       header: 'FVS',
       cell: (item) => (
-        <span className="text-[13px] text-txt">{item.fvs_concluidas || 0}/{item.total_fvs || 0}</span>
+        <span className="prumo-metric text-[13px] text-txt">{item.fvs_concluidas || 0}/{item.total_fvs || 0}</span>
       ),
     },
     {
@@ -100,14 +100,14 @@ export default function ObrasClient({ initialObras, empresas, canDelete }: Obras
       cell: (item) => {
         const percent = Math.round(item.progresso_percentual ?? (item.total_fvs > 0 ? (item.fvs_concluidas / item.total_fvs) * 100 : 0));
         return (
-          <div className="w-[90px]">
-            <ProgressBar value={percent} variant={percent === 100 ? 'ok' : 'brand'} />
+          <div className="w-[170px]">
+            <ProgressBar value={percent} showLabel />
           </div>
         );
       }
     },
     {
-      header: 'Status',
+      header: 'Situação',
       cell: (item) => <StatusBadge status={item.status || 'em_andamento'} size="sm" />
     },
     {
@@ -127,7 +127,8 @@ export default function ObrasClient({ initialObras, empresas, canDelete }: Obras
                 onClick={(e) => { e.stopPropagation(); !inUse && setConfirmDelete({ id: item.id, name: item.nome }); }}
                 disabled={inUse}
                 title={inUse ? 'Obra possui registros — não pode ser excluída' : 'Excluir obra'}
-                className={`p-1.5 rounded transition-colors ${inUse ? 'text-txt-3 cursor-not-allowed opacity-40' : 'text-nok hover:bg-nok/10'}`}
+                aria-label={`Excluir ${item.nome}`}
+                className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${inUse ? 'cursor-not-allowed text-txt-3 opacity-40' : 'text-txt-2 hover:bg-nok-bg hover:text-nok'}`}
               >
                 <Trash2 size={15} />
               </button>
@@ -150,7 +151,7 @@ export default function ObrasClient({ initialObras, empresas, canDelete }: Obras
           description="Ponto de entrada da operação: de cada obra você desce para ambientes, FVS planejadas, vistorias e medições."
           actions={
             <button type="button" onClick={() => setIsModalOpen(true)} className="prumo-primary-button">
-              <Plus size={15} /> Nova obra
+              <Plus size={18} /> Nova obra
             </button>
           }
         >
@@ -187,9 +188,9 @@ export default function ObrasClient({ initialObras, empresas, canDelete }: Obras
         isOpen={!!confirmDelete}
         onClose={() => setConfirmDelete(null)}
         onConfirm={handleDeleteObra}
-        title="Excluir Obra"
+        title="Excluir obra"
         message={`Tem certeza que deseja excluir "${confirmDelete?.name}"? Esta ação é permanente e não pode ser desfeita.`}
-        confirmText="Sim, Excluir"
+        confirmText="Sim, excluir"
         variant="danger"
         isLoading={isPending}
       />

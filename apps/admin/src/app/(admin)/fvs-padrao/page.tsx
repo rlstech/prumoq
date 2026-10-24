@@ -3,7 +3,7 @@ import Header from '@/components/layout/Header';
 import PageHeader from '@/components/layout/PageHeader';
 import FvsPadraoClient from './FvsPadraoClient';
 import KPICard from '@/components/ui/KPICard';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList } from '@/components/icons';
 import { pageFromSearchParam, pageRange, pageSlice } from '@/lib/pagination';
 import { getAuthContext } from '@/lib/auth/context';
 

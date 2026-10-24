@@ -61,7 +61,7 @@ export default function AddFvsModal({
           Selecione as fixas de verificação padrão que deseja adicionar a este ambiente.
         </p>
 
-        <div className="border border-brd-0 rounded-lg overflow-hidden bg-bg-0 max-h-80 overflow-y-auto">
+        <div className="rounded-lg overflow-hidden bg-bg-0 max-h-80 overflow-y-auto">
           {available.length > 0 ? (
             available.map(fvs => {
               const isSelected = selectedIds.includes(fvs.id);
@@ -100,7 +100,7 @@ export default function AddFvsModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2"
+            className="prumo-secondary-button bg-bg-0 hover:bg-bg-2 flex-1"
           >
             Cancelar
           </button>
@@ -108,7 +108,7 @@ export default function AddFvsModal({
             type="button"
             onClick={handleSave}
             disabled={loading || selectedIds.length === 0}
-            className="flex-1 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-50"
+            className="prumo-primary-button flex-1 disabled:opacity-50"
           >
             {loading ? 'Adicionando...' : 'Adicionar selecionadas'}
           </button>

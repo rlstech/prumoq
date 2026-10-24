@@ -2,11 +2,10 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/context';
 import { notFound } from '@/lib/compat/navigation';
 import Link from '@/lib/compat/link';
-import { ArrowRight } from 'lucide-react';
+import { CalendarDays, HardHat, Landmark, MapPin } from '@/components/icons';
 import Header from '@/components/layout/Header';
 import PageHeader from '@/components/layout/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
-import ProgressBar from '@/components/ui/ProgressBar';
 import ObraDetailClient from './ObraDetailClient';
 
 function formatarData(value: string | null | undefined): string {
@@ -161,85 +160,77 @@ export default async function ObraDetailPage(props: { params: Promise<{ id: stri
 
       <div className="prumo-page">
         <div className="prumo-page-inner">
-        <PageHeader
-          title={typedObra.nome}
-          description={`${empresaNome} · ${typedObra.endereco || typedObra.municipio}${typedObra.uf ? `-${typedObra.uf}` : ''}${typedObra.eng_responsavel ? ` · ${typedObra.eng_responsavel}${typedObra.crea_cau ? ` (${typedObra.crea_cau})` : ''}` : ''}`}
-          actions={<StatusBadge status={typedObra.status} />}
-        />
-
-        {/* Ficha resumida: os dados que respondem "que obra é esta" sem abrir nada. */}
-        <div className="prumo-panel flex flex-col overflow-hidden lg:flex-row">
-          {[
-            {
-              rotulo: 'Engenheiro responsável',
-              valor: typedObra.eng_responsavel || '—',
-              apoio: typedObra.crea_cau || 'sem CREA/CAU informado',
-            },
-            {
-              rotulo: 'Prazo',
-              valor: formatarData(typedObra.data_inicio_prev) || '—',
-              apoio: typedObra.data_termino_prev ? `término previsto ${formatarData(typedObra.data_termino_prev)}` : 'sem término previsto',
-            },
-            {
-              rotulo: 'Empresa',
-              valor: empresaNome || '—',
-              apoio: `${typedObra.municipio || 'Local não informado'}${typedObra.uf ? `-${typedObra.uf}` : ''}`,
-            },
-          ].map(campo => (
-            <div key={campo.rotulo} className="flex-1 border-b border-brd-0 px-[18px] py-3.5 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0">
-              <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-txt-3">{campo.rotulo}</div>
-              <div className="mt-1.5 truncate text-sm font-medium text-txt">{campo.valor}</div>
-              <div className="mt-0.5 truncate text-[11.5px] text-txt-3">{campo.apoio}</div>
-            </div>
-          ))}
-          <div className="w-full shrink-0 px-[18px] py-3.5 lg:w-[300px] lg:border-l lg:border-brd-0">
-            <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-txt-3">Progresso das FVS</div>
-            <div className="mt-2.5 flex items-center gap-2.5">
-              <ProgressBar value={progressoFvs} variant={progressoFvs === 100 ? 'ok' : 'brand'} />
-              <span className="prumo-metric shrink-0 text-[15px] font-semibold text-txt">{progressoFvs}%</span>
-            </div>
-            <div className="mt-1 text-[11.5px] text-txt-3">
-              {typedKpi?.fvs_concluidas || 0} de {typedKpi?.total_fvs || 0} fichas conformes
-            </div>
+        <PageHeader title={typedObra.nome}>
+          {/* Ficha em etiquetas: os dados que respondem "que obra é esta" sem abrir nada. */}
+          <div className="mt-3.5 flex flex-wrap gap-2">
+            <StatusBadge status={typedObra.status} size="md" />
+            {empresaNome ? (
+              <span className="prumo-pill h-[30px] bg-bg-1 px-3 text-[13px] font-semibold text-txt">
+                <Landmark size={15} /> {empresaNome}
+              </span>
+            ) : null}
+            {typedObra.municipio || typedObra.endereco ? (
+              <span className="prumo-pill h-[30px] bg-bg-1 px-3 text-[13px] font-semibold text-txt">
+                <MapPin size={15} /> {typedObra.municipio || typedObra.endereco}{typedObra.uf ? `-${typedObra.uf}` : ''}
+              </span>
+            ) : null}
+            {typedObra.eng_responsavel ? (
+              <span className="prumo-pill h-[30px] bg-bg-1 px-3 text-[13px] font-semibold text-txt">
+                <HardHat size={15} /> {typedObra.eng_responsavel}
+                {typedObra.crea_cau ? <span className="prumo-metric text-xs font-medium text-txt-2">{typedObra.crea_cau}</span> : null}
+              </span>
+            ) : null}
+            {typedObra.data_inicio_prev || typedObra.data_termino_prev ? (
+              <span className="prumo-pill h-[30px] bg-bg-1 px-3 text-[13px] font-semibold text-txt">
+                <CalendarDays size={15} />
+                <span className="prumo-metric text-xs">
+                  {formatarData(typedObra.data_inicio_prev) || '—'} → {formatarData(typedObra.data_termino_prev) || '—'}
+                </span>
+              </span>
+            ) : null}
           </div>
-        </div>
+        </PageHeader>
 
-        {/* Trilha do fluxo: cada etapa alimenta a seguinte. */}
-        <div>
-          <h2 className="prumo-section-title mb-3">
-            <span>Fluxo da obra</span>
-          </h2>
-          <div className="flex flex-wrap items-stretch gap-2">
+        {/* Resumo em grafite: avanço das FVS em trena e o fluxo da obra em ladrilhos. */}
+        <section aria-label="Resumo da obra" className="on-brand flex flex-wrap items-center gap-7 rounded-2xl bg-sidebar px-7 py-6 text-white">
+          <div className="flex min-w-[280px] flex-[2_1_380px] flex-col gap-3.5">
+            <div className="flex items-baseline gap-3.5">
+              <span className="prumo-metric text-[48px] font-bold leading-none tracking-[-0.02em]">{progressoFvs}%</span>
+              <span className="text-[15px] text-on-brand">das FVS conformes</span>
+            </div>
+            <div className="h-4 overflow-hidden rounded-full bg-brand-line">
+              <div className="prumo-tape-on-dark h-full rounded-full" style={{ width: `${progressoFvs}%` }} />
+            </div>
+            <span className="prumo-metric text-xs text-on-brand">
+              {typedKpi?.fvs_concluidas || 0} de {typedKpi?.total_fvs || 0} FVS · {typedKpi?.total_ambientes || 0} ambientes
+            </span>
+          </div>
+          <div className="grid min-w-0 flex-[3_1_420px] grid-cols-2 gap-2 sm:grid-cols-4">
             {[
-              { rotulo: 'Ambientes', valor: typedKpi?.total_ambientes || 0, apoio: 'onde a inspeção acontece', cor: 'text-[var(--br)]' },
-              { rotulo: 'FVS planejadas', valor: typedKpi?.total_fvs || 0, apoio: 'fichas associadas', cor: 'text-[var(--br)]' },
-              { rotulo: 'Conformes', valor: typedKpi?.fvs_concluidas || 0, apoio: 'liberam medição', cor: 'text-ok' },
-              { rotulo: 'NC abertas', valor: typedKpi?.ncs_abertas || 0, apoio: 'em tratativa', cor: 'text-nok', href: '/nc' },
-            ].map((etapa, idx, todas) => {
+              { rotulo: 'Ambientes', valor: typedKpi?.total_ambientes || 0, ponto: null },
+              { rotulo: 'FVS planejadas', valor: typedKpi?.total_fvs || 0, ponto: null },
+              { rotulo: 'Conformes', valor: typedKpi?.fvs_concluidas || 0, ponto: 'bg-[#4CC06E]' },
+              { rotulo: 'NCs abertas', valor: typedKpi?.ncs_abertas || 0, ponto: 'bg-[#FF6B5E]', href: '/nc' },
+            ].map(etapa => {
               const conteudo = (
                 <>
-                  <div className="text-[12.5px] font-semibold text-txt">{etapa.rotulo}</div>
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <span className={`prumo-metric text-[22px] font-semibold leading-none ${etapa.cor}`}>{etapa.valor}</span>
-                    <span className="truncate text-[11.5px] text-txt-3">{etapa.apoio}</span>
-                  </div>
+                  <span className="text-xs font-semibold text-on-brand">{etapa.rotulo}</span>
+                  <span className="prumo-metric flex items-center gap-2 text-[26px] font-bold leading-none">
+                    {etapa.ponto ? <span className={`h-2 w-2 rounded-full ${etapa.ponto}`} aria-hidden="true" /> : null}
+                    {etapa.valor}
+                  </span>
                 </>
               );
-              return (
-                <div key={etapa.rotulo} className="flex min-w-[190px] flex-1 items-center gap-2">
-                  {etapa.href ? (
-                    <Link href={etapa.href} className="prumo-panel flex-1 px-4 py-3.5 transition-shadow hover:shadow-float">
-                      {conteudo}
-                    </Link>
-                  ) : (
-                    <div className="prumo-panel flex-1 px-4 py-3.5">{conteudo}</div>
-                  )}
-                  {idx < todas.length - 1 ? <ArrowRight size={16} className="shrink-0 text-txt-3" aria-hidden="true" /> : null}
-                </div>
+              return etapa.href ? (
+                <Link key={etapa.rotulo} href={etapa.href} className="flex flex-col gap-2 rounded-[22px] bg-[#26292D] p-4 transition-colors hover:bg-[#30343A]">
+                  {conteudo}
+                </Link>
+              ) : (
+                <div key={etapa.rotulo} className="flex flex-col gap-2 rounded-[22px] bg-[#26292D] p-4">{conteudo}</div>
               );
             })}
           </div>
-        </div>
+        </section>
 
         <ObraDetailClient
           obraId={typedObra.id}

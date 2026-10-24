@@ -4,8 +4,9 @@ import { createClient } from '@/lib/supabase/server';
 import MeasurementServiceClient from './MeasurementServiceClient';
 
 
-export default async function MeasurementServicePage({ params }: { params: Promise<{ id: string; ambId: string; fvsId: string }> }) {
+export default async function MeasurementServicePage({ params, searchParams }: { params: Promise<{ id: string; ambId: string; fvsId: string }>; searchParams?: Promise<{ contrato?: string | string[] }> }) {
   const { id: obraId, ambId, fvsId } = await params;
+  const contratoParam = (await searchParams)?.contrato;
   const supabase = await createClient();
   const [{ data: obra }, { data: ambiente }, { data: fvs }] = await Promise.all([
     supabase.from('obras').select('id,nome,empresa_id,controle_medicoes_efetivo').eq('id', obraId).maybeSingle(),
@@ -14,16 +15,18 @@ export default async function MeasurementServicePage({ params }: { params: Promi
   ]);
   if (!obra || !ambiente || !fvs || ambiente.obra_id !== obraId || fvs.ambiente_id !== ambId) notFound();
 
-  const [{ data: config }, { data: links }, { data: balances }, { data: teamLinks }, { data: models }] = await Promise.all([
+  const [{ data: config }, { data: links }, { data: balances }, { data: teamLinks }, { data: models }, { data: contracts }] = await Promise.all([
     supabase.from('fvs_medicao_configuracoes').select('*').eq('fvs_planejada_id', fvsId).maybeSingle(),
     supabase.from('vinculos_execucao_servico').select('*').eq('fvs_planejada_id', fvsId).order('created_at'),
     supabase.from('vw_saldos_medicao_servico').select('*').eq('fvs_planejada_id', fvsId),
     supabase.from('obra_equipes').select('equipe_id').eq('obra_id', obraId),
     supabase.from('modelos_etapas_medicao').select('*').eq('empresa_id', obra.empresa_id).eq('ativo', true).order('nome'),
+    supabase.from('contratos').select('id,numero,objeto,equipe_id,status').eq('obra_id', obraId).order('numero'),
   ]);
-  const linkedTeamIds = (teamLinks ?? []).map(link => link.equipe_id);
+  // Nomes das equipes da obra e das que já tiveram vínculo ou contrato (o histórico pode ter equipe que saiu da obra).
+  const linkedTeamIds = Array.from(new Set([...(teamLinks ?? []).map(link => link.equipe_id), ...(links ?? []).map(link => link.equipe_id), ...(contracts ?? []).map(c => c.equipe_id)]));
   const { data: teams } = linkedTeamIds.length
-    ? await supabase.from('equipes').select('id,nome,tipo').in('id', linkedTeamIds).eq('ativo', true).order('nome')
+    ? await supabase.from('equipes').select('id,nome,tipo').in('id', linkedTeamIds).order('nome')
     : { data: [] };
   const configId = config?.id;
   const linkIds = (links ?? []).map(link => link.id);
@@ -52,6 +55,8 @@ export default async function MeasurementServicePage({ params }: { params: Promi
         links={links ?? []}
         balances={balances ?? []}
         teams={teams ?? []}
+        contracts={contracts ?? []}
+        preselectedContractId={Array.isArray(contratoParam) ? contratoParam[0] : contratoParam ?? null}
         models={(models ?? []).map(model => ({ ...model, items: (modelItems ?? []).filter(item => item.modelo_id === model.id) }))}
         advances={advances ?? []}
         measurementItems={measurementItems ?? []}

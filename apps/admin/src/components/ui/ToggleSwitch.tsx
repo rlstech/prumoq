@@ -1,29 +1,27 @@
-
 interface ToggleSwitchProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
 }
 
+/** Chave: ligada em grafite com o botão amarelo; desligada no tom de junta. */
 export default function ToggleSwitch({ checked, onChange, disabled = false }: ToggleSwitchProps) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={checked}
       onClick={() => !disabled && onChange(!checked)}
-      className={`
-        relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--br)] focus:ring-offset-2
-        ${checked ? 'bg-ok' : 'bg-txt-3'}
-        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-      `}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out ${
+        checked ? 'bg-sidebar' : 'bg-brd-1'
+      } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
       disabled={disabled}
     >
       <span
         aria-hidden="true"
-        className={`
-          pointer-events-none absolute left-0.5 inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
-          ${checked ? 'translate-x-4' : 'translate-x-0'}
-        `}
+        className={`pointer-events-none absolute left-[3px] inline-block h-[18px] w-[18px] rounded-full transition duration-200 ease-in-out ${
+          checked ? 'translate-x-5 bg-accent' : 'translate-x-0 bg-white'
+        }`}
       />
     </button>
   );

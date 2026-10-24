@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 
 interface KPICardProps {
@@ -9,36 +8,29 @@ interface KPICardProps {
   colorVariant?: 'default' | 'ok' | 'nok' | 'warn' | 'brand';
 }
 
+/** Indicador: ladrilho de ícone no tom do estado e número grande em mono. */
 export default function KPICard({ title, value, icon, subtitle, colorVariant = 'default' }: KPICardProps) {
-  const iconColors = {
-    default: 'text-txt-3',
-    ok: 'text-ok',
-    nok: 'text-nok',
-    warn: 'text-warn',
-    brand: 'text-[var(--br)]',
-  };
-
-  const iconBackgrounds = {
-    default: 'bg-bg-2',
-    ok: 'bg-ok-bg',
-    nok: 'bg-nok-bg',
-    warn: 'bg-warn-bg',
-    brand: 'bg-[var(--brl)]',
+  const tiles = {
+    default: 'bg-bg-0 text-txt',
+    ok: 'bg-ok-bg text-ok',
+    nok: 'bg-nok-bg text-nok',
+    warn: 'bg-warn-bg text-warn',
+    brand: 'bg-accent text-txt',
   };
 
   return (
-    <div className="prumo-panel prumo-datum flex min-h-[148px] flex-col p-5 pl-6">
-      <div className="flex items-start justify-between mb-4">
-        <h3 className="text-sm font-medium text-txt-2">{title}</h3>
+    <div className="prumo-panel flex min-h-[148px] flex-col justify-between gap-4 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-sm font-semibold text-txt-2">{title}</h3>
         {icon && (
-          <div className={`rounded-lg p-2 ${iconBackgrounds[colorVariant]} ${iconColors[colorVariant]}`}>
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md ${tiles[colorVariant]}`}>
             {icon}
           </div>
         )}
       </div>
       <div>
-        <div className="prumo-metric text-2xl font-semibold tracking-tight text-txt">{value}</div>
-        {subtitle && <p className="text-xs text-txt-3 mt-1">{subtitle}</p>}
+        <div className="prumo-metric text-[28px] font-bold leading-none tracking-tight text-txt">{value}</div>
+        {subtitle && <p className="mt-1.5 text-[13px] text-txt-2">{subtitle}</p>}
       </div>
     </div>
   );

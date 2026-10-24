@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import Modal from './Modal';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from '@/components/icons';
 
 export interface Photo {
   r2_key: string;
@@ -43,7 +43,7 @@ export default function PhotoGallery({ photos }: PhotoGalleryProps) {
         {photos.map((photo, idx) => (
           <div 
             key={photo.r2_key}
-            className="aspect-square relative rounded-md overflow-hidden cursor-pointer border border-brd-0"
+            className="relative aspect-square cursor-pointer overflow-hidden rounded-lg bg-bg-2"
             onClick={() => setSelectedIndex(idx)}
           >
             {/* Using img tag to avoid Next.js Image hostname config issues temporarily */}
@@ -63,7 +63,7 @@ export default function PhotoGallery({ photos }: PhotoGalleryProps) {
         size="lg"
       >
         {selectedIndex !== null && (
-          <div className="relative w-full aspect-[4/3] bg-bg-0 rounded-lg overflow-hidden flex items-center justify-center group">
+          <div className="group relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-xl bg-bg-0">
             <img 
               src={getUrl(photos[selectedIndex].r2_key)} 
               alt={photos[selectedIndex].caption || 'Visualização completa'} 

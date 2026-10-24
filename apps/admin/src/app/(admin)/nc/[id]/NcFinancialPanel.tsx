@@ -1,6 +1,6 @@
 
 import { useState, useTransition } from 'react';
-import { Landmark, Save } from 'lucide-react';
+import { Landmark, Save } from '@/components/icons';
 import { useRouter } from '@/lib/compat/navigation';
 import { useToast } from '@/components/ui/Toast';
 import { updateNcFinancialImpact, type NcFinancialInput } from './actions';
@@ -55,7 +55,7 @@ export default function NcFinancialPanel({ ncId, initial, users, history }: Prop
   }
 
   return (
-    <section className="rounded-xl border border-brd-0 bg-bg-1 p-4">
+    <section className="rounded-xl bg-bg-1 p-4">
       <div className="flex items-center gap-2"><Landmark size={17} className="text-[var(--br)]" /><div><h2 className="text-sm font-semibold text-txt">Impacto financeiro</h2><p className="text-xs text-txt-3">Obrigatório nesta obra. O histórico de alterações é preservado.</p></div></div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Field label="Situação"><select value={form.situacao} onChange={event => set('situacao', event.target.value as NcFinancialInput['situacao'])}><option value="sem_impacto">{situationLabels.sem_impacto}</option><option value="em_avaliacao">{situationLabels.em_avaliacao}</option><option value="estimado">{situationLabels.estimado}</option><option value="confirmado">{situationLabels.confirmado}</option></select></Field>
@@ -71,7 +71,7 @@ export default function NcFinancialPanel({ ncId, initial, users, history }: Prop
       <Field label="Observação financeira"><textarea rows={2} value={form.observacao ?? ''} onChange={event => set('observacao', event.target.value || null)} /></Field>
       <Field label="Documento/evidência (chave R2 ou referência)"><input value={form.documento ?? ''} onChange={event => set('documento', event.target.value || null)} /></Field>
       <button type="button" onClick={submit} disabled={pending} className="prumo-primary-button mt-4 disabled:opacity-60"><Save size={15} />{pending ? 'Salvando...' : 'Salvar impacto'}</button>
-      {history.length ? <div className="mt-5 border-t border-brd-0 pt-4"><h3 className="text-xs font-semibold uppercase tracking-wider text-txt-3">Histórico financeiro</h3><div className="mt-2 space-y-2">{history.map(item=><div key={item.id} className="rounded-lg bg-bg-0 p-3 text-xs text-txt-2"><b className="text-txt">{item.situacao?.replaceAll('_',' ') ?? 'Declaração'}</b> · bloqueio {item.bloqueio?.replaceAll('_',' ') ?? 'não informado'}<span className="block mt-1 text-txt-3">{new Date(item.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</span></div>)}</div></div>:null}
+      {history.length ? <div className="mt-5 border-t border-brd-0 pt-4"><h3 className="text-xs font-semibold text-txt-3">Histórico financeiro</h3><div className="mt-2 space-y-2">{history.map(item=><div key={item.id} className="rounded-lg bg-bg-0 p-3 text-xs text-txt-2"><b className="text-txt">{item.situacao?.replaceAll('_',' ') ?? 'Declaração'}</b> · bloqueio {item.bloqueio?.replaceAll('_',' ') ?? 'não informado'}<span className="block mt-1 text-txt-3">{new Date(item.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</span></div>)}</div></div>:null}
     </section>
   );
 }

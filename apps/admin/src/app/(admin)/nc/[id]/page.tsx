@@ -15,7 +15,7 @@ import {
   UserRound,
   UsersRound,
   Wrench,
-} from 'lucide-react';
+} from '@/components/icons';
 import Header from '@/components/layout/Header';
 import PageHeader from '@/components/layout/PageHeader';
 import PhotoGallery from '@/components/ui/PhotoGallery';
@@ -320,7 +320,7 @@ export default async function NcDetailPage({ params }: PageProps) {
                 description={`${plannedFvs.subservico} · ${work.nome} · ${environment.nome}`}
                 actions={
                   <>
-                    <StatusBadge status={nc.status} size="md" />
+                    <StatusBadge status={nc.status} size="md" tipo="nc" />
                     <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${
                       nc.prioridade === 'alta'
                         ? 'border-nok/20 bg-nok-bg text-nok'
@@ -345,8 +345,8 @@ export default async function NcDetailPage({ params }: PageProps) {
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
             <div className="space-y-5">
               <Panel eyebrow="Ocorrência" title="Problema e encaminhamento" icon={<AlertTriangle size={18} />}>
-                <div className="rounded-lg border-l-[3px] border-l-nok bg-nok-bg p-4">
-                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.7px] text-nok">Descrição</div>
+                <div className="rounded-lg bg-nok-bg p-4">
+                  <div className="mb-1 text-xs font-semibold text-nok">Descrição</div>
                   <p className="text-sm font-medium leading-6 text-txt">{nc.descricao}</p>
                 </div>
                 <Detail label="Solução proposta" value={nc.solucao_proposta} />
@@ -501,8 +501,8 @@ export default async function NcDetailPage({ params }: PageProps) {
                 />
               ) : null}
 
-              <section className="rounded-xl border border-brd-0 bg-bg-1 p-4">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.7px] text-txt-3">Auditoria</div>
+              <section className="rounded-xl bg-bg-1 p-4">
+                <div className="text-xs font-semibold text-txt-3">Auditoria</div>
                 <dl className="mt-3 space-y-3 text-xs">
                   <AuditFact label="ID do registro" value={nc.id} mono />
                   <AuditFact label="Criada em" value={formatDateTime(nc.created_at)} />
@@ -530,13 +530,13 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-brd-0 bg-bg-1 p-5">
+    <section className="rounded-xl bg-bg-1 p-5">
       <div className="mb-5 flex items-center gap-3">
         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--bl)] text-[var(--br)]">
           {icon}
         </span>
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.7px] text-txt-3">{eyebrow}</div>
+          <div className="text-xs font-semibold text-txt-3">{eyebrow}</div>
           <h2 className="text-[15px] font-semibold text-txt">{title}</h2>
         </div>
       </div>
@@ -560,7 +560,7 @@ function HeroFact({
     <div className="flex items-start gap-3 border-b border-brd-0 px-5 py-4 last:border-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
       <span className="mt-0.5 text-txt-3">{icon}</span>
       <div>
-        <div className="text-[10px] font-semibold uppercase tracking-[0.6px] text-txt-3">{label}</div>
+        <div className="text-xs font-semibold text-txt-3">{label}</div>
         <div className={`mt-0.5 text-sm font-medium ${valueClassName}`}>{value}</div>
       </div>
     </div>
@@ -578,7 +578,7 @@ function Detail({
 }) {
   return (
     <div className={compact ? '' : 'rounded-lg bg-bg-0 p-4'}>
-      <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.6px] text-txt-3">{label}</div>
+      <div className="mb-1 text-xs font-semibold text-txt-3">{label}</div>
       <p className={`${compact ? 'text-[13px]' : 'text-sm leading-6'} text-txt`}>{value}</p>
     </div>
   );
@@ -599,7 +599,7 @@ function SideFact({
     <div className={`flex gap-3 pb-3 ${last ? '' : 'border-b border-brd-0'}`}>
       <span className="mt-0.5 text-txt-3">{icon}</span>
       <div className="min-w-0">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.5px] text-txt-3">{label}</div>
+        <div className="text-xs font-semibold text-txt-3">{label}</div>
         <div className="mt-0.5 text-[13px] font-medium text-txt">{value}</div>
       </div>
     </div>
@@ -653,7 +653,7 @@ function RelatedOccurrence({
   return (
     <Link href={`/nc/${occurrence.id}`} className="flex items-center justify-between gap-4 bg-bg-1 p-4 hover:bg-bg-0">
       <div className="min-w-0">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.6px] text-txt-3">{prefix}</div>
+        <div className="text-xs font-semibold text-txt-3">{prefix}</div>
         <div className="mt-0.5 text-[13px] font-semibold text-txt">
           Ocorrência {occurrence.numero_ocorrencia} · {statusLabel(occurrence.status)}
         </div>

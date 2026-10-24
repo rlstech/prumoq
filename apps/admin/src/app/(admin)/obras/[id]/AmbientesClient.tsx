@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Layers, Plus, Search } from 'lucide-react';
+import { Layers, Plus, Search } from '@/components/icons';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { useRouter } from '@/lib/compat/navigation';
 import AmbienteModal from './AmbienteModal';
@@ -48,7 +48,7 @@ export default function AmbientesClient({ obraId, initialAmbientes, fvsPadraoLis
               placeholder="Buscar ambiente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-brd-1 rounded-lg text-sm bg-bg-1 focus:outline-none focus:border-[var(--br)]"
+              className="prumo-field py-2.5 pl-9"
             />
           </div>
           <select 
@@ -77,7 +77,7 @@ export default function AmbientesClient({ obraId, initialAmbientes, fvsPadraoLis
             <div 
               key={amb.id}
               onClick={() => router.push(`/obras/${obraId}/ambiente/${amb.id}`)}
-              className="bg-bg-1 border border-brd-0 rounded-xl p-4 cursor-pointer hover:border-[var(--br)] transition-colors group overflow-hidden relative"
+              className="bg-bg-1 rounded-xl p-4 cursor-pointer hover:border-[var(--br)] transition-colors group overflow-hidden relative"
             >
               <div 
                 className="absolute top-0 inset-x-0 h-1" 
@@ -103,7 +103,7 @@ export default function AmbientesClient({ obraId, initialAmbientes, fvsPadraoLis
           ))}
         </div>
       ) : (
-        <div className="bg-bg-1 rounded-xl border border-brd-0 p-12 flex flex-col items-center justify-center text-center">
+        <div className="bg-bg-1 rounded-xl p-12 flex flex-col items-center justify-center text-center">
           <div className="w-12 h-12 bg-bg-2 rounded-full flex items-center justify-center text-txt-3 mb-4">
              <Layers size={24} />
           </div>
@@ -111,7 +111,7 @@ export default function AmbientesClient({ obraId, initialAmbientes, fvsPadraoLis
           <p className="text-sm text-txt-2 mb-4">Ainda não há ambientes cadastrados para esta obra.</p>
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-[var(--br)] hover:bg-[var(--brd)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="prumo-primary-button"
           >
             <Plus size={16} /> Cadastrar Ambiente
           </button>

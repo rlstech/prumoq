@@ -577,6 +577,247 @@ export type Database = {
           },
         ]
       }
+      contrato_aditivo_itens: {
+        Row: {
+          aditivo_id: string
+          cliente_id: string
+          fvs_planejada_id: string
+          id: string
+          obra_id: string
+          preco_anterior: number | null
+          preco_novo: number | null
+          quantidade_anterior: number
+          quantidade_nova: number
+          tipo: string
+          unidade: string
+        }
+        Insert: {
+          aditivo_id: string
+          cliente_id: string
+          fvs_planejada_id: string
+          id?: string
+          obra_id: string
+          preco_anterior?: number | null
+          preco_novo?: number | null
+          quantidade_anterior: number
+          quantidade_nova: number
+          tipo: string
+          unidade: string
+        }
+        Update: {
+          aditivo_id?: string
+          cliente_id?: string
+          fvs_planejada_id?: string
+          id?: string
+          obra_id?: string
+          preco_anterior?: number | null
+          preco_novo?: number | null
+          quantidade_anterior?: number
+          quantidade_nova?: number
+          tipo?: string
+          unidade?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrato_aditivo_itens_aditivo_id_fkey"
+            columns: ["aditivo_id"]
+            isOneToOne: false
+            referencedRelation: "contrato_aditivos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contrato_aditivo_itens_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contrato_aditivo_itens_fvs_planejada_id_fkey"
+            columns: ["fvs_planejada_id"]
+            isOneToOne: false
+            referencedRelation: "fvs_planejadas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contrato_aditivo_itens_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contrato_aditivos: {
+        Row: {
+          cliente_id: string
+          contrato_id: string
+          created_at: string
+          criado_por: string | null
+          data: string
+          descricao: string
+          id: string
+          numero: number
+          obra_id: string
+          valor_anterior: number
+          valor_novo: number
+        }
+        Insert: {
+          cliente_id: string
+          contrato_id: string
+          created_at?: string
+          criado_por?: string | null
+          data?: string
+          descricao: string
+          id?: string
+          numero: number
+          obra_id: string
+          valor_anterior: number
+          valor_novo: number
+        }
+        Update: {
+          cliente_id?: string
+          contrato_id?: string
+          created_at?: string
+          criado_por?: string | null
+          data?: string
+          descricao?: string
+          id?: string
+          numero?: number
+          obra_id?: string
+          valor_anterior?: number
+          valor_novo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrato_aditivos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contrato_aditivos_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contrato_aditivos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contrato_aditivos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contratos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          criado_por: string | null
+          data_fim: string | null
+          data_inicio: string
+          encerrado_em: string | null
+          encerrado_por: string | null
+          equipe_id: string
+          id: string
+          motivo_encerramento: string | null
+          numero: string
+          obra_id: string
+          objeto: string
+          observacao: string | null
+          status: Database["public"]["Enums"]["status_contrato"]
+          updated_at: string
+          updated_by: string | null
+          valor_contratado: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          criado_por?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          encerrado_em?: string | null
+          encerrado_por?: string | null
+          equipe_id: string
+          id?: string
+          motivo_encerramento?: string | null
+          numero: string
+          obra_id: string
+          objeto: string
+          observacao?: string | null
+          status?: Database["public"]["Enums"]["status_contrato"]
+          updated_at?: string
+          updated_by?: string | null
+          valor_contratado?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          criado_por?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          encerrado_em?: string | null
+          encerrado_por?: string | null
+          equipe_id?: string
+          id?: string
+          motivo_encerramento?: string | null
+          numero?: string
+          obra_id?: string
+          objeto?: string
+          observacao?: string | null
+          status?: Database["public"]["Enums"]["status_contrato"]
+          updated_at?: string
+          updated_by?: string | null
+          valor_contratado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_encerrado_por_fkey"
+            columns: ["encerrado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_equipe_id_cliente_fkey"
+            columns: ["equipe_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
+            foreignKeyName: "contratos_obra_id_cliente_fkey"
+            columns: ["obra_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id", "cliente_id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           contato_email: string | null
@@ -1626,6 +1867,7 @@ export type Database = {
           cancelado_em: string | null
           cancelado_por: string | null
           cliente_id: string
+          contrato_id: string | null
           created_at: string
           criado_por: string
           data_medicao: string
@@ -1646,6 +1888,7 @@ export type Database = {
           cancelado_em?: string | null
           cancelado_por?: string | null
           cliente_id: string
+          contrato_id?: string | null
           created_at?: string
           criado_por: string
           data_medicao?: string
@@ -1666,6 +1909,7 @@ export type Database = {
           cancelado_em?: string | null
           cancelado_por?: string | null
           cliente_id?: string
+          contrato_id?: string | null
           created_at?: string
           criado_por?: string
           data_medicao?: string
@@ -1681,6 +1925,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "medicoes_servico_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "medicoes_servico_aprovado_por_fkey"
             columns: ["aprovado_por"]
@@ -3005,6 +3256,7 @@ export type Database = {
         Row: {
           aprovado_congelado: number
           cliente_id: string
+          contrato_id: string | null
           created_at: string
           criado_por: string
           data_inicio: string
@@ -3023,6 +3275,7 @@ export type Database = {
         Insert: {
           aprovado_congelado?: number
           cliente_id: string
+          contrato_id?: string | null
           created_at?: string
           criado_por: string
           data_inicio: string
@@ -3041,6 +3294,7 @@ export type Database = {
         Update: {
           aprovado_congelado?: number
           cliente_id?: string
+          contrato_id?: string | null
           created_at?: string
           criado_por?: string
           data_inicio?: string
@@ -3057,6 +3311,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vinculos_execucao_servico_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vinculos_execucao_servico_cliente_id_fkey"
             columns: ["cliente_id"]
@@ -3143,6 +3404,26 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_resumo_contratos: {
+        Row: {
+          cliente_id: string | null
+          contrato_id: string | null
+          equipe_id: string | null
+          medicoes_aprovadas: number | null
+          obra_id: string | null
+          rascunhos: number | null
+          servicos: number | null
+          ultima_medicao: string | null
+          valor_a_medir: number | null
+          valor_bloqueado: number | null
+          valor_liberado: number | null
+          valor_medido: number | null
+          valor_previsto: number | null
+          valor_rascunho: number | null
+          valor_referencia: number | null
+        }
+        Relationships: []
+      }
       vw_indicadores_medicoes: {
         Row: {
           custo_confirmado_retrabalho: number | null
@@ -3212,6 +3493,15 @@ export type Database = {
       aprovar_avaliacao_empreiteiro: {
         Args: { p_avaliacao_id: string }
         Returns: undefined
+      }
+      aplicar_aditivo_contrato: {
+        Args: {
+          p_contrato_id: string
+          p_data: string
+          p_descricao: string
+          p_itens: Json
+        }
+        Returns: string
       }
       aprovar_medicao_servico: {
         Args: { p_medicao_id: string }
@@ -3650,6 +3940,70 @@ export type Database = {
         }
         Returns: string
       }
+      encerrar_contrato: {
+        Args: {
+          p_contrato_id: string
+          p_motivo: string
+        }
+        Returns: undefined
+      }
+      reabrir_contrato: {
+        Args: {
+          p_contrato_id: string
+        }
+        Returns: undefined
+      }
+      salvar_configuracao_medicao_contrato: {
+        Args: {
+          p_contrato_id: string
+          p_data_inicio: string
+          p_etapas: Json
+          p_fvs_id: string
+          p_metodo: Database["public"]["Enums"]["metodo_medicao_servico"]
+          p_modelo_id: string | null
+          p_permite_parciais: boolean
+          p_preco_unitario: number | null
+          p_quantidade_total: number
+          p_unidade: string
+        }
+        Returns: string
+      }
+      salvar_contrato: {
+        Args: {
+          p_contrato_id: string | null
+          p_data_fim: string | null
+          p_data_inicio: string
+          p_equipe_id: string
+          p_numero: string
+          p_obra_id: string
+          p_objeto: string
+          p_observacao: string | null
+          p_valor_contratado: number | null
+        }
+        Returns: string
+      }
+      salvar_medicao_contrato: {
+        Args: {
+          p_contrato_id: string
+          p_data_medicao: string
+          p_itens: Json
+          p_medicao_id: string | null
+          p_observacao: string | null
+          p_periodo_fim: string
+          p_periodo_inicio: string
+          p_referencia: string
+        }
+        Returns: string
+      }
+      trocar_empreiteiro_contrato: {
+        Args: {
+          p_contrato_destino_id: string
+          p_data: string
+          p_motivo: string
+          p_vinculo_id: string
+        }
+        Returns: string
+      }
       salvar_medicao_rascunho: {
         Args: {
           p_data_medicao: string
@@ -3771,6 +4125,7 @@ export type Database = {
         | "concluida"
         | "em_revisao"
         | "concluida_ressalva"
+      status_contrato: "ativo" | "encerrado"
       status_medicao_servico: "rascunho" | "aprovada" | "cancelada"
       status_nc:
         | "aberta"
@@ -3982,6 +4337,7 @@ export const Constants = {
         "em_revisao",
         "concluida_ressalva",
       ],
+      status_contrato: ["ativo", "encerrado"],
       status_medicao_servico: ["rascunho", "aprovada", "cancelada"],
       status_nc: [
         "aberta",

@@ -63,6 +63,8 @@ export const router = createBrowserRouter(
             { path: '/fvs-padrao', element: page('fvs-padrao', () => import('@/app/(admin)/fvs-padrao/page')) },
             { path: '/fvs-padrao/:id', element: page('fvs-padrao-detalhe', () => import('@/app/(admin)/fvs-padrao/[id]/page')) },
             { path: '/medicoes', element: page('medicoes', () => import('@/app/(admin)/medicoes/page')) },
+            { path: '/medicoes/contratos/:id', element: page('contrato', () => import('@/app/(admin)/medicoes/contratos/[id]/page')) },
+            { path: '/medicoes/m/:medicaoId', element: page('medicao', () => import('@/app/(admin)/medicoes/m/[medicaoId]/page')) },
             { path: '/nc', element: page('nc', () => import('@/app/(admin)/nc/page')) },
             { path: '/nc/:id', element: page('nc-detalhe', () => import('@/app/(admin)/nc/[id]/page')) },
             { path: '/obras', element: page('obras', () => import('@/app/(admin)/obras/page')) },
@@ -83,6 +85,7 @@ export const router = createBrowserRouter(
           ],
         },
         { path: '/relatorio/fvs/:fvsId', element: page('relatorio-fvs', () => import('@/app/relatorio/fvs/[fvsId]/page'), <TelaCarregando />) },
+        { path: '/relatorio/medicoes', element: page('relatorio-medicoes', () => import('@/app/relatorio/medicoes/page'), <TelaCarregando />) },
         {
           path: '/relatorio/avaliacoes-empreiteiro/:id',
           element: page('relatorio-avaliacao', () => import('@/app/relatorio/avaliacoes-empreiteiro/[id]/page'), <TelaCarregando />),

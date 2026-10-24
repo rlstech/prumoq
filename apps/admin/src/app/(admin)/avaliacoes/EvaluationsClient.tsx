@@ -1,6 +1,6 @@
 
 import { useMemo, useState, useTransition } from 'react';
-import { CheckCircle2, FileDown, Plus, RotateCcw, Save, ShieldX } from 'lucide-react';
+import { CheckCircle2, FileDown, Plus, RotateCcw, Save, ShieldX } from '@/components/icons';
 import Modal from '@/components/ui/Modal';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Tabs from '@/components/ui/Tabs';
@@ -122,14 +122,14 @@ export default function EvaluationsClient({evaluations,metrics,models,revisions,
     <p className="mt-2 text-sm text-txt-2">A avaliação passa a valer como aprovada e libera a medição vinculada, se houver. Esta decisão não pode ser desfeita por aqui.</p>
     <div className="mt-4 flex justify-end gap-2">
       <button type="button" onClick={()=>setApproveId(null)} className="prumo-secondary-button">Cancelar</button>
-      <button type="button" disabled={pending} onClick={approve} className="inline-flex h-[38px] items-center gap-2 rounded bg-ok px-4 text-[13px] font-semibold text-white transition-colors hover:bg-ok/90 disabled:opacity-60"><CheckCircle2 size={15}/>Aprovar</button>
+      <button type="button" disabled={pending} onClick={approve} className="inline-flex h-[38px] items-center gap-2 rounded-full bg-ok px-4 text-[13px] font-semibold text-white transition-colors hover:bg-ok/90 disabled:opacity-60"><CheckCircle2 size={15}/>Aprovar</button>
     </div>
   </Modal>:null}
   {invalidateId?<Modal isOpen onClose={()=>setInvalidateId(null)} title="Invalidar avaliação">
     <label className="block text-sm text-txt-2">Justificativa<textarea value={reason} onChange={e=>setReason(e.target.value)} className="prumo-field mt-2 min-h-24 p-3" rows={3}/></label>
     <div className="mt-4 flex justify-end gap-2">
       <button type="button" onClick={()=>setInvalidateId(null)} className="prumo-secondary-button">Voltar</button>
-      <button type="button" disabled={pending||reason.trim().length<3} onClick={invalidate} className="inline-flex h-[38px] items-center gap-2 rounded bg-nok px-4 text-[13px] font-semibold text-white transition-colors hover:bg-nok/90 disabled:opacity-60">Invalidar</button>
+      <button type="button" disabled={pending||reason.trim().length<3} onClick={invalidate} className="inline-flex h-[38px] items-center gap-2 rounded-full bg-nok px-4 text-[13px] font-semibold text-white transition-colors hover:bg-nok/90 disabled:opacity-60">Invalidar</button>
     </div>
   </Modal>:null}
   {reopenId?<Modal isOpen onClose={()=>setReopenId(null)} title="Reabrir avaliação">
@@ -137,7 +137,7 @@ export default function EvaluationsClient({evaluations,metrics,models,revisions,
     <label className="mt-4 block text-sm text-txt-2">Motivo da reabertura<textarea value={reason} onChange={e=>setReason(e.target.value)} className="prumo-field mt-2 min-h-24 p-3" rows={3}/></label>
     <div className="mt-4 flex justify-end gap-2">
       <button type="button" onClick={()=>setReopenId(null)} className="prumo-secondary-button">Cancelar</button>
-      <button type="button" disabled={pending||reason.trim().length<3} onClick={reopen} className="inline-flex h-[38px] items-center gap-2 rounded bg-warn px-4 text-[13px] font-semibold text-white transition-colors hover:bg-warn/90 disabled:opacity-60"><RotateCcw size={15}/>Reabrir</button>
+      <button type="button" disabled={pending||reason.trim().length<3} onClick={reopen} className="inline-flex h-[38px] items-center gap-2 rounded-full bg-warn px-4 text-[13px] font-semibold text-white transition-colors hover:bg-warn/90 disabled:opacity-60"><RotateCcw size={15}/>Reabrir</button>
     </div>
   </Modal>:null}
  </div>;

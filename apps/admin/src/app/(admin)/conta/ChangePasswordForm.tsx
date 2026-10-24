@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useClerk, useUser } from '@clerk/clerk-react';
 import { isClerkAPIResponseError } from '@clerk/clerk-react/errors';
-import { KeyRound, ShieldCheck } from 'lucide-react';
+import { KeyRound, ShieldCheck } from '@/components/icons';
 import {
   changePasswordSchema,
   getPasswordAuthErrorMessage,

@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@/components/icons';
 
 interface ModalProps {
   isOpen: boolean;
@@ -38,9 +38,9 @@ export default function Modal({ isOpen, onClose, title, size = 'md', children, f
   const isCentered = size === 'xl' || size === 'full';
 
   return (
-    <div className={`fixed inset-0 z-50 flex ${isCentered ? 'items-center justify-center p-4' : 'items-end justify-end sm:items-stretch'}`}>
+    <div className={`fixed inset-0 z-50 flex ${isCentered ? 'items-center justify-center p-4' : 'items-end justify-end sm:items-stretch sm:p-3'}`}>
       <div 
-        className="absolute inset-0 bg-[rgba(20,37,34,.58)] backdrop-blur-[2px] transition-opacity"
+        className="absolute inset-0 bg-[rgba(28,31,34,.62)] transition-opacity"
         onClick={onClose}
       />
       
@@ -50,31 +50,28 @@ export default function Modal({ isOpen, onClose, title, size = 'md', children, f
         aria-label={title}
         className={`relative flex w-full flex-col overflow-hidden bg-bg-1 shadow-float ${
           isCentered
-            ? `max-h-[95vh] rounded-xl ${sizeClasses[size]}`
-            : `max-h-[92vh] rounded-t-xl sm:max-h-none sm:h-full sm:rounded-none sm:rounded-l-xl ${sizeClasses[size]}`
+            ? `max-h-[95vh] rounded-2xl ${sizeClasses[size]}`
+            : `max-h-[92vh] rounded-t-2xl sm:h-full sm:max-h-none sm:rounded-2xl ${sizeClasses[size]}`
         }`}
       >
-        <div className="flex min-h-[72px] items-center justify-between border-b border-brd-0 px-5 py-4 sm:px-6">
-          <div>
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[.14em] text-[var(--prumo-brand)]">PrumoQ</div>
-            <h2 className="text-lg font-semibold text-txt">{title}</h2>
-          </div>
+        <div className="flex items-start justify-between gap-4 px-5 pb-4 pt-6 sm:px-7">
+          <h2 className="pt-1 text-[24px] font-extrabold leading-tight tracking-[-0.02em] text-txt">{title}</h2>
           <button 
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-txt-3 transition-colors hover:bg-bg-2 hover:text-txt"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-0 text-txt transition-colors hover:bg-bg-2"
             aria-label="Fechar"
           >
             <X size={18} />
           </button>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+        <div className="flex-1 overflow-y-auto px-5 pb-6 pt-1 sm:px-7">
           {children}
         </div>
 
         {footer && (
-          <div className="flex items-center justify-end gap-3 border-t border-brd-0 bg-bg-0 px-5 py-4 sm:px-6">
+          <div className="flex items-center justify-end gap-2.5 border-t border-brd-0 px-5 py-4 sm:px-7">
             {footer}
           </div>
         )}

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from '@/lib/compat/navigation';
 import { useAuth, useClerk, useSignIn } from '@clerk/clerk-react';
 import { isClerkAPIResponseError } from '@clerk/clerk-react/errors';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from '@/components/icons';
 import { minimumPasswordSchema } from '@/lib/auth/passwords';
 import { verificarAcesso } from './actions';
 
@@ -173,8 +173,8 @@ export default function LoginForm() {
 
   return (
     <>
-      <h2 className="mt-3 text-2xl font-semibold tracking-[-.035em] text-txt">{titulo[etapa]}</h2>
-      <p className="mt-2 text-sm text-txt-2">{subtitulo[etapa]}</p>
+      <h2 className="mt-2 text-[34px] font-extrabold leading-tight tracking-[-0.03em] text-txt">{titulo[etapa]}</h2>
+      <p className="mt-2 text-[15px] text-txt-2">{subtitulo[etapa]}</p>
 
       <form
         onSubmit={{ entrar, codigo: confirmarCodigo, esqueci: pedirRedefinicao, redefinir }[etapa]}
@@ -188,7 +188,7 @@ export default function LoginForm() {
               name="email"
               value={email}
               onChange={event => setEmail(event.target.value)}
-              className="prumo-field"
+              className="prumo-field h-12"
               placeholder="voce@empresa.com.br"
               required
               autoComplete="email"
@@ -213,7 +213,7 @@ export default function LoginForm() {
               name="password"
               value={senha}
               onChange={event => setSenha(event.target.value)}
-              className="prumo-field"
+              className="prumo-field h-12"
               placeholder="••••••••"
               required
               autoComplete="current-password"
@@ -230,7 +230,7 @@ export default function LoginForm() {
               inputMode="numeric"
               value={codigo}
               onChange={event => setCodigo(event.target.value)}
-              className="prumo-field"
+              className="prumo-field h-12"
               placeholder="000000"
               required
               autoComplete="one-time-code"
@@ -246,7 +246,7 @@ export default function LoginForm() {
               name="nova-senha"
               value={novaSenha}
               onChange={event => setNovaSenha(event.target.value)}
-              className="prumo-field"
+              className="prumo-field h-12"
               placeholder="Mínimo de 8 caracteres"
               required
               autoComplete="new-password"
@@ -255,13 +255,13 @@ export default function LoginForm() {
         )}
 
         {erro ? (
-          <div role="alert" className="rounded-lg border border-nok/20 bg-nok-bg px-4 py-3 text-sm font-medium text-nok">
+          <div role="alert" className="rounded-lg bg-nok-bg px-4 py-3 text-sm font-medium text-nok">
             {erro}
           </div>
         ) : null}
 
         {senhaAlterada && etapa === 'entrar' ? (
-          <div role="status" className="flex items-start gap-2 rounded-lg border border-ok/20 bg-ok-bg px-4 py-3 text-sm font-medium text-ok">
+          <div role="status" className="flex items-start gap-2 rounded-lg bg-ok-bg px-4 py-3 text-sm font-medium text-ok">
             <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
             Senha alterada. Entre novamente com sua nova senha.
           </div>

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { CheckCircle2, Plus, Save, XCircle } from 'lucide-react';
+import { CheckCircle2, Plus, Save, XCircle } from '@/components/icons';
 import Modal from '@/components/ui/Modal';
 import { FilterBar, SearchField } from '@/components/ui/FilterBar';
 import { createEmpresa, updateEmpresa } from './actions';
@@ -241,71 +241,71 @@ export default function EmpresasClient({
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={selectedEmpresa ? 'Editar Empresa' : 'Nova Empresa'} size="lg">
         <form onSubmit={handleSave} className="flex flex-col gap-5 p-1">
           {/* Identificação */}
-          <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-            <div className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-3">Identificação</div>
+          <div className="bg-bg-0 rounded-lg p-4">
+            <div className="text-xs font-semibold text-txt-2 mb-3">Identificação</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-txt-2 mb-1">Razão Social *</label>
-                <input type="text" className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]" required value={formData.nome} onChange={e => setFormData(p => ({...p, nome: e.target.value}))} autoFocus />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">Razão Social *</label>
+                <input type="text" className="prumo-field py-2.5" required value={formData.nome} onChange={e => setFormData(p => ({...p, nome: e.target.value}))} autoFocus />
               </div>
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">CNPJ *</label>
-                <input type="text" className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)] font-mono" value={formatCNPJ(formData.cnpj)} onChange={e => setFormData(p => ({...p, cnpj: e.target.value}))} placeholder="00.000.000/0000-00" maxLength={18} required />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">CNPJ *</label>
+                <input type="text" className="prumo-field py-2.5 font-mono" value={formatCNPJ(formData.cnpj)} onChange={e => setFormData(p => ({...p, cnpj: e.target.value}))} placeholder="00.000.000/0000-00" maxLength={18} required />
               </div>
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">Inscrição Estadual</label>
-                <input type="text" className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]" value={formData.ie} onChange={e => setFormData(p => ({...p, ie: e.target.value}))} />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">Inscrição Estadual</label>
+                <input type="text" className="prumo-field py-2.5" value={formData.ie} onChange={e => setFormData(p => ({...p, ie: e.target.value}))} />
               </div>
             </div>
           </div>
 
           {/* Contato */}
-          <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-            <div className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-3">Contato</div>
+          <div className="bg-bg-0 rounded-lg p-4">
+            <div className="text-xs font-semibold text-txt-2 mb-3">Contato</div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">Pessoa de Contato</label>
-                <input type="text" className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]" value={formData.contato} onChange={e => setFormData(p => ({...p, contato: e.target.value}))} />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">Pessoa de Contato</label>
+                <input type="text" className="prumo-field py-2.5" value={formData.contato} onChange={e => setFormData(p => ({...p, contato: e.target.value}))} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">E-mail</label>
-                <input type="email" className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]" value={formData.email} onChange={e => setFormData(p => ({...p, email: e.target.value}))} />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">E-mail</label>
+                <input type="email" className="prumo-field py-2.5" value={formData.email} onChange={e => setFormData(p => ({...p, email: e.target.value}))} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">Telefone</label>
-                <input type="text" className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]" value={formatPhone(formData.telefone)} onChange={e => setFormData(p => ({...p, telefone: e.target.value}))} placeholder="(61) 99999-0000" />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">Telefone</label>
+                <input type="text" className="prumo-field py-2.5" value={formatPhone(formData.telefone)} onChange={e => setFormData(p => ({...p, telefone: e.target.value}))} placeholder="(61) 99999-0000" />
               </div>
             </div>
           </div>
 
           {/* Endereço */}
-          <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-            <div className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-3">Endereço</div>
+          <div className="bg-bg-0 rounded-lg p-4">
+            <div className="text-xs font-semibold text-txt-2 mb-3">Endereço</div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-txt-2 mb-1">Endereço</label>
-                <input type="text" className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]" value={formData.endereco} onChange={e => setFormData(p => ({...p, endereco: e.target.value}))} />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">Endereço</label>
+                <input type="text" className="prumo-field py-2.5" value={formData.endereco} onChange={e => setFormData(p => ({...p, endereco: e.target.value}))} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">Município</label>
-                <input type="text" className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]" value={formData.municipio} onChange={e => setFormData(p => ({...p, municipio: e.target.value}))} />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">Município</label>
+                <input type="text" className="prumo-field py-2.5" value={formData.municipio} onChange={e => setFormData(p => ({...p, municipio: e.target.value}))} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">UF</label>
-                <select className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]" value={formData.uf} onChange={e => setFormData(p => ({...p, uf: e.target.value}))}>
+                <label className="mb-2 block text-[13px] font-semibold text-txt">UF</label>
+                <select className="prumo-field py-2.5" value={formData.uf} onChange={e => setFormData(p => ({...p, uf: e.target.value}))}>
                   <option value="">—</option>
                   {UFS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">CEP</label>
-                <input type="text" className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]" value={formatCEP(formData.cep)} onChange={e => setFormData(p => ({...p, cep: e.target.value}))} placeholder="00000-000" maxLength={9} />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">CEP</label>
+                <input type="text" className="prumo-field py-2.5" value={formatCEP(formData.cep)} onChange={e => setFormData(p => ({...p, cep: e.target.value}))} placeholder="00000-000" maxLength={9} />
               </div>
             </div>
           </div>
 
-          <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-            <div className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-1">Recursos opcionais</div>
+          <div className="bg-bg-0 rounded-lg p-4">
+            <div className="text-xs font-semibold text-txt-2 mb-1">Recursos opcionais</div>
             <p className="mb-3 text-xs leading-5 text-txt-3">Defina o padrão para as obras desta empresa. Cada obra pode herdar ou sobrescrever estes controles.</p>
             <label className="flex items-start gap-3 rounded-lg border border-brd-1 bg-bg-1 p-3 cursor-pointer">
               <input

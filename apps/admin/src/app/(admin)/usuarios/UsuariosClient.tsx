@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Plus, ShieldCheck, HardHat, KeyRound, Save } from 'lucide-react';
+import { Plus, ShieldCheck, HardHat, KeyRound, Save } from '@/components/icons';
 import Modal from '@/components/ui/Modal';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import DataTable, { Column } from '@/components/ui/DataTable';
@@ -188,25 +188,25 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
         <form onSubmit={handleSave} className="flex flex-col gap-4 p-2">
           <div className="grid grid-cols-2 gap-4">
              <div>
-               <label className="block text-xs font-medium text-txt-2 mb-1">Nome Completo *</label>
-               <input type="text" required className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
+               <label className="mb-2 block text-[13px] font-semibold text-txt">Nome Completo *</label>
+               <input type="text" required className="prumo-field py-2.5" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
              </div>
              <div>
-               <label className="block text-xs font-medium text-txt-2 mb-1">E-mail *</label>
-               <input type="email" required className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+               <label className="mb-2 block text-[13px] font-semibold text-txt">E-mail *</label>
+               <input type="email" required className="prumo-field py-2.5" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
              </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
              {!selectedUser ? <div>
-               <label className="block text-xs font-medium text-txt-2 mb-1">
+               <label className="mb-2 block text-[13px] font-semibold text-txt">
                  Senha *
                </label>
-               <input type="password" required minLength={8} placeholder="Mínimo 8 caracteres" className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]" value={formData.senha} onChange={e => setFormData({...formData, senha: e.target.value})} />
+               <input type="password" required minLength={8} placeholder="Mínimo 8 caracteres" className="prumo-field py-2.5" value={formData.senha} onChange={e => setFormData({...formData, senha: e.target.value})} />
              </div> : null}
              <div className={selectedUser ? 'col-span-2' : undefined}>
-               <label className="block text-xs font-medium text-txt-2 mb-1">Cargo</label>
-               <input type="text" className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]" placeholder="Ex: Mestre de Obras" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})} />
+               <label className="mb-2 block text-[13px] font-semibold text-txt">Cargo</label>
+               <input type="text" className="prumo-field py-2.5" placeholder="Ex: Mestre de Obras" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})} />
              </div>
           </div>
 
@@ -230,8 +230,8 @@ export default function UsuariosClient({ initialUsers, availableObras }: { initi
           </div>
 
           {formData.perfil !== 'admin' && (
-            <div className="mt-2 p-4 border border-brd-0 rounded-lg bg-bg-0">
-               <label className="block text-xs font-medium text-txt-2 mb-2 uppercase tracking-wider">Obras Vinculadas</label>
+            <div className="mt-2 p-4 rounded-lg bg-bg-0">
+               <label className="block text-xs font-medium text-txt-2 mb-2">Obras Vinculadas</label>
                <p className="text-[11px] text-txt-3 mb-3">Selecione as obras que este usuário pode acessar.</p>
                
                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2">
