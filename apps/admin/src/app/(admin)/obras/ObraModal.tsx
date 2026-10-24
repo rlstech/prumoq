@@ -113,22 +113,22 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
 
         {/* Identificação */}
         <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-          <div className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-3">Identificação</div>
+          <div className="text-xs font-semibold text-txt-2 mb-3">Identificação</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-txt-2 mb-1">Nome da Obra *</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Nome da Obra *</label>
               <input
                 type="text"
-                className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
+                className="prumo-field py-2.5"
                 value={f.nome} onChange={set('nome')}
                 placeholder="Ex: Residencial Portal Oeste"
                 required autoFocus
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">Empresa *</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Empresa *</label>
               <select
-                className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
+                className="prumo-field py-2.5"
                 value={f.empresa_id} onChange={set('empresa_id')} required
               >
                 <option value="" disabled>Selecione a empresa</option>
@@ -136,9 +136,9 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">Status</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Status</label>
               <select
-                className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
+                className="prumo-field py-2.5"
                 value={f.status} onChange={set('status')}
               >
                 <option value="nao_iniciada">Não Iniciada</option>
@@ -152,22 +152,22 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
 
         {/* Responsável Técnico */}
         <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-          <div className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-3">Responsável Técnico</div>
+          <div className="text-xs font-semibold text-txt-2 mb-3">Responsável Técnico</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">Engenheiro Resp.</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Engenheiro Resp.</label>
               <input
                 type="text"
-                className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
+                className="prumo-field py-2.5"
                 value={f.eng_responsavel} onChange={set('eng_responsavel')}
                 placeholder="Ex: Eng. Roberto Matos"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">CREA / CAU</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">CREA / CAU</label>
               <input
                 type="text"
-                className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
+                className="prumo-field py-2.5"
                 value={f.crea_cau} onChange={set('crea_cau')}
                 placeholder="Ex: CREA-DF 12.345-D"
               />
@@ -177,31 +177,31 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
 
         {/* Localização */}
         <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-          <div className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-3">Localização</div>
+          <div className="text-xs font-semibold text-txt-2 mb-3">Localização</div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-txt-2 mb-1">Endereço</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Endereço</label>
               <input
                 type="text"
-                className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
+                className="prumo-field py-2.5"
                 value={f.endereco} onChange={set('endereco')}
                 placeholder="Setor Hab. Jardins, Lote 24"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">Município</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Município</label>
               <input
                 type="text"
-                className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
+                className="prumo-field py-2.5"
                 value={f.municipio} onChange={set('municipio')}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">UF</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">UF</label>
               <input
                 type="text"
                 maxLength={2}
-                className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)] uppercase"
+                className="prumo-field py-2.5 uppercase"
                 value={f.uf} onChange={e => setFormData(p => ({ ...p, uf: e.target.value.toUpperCase() }))}
               />
             </div>
@@ -210,21 +210,21 @@ export default function ObraModal({ isOpen, onClose, empresas, initialData }: Ob
 
         {/* Cronograma */}
         <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-          <div className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-3">Cronograma</div>
+          <div className="text-xs font-semibold text-txt-2 mb-3">Cronograma</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">Previsão de início</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Previsão de início</label>
               <input
                 type="date"
-                className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
+                className="prumo-field py-2.5"
                 value={f.data_inicio_prev} onChange={set('data_inicio_prev')}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">Previsão de conclusão</label>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Previsão de conclusão</label>
               <input
                 type="date"
-                className="w-full px-3 py-[9px] border border-brd-1 rounded text-[13px] bg-bg-1 outline-none focus:border-[var(--br)]"
+                className="prumo-field py-2.5"
                 value={f.data_termino_prev} onChange={set('data_termino_prev')}
               />
             </div>

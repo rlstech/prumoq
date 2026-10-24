@@ -84,7 +84,7 @@ export default function MeasurementServiceClient(props: {
 
   if (!props.enabled) return <section className="rounded-xl border border-dashed border-brd-1 bg-bg-1 p-8 text-sm text-txt-2">O controle de medições está desativado nesta obra. Ative-o nos recursos opcionais da obra.</section>;
   return <div className="space-y-5">
-    <section className="rounded-xl border border-brd-0 bg-bg-1 p-5"><p className="text-xs font-semibold uppercase tracking-wider text-txt-3">Serviço mensurável</p><h1 className="mt-1 text-xl font-semibold text-txt">{props.title}</h1>
+    <section className="rounded-xl border border-brd-0 bg-bg-1 p-5"><p className="text-xs font-semibold text-txt-3">Serviço mensurável</p><h1 className="mt-1 text-xl font-semibold text-txt">{props.title}</h1>
       {props.config ? <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-6"><Metric label="Previsto" value={`${fmt(summary.scope || props.config.quantidade_total)} ${props.config.unidade}`} /><Metric label="Aprovado" value={fmt(summary.approved)} /><Metric label="Medido" value={fmt(summary.measured)} /><Metric label="Bloqueado" value={fmt(summary.blocked)} tone="danger" /><Metric label="Disponível" value={fmt(summary.available)} tone="success" /><Metric label="Valor disponível" value={money(summary.value)} /></div> : null}
     </section>
 
@@ -105,5 +105,5 @@ export default function MeasurementServiceClient(props: {
   </div>;
 }
 
-function Metric({ label, value, tone }: { label: string; value: string; tone?: 'success'|'danger' }) { return <div className="rounded-lg bg-bg-0 p-3"><div className="text-[10px] font-semibold uppercase text-txt-3">{label}</div><div className={`mt-1 text-sm font-semibold ${tone==='success'?'text-ok':tone==='danger'?'text-nok':'text-txt'}`}>{value}</div></div>; }
+function Metric({ label, value, tone }: { label: string; value: string; tone?: 'success'|'danger' }) { return <div className="rounded-lg bg-bg-0 p-3"><div className="text-xs font-semibold text-txt-3">{label}</div><div className={`mt-1 text-sm font-semibold ${tone==='success'?'text-ok':tone==='danger'?'text-nok':'text-txt'}`}>{value}</div></div>; }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block text-xs font-medium text-txt-2">{label}<span className="mt-1 block [&_input]:w-full [&_input]:rounded-md [&_input]:border [&_input]:border-brd-1 [&_input]:bg-bg-0 [&_input]:px-2.5 [&_input]:py-2 [&_select]:w-full [&_select]:rounded-md [&_select]:border [&_select]:border-brd-1 [&_select]:bg-bg-0 [&_select]:px-2.5 [&_select]:py-2 [&_textarea]:w-full [&_textarea]:rounded-md [&_textarea]:border [&_textarea]:border-brd-1 [&_textarea]:bg-bg-0 [&_textarea]:px-2.5 [&_textarea]:py-2">{children}</span></label>; }

@@ -129,7 +129,7 @@ export default function EquipesClient({
         <div>
            <div className="flex items-center gap-2 mb-4">
              <div className="p-1.5 bg-bg-2 rounded text-txt-2"><HardHat size={16} /></div>
-             <h3 className="text-sm font-semibold text-txt uppercase tracking-wider">Equipes Próprias</h3>
+             <h3 className="text-sm font-semibold text-txt">Equipes Próprias</h3>
            </div>
            <div className="space-y-3">
              {proprios.length > 0 ? proprios.map(eq => <EquipeCard key={eq.id} eq={eq} />) : <p className="text-sm text-txt-3 p-4 bg-bg-0 text-center rounded-lg border border-brd-0 border-dashed">Nenhuma equipe encontrada.</p>}
@@ -138,7 +138,7 @@ export default function EquipesClient({
         <div>
            <div className="flex items-center gap-2 mb-4">
              <div className="p-1.5 bg-bg-2 rounded text-txt-2"><HardHat size={16} /></div>
-             <h3 className="text-sm font-semibold text-txt uppercase tracking-wider">Terceirizados</h3>
+             <h3 className="text-sm font-semibold text-txt">Terceirizados</h3>
            </div>
            <div className="space-y-3">
              {terceirizados.length > 0 ? terceirizados.map(eq => <EquipeCard key={eq.id} eq={eq} />) : <p className="text-sm text-txt-3 p-4 bg-bg-0 text-center rounded-lg border border-brd-0 border-dashed">Nenhum terceirizado encontrado.</p>}
@@ -150,12 +150,12 @@ export default function EquipesClient({
          <form onSubmit={handleSave} className="flex flex-col gap-4 p-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">Nome *</label>
-                <input type="text" className="w-full px-3 py-2 border border-brd-1 rounded bg-bg-1 text-[13px] outline-none focus:border-[var(--br)]" required value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} autoFocus />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">Nome *</label>
+                <input type="text" className="prumo-field py-2.5" required value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} autoFocus />
               </div>
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">Tipo *</label>
-                <select className="w-full px-3 py-2 border border-brd-1 rounded bg-bg-1 text-[13px] outline-none focus:border-[var(--br)]" value={formData.tipo} onChange={e => setFormData({...formData, tipo: e.target.value})}>
+                <label className="mb-2 block text-[13px] font-semibold text-txt">Tipo *</label>
+                <select className="prumo-field py-2.5" value={formData.tipo} onChange={e => setFormData({...formData, tipo: e.target.value})}>
                   <option value="proprio">Própria</option>
                   <option value="terceirizado">Terceirizada</option>
                 </select>
@@ -164,19 +164,19 @@ export default function EquipesClient({
 
             {formData.tipo === 'terceirizado' && (
               <div>
-                <label className="block text-xs font-medium text-txt-2 mb-1">CNPJ (Terceirizado)</label>
-                <input type="text" placeholder="00.000.000/0001-00" className="w-full px-3 py-2 border border-brd-1 rounded bg-bg-1 text-[13px] outline-none focus:border-[var(--br)]" value={formData.cnpj_terceiro} onChange={e => setFormData({...formData, cnpj_terceiro: e.target.value})} />
+                <label className="mb-2 block text-[13px] font-semibold text-txt">CNPJ (Terceirizado)</label>
+                <input type="text" placeholder="00.000.000/0001-00" className="prumo-field py-2.5" value={formData.cnpj_terceiro} onChange={e => setFormData({...formData, cnpj_terceiro: e.target.value})} />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-medium text-txt-2 mb-1">Especialidade</label>
-              <input type="text" placeholder="Ex: Carpintaria, Instalações Elétricas..." className="w-full px-3 py-2 border border-brd-1 rounded bg-bg-1 text-[13px] outline-none focus:border-[var(--br)]" value={formData.especialidade} onChange={e => setFormData({...formData, especialidade: e.target.value})} />
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Especialidade</label>
+              <input type="text" placeholder="Ex: Carpintaria, Instalações Elétricas..." className="prumo-field py-2.5" value={formData.especialidade} onChange={e => setFormData({...formData, especialidade: e.target.value})} />
             </div>
 
             <div className="rounded-lg border border-brd-0 bg-bg-0 p-4">
-              <label className="block text-xs font-medium text-txt-2 mb-1">Disponibilidade</label>
-              <select className="w-full px-3 py-2 border border-brd-1 rounded bg-bg-1 text-[13px]" value={formData.escopo} onChange={e => setFormData({...formData, escopo: e.target.value as 'global' | 'restrito', empresaIds: e.target.value === 'global' ? [] : formData.empresaIds})}>
+              <label className="mb-2 block text-[13px] font-semibold text-txt">Disponibilidade</label>
+              <select className="prumo-field py-2.5" value={formData.escopo} onChange={e => setFormData({...formData, escopo: e.target.value as 'global' | 'restrito', empresaIds: e.target.value === 'global' ? [] : formData.empresaIds})}>
                 <option value="global">Todas as empresas do cliente</option>
                 <option value="restrito">Somente empresas selecionadas</option>
               </select>
@@ -194,12 +194,12 @@ export default function EquipesClient({
 
             <div className="grid grid-cols-2 gap-4">
                <div>
-                  <label className="block text-xs font-medium text-txt-2 mb-1">Responsável</label>
-                  <input type="text" placeholder="Nome do contato" className="w-full px-3 py-2 border border-brd-1 rounded bg-bg-1 text-[13px] outline-none focus:border-[var(--br)]" value={formData.responsavel} onChange={e => setFormData({...formData, responsavel: e.target.value})} />
+                  <label className="mb-2 block text-[13px] font-semibold text-txt">Responsável</label>
+                  <input type="text" placeholder="Nome do contato" className="prumo-field py-2.5" value={formData.responsavel} onChange={e => setFormData({...formData, responsavel: e.target.value})} />
                </div>
                <div>
-                  <label className="block text-xs font-medium text-txt-2 mb-1">Telefone</label>
-                  <input type="text" placeholder="(11) 90000-0000" className="w-full px-3 py-2 border border-brd-1 rounded bg-bg-1 text-[13px] outline-none focus:border-[var(--br)]" value={formData.telefone} onChange={e => setFormData({...formData, telefone: e.target.value})} />
+                  <label className="mb-2 block text-[13px] font-semibold text-txt">Telefone</label>
+                  <input type="text" placeholder="(11) 90000-0000" className="prumo-field py-2.5" value={formData.telefone} onChange={e => setFormData({...formData, telefone: e.target.value})} />
                </div>
             </div>
 

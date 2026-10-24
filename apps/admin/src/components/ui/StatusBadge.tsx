@@ -6,6 +6,8 @@ type Prioridade = 'Alta' | 'Média' | 'Baixa';
 interface StatusBadgeProps {
   status: FvsStatus | NcStatus | ObraStatus | Prioridade;
   size?: 'sm' | 'md';
+  /** `nc`: o mesmo valor "aberta" vira "Aberta" (vermelho), não "Pendente" de FVS. */
+  tipo?: 'fvs' | 'nc';
 }
 
 const tone = {
@@ -43,8 +45,11 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 /** Etiqueta em pílula sem borda: fundo suave e texto na cor do estado. */
-export default function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
-  const config = statusConfig[status] || { label: status, className: tone.neutral };
+export default function StatusBadge({ status, size = 'sm', tipo = 'fvs' }: StatusBadgeProps) {
+  const config =
+    tipo === 'nc' && status === 'aberta'
+      ? { label: 'Aberta', className: tone.nok }
+      : statusConfig[status] || { label: status, className: tone.neutral };
   const sizeClasses = size === 'sm' ? 'h-6 px-2.5 text-[11.5px]' : 'h-[30px] px-3 text-[13px]';
 
   return (

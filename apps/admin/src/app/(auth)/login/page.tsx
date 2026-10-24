@@ -20,12 +20,12 @@ export default function LoginPage() {
           <BrandMark />
           <div>
             <div className="text-xl font-semibold tracking-[-.03em]">PrumoQ</div>
-            <div className="text-xs font-medium uppercase tracking-[.16em] text-accent">Qualidade em eixo</div>
+            <div className="text-xs font-medium text-accent">Qualidade em eixo</div>
           </div>
         </div>
 
         <div className="relative max-w-[650px]">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[.18em] text-accent">Centro de controle</p>
+          <p className="mb-4 text-xs font-semibold text-accent">Centro de controle</p>
           <h1 className="max-w-[620px] text-[54px] font-semibold leading-[1.02] tracking-[-.045em]">
             Decisões de obra com evidência, contexto e precisão.
           </h1>
@@ -55,7 +55,7 @@ export default function LoginPage() {
             <div className="rounded-lg bg-sidebar p-2"><BrandMark /></div>
             <div>
               <div className="text-xl font-semibold tracking-tight text-txt">PrumoQ</div>
-              <div className="text-xs font-medium uppercase tracking-[.14em] text-txt-2">Qualidade em eixo</div>
+              <div className="text-xs font-medium text-txt-2">Qualidade em eixo</div>
             </div>
           </div>
 

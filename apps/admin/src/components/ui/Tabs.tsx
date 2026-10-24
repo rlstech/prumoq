@@ -14,17 +14,22 @@ interface TabsProps {
   ariaLabel?: string;
   /** Ação alinhada à direita, na mesma linha das abas. */
   trailing?: ReactNode;
+  /** `segmented`: seções da tela (uma pílula branca com abas). `chips`: filtros soltos, um por pílula. */
+  variant?: 'segmented' | 'chips';
+  /** Espaço acima do grupo (padrão: logo abaixo do cabeçalho da página). */
+  className?: string;
 }
 
 /**
  * Recortes do mesmo conjunto de dados — abertas, em correção, resolvidas.
  * Seletor em pílula: a aba ativa fica grafite com a contagem em amarelo.
  */
-export default function Tabs({ tabs, value, onChange, ariaLabel = 'Recortes', trailing }: TabsProps) {
+export default function Tabs({ tabs, value, onChange, ariaLabel = 'Recortes', trailing, variant = 'segmented', className = 'mt-5' }: TabsProps) {
+  const chips = variant === 'chips';
   return (
-    <div className="mt-5 flex flex-wrap items-center gap-3">
+    <div className={`flex flex-wrap items-center gap-3 ${className}`}>
       <div
-        className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full bg-bg-1 p-1"
+        className={`flex max-w-full items-center overflow-x-auto ${chips ? 'flex-wrap gap-2' : 'gap-1 rounded-full bg-bg-1 p-1'}`}
         role="tablist"
         aria-label={ariaLabel}
       >
@@ -38,7 +43,9 @@ export default function Tabs({ tabs, value, onChange, ariaLabel = 'Recortes', tr
               aria-selected={active}
               onClick={() => onChange(tab.id)}
               className={`flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm transition-colors ${
-                active ? 'bg-sidebar font-bold text-white' : 'font-semibold text-txt hover:bg-bg-0'
+                active
+                  ? 'bg-sidebar font-bold text-white'
+                  : `font-semibold text-txt ${chips ? 'bg-bg-1 hover:bg-bg-2' : 'hover:bg-bg-0'}`
               }`}
             >
               {tab.label}

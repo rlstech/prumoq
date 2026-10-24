@@ -77,10 +77,10 @@ export default function ChecklistEditor({ items, onChange, readOnly = false }: C
                 {/* Content */}
                 <div className="flex-1 p-4">
                   <div className="mb-3">
-                    <label className="block text-xs font-medium text-txt-2 mb-1">O que inspecionar? (Título) *</label>
+                    <label className="mb-2 block text-[13px] font-semibold text-txt">O que inspecionar? (Título) *</label>
                     <input 
                       type="text"
-                      className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 focus:bg-bg-1 focus:border-[var(--br)] outline-none"
+                      className="prumo-field py-2.5"
                       value={item.titulo}
                       onChange={e => updateItem(item.id, { titulo: e.target.value })}
                       placeholder="Ex: Alinhamento das paredes"
@@ -90,9 +90,9 @@ export default function ChecklistEditor({ items, onChange, readOnly = false }: C
                   
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="sm:col-span-2">
-                       <label className="block text-xs font-medium text-txt-2 mb-1">Método de verificação</label>
+                       <label className="mb-2 block text-[13px] font-semibold text-txt">Método de verificação</label>
                        <textarea 
-                         className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 focus:bg-bg-1 focus:border-[var(--br)] outline-none h-[68px] resize-none"
+                         className="prumo-field py-2.5 h-[68px] resize-none"
                          value={item.metodo_verif}
                          onChange={e => updateItem(item.id, { metodo_verif: e.target.value })}
                          placeholder="Ex: Uso de prumo e nível..."
@@ -100,10 +100,10 @@ export default function ChecklistEditor({ items, onChange, readOnly = false }: C
                        />
                     </div>
                     <div>
-                       <label className="block text-xs font-medium text-txt-2 mb-1">Tolerância (opcional)</label>
+                       <label className="mb-2 block text-[13px] font-semibold text-txt">Tolerância (opcional)</label>
                        <input 
                          type="text"
-                         className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 focus:bg-bg-1 focus:border-[var(--br)] outline-none"
+                         className="prumo-field py-2.5"
                          value={item.tolerancia}
                          onChange={e => updateItem(item.id, { tolerancia: e.target.value })}
                          placeholder="Ex: ± 2mm"

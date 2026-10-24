@@ -183,13 +183,13 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
                   <div className="text-lg font-semibold text-txt">
                     {isPending ? <Loader2 size={16} className="animate-spin mx-auto" /> : (detailData?.verificacao_itens?.length ?? '-')}
                   </div>
-                  <div className="text-[10px] text-txt-3 uppercase font-semibold">Itens</div>
+                  <div className="text-xs text-txt-3 font-semibold">Itens</div>
                 </div>
               </div>
 
               {/* Checklist Results */}
               <div className="bg-bg-1 border border-brd-0 rounded-lg">
-                <div className="px-4 py-3 border-b border-brd-0 text-xs font-bold text-txt-2 uppercase tracking-wider">Itens de verificação</div>
+                <div className="px-4 py-3 border-b border-brd-0 text-xs font-semibold text-txt-2">Itens de verificação</div>
                 {isPending ? (
                   <div className="px-4 py-6 flex justify-center"><Loader2 size={20} className="animate-spin text-txt-3" /></div>
                 ) : itens.length ? itens.map((item: any) => (
@@ -220,7 +220,7 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
               {/* Observações */}
               {detail?.observacoes && (
                 <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-                  <h4 className="text-xs font-bold text-txt-2 uppercase mb-2">Observações</h4>
+                  <h4 className="text-xs font-semibold text-txt-2 mb-2">Observações</h4>
                   <p className="text-sm text-txt leading-relaxed">{detail.observacoes}</p>
                 </div>
               )}
@@ -228,7 +228,7 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
               {/* Assinatura */}
               {detail?.assinatura_url && (
                 <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-                  <h4 className="text-xs font-bold text-txt-2 uppercase mb-3">Assinatura Digital</h4>
+                  <h4 className="text-xs font-semibold text-txt-2 mb-3">Assinatura Digital</h4>
                   {resolveR2Url(detail.assinatura_url) ? (
                     <img
                       src={resolveR2Url(detail.assinatura_url)!}
@@ -252,7 +252,7 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
             {/* Painel Direito (2/5) */}
             <div className="lg:col-span-2 flex flex-col gap-5">
               <div className="bg-bg-0 border border-brd-0 rounded-lg p-4 flex flex-col gap-3">
-                <h4 className="text-xs font-bold text-txt-2 uppercase">Dados da verificação</h4>
+                <h4 className="text-xs font-semibold text-txt-2">Dados da verificação</h4>
                 <div>
                   <div className="text-[11px] text-txt-3">Obra</div>
                   <div className="text-sm font-medium text-txt">{detail?.fvs_planejadas?.ambientes?.obras?.nome || '-'}</div>
@@ -281,7 +281,7 @@ export default function VerificacoesClient({ initialData, page, hasNextPage }: {
 
               {/* Fotos */}
               <div className="bg-bg-0 border border-brd-0 rounded-lg p-4">
-                <h4 className="text-xs font-bold text-txt-2 uppercase mb-3">
+                <h4 className="text-xs font-semibold text-txt-2 mb-3">
                   Fotos ({isPending ? '…' : fotos.length})
                 </h4>
                 {isPending ? (

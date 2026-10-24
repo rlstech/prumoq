@@ -208,7 +208,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
             <div className="overflow-x-auto">
               <table className="w-full text-[11px] border border-brd-1 rounded">
                 <thead>
-                  <tr className="bg-bg-0 text-txt-2 uppercase tracking-wide">
+                  <tr className="text-txt-2">
                     {['Código', 'Nome da FVS', 'Categoria', 'Descrição do Item', 'Método de verificação', 'Tolerância (opcional)'].map(h => (
                       <th key={h} className="px-2 py-1.5 text-left font-semibold border-b border-brd-1 whitespace-nowrap">{h}</th>
                     ))}
@@ -253,9 +253,9 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1.5">Cole os dados aqui *</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Cole os dados aqui *</label>
             <textarea
-              className="w-full h-52 px-3 py-2 border border-brd-1 rounded bg-bg-0 text-[13px] font-mono outline-none focus:border-[var(--br)] resize-none"
+              className="prumo-field py-2.5 h-52 font-mono resize-none"
               placeholder={"FVS 04.01\tMontagem de Forma - Pilar e Cortina\tEstrutura\tCondições de Início\tVerificar o projeto de formas e escoramento\tVisual\nFVS 04.01\tMontagem de Forma - Pilar e Cortina\tEstrutura\tLocação\tConferir a locação dos gastalhos\t+/- 3mm"}
               value={rawText}
               onChange={e => setRawText(e.target.value)}
@@ -266,7 +266,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
             <button type="button" onClick={handleClose} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">
               Cancelar
             </button>
-            <button type="button" onClick={handleAnalyze} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)]">
+            <button type="button" onClick={handleAnalyze} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-full text-sm font-medium hover:bg-[var(--brd)]">
               Analisar <ChevronRight size={16} />
             </button>
           </div>
@@ -294,7 +294,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
 
           <div className="border border-brd-0 rounded-lg overflow-hidden max-h-64 overflow-y-auto">
             <table className="w-full text-sm">
-              <thead className="bg-bg-2 text-xs text-txt-2 uppercase tracking-wide sticky top-0">
+              <thead className="text-xs text-txt-2 sticky top-0">
                 <tr>
                   <th className="text-left px-4 py-2.5 font-semibold w-24">Código</th>
                   <th className="text-left px-4 py-2.5 font-semibold">Nome da FVS</th>
@@ -319,7 +319,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
             <button type="button" onClick={() => setStep('paste')} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">
               Voltar
             </button>
-            <button type="button" onClick={() => setStep('review')} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)]">
+            <button type="button" onClick={() => setStep('review')} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-full text-sm font-medium hover:bg-[var(--brd)]">
               Revisar itens <ChevronRight size={16} />
             </button>
           </div>
@@ -372,7 +372,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
                   {/* Itens expandidos */}
                   {isOpen && (
                     <table className="w-full text-xs">
-                      <thead className="bg-bg-1 text-txt-3 uppercase tracking-wide border-b border-brd-0">
+                      <thead className="bg-bg-1 text-txt-3 border-b border-brd-0">
                         <tr>
                           <th className="text-right px-3 py-2 font-semibold w-8">Nº</th>
                           <th className="text-left px-3 py-2 font-semibold w-44">Título</th>
@@ -419,7 +419,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
             <button type="button" onClick={() => setStep('preview')} className="px-5 py-2.5 bg-bg-2 rounded-lg text-sm font-medium hover:bg-brd-0 text-txt-2">
               Voltar
             </button>
-            <button type="button" onClick={handleImport} disabled={isImporting} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
+            <button type="button" onClick={handleImport} disabled={isImporting} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--br)] text-white rounded-full text-sm font-medium hover:bg-[var(--brd)] disabled:opacity-60">
               {isImporting ? 'Importando...' : `Confirmar e Importar ${parsed.length} FVS`}
             </button>
           </div>
@@ -453,7 +453,7 @@ export default function FvsImportModal({ isOpen, onClose }: FvsImportModalProps)
           </div>
 
           <div className="flex justify-end pt-1 border-t border-brd-0">
-            <button type="button" onClick={handleClose} className="px-5 py-2.5 bg-[var(--br)] text-white rounded-lg text-sm font-medium hover:bg-[var(--brd)]">
+            <button type="button" onClick={handleClose} className="px-5 py-2.5 bg-[var(--br)] text-white rounded-full text-sm font-medium hover:bg-[var(--brd)]">
               Concluir
             </button>
           </div>

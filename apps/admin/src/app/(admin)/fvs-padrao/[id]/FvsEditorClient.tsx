@@ -159,7 +159,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-txt">{fvsData.revisao_atual < 0 ? 'Rascunho' : `Rev. ${fvsData.revisao_atual}`}</h1>
             <div className="flex items-center gap-2 bg-bg-1 px-3 py-1.5 border border-brd-0 rounded-lg">
-               <span className={`text-[11px] font-semibold uppercase ${fvsData.ativo ? 'text-ok' : 'text-txt-3'}`}>
+               <span className={`text-xs font-semibold ${fvsData.ativo ? 'text-ok' : 'text-txt-3'}`}>
                  {fvsData.ativo ? 'Ativa' : 'Inativa'}
                </span>
                <ToggleSwitch checked={fvsData.ativo} onChange={handleToggleStatus} />
@@ -167,32 +167,32 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
           </div>
 
           <div className="bg-bg-1 border border-brd-0 rounded-xl p-5">
-             <h3 className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-4">Informações da Padrão</h3>
+             <h3 className="text-xs font-semibold text-txt-2 mb-4">Informações da Padrão</h3>
              
              <div className="space-y-4">
                <div>
-                  <label className="block text-xs font-medium text-txt-2 mb-1">Código</label>
+                  <label className="mb-2 block text-[13px] font-semibold text-txt">Código</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)] font-mono"
+                    className="prumo-field py-2.5 font-mono"
                     value={fvsData.codigo || ''}
                     onChange={e => setFvsData({...fvsData, codigo: e.target.value || null})}
                     placeholder="Ex: FVS 03.01"
                   />
                </div>
                <div>
-                  <label className="block text-xs font-medium text-txt-2 mb-1">Nome *</label>
+                  <label className="mb-2 block text-[13px] font-semibold text-txt">Nome *</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]"
+                    className="prumo-field py-2.5"
                     value={fvsData.nome}
                     onChange={e => setFvsData({...fvsData, nome: e.target.value})}
                   />
                </div>
                <div>
-                  <label className="block text-xs font-medium text-txt-2 mb-1">Categoria *</label>
+                  <label className="mb-2 block text-[13px] font-semibold text-txt">Categoria *</label>
                   <select 
-                    className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]"
+                    className="prumo-field py-2.5"
                     value={fvsData.categoria}
                     onChange={e => setFvsData({...fvsData, categoria: e.target.value})}
                   >
@@ -202,10 +202,10 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
                   </select>
                </div>
                <div>
-                 <label className="block text-xs font-medium text-txt-2 mb-1">Norma Ref.</label>
+                 <label className="mb-2 block text-[13px] font-semibold text-txt">Norma Ref.</label>
                  <input 
                    type="text"
-                   className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0 outline-none focus:border-[var(--br)]"
+                   className="prumo-field py-2.5"
                    value={fvsData.norma_ref || ''}
                    onChange={e => setFvsData({...fvsData, norma_ref: e.target.value})}
                  />
@@ -214,9 +214,9 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
           </div>
 
           <div className="bg-bg-1 border border-brd-0 rounded-xl p-5">
-            <h3 className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-4">Escopo empresarial</h3>
+            <h3 className="text-xs font-semibold text-txt-2 mb-4">Escopo empresarial</h3>
             <select
-              className="w-full px-3 py-2 border border-brd-1 rounded text-[13px] bg-bg-0"
+              className="prumo-field py-2.5"
               value={fvsData.escopo ?? 'global'}
               onChange={event => setFvsData({ ...fvsData, escopo: event.target.value })}
             >
@@ -242,18 +242,18 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
           </div>
 
           <div className="bg-bg-1 border border-brd-0 rounded-xl p-5">
-             <h3 className="text-xs font-bold text-txt-2 uppercase tracking-wider mb-4">Uso Atual</h3>
+             <h3 className="text-xs font-semibold text-txt-2 mb-4">Uso Atual</h3>
              <div className="flex bg-bg-0 border border-brd-0 rounded-lg divide-x divide-brd-0 p-3 text-center">
                <div className="flex-1">
                  <p className="text-xl font-bold text-txt">{getInUseCount()}</p>
-                 <p className="text-[10px] uppercase text-txt-3 font-semibold mt-0.5">Ambientes</p>
+                 <p className="text-xs text-txt-3 font-semibold mt-0.5">Ambientes</p>
                </div>
              </div>
           </div>
 
           <div className="bg-bg-1 border border-brd-0 rounded-xl flex flex-col flex-1 min-h-[200px]">
              <div className="px-5 py-3 border-b border-brd-0 bg-bg-0 flex items-center justify-between">
-                <h3 className="text-xs font-bold text-txt-2 uppercase tracking-wider">Histórico</h3>
+                <h3 className="text-xs font-semibold text-txt-2">Histórico</h3>
                 <History size={14} className="text-txt-3" />
              </div>
              <div className="p-5 flex-1 overflow-y-auto space-y-4">
@@ -287,7 +287,7 @@ export default function FvsEditorClient({ fvs, initialItems, logs, empresas, ini
           <div>
             <label className="block text-xs font-medium text-txt-2 mb-2">Descreva as alterações desta revisão *</label>
             <textarea 
-              className="w-full px-3 py-2 border border-brd-1 rounded bg-bg-0 h-24 resize-none outline-none focus:border-[var(--br)] text-sm"
+              className="prumo-field py-2.5 h-24 resize-none"
               value={resumoAlteracoes}
               onChange={e => setResumoAlteracoes(e.target.value)}
               placeholder="Descreva o que mudou nos itens de verificação..."

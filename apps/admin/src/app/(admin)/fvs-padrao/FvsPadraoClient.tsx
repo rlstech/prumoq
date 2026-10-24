@@ -271,20 +271,20 @@ export default function FvsPadraoClient({
       <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Nova FVS Padrão" size="sm">
         <form onSubmit={handleCreate} className="flex flex-col gap-4">
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Código</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Código</label>
             <input
               type="text"
-              className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1 focus:border-[var(--br)] outline-none font-mono"
+              className="prumo-field py-2.5 font-mono"
               value={formData.codigo}
               onChange={e => setFormData({ ...formData, codigo: e.target.value })}
               placeholder="Ex: FVS 03.01"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Nome da Verificação *</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Nome da Verificação *</label>
             <input 
               type="text"
-              className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1 focus:border-[var(--br)] outline-none"
+              className="prumo-field py-2.5"
               value={formData.nome}
               onChange={e => setFormData({ ...formData, nome: e.target.value })}
               placeholder="Ex: Execução de Alvenaria"
@@ -293,9 +293,9 @@ export default function FvsPadraoClient({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Categoria *</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Categoria *</label>
             <select 
-              className="w-full px-3 py-2 border border-brd-1 rounded text-sm bg-bg-1 focus:border-[var(--br)] outline-none"
+              className="prumo-field py-2.5"
               value={formData.categoria}
               onChange={e => setFormData({ ...formData, categoria: e.target.value })}
               required
@@ -306,7 +306,7 @@ export default function FvsPadraoClient({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-txt-2 mb-1">Disponibilidade</label>
+            <label className="mb-2 block text-[13px] font-semibold text-txt">Disponibilidade</label>
             <select className="prumo-field" value={formData.escopo} onChange={e => setFormData({...formData, escopo: e.target.value as 'global' | 'restrito', empresaIds: e.target.value === 'global' ? [] : formData.empresaIds})}>
               <option value="global">Todas as empresas</option>
               <option value="restrito">Empresas selecionadas</option>

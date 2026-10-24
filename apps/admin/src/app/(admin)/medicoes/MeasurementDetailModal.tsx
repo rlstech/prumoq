@@ -53,7 +53,7 @@ export default function MeasurementDetailModal({ detail, onClose }: { detail: Me
             </p>
           </div>
           <div className="rounded-xl border border-brd-0 bg-bg-0 px-4 py-3 text-right">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-txt-3">Valor total</div>
+            <div className="text-xs font-semibold text-txt-3">Valor total</div>
             <div className="mt-1 text-xl font-bold text-txt">{money(total)}</div>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function MeasurementDetailModal({ detail, onClose }: { detail: Me
                   <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${item.tipo === 'avanco' ? 'bg-pg-bg text-pg' : 'bg-nok-bg text-nok'}`}>
+                        <span className={`prumo-pill ${item.tipo === 'avanco' ? 'bg-pg-bg text-pg' : 'bg-nok-bg text-nok'}`}>
                           {item.tipo === 'avanco' ? 'Avanço' : 'Retrabalho'}
                         </span>
                         <b className="truncate text-txt">{item.servico}</b>
@@ -118,7 +118,7 @@ export default function MeasurementDetailModal({ detail, onClose }: { detail: Me
 
                   {item.liberacoes.length ? (
                     <div className="mt-2 rounded-lg bg-bg-0 p-2.5">
-                      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-txt-3">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-txt-3">
                         <FileText size={11} /> Liberações consumidas
                       </div>
                       <div className="mt-1.5 space-y-1">
@@ -161,7 +161,7 @@ export default function MeasurementDetailModal({ detail, onClose }: { detail: Me
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <b className="text-txt">NC #{nc.numero_ocorrencia}</b>
-                      <span className="text-[10px] font-semibold uppercase text-txt-3">{blockLabel[nc.bloqueio_medicao ?? 'nao'] ?? nc.bloqueio_medicao}</span>
+                      <span className="text-xs font-semibold text-txt-3">{blockLabel[nc.bloqueio_medicao ?? 'nao'] ?? nc.bloqueio_medicao}</span>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${nc.status === 'aberta' ? 'bg-nok-bg text-nok' : 'bg-warn-bg text-warn'}`}>
                         {nc.status === 'aberta' ? 'Aberta' : 'Em correção'}
                       </span>
@@ -202,7 +202,7 @@ export default function MeasurementDetailModal({ detail, onClose }: { detail: Me
 function Metric({ label, value, tone }: { label: string; value: string; tone?: 'ok' | 'nok' }) {
   return (
     <div className="rounded-xl border border-brd-0 bg-bg-1 p-4">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-txt-3">{label}</div>
+      <div className="text-xs font-semibold text-txt-3">{label}</div>
       <div className={`mt-1 text-lg font-semibold ${tone === 'ok' ? 'text-ok' : tone === 'nok' ? 'text-nok' : 'text-txt'}`}>{value}</div>
     </div>
   );

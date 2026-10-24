@@ -221,7 +221,7 @@ export default async function DashboardPage() {
                                 : 'Sem prazo'}
                           </span>
                         </td>
-                        <td className="px-4 py-3"><StatusBadge status={nc.status || 'aberta'} /></td>
+                        <td className="px-4 py-3"><StatusBadge status={nc.status || 'aberta'} tipo="nc" /></td>
                       </tr>
                     );
                   }) : (

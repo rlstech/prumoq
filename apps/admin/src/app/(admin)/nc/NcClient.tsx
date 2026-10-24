@@ -114,11 +114,11 @@ export default function NcClient({ initialData, page, hasNextPage }: { initialDa
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-brd-0 bg-bg-0">
+              <tr>
                 {['Descrição', 'Serviço / Ambiente', 'Obra', 'Prioridade', 'Responsável', 'Prazo', 'Status', ''].map(header => (
                   <th
                     key={header}
-                    className="whitespace-nowrap px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.4px] text-txt-2 first:w-1/4"
+                    className="whitespace-nowrap px-4 py-2.5 text-xs font-semibold text-txt-2 first:w-1/4"
                   >
                     {header}
                   </th>
@@ -168,7 +168,7 @@ export default function NcClient({ initialData, page, hasNextPage }: { initialDa
                       ) : <span className="text-xs text-txt-3">—</span>}
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={item.status as 'aberta' | 'em_correcao' | 'resolvida' | 'cancelada'} size="sm" />
+                      <StatusBadge status={item.status as 'aberta' | 'em_correcao' | 'resolvida' | 'cancelada'} tipo="nc" />
                     </td>
                     <td className="px-4 py-3">
                       <Link
