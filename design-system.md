@@ -1,15 +1,15 @@
 # PrumoQ — Design System
 
-O PrumoQ tem duas identidades visuais, com tokens no mesmo pacote
-(`packages/design-system`):
+Os dois apps usam a identidade **Trena Suave** (desde out/2026), com tokens em
+`packages/design-system`:
 
-| App | Identidade | Tokens |
+| App | Densidade | Tokens |
 |---|---|---|
-| PWA de campo (`apps/mobile`) | **Trena Suave** (desde out/2026) | `trenaPalette`, `trenaColors`, `trenaRadius`, `trenaBorder`, `faceSymbolGeometry` |
-| Painel admin (`apps/admin`) | **Prumo Mineral** (a migrar) | `mineralPalette`, `mineralColors`, `mineralRadius`, `prumoSymbolGeometry`, `tokens.css` |
+| PWA de campo (`apps/mobile`) | Campo: alvos grandes, botão de 56px | `trenaPalette`, `trenaColors`, `trenaRadius`, `trenaBorder`, `faceSymbolGeometry` (via `lib/constants.ts`) |
+| Painel admin (`apps/admin`) | Mesa: controles de 44px, tabelas | `trenaPalette` (Tailwind), `tokens.css`, `seixoIconPaths`, `faceSymbolGeometry` |
 
-A seção Trena vem primeiro. A partir de "Prumo Mineral (admin)", o texto vale
-para o painel; as seções de layout e acessibilidade valem para os dois.
+A seção "Trena Suave (PWA)" define a identidade; "Trena Suave no painel admin"
+diz como ela se aplica no painel. Layout e acessibilidade valem para os dois.
 
 # Trena Suave (PWA)
 
@@ -121,152 +121,84 @@ na cor da tinta; peso sempre amarelo; frisos do peso só a partir de 40px.
   aba ativa vira pílula amarela com nome, as demais só ícone. No tablet, trilho
   vertical com a mesma linguagem.
 
-# Prumo Mineral (admin)
+# Trena Suave no painel admin
 
-## Conceito
+A mesma identidade do PWA (paleta, Figtree/JetBrains Mono, ícones Seixo, Q de
+face), na densidade de mesa. Proposta aprovada no canvas
+https://claude.ai/artifact/Wg15jsrBxgvQUaRoPQwpRS.
 
-O PrumoQ usa uma linguagem visual inspirada em linhas de prumo, referências de
-nível, plantas técnicas e materiais minerais. A interface deve parecer precisa,
-robusta e calma — nunca decorativa ou excessivamente “industrial”.
+## Tokens no admin
 
-A assinatura visual é formada por:
+- Tailwind (`apps/admin/tailwind.config.ts`), a partir de `trenaPalette`. As
+  chaves são as antigas do Mineral (`brand`, `accent`, `bg-0/1/2`, `txt`,
+  `txt-2/3`, `ok/nok/warn/pg/na`), então as telas não mudaram de classe.
+  `brd-0` (divisor, tom do concreto), `brd-1` (contorno de campo), `brd-2`,
+  `bg-hover` (#F6F5F2) e `on-brand` (texto secundário sobre o grafite).
+- `txt-3` é `#646A71` (não `steelMuted`) para passar 4,5:1 também sobre o concreto.
+- `text-sm` é 14px; raios: `rounded` 12, `md` 16 (campos), `lg` 20, `xl` 24
+  (cartões), `2xl` 32 (destaques, painéis laterais), `full` (botões, chips).
+- Variáveis CSS: `packages/design-system/src/tokens.css` (nomes `--prumo-*`
+  históricos, valores Trena).
+- Fontes empacotadas (@fontsource): Figtree Variable, JetBrains Mono 500/700,
+  Barlow Condensed 700 (só o logotipo). A CSP do admin só aceita fontes locais.
 
-- Azul Prumo para marca, navegação e ações primárias.
-- Cal Viva para foco, seleção e pontos de referência.
-- Superfícies claras e quentes para leitura prolongada.
-- Linha de datum de 3px para indicar contexto ou estado.
-- Cor semântica sempre acompanhada de texto e/ou ícone.
+## Classes base (`apps/admin/src/globals.css`)
 
-Os valores canônicos ficam em `packages/design-system`. Aplicações devem
-consumir os tokens compartilhados; este documento explica como usá-los.
+| Classe | Uso |
+|---|---|
+| `prumo-primary-button` | Pílula amarela 44px, texto grafite. Uma por tela/painel. |
+| `prumo-secondary-button` | Pílula branca (sobre concreto) ou `bg-bg-0` (sobre branco). |
+| `prumo-row-button` | Pílula 32px em linhas de tabela e cartões. |
+| `prumo-panel` | Cartão branco raio 24, sem borda nem sombra. |
+| `prumo-field` | Campo raio 16, borda 1,5 junta; foco borda grafite + halo amarelo. |
+| `prumo-th` | Cabeçalho de tabela: 12px semibold aço, sem caixa alta. |
+| `prumo-pill` | Etiqueta em pílula sem borda (estado, prazo, contagem). |
+| `prumo-tape` / `prumo-tape-on-dark` | Fita da trena (grafite com marcas amarelas / amarela sobre grafite). |
+| `prumo-metric` | Números em JetBrains Mono tabular. |
+| `on-brand` | Em superfícies grafite: foco passa a amarelo. |
 
-## Cores
+`prumo-datum` ficou inócua (a linha lateral de 3px saiu).
 
-### Marca e interface
+## Ícones e marca
 
-| Token | Valor | Uso |
-|---|---:|---|
-| `plumb` | `#163B50` | Marca, navegação e ação primária |
-| `plumbDeep` | `#0F2C3C` | Shell escuro e hover |
-| `plumbPressed` | `#0C2533` | Estado pressionado |
-| `lime` | `#D8E568` | Foco, seleção e assinatura |
-| `limeSoft` | `#F3F7D5` | Fundo de seleção |
-| `basalt` | `#142522` | Texto principal |
-| `slate` | `#52615B` | Texto secundário |
-| `mistText` | `#6E7A75` | Texto terciário |
-| `limestone` | `#F4F1E8` | Canvas |
-| `mineralWhite` | `#FFFEFB` | Cards e formulários |
-| `fog` | `#E4E7E1` | Divisores e superfícies secundárias |
-| `fogStrong` | `#C9D0CA` | Bordas de controles |
+- Ícones só de `apps/admin/src/components/icons.tsx`, nunca direto de
+  `lucide-react`. Os desenhados vêm de `seixoIconPaths`
+  (`packages/design-system`); os demais são Lucide com traço 1,8 redondo. Mesma
+  API do Lucide; ícone novo: adicione ali.
+- `BrandMark` (Q de face, `faceSymbolGeometry`; `onBrand` ou `onLight`) e
+  `BrandWordmark` ("PRUMO" + Q amarelo). Favicon: `apps/admin/public/icon.svg`
+  (cópia de `prumoq-face.svg`).
 
-### Estados
+## Componentes do painel
 
-| Estado | Principal | Fundo |
-|---|---:|---:|
-| Conforme | `#2D7A4B` | `#E8F4EC` |
-| Não conforme | `#B23A3A` | `#FAEAEA` |
-| Atenção | `#986014` | `#FBF1DD` |
-| Informação/sync | `#2D66A8` | `#E9F0F8` |
-| Neutro/pendente | `#52615B` | `#EEF0EC` |
+- **Menu** (`layout/Sidebar.tsx`): cartão grafite solto da borda (margem 12,
+  raio 28), 240px; item ativo em pílula amarela com nome; contagem de NC em
+  pílula vermelha (grafite com número amarelo quando ativo). Recolhido: trilho
+  de 76px, ativo em círculo amarelo. No celular, gaveta.
+- **Cabeçalho**: trilha leve sobre o concreto (`Header`) e `PageHeader` com
+  título Figtree 800 (36px), kicker em caixa normal e ações à direita.
+- **Abas** (`Tabs`): `segmented` para seções (pílula branca, ativa grafite com
+  contagem amarela) e `chips` para filtros soltos.
+- **Filtros** (`FilterBar`, `SearchField`, `SelectFilter`): pílulas brancas de 44px.
+- **Tabelas** (`DataTable` e tabelas à mão): cartão raio 24, `prumo-th`,
+  divisor 1px no tom do concreto, hover `bg-hover`.
+- **Etiquetas** (`StatusBadge`): pílulas sem borda; `tipo="nc"` faz "aberta"
+  virar "Aberta" (vermelho) em vez do "Pendente" de FVS.
+- **Progresso** (`ProgressBar`): trena; 100% fica verde.
+- **Resumo em grafite**: Visão geral e Obra usam um cartão grafite com o avanço
+  das FVS em trena (`prumo-tape-on-dark`) e ladrilhos `#26292D`.
+- **Painel lateral** (`Modal`, tamanhos sm/md/lg): abre pela direita, raio 32,
+  título 24/800, fechar redondo; rodapé com secundário + ação amarela.
+  `xl`/`full` continuam centrais.
+- **Avisos** (`Toast`): pílula grafite com ícone num círculo do estado.
 
-Cal Viva recebe texto Basalto, nunca texto branco. Estados críticos não devem
-ser comunicados apenas por cor.
+# Prumo Mineral (histórico)
 
-## Tipografia
-
-- Interface: IBM Plex Sans.
-- Números, percentuais, revisões e códigos: IBM Plex Mono.
-- Fontes são distribuídas com os aplicativos; não dependem de download em
-  runtime.
-
-| Papel | Tamanho/linha | Peso |
-|---|---|---|
-| Display | `40/44` web, `34/40` mobile | 700 |
-| Título de página | `28/34` | 600–700 |
-| Título de seção | `22/28` | 600 |
-| Corpo | `15/22` mobile, `15/22` web | 400 |
-| Label | `13/18` | 600 |
-| Legenda | `12/16` | 400–500 |
-
-Evitar caixa alta em títulos. Overlines e labels de seção podem usar caixa alta
-com tracking entre `0.12em` e `0.16em`.
-
-## Espaçamento, forma e movimento
-
-- Grid: `4, 8, 12, 16, 24, 32, 48`.
-- Controle: raio de `6px`.
-- Card: raio de `12px`.
-- Superfície protagonista: raio máximo de `20px`.
-- Touch target mobile: mínimo `44px`.
-- Input e ação primária mobile: `48px`.
-- Motion: `120ms`, `180ms` e `220ms`.
-- Respeitar `prefers-reduced-motion`.
-
-Sombras são discretas. Use espaço, contraste e borda antes de elevar uma
-superfície.
-
-## Marca
-
-O símbolo combina um `Q` com uma corda vertical e um peso de prumo facetado na
-base. A gravidade organiza a forma: a corda nunca é inclinada e o peso sempre
-fica abaixo do centro óptico.
-Ele aparece no favicon, ícone do app, splash, login e navegação.
-
-Não desenhar novas variações do símbolo em telas. Usar os ativos canônicos em
-`packages/design-system/assets`, os componentes `BrandMark` e os derivados em
-`apps/admin/public/icon.svg` e `apps/mobile/assets`.
-
-## Componentes
-
-### Linha de datum
-
-Linha vertical de 3px no lado esquerdo. Cal Viva representa contexto ou marca;
-cores semânticas representam estados. Evitar barras coloridas no topo e fundos
-inteiros saturados.
-
-### Botões
-
-- Primário: Azul Prumo, texto branco.
-- Secundário: superfície branca, borda forte, texto Basalto.
-- Destrutivo: vermelho semântico.
-- Ghost: sem fundo; hover usa Fog.
-- Apenas uma ação primária por superfície.
-
-### Controle de resposta (ChoiceToggle)
-
-Controle único de 2–3 posições, 56px de altura, ícone sobre rótulo, **todas as
-posições com a mesma largura** — nenhuma resposta pode ser mais difícil de
-acertar que outra. A posição escolhida carrega três sinais somados: fundo em
-tint suave, anel semântico de 1,5px e o glifo circular **preenchido**, enquanto
-as demais permanecem em contorno.
-
-O preenchimento do glifo é o sinal que sobrevive ao sol direto e continua legível
-em escala de cinza; o tint sozinho é um degrau de cerca de 4% de luminância e
-desaparece em campo. As posições não escolhidas recuam para Névoa assim que
-existe resposta.
-
-Isso substitui a marcação anterior por barra de 3px na base, que era fraca demais
-para uso externo. Preenchimento de glifo não conflita com a regra de fundos
-saturados: o bloco de cor tem o tamanho de um ícone, não de uma superfície.
-
-### Status
-
-Badges usam ponto/ícone, texto, fundo suave e borda. NCs usam card branco com
-datum vermelho em vez de um card inteiramente vermelho.
-
-### Cards e métricas
-
-Cards padrão têm superfície Mineral White, borda Fog e sombra mínima. Métricas
-usam IBM Plex Mono e hierarquia assimétrica; não criar grades de cartões
-idênticos quando uma informação tem prioridade maior.
-
-### Formulários
-
-Labels ficam acima dos campos. Foco usa borda Azul Prumo e halo Cal Viva. Erros
-aparecem inline e também em resumos navegáveis para formulários longos.
-
-No admin, formulários simples abrem em side sheet. Modais centrais ficam
-reservados a confirmação, visualização ampla e fluxos concentrados.
+Identidade anterior do admin (azul prumo `#163B50`, cal viva `#D8E568`,
+calcário, IBM Plex, linha de datum, prumo facetado). Saiu do admin em
+out/2026. `mineralPalette`, `mineralColors`, `mineralRadius` e
+`prumoSymbolGeometry` ficam no pacote; `mineralMotion` e `mineralBreakpoints`
+ainda são usados pelo PWA.
 
 # Layout e acessibilidade (os dois apps)
 
@@ -282,9 +214,9 @@ reservados a confirmação, visualização ampla e fluxos concentrados.
 
 ## Layout admin
 
-- Rail principal de `88px`; em telas pequenas vira drawer.
-- Command/header de `72px`.
-- Canvas em grid de 12 colunas, largura máxima `1440px`.
+- Menu grafite solto da borda (240px; recolhido, trilho de `76px`); em telas pequenas vira gaveta.
+- Trilha leve de `60px` sobre o concreto; título da tela no `PageHeader`.
+- Conteúdo com largura máxima `1280px`.
 - Dashboard usa portfólio em destaque e coluna de atenção.
 - Tabelas têm cabeçalho sticky e estados de foco para linhas interativas.
 - Detalhes usam masthead, resumo operacional e navegação local.
@@ -292,7 +224,7 @@ reservados a confirmação, visualização ampla e fluxos concentrados.
 ## Acessibilidade
 
 - Contraste mínimo WCAG AA.
-- Foco visível com Cal Viva.
+- Foco visível: contorno grafite sobre claro, amarelo sobre o grafite (`on-brand`).
 - Touch target mínimo de `44px`.
 - Navegação por teclado em tabelas, dialogs e ações.
 - Ícone e texto acompanham todas as cores semânticas.
@@ -304,6 +236,6 @@ reservados a confirmação, visualização ampla e fluxos concentrados.
 - Tokens: `packages/design-system/src/index.ts`
 - CSS variables: `packages/design-system/src/tokens.css`
 - Adapter mobile: `apps/mobile/lib/constants.ts`
-- Adapter Tailwind: `apps/admin/tailwind.config.ts`
+- Adapter Tailwind: `apps/admin/tailwind.config.ts` (classes base em `apps/admin/src/globals.css`)
 - Primitivas mobile: `apps/mobile/components/ui/`
 - Primitivas web: `apps/admin/src/components/ui/`
