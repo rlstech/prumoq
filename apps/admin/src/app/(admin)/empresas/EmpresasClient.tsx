@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { CheckCircle2, Plus, Save, XCircle } from 'lucide-react';
+import { CheckCircle2, Plus, Save, XCircle } from '@/components/icons';
 import Modal from '@/components/ui/Modal';
 import { FilterBar, SearchField } from '@/components/ui/FilterBar';
 import { createEmpresa, updateEmpresa } from './actions';

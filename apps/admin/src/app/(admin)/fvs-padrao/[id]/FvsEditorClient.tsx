@@ -8,7 +8,7 @@ import { FVS_CATEGORIES } from '@/lib/fvs/categories';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
 import Modal from '@/components/ui/Modal';
 import { useRouter } from '@/lib/compat/navigation';
-import { History, Save } from 'lucide-react';
+import { History, Save } from '@/components/icons';
 
 interface FvsEditorClientProps {
   fvs: any;

@@ -1,6 +1,6 @@
 
 import { useMemo, useState, useTransition } from 'react';
-import { ArrowRightLeft, History, Ruler, Save } from 'lucide-react';
+import { ArrowRightLeft, History, Ruler, Save } from '@/components/icons';
 import { useRouter } from '@/lib/compat/navigation';
 import Link from '@/lib/compat/link';
 import { useToast } from '@/components/ui/Toast';

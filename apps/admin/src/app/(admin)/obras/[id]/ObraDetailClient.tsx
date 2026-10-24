@@ -1,7 +1,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from '@/lib/compat/link';
-import { HardHat, Pencil, Ruler, Trash2, AlertTriangle } from 'lucide-react';
+import { HardHat, Pencil, Ruler, Trash2, AlertTriangle } from '@/components/icons';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { useRouter } from '@/lib/compat/navigation';
 import { useToast } from '@/components/ui/Toast';

@@ -1,60 +1,54 @@
-import {
-  mineralColors,
-  mineralPalette,
-  prumoSymbolGeometry,
-} from '@prumoq/design-system';
+import { faceSymbolGeometry, trenaPalette } from '@prumoq/design-system';
 
-type BrandMarkVariant = 'default' | 'onBrand';
+type BrandMarkVariant = 'onBrand' | 'onLight';
 
 interface Props {
   size?: number;
+  /** `onBrand`: Q branco sobre o grafite (menu, login). `onLight`: Q grafite sobre claro. */
   variant?: BrandMarkVariant;
   className?: string;
 }
 
 /**
- * Marca PrumoQ — o fio de prumo desce do contorno do "O" e termina no peso em
- * cal viva. Mesma geometria do símbolo no app mobile: os números vivem em
- * `prumoSymbolGeometry`, no design system, para as duas plataformas não
- * divergirem.
+ * Marca PrumoQ — "Q de face": o Q com a perninha trocada por um prumo de face
+ * (cordão, taco deitado e peso cilíndrico da mesma largura). O peso é sempre
+ * amarelo; os frisos só aparecem a partir de 40px. Geometria em
+ * `faceSymbolGeometry`, a mesma do PWA.
  */
 export function BrandMark({ size = 40, variant = 'onBrand', className }: Props) {
-  const onBrand = variant === 'onBrand';
-  const ringColor = onBrand ? mineralPalette.mineralWhite : mineralColors.brand;
-  const cordColor = onBrand ? mineralColors.accent : mineralColors.brand;
-  const weightColor = mineralColors.accent;
-  const geometry = prumoSymbolGeometry;
+  const g = faceSymbolGeometry;
+  const ink = variant === 'onBrand' ? trenaPalette.white : trenaPalette.graphite;
+  const showRibs = size >= 40;
 
   return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      width={size}
-      height={size}
-      viewBox={geometry.viewBox}
-      fill="none"
-    >
-      <circle
-        cx={geometry.ring.cx}
-        cy={geometry.ring.cy}
-        r={geometry.ring.radius}
-        stroke={ringColor}
-        strokeWidth={geometry.ring.strokeWidth}
-      />
+    <svg aria-hidden="true" className={className} width={size} height={size} viewBox={g.fittedViewBox} fill="none">
+      <circle cx={g.ring.cx} cy={g.ring.cy} r={g.ring.radius} stroke={ink} strokeWidth={g.ring.strokeWidth} />
       <path
-        d={geometry.cordPath}
-        stroke={cordColor}
-        strokeWidth={geometry.cord.strokeWidth}
-        strokeLinecap="round"
+        d={`M${g.cordTop.x} ${g.cordTop.top}V${g.cordTop.bottom}M${g.cordBottom.x} ${g.cordBottom.top}V${g.cordBottom.bottom}`}
+        stroke={ink}
+        strokeWidth={g.cordTop.strokeWidth}
       />
-      {/* Sobre fundo claro o peso ganha contorno para não sumir no calcário. */}
-      <path
-        d={geometry.weightPath}
-        fill={weightColor}
-        stroke={onBrand ? 'none' : mineralColors.brand}
-        strokeWidth={onBrand ? 0 : 0.9}
-        strokeLinejoin="round"
-      />
+      <rect x={g.taco.x} y={g.taco.y} width={g.taco.width} height={g.taco.height} rx={g.taco.radius} fill={ink} />
+      <path d={g.weightPath} fill={trenaPalette.tapeYellow} />
+      {showRibs ? (
+        <path
+          d={g.ribs.y.map(y => `M${g.weight.x} ${y}H${g.weight.x + g.weight.width}`).join('')}
+          stroke={trenaPalette.graphite}
+          strokeWidth={g.ribs.strokeWidth}
+        />
+      ) : null}
     </svg>
+  );
+}
+
+/** Logotipo "PRUMOQ" (Barlow Condensed); o Q é amarelo sobre o grafite. */
+export function BrandWordmark({ variant = 'onBrand', className = '' }: { variant?: BrandMarkVariant; className?: string }) {
+  const onBrand = variant === 'onBrand';
+  return (
+    <span
+      className={`font-wordmark text-[26px] font-bold leading-none tracking-[0.6px] ${onBrand ? 'text-white' : 'text-txt'} ${className}`}
+    >
+      PRUMO<span className={onBrand ? 'text-accent' : 'text-txt'}>Q</span>
+    </span>
   );
 }

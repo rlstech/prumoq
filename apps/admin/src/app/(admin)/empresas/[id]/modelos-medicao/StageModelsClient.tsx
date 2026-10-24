@@ -1,6 +1,6 @@
 
 import { useState, useTransition } from 'react';
-import { Plus, Save } from 'lucide-react';
+import { Plus, Save } from '@/components/icons';
 import { useRouter } from '@/lib/compat/navigation';
 import { useToast } from '@/components/ui/Toast';
 import type { Database } from '@prumoq/shared';

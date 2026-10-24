@@ -3,7 +3,7 @@ import Header from '@/components/layout/Header';
 import PageHeader from '@/components/layout/PageHeader';
 import EmpresasClient from './EmpresasClient';
 import KPICard from '@/components/ui/KPICard';
-import { Building2 } from 'lucide-react';
+import { Building2 } from '@/components/icons';
 
 
 export default async function EmpresasPage() {

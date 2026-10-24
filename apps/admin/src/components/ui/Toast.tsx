@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { CheckCircle2, XCircle, AlertCircle, X } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, X } from '@/components/icons';
 
 type ToastType = 'success' | 'error' | 'info';
 

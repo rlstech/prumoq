@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { Search } from 'lucide-react';
+import { Search } from '@/components/icons';
 
 interface FilterBarProps {
   children: ReactNode;

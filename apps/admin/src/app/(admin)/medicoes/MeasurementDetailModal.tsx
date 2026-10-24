@@ -1,5 +1,5 @@
 
-import { AlertTriangle, ArrowUpRight, FileText, ShieldOff } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, FileText, ShieldOff } from '@/components/icons';
 import Link from '@/lib/compat/link';
 import Modal from '@/components/ui/Modal';
 import type { MeasurementDetail } from './actions';

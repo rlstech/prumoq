@@ -1,6 +1,6 @@
 
 import { useState, useTransition } from 'react';
-import { Landmark, Save } from 'lucide-react';
+import { Landmark, Save } from '@/components/icons';
 import { useRouter } from '@/lib/compat/navigation';
 import { useToast } from '@/components/ui/Toast';
 import { updateNcFinancialImpact, type NcFinancialInput } from './actions';

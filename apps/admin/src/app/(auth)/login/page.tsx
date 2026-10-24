@@ -1,6 +1,6 @@
 
 import { Suspense } from 'react';
-import { CheckCircle2, ShieldCheck, Wifi } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, Wifi } from '@/components/icons';
 import { BrandMark } from '@/components/ui/BrandMark';
 import LoginForm from './LoginForm';
 

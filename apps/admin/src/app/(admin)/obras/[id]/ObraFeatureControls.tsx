@@ -1,6 +1,6 @@
 
 import { useState, useTransition } from 'react';
-import { Settings2 } from 'lucide-react';
+import { Settings2 } from '@/components/icons';
 import { useRouter } from '@/lib/compat/navigation';
 import { useToast } from '@/components/ui/Toast';
 import { updateObraFeatureOverrides } from './actions';

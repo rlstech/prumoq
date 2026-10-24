@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Plus, Upload, Trash2, XCircle } from 'lucide-react';
+import { Plus, Upload, Trash2, XCircle } from '@/components/icons';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { FilterBar, SearchField, SelectFilter } from '@/components/ui/FilterBar';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';

@@ -1,5 +1,5 @@
 
-import { Plus, X, GripVertical } from 'lucide-react';
+import { Plus, X, GripVertical } from '@/components/icons';
 import { useState } from 'react';
 
 export interface ChecklistItemType {

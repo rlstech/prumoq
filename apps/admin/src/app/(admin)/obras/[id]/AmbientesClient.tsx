@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Layers, Plus, Search } from 'lucide-react';
+import { Layers, Plus, Search } from '@/components/icons';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { useRouter } from '@/lib/compat/navigation';
 import AmbienteModal from './AmbienteModal';

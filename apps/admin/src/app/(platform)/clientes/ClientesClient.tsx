@@ -1,7 +1,7 @@
 
 import { useState, useTransition } from 'react';
 import type { Database } from '@prumoq/shared';
-import { Building2, Clock3, Plus, UserCheck, UserX } from 'lucide-react';
+import { Building2, Clock3, Plus, UserCheck, UserX } from '@/components/icons';
 import Modal from '@/components/ui/Modal';
 import PageHeader from '@/components/layout/PageHeader';
 import DataTable, { Column } from '@/components/ui/DataTable';

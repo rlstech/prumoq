@@ -13,7 +13,7 @@ function formatDateTime(dateStr: string): string {
   });
 }
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Download, Loader2, Printer } from 'lucide-react';
+import { Download, Loader2, Printer } from '@/components/icons';
 import Modal from '@/components/ui/Modal';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { FilterBar, SelectFilter } from '@/components/ui/FilterBar';

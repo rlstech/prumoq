@@ -22,7 +22,7 @@ import {
   ScanLine,
   Users,
   X,
-} from 'lucide-react';
+} from '@/components/icons';
 
 /**
  * Os grupos espelham o fluxo do painel: decidir (visão geral), operar na ordem em

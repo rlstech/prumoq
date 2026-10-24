@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@/components/icons';
 import Link from '@/lib/compat/link';
 import { usePathname } from '@/lib/compat/navigation';
 import { NAV_GROUPS } from '@/components/layout/Sidebar';

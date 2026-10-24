@@ -15,7 +15,7 @@ import {
   UserRound,
   UsersRound,
   Wrench,
-} from 'lucide-react';
+} from '@/components/icons';
 import Header from '@/components/layout/Header';
 import PageHeader from '@/components/layout/PageHeader';
 import PhotoGallery from '@/components/ui/PhotoGallery';

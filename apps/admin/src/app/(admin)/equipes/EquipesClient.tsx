@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from '@/lib/compat/navigation';
-import { HardHat, Plus, Save, XCircle } from 'lucide-react';
+import { HardHat, Plus, Save, XCircle } from '@/components/icons';
 import { FilterBar, SearchField } from '@/components/ui/FilterBar';
 import { createEquipe, updateEquipe } from './actions';
 

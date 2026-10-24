@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import Modal from './Modal';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from '@/components/icons';
 
 export interface Photo {
   r2_key: string;

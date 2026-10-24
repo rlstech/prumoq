@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from '@/lib/compat/navigation';
 import { useAuth, useClerk, useSignIn } from '@clerk/clerk-react';
 import { isClerkAPIResponseError } from '@clerk/clerk-react/errors';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from '@/components/icons';
 import { minimumPasswordSchema } from '@/lib/auth/passwords';
 import { verificarAcesso } from './actions';
 

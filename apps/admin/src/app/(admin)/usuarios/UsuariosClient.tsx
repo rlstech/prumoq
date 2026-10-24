@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Plus, ShieldCheck, HardHat, KeyRound, Save } from 'lucide-react';
+import { Plus, ShieldCheck, HardHat, KeyRound, Save } from '@/components/icons';
 import Modal from '@/components/ui/Modal';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import DataTable, { Column } from '@/components/ui/DataTable';

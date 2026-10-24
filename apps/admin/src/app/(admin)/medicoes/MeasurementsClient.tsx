@@ -1,6 +1,6 @@
 
 import { useMemo, useState, useTransition } from 'react';
-import { AlertTriangle, Ban, CheckCircle2, Plus, Ruler, Trash2 } from 'lucide-react';
+import { AlertTriangle, Ban, CheckCircle2, Plus, Ruler, Trash2 } from '@/components/icons';
 import { useRouter } from '@/lib/compat/navigation';
 import Link from '@/lib/compat/link';
 import { useToast } from '@/components/ui/Toast';

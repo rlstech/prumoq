@@ -1,6 +1,6 @@
 
 import Modal from './Modal';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from '@/components/icons';
 
 interface ConfirmDialogProps {
   isOpen: boolean;

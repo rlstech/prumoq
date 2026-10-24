@@ -273,3 +273,49 @@ export const prumoTheme: PrumoTheme = {
   breakpoints: mineralBreakpoints,
   motion: mineralMotion,
 };
+
+/**
+ * Ícones Seixo: traços desenhados numa grade de 24 (traço 1,8, pontas e
+ * junções redondas). O PWA ainda repete estes `d` em `apps/mobile/lib/icons.tsx`;
+ * o admin desenha a partir daqui (`apps/admin/src/components/icons.tsx`).
+ */
+export const seixoIconPaths = {
+  Plumb: 'M12 2.5v5M8 7.5h8L12 21.5z',
+  Home: 'M4 10.8L11 5a1.6 1.6 0 0 1 2 0l7 5.8V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9v5.5H5.5A1.5 1.5 0 0 1 4 19z',
+  LayoutGrid: 'M6 4h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM15 4h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM6 13h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2zM15 13h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2z',
+  Building2: 'M6 21V5.5A1.5 1.5 0 0 1 7.5 4h9A1.5 1.5 0 0 1 18 5.5V21M3.5 21h17M9.5 8h1M13.5 8h1M9.5 11.5h1M13.5 11.5h1M9.5 15h1M13.5 15h1M10.5 21v-2.5h3V21',
+  AlertTriangle: 'M10.3 5.2a2 2 0 0 1 3.4 0l6.6 11.3a2 2 0 0 1-1.7 3H5.4a2 2 0 0 1-1.7-3zM12 10v3.5M12 16.4v.1',
+  ClipboardCheck: 'M8 5H6.5A1.5 1.5 0 0 0 5 6.5v13A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 17.5 5H16M9.5 3.5h5a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1zM9 13.5l2 2 4-4',
+  ClipboardList: 'M8 5H6.5A1.5 1.5 0 0 0 5 6.5v13A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 17.5 5H16M9.5 3.5h5a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1zM9 11h6M9 15h4',
+  Star: 'M12 4.5l2.2 4.5 4.9.7-3.5 3.4.8 4.9-4.4-2.3-4.4 2.3.8-4.9-3.5-3.4 4.9-.7z',
+  HardHat: 'M3.5 17.5h17M5.5 17.5V15a6.5 6.5 0 0 1 13 0v2.5M10 8.8V6.5a2 2 0 0 1 4 0v2.3',
+  Ruler: 'M4.5 15.5L15.5 4.5a1.5 1.5 0 0 1 2.1 0l1.9 1.9a1.5 1.5 0 0 1 0 2.1L8.5 19.5a1.5 1.5 0 0 1-2.1 0l-1.9-1.9a1.5 1.5 0 0 1 0-2.1zM8 12l1.5 1.5M11 9l1.5 1.5M14 6l1.5 1.5',
+  Landmark: 'M4 9.5L12 5l8 4.5M5 20h14M6.5 10v7M10 10v7M14 10v7M17.5 10v7',
+  Users: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3.5 19a5.5 5.5 0 0 1 11 0M15.5 5.3a3 3 0 0 1 0 5.4M17.5 14a5.5 5.5 0 0 1 3 5',
+  Layers: 'M12 4.5l7.5 4-7.5 4-7.5-4zM4.5 12.5l7.5 4 7.5-4M4.5 16.5l7.5 4 7.5-4',
+  LogOut: 'M14 4.5h3.5A1.5 1.5 0 0 1 19 6v12a1.5 1.5 0 0 1-1.5 1.5H14M10 8l-4 4 4 4M6 12h9',
+  Printer: 'M7 9V4.5h10V9M7 17H5.5A1.5 1.5 0 0 1 4 15.5v-5A1.5 1.5 0 0 1 5.5 9h13a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H17M7 14h10v6H7z',
+  ScanLine: 'M4 8V6.5A2.5 2.5 0 0 1 6.5 4H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V8M20 16v1.5a2.5 2.5 0 0 1-2.5 2.5H16M8 20H6.5A2.5 2.5 0 0 1 4 17.5V16M7 12h10',
+  RefreshCw: 'M19 12a7 7 0 0 1-12.5 4.3M5 12a7 7 0 0 1 12.5-4.3M17.5 4v3.7h-3.7M6.5 20v-3.7h3.7',
+  History: 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v3h3M12 8v4l2.5 2.5',
+  Clock3: 'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 8v4.5l3 2',
+  CalendarDays: 'M6.5 6h11A1.5 1.5 0 0 1 19 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5v-11A1.5 1.5 0 0 1 6.5 6zM5 10.5h14M9 4v3.5M15 4v3.5M9 14.5h.01M12 14.5h.01M15 14.5h.01',
+  Camera: 'M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5zM12 15.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  Search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5L20 20',
+  MapPin: 'M12 21s6-5.5 6-11a6 6 0 0 0-12 0c0 5.5 6 11 6 11zM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  ChevronRight: 'M10 6l6 6-6 6',
+  ChevronLeft: 'M14 6l-6 6 6 6',
+  ChevronDown: 'M6 10l6 6 6-6',
+  ChevronUp: 'M6 14l6-6 6 6',
+  ChevronsLeft: 'M12 6l-6 6 6 6M18 6l-6 6 6 6',
+  ChevronsRight: 'M12 6l6 6-6 6M6 6l6 6-6 6',
+  Check: 'M5 12.5l4.5 4.5L19 7.5',
+  X: 'M7 7l10 10M17 7L7 17',
+  Plus: 'M12 5v14M5 12h14',
+  Minus: 'M6 12h12',
+  Menu: 'M4.5 7h15M4.5 12h15M4.5 17h15',
+  ArrowRight: 'M5 12h14M13 6l6 6-6 6',
+  ArrowLeft: 'M19 12H5M11 6l-6 6 6 6',
+} as const;
+
+export type SeixoIconName = keyof typeof seixoIconPaths;

@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import ProgressBar from '@/components/ui/ProgressBar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import PageHeader from '@/components/layout/PageHeader';
-import { AlertTriangle, ArrowRight, Building2, ClipboardCheck, Layers, Ruler, ScanLine } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Building2, ClipboardCheck, Layers, Ruler, ScanLine } from '@/components/icons';
 import Link from '@/lib/compat/link';
 
 /** Uma NC entra na fila crítica quando já venceu ou vence nas próximas 48 h. */

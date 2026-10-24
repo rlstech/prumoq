@@ -2,7 +2,7 @@
 import { useState, useTransition } from 'react';
 import Link from '@/lib/compat/link';
 import { useRouter } from '@/lib/compat/navigation';
-import { AlertTriangle, FileText, Trash2 } from 'lucide-react';
+import { AlertTriangle, FileText, Trash2 } from '@/components/icons';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ProgressBar from '@/components/ui/ProgressBar';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';

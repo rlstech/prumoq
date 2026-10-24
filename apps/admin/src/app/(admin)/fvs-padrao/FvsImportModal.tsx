@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { CheckCircle2, AlertTriangle, ChevronRight, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ChevronRight, ExternalLink, ChevronDown, ChevronUp } from '@/components/icons';
 import Modal from '@/components/ui/Modal';
 import { createClient } from '@/lib/supabase/client';
 import { getUsuarioAtual } from '@/lib/auth/usuario-atual';

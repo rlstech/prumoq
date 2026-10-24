@@ -1,7 +1,7 @@
 import { redirect } from '@/lib/compat/navigation';
 import { requirePlatformAdmin } from '@/lib/auth/context';
 import { BrandMark } from '@/components/ui/BrandMark';
-import { LogOut } from 'lucide-react';
+import { LogOut } from '@/components/icons';
 import { logoutPlatform } from './clientes/actions';
 
 

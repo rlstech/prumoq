@@ -1,6 +1,6 @@
 
 import { useMemo, useState, useTransition } from 'react';
-import { CheckCircle2, FileDown, Plus, RotateCcw, Save, ShieldX } from 'lucide-react';
+import { CheckCircle2, FileDown, Plus, RotateCcw, Save, ShieldX } from '@/components/icons';
 import Modal from '@/components/ui/Modal';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Tabs from '@/components/ui/Tabs';
