@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS public.contratos (
   motivo_encerramento text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_by uuid REFERENCES public.usuarios(id),
   CONSTRAINT contratos_obra_id_cliente_fkey FOREIGN KEY (obra_id, cliente_id) REFERENCES public.obras(id, cliente_id),
   CONSTRAINT contratos_equipe_id_cliente_fkey FOREIGN KEY (equipe_id, cliente_id) REFERENCES public.equipes(id, cliente_id),
   CONSTRAINT contratos_numero_check CHECK (length(trim(numero)) > 0),
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS public.contratos (
   CONSTRAINT contratos_vigencia_check CHECK (data_fim IS NULL OR data_fim >= data_inicio),
   CONSTRAINT contratos_encerramento_check CHECK ((status = 'encerrado') = (encerrado_em IS NOT NULL))
 );
+ALTER TABLE public.contratos ADD COLUMN IF NOT EXISTS updated_by uuid REFERENCES public.usuarios(id);
 CREATE UNIQUE INDEX IF NOT EXISTS contratos_obra_numero_uidx ON public.contratos (obra_id, lower(numero));
 CREATE INDEX IF NOT EXISTS contratos_cliente_status_idx ON public.contratos (cliente_id, status);
 CREATE INDEX IF NOT EXISTS contratos_obra_equipe_idx ON public.contratos (obra_id, equipe_id);
@@ -213,9 +215,9 @@ BEGIN
   END IF;
 
   IF p_contrato_id IS NULL THEN
-    INSERT INTO public.contratos (cliente_id, obra_id, equipe_id, numero, objeto, valor_contratado, data_inicio, data_fim, observacao, criado_por)
+    INSERT INTO public.contratos (cliente_id, obra_id, equipe_id, numero, objeto, valor_contratado, data_inicio, data_fim, observacao, criado_por, updated_by)
     VALUES (v_cliente, p_obra_id, p_equipe_id, trim(p_numero), trim(p_objeto), p_valor_contratado, p_data_inicio, p_data_fim,
-            NULLIF(trim(p_observacao), ''), v_actor)
+            NULLIF(trim(p_observacao), ''), v_actor, v_actor)
     RETURNING id INTO v_id;
   ELSE
     SELECT * INTO c FROM public.contratos WHERE id = p_contrato_id FOR UPDATE;
@@ -229,7 +231,7 @@ BEGIN
     END IF;
     UPDATE public.contratos SET equipe_id = p_equipe_id, numero = trim(p_numero), objeto = trim(p_objeto),
       valor_contratado = p_valor_contratado, data_inicio = p_data_inicio, data_fim = p_data_fim,
-      observacao = NULLIF(trim(p_observacao), ''), updated_at = now()
+      observacao = NULLIF(trim(p_observacao), ''), updated_at = now(), updated_by = v_actor
     WHERE id = c.id;
   END IF;
   INSERT INTO public.auditoria_operacional (cliente_id, obra_id, entidade, entidade_id, acao, dados, usuario_id)
@@ -260,7 +262,7 @@ BEGIN
     RAISE EXCEPTION 'Aprove ou descarte os rascunhos de medição antes de encerrar' USING ERRCODE = 'check_violation';
   END IF;
   UPDATE public.contratos SET status = 'encerrado', encerrado_em = now(), encerrado_por = v_actor,
-    motivo_encerramento = NULLIF(trim(p_motivo), ''), updated_at = now()
+    motivo_encerramento = NULLIF(trim(p_motivo), ''), updated_at = now(), updated_by = v_actor
   WHERE id = c.id;
   INSERT INTO public.auditoria_operacional (cliente_id, obra_id, entidade, entidade_id, acao, dados, usuario_id)
   VALUES (c.cliente_id, c.obra_id, 'contrato', c.id, 'encerrado', jsonb_build_object('motivo', p_motivo), v_actor);
@@ -282,7 +284,7 @@ BEGIN
     RAISE EXCEPTION 'Sem permissão para reabrir este contrato' USING ERRCODE = 'insufficient_privilege';
   END IF;
   UPDATE public.contratos SET status = 'ativo', encerrado_em = NULL, encerrado_por = NULL, motivo_encerramento = NULL,
-    updated_at = now()
+    updated_at = now(), updated_by = v_actor
   WHERE id = c.id;
   INSERT INTO public.auditoria_operacional (cliente_id, obra_id, entidade, entidade_id, acao, usuario_id)
   VALUES (c.cliente_id, c.obra_id, 'contrato', c.id, 'reaberto', v_actor);

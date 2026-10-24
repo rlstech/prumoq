@@ -135,3 +135,9 @@ por obra; painel e PWA publicados passaram nos testes de tela, impressão, escri
 - `public.uuid_generate_v4()` (atalho que a produção tem e o prumoq-teste recriado não tinha).
 
 Aplicado no prumoq-teste em 2026-10-24 (15 testes de regra com rollback antes). Produção: pendente, só com confirmação.
+
+`extra/31_contratos_aditivos.sql` (2026-10-24): `contratos.updated_by`; aditivos (`contrato_aditivos` + `contrato_aditivo_itens`,
+leitura pela obra, escrita só por `aplicar_aditivo_contrato`). O aditivo inclui serviços e muda quantidade (só método
+"quantidade", nunca abaixo do aprovado em campo) e preço; vale na hora; o valor do contrato soma a diferença; medições
+aprovadas não mudam. `registrar_alteracao_config_medicao` grava em `auditoria_operacional` qualquer mudança de quantidade ou
+preço feita fora de aditivo/contrato. Aplicado no prumoq-teste em 2026-10-24 (testes com rollback antes); produção pendente.
