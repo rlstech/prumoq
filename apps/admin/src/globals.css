@@ -1,7 +1,8 @@
 @import '@prumoq/design-system/tokens.css';
-@import '@fontsource-variable/ibm-plex-sans';
-@import '@fontsource/ibm-plex-mono/500.css';
-@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource-variable/figtree';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/700.css';
+@import '@fontsource/barlow-condensed/700.css';
 
 @tailwind base;
 @tailwind components;
@@ -33,8 +34,8 @@
   --txt: var(--prumo-basalt);
   --txt2: var(--prumo-slate);
   --txt3: var(--prumo-muted);
-  --brd0: rgba(20, 37, 34, 0.1);
-  --brd1: rgba(20, 37, 34, 0.18);
+  --brd0: var(--prumo-canvas);
+  --brd1: var(--prumo-fog-strong);
   --r: var(--prumo-radius-control);
   --rl: var(--prumo-radius-card);
 }
@@ -49,7 +50,7 @@ html {
 
 body {
   min-width: 320px;
-  font-family: 'IBM Plex Sans Variable', 'IBM Plex Sans', system-ui, sans-serif;
+  font-family: 'Figtree Variable', Figtree, system-ui, sans-serif;
   font-size: 15px;
   line-height: 1.47;
   color: var(--txt);
@@ -59,13 +60,19 @@ body {
 }
 
 ::selection {
-  color: var(--prumo-basalt);
+  color: var(--prumo-brand);
   background: var(--prumo-accent);
 }
 
 :focus-visible {
-  outline: 3px solid var(--prumo-accent);
+  outline: 2px solid var(--prumo-brand);
   outline-offset: 2px;
+}
+
+/* Sobre o grafite (menu, cartões escuros) o foco é amarelo. */
+.on-brand :focus-visible,
+.on-brand:focus-visible {
+  outline-color: var(--prumo-accent);
 }
 
 button,
@@ -82,74 +89,87 @@ a {
 
 @layer components {
   .prumo-page {
-    @apply flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-7;
+    @apply flex-1 overflow-y-auto px-4 pb-10 pt-4 md:px-7 md:pt-5;
   }
 
   .prumo-page-inner {
-    @apply mx-auto w-full max-w-[1440px] space-y-6;
+    @apply mx-auto w-full max-w-[1280px] space-y-7;
   }
 
+  /* Cartão: branco sobre o concreto, sem borda nem sombra. */
   .prumo-panel {
-    @apply rounded-lg border border-[var(--brd0)] bg-bg-1 shadow-card;
+    @apply rounded-xl bg-bg-1;
   }
 
+  /* Histórico (Prumo Mineral): a barra lateral saiu; a classe fica inócua. */
   .prumo-datum {
     @apply relative overflow-hidden;
   }
 
-  .prumo-datum::before {
-    content: '';
-    @apply absolute inset-y-0 left-0 w-[3px] bg-accent;
-  }
-
   .prumo-kicker {
-    @apply text-xs font-semibold uppercase tracking-[0.12em] text-txt-2;
+    @apply text-[13px] font-semibold text-txt-2;
   }
 
   .prumo-metric {
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
   }
 
+  /* Ação principal: pílula amarela, texto sempre grafite. Uma por tela. */
   .prumo-primary-button {
-    @apply inline-flex h-[38px] min-h-[38px] items-center justify-center gap-2 rounded px-4 text-[13px] font-semibold text-white transition-colors;
-    background: var(--prumo-brand);
+    @apply inline-flex h-11 min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    background: var(--prumo-accent);
+    color: var(--prumo-brand);
   }
 
-  .prumo-primary-button:hover {
-    background: var(--prumo-brand-deep);
+  .prumo-primary-button:hover:not(:disabled) {
+    background: var(--prumo-accent-pressed);
   }
 
   .prumo-secondary-button {
-    @apply inline-flex h-[38px] min-h-[38px] items-center justify-center gap-2 rounded border border-[var(--brd1)] bg-bg-1 px-3.5 text-[13px] font-semibold text-txt transition-colors hover:bg-bg-2;
+    @apply inline-flex h-11 min-h-11 items-center justify-center gap-2 rounded-full bg-bg-1 px-[18px] text-sm font-semibold text-txt transition-colors hover:bg-bg-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   /* Ação dentro de uma linha de tabela — menor que a ação da página. */
   .prumo-row-button {
-    @apply inline-flex h-7 items-center justify-center gap-1.5 rounded border border-[var(--brd1)] bg-bg-1 px-2.5 text-xs font-semibold text-[var(--br)] transition-colors hover:bg-bg-2;
+    @apply inline-flex h-8 items-center justify-center gap-1.5 rounded-full bg-bg-0 px-3 text-xs font-semibold text-txt transition-colors hover:bg-bg-2;
   }
 
-  /* Título de faixa dentro da página: rótulo em caixa alta seguido de fio. */
+  /* Título de faixa dentro da página. */
   .prumo-section-title {
-    @apply flex items-center gap-2.5;
+    @apply flex items-center gap-2.5 px-1;
   }
 
   .prumo-section-title > span:first-child {
-    @apply text-xs font-semibold uppercase tracking-[0.14em] text-[var(--br)];
-  }
-
-  .prumo-section-title::after {
-    content: '';
-    @apply h-px flex-1 bg-[var(--brd0)];
+    @apply text-lg font-bold text-txt;
   }
 
   .prumo-field {
-    @apply min-h-11 w-full rounded border border-[var(--brd1)] bg-bg-1 px-3 text-sm text-txt outline-none transition-colors placeholder:text-txt-3;
+    @apply min-h-11 w-full rounded-md border-[1.5px] border-brd-1 bg-bg-1 px-4 text-sm text-txt outline-none transition-[border-color,box-shadow] placeholder:text-txt-3;
   }
 
   .prumo-field:focus {
     border-color: var(--prumo-brand);
-    box-shadow: 0 0 0 3px rgba(216, 229, 104, 0.55);
+    box-shadow: 0 0 0 4px rgba(255, 194, 26, 0.5);
+  }
+
+  /* Cabeçalho de tabela: rótulo pequeno em aço, sem caixa alta. */
+  .prumo-th {
+    @apply whitespace-nowrap px-4 py-3 text-left text-xs font-semibold text-txt-2;
+  }
+
+  /* Etiqueta em pílula sem borda (estado, prazo, contagem). */
+  .prumo-pill {
+    @apply inline-flex h-[26px] items-center gap-1.5 whitespace-nowrap rounded-full px-[11px] text-xs font-bold;
+  }
+
+  /* Fita da trena: grafite com marcas amarelas. */
+  .prumo-tape {
+    background: var(--prumo-brand) repeating-linear-gradient(90deg, rgba(255, 194, 26, 0.6) 0 1px, transparent 1px 8px);
+  }
+
+  .prumo-tape-on-dark {
+    background: var(--prumo-accent) repeating-linear-gradient(90deg, rgba(28, 31, 34, 0.35) 0 1px, transparent 1px 8px);
   }
 }
 
